@@ -1,6 +1,7 @@
 import { BoxGeometry, CanvasTexture, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { BlockKind } from './voxel';
+import { EXTRA_BLOCK_META, isSapling } from './extraBlocks';
 
 function random(x: number, y: number, seed: number) {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
@@ -13,7 +14,7 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   canvas.height = 16;
   const context = canvas.getContext('2d')!;
 
-  const palettes: Record<BlockKind, string[]> = {
+  const palettes: Record<number, string[]> = {
     [BlockKind.Grass]: ['#5d983d', '#69a947', '#76b653', '#4f8a36', '#83b95b'],
     [BlockKind.Dirt]: ['#805536', '#8f6240', '#765033', '#9b6c47', '#6e472e'],
     [BlockKind.Stone]: ['#7e7e7e', '#8c8c8c', '#747474', '#969696', '#696969'],
@@ -37,15 +38,17 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
     [BlockKind.Candle]: ['#e6c877', '#f2d68a', '#d9b965', '#ffe6a0', '#cfa954'],
   };
 
+  for (const [kind, meta] of Object.entries(EXTRA_BLOCK_META)) palettes[Number(kind) as BlockKind] = meta.palette;
   const grassy = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass;
   const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves;
+  const sapling = isSapling(kind);
   let palette = palettes[kind];
   if (grassy && face !== 'top') palette = palettes[BlockKind.Dirt];
 
   for (let x = 0; x < 16; x += 1) {
     for (let y = 0; y < 16; y += 1) {
       const value = random(x, y, kind * 17 + face.length);
-      if (foliage && value < 0.09) continue;
+      if ((foliage || sapling) && value < 0.09) continue;
       context.fillStyle = palette[Math.floor(value * palette.length)];
       context.fillRect(x, y, 1, 1);
     }
@@ -59,6 +62,27 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
         context.fillRect(x, y, 1, 1);
       }
     }
+  }
+
+  if (kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick) {
+    context.fillStyle = 'rgba(45, 45, 45, 0.28)';
+    for (const y of [4, 9, 14]) context.fillRect(0, y, 16, 1);
+    for (let row = 0; row < 4; row += 1) {
+      const offset = row % 2 === 0 ? 4 : 0;
+      for (let x = offset; x < 16; x += 8) context.fillRect(x, row * 5, 1, 5);
+    }
+  }
+
+  if (kind === BlockKind.Glass) {
+    context.clearRect(0, 0, 16, 16);
+    context.fillStyle = 'rgba(160, 215, 235, 0.12)';
+    context.fillRect(0, 0, 16, 16);
+    context.fillStyle = 'rgba(225, 250, 255, 0.72)';
+    context.fillRect(0, 0, 16, 1);
+    context.fillRect(0, 15, 16, 1);
+    context.fillRect(0, 0, 1, 16);
+    context.fillRect(15, 0, 1, 16);
+    for (let index = 3; index < 10; index += 1) context.fillRect(index, index - 1, 1, 1);
   }
 
   if (kind === BlockKind.Apple) {
@@ -110,9 +134,13 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
 
 function material(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves;
+  const glass = kind === BlockKind.Glass;
   return new MeshLambertMaterial({
     map: texture(kind, face),
-    alphaTest: foliage ? 0.35 : 0,
+    alphaTest: foliage || isSapling(kind) ? 0.35 : glass ? 0.05 : 0,
+    transparent: glass,
+    opacity: glass ? 0.7 : 1,
+    depthWrite: !glass,
   });
 }
 
@@ -130,7 +158,7 @@ const forestGrassTop = material(BlockKind.ForestGrass, 'top');
 const woodSide = material(BlockKind.Wood, 'side');
 const woodTop = material(BlockKind.Wood, 'top');
 
-export const blockMaterials: Record<BlockKind, Material[]> = {
+const baseBlockMaterials = {
   [BlockKind.Grass]: [grassSide, grassSide, grassTop, dirt, grassSide, grassSide],
   [BlockKind.Dirt]: repeated(dirt),
   [BlockKind.Stone]: repeated(material(BlockKind.Stone, 'side')),
@@ -153,5 +181,10 @@ export const blockMaterials: Record<BlockKind, Material[]> = {
   [BlockKind.Tnt]: repeated(material(BlockKind.Tnt, 'side')),
   [BlockKind.Candle]: repeated(material(BlockKind.Candle, 'side')),
 };
+
+export const blockMaterials = {
+  ...baseBlockMaterials,
+  ...Object.fromEntries(Object.keys(EXTRA_BLOCK_META).map((kind) => [kind, repeated(material(Number(kind) as BlockKind, 'side'))])),
+} as unknown as Record<BlockKind, Material[]>;
 
 export const blockGeometry = new BoxGeometry(1, 1, 1);

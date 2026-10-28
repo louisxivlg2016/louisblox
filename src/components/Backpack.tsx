@@ -34,7 +34,10 @@ export function Backpack() {
             <button
               key={kind}
               className={`backpack-block ${selected === kind ? 'selected' : ''}`}
-              onClick={() => selectBlock(kind)}
+              onClick={() => {
+                selectBlock(kind);
+                close();
+              }}
             >
               <span className="block-swatch" style={{ backgroundColor: BLOCK_INFO[kind].color }} />
               <span>{index === 9 ? '0' : index + 1} · {BLOCK_INFO[kind].name}</span>

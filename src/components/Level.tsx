@@ -8,6 +8,7 @@ import type { WaterTile } from '../game/levels';
 import { Chunk, ChunkData } from '../game/traits';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { SpecialBlocks } from './SpecialBlocks';
+import { isSapling } from '../game/extraBlocks';
 import { BlockKind, voxelKey } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 
@@ -30,6 +31,9 @@ function BlockInstances({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }) 
       if (kind === BlockKind.Apple) {
         matrix.makeScale(0.35, 0.35, 0.35);
         matrix.setPosition(block.x, block.y - 0.28, block.z);
+      } else if (isSapling(kind)) {
+        matrix.makeScale(0.35, 0.6, 0.35);
+        matrix.setPosition(block.x, block.y - 0.2, block.z);
       } else {
         matrix.makeTranslation(block.x, block.y, block.z);
       }

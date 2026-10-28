@@ -1,14 +1,17 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
-import { CHUNK_SIZE, VIEW_DISTANCE, generateChunk, heightAt } from './levels';
+import { CHUNK_SIZE, MAX_BUILD_Y, VIEW_DISTANCE, biomeAt, generateChunk, heightAt } from './levels';
 import type { LevelData } from './levels';
 import { spawnChunkAnimals } from './animals';
 import { spawnBomb } from './bombLifecycle';
+import { spawnSapling } from './saplingLifecycle';
+import { isSapling } from './extraBlocks';
 import {
   Animal,
   MeatDrop,
   Bomb,
   Explosion,
+  Sapling,
   BlockTarget,
   Chunk,
   ChunkData,
@@ -116,6 +119,7 @@ function loadChunk(world: World, cx: number, cz: number) {
   data.animals = spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
   for (const block of data.blocks) {
     if (block.kind === BlockKind.Tnt) data.bombs.push(spawnBomb(world, block.x, block.y, block.z));
+    if (isSapling(block.kind)) data.saplings.push(spawnSapling(world, block.kind, block.x, block.y, block.z));
   }
 
   touchNeighbors(state, cx, cz);
@@ -132,8 +136,10 @@ function unloadChunk(world: World, entity: Entity) {
   }
   for (const animal of data.animals) animal.destroy();
   for (const bomb of data.bombs) bomb.destroy();
+  for (const sapling of data.saplings) sapling.destroy();
   data.animals = [];
   data.bombs = [];
+  data.saplings = [];
   state.chunks.delete(chunkKey(chunk.x, chunk.z));
   entity.destroy();
   touchNeighbors(state, chunk.x, chunk.z);
@@ -228,6 +234,34 @@ export function explodeVoxels(world: World, x: number, y: number, z: number, rad
   return destroyed;
 }
 
+export function growSapling(world: World, kind: BlockKind, x: number, y: number, z: number) {
+  const block = getBlockIndex(world).get(voxelKey(x, y, z));
+  if (!block) return;
+  replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, BlockKind.Wood);
+  for (let trunk = 1; trunk <= 4 && y + trunk <= MAX_BUILD_Y; trunk += 1) {
+    addVoxel(world, x, y + trunk, z, BlockKind.Wood);
+  }
+
+  const leafKind = kind === BlockKind.PineSapling
+    ? BlockKind.PineLeaves
+    : kind === BlockKind.AutumnSapling ? BlockKind.AutumnLeaves : BlockKind.Leaves;
+  const winter = biomeAt(x, z, getWorldSeed(world)) === 'winter';
+  for (let dx = -2; dx <= 2; dx += 1) {
+    for (let dz = -2; dz <= 2; dz += 1) {
+      for (let dy = -1; dy <= 1; dy += 1) {
+        if (Math.abs(dx) + Math.abs(dz) + Math.abs(dy) > 4 || (dx === 0 && dz === 0)) continue;
+        const leafY = y + 4 + dy;
+        if (leafY > MAX_BUILD_Y) continue;
+        const apple = kind === BlockKind.OakSapling && Math.abs(dx * 13 + dz * 17 + dy * 19) % 9 === 0;
+        addVoxel(world, x + dx, leafY, z + dz, apple ? BlockKind.Apple : leafKind);
+        if (kind === BlockKind.PineSapling && winter && dy === 1 && Math.abs(dx * 7 + dz * 11) % 3 === 0) {
+          addVoxel(world, x + dx, leafY + 1, z + dz, BlockKind.Snow);
+        }
+      }
+    }
+  }
+}
+
 export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind) {
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
@@ -268,6 +302,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   for (const entity of [...world.query(MeatDrop)]) entity.destroy();
   for (const entity of [...world.query(Bomb)]) entity.destroy();
   for (const entity of [...world.query(Explosion)]) entity.destroy();
+  for (const entity of [...world.query(Sapling)]) entity.destroy();
   for (const entity of [...world.query(Player)]) entity.destroy();
   for (const entity of [...world.query(BlockTarget)]) entity.destroy();
   for (const entity of [...world.query(Environment)]) entity.destroy();

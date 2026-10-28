@@ -1,4 +1,5 @@
 import type { Vector3 } from 'three';
+import { EXTRA_BLOCKS, EXTRA_BLOCK_META, EXTRA_BLOCK_ORDER } from './extraBlocks';
 
 export const BlockKind = {
   Grass: 0,
@@ -22,6 +23,7 @@ export const BlockKind = {
   Ice: 18,
   Tnt: 19,
   Candle: 20,
+  ...EXTRA_BLOCKS,
 } as const;
 
 export type BlockKind = (typeof BlockKind)[keyof typeof BlockKind];
@@ -57,9 +59,10 @@ export const HOTBAR_BLOCKS = [
   BlockKind.DiamondOre,
   BlockKind.Tnt,
   BlockKind.Candle,
+  ...EXTRA_BLOCK_ORDER,
 ] as const;
 
-export const BLOCK_INFO: Record<BlockKind, { name: string; color: string }> = {
+const baseBlockInfo = {
   [BlockKind.Grass]: { name: 'Herbe', color: '#69a947' },
   [BlockKind.Dirt]: { name: 'Terre', color: '#8b5e3c' },
   [BlockKind.Stone]: { name: 'Pierre', color: '#858585' },
@@ -83,7 +86,7 @@ export const BLOCK_INFO: Record<BlockKind, { name: string; color: string }> = {
   [BlockKind.Candle]: { name: 'Bougie', color: '#f2d68a' },
 };
 
-export const BLOCK_HARDNESS: Record<BlockKind, number> = {
+const baseBlockHardness = {
   [BlockKind.Grass]: 0.55,
   [BlockKind.Dirt]: 0.6,
   [BlockKind.Stone]: 2.5,
@@ -106,6 +109,16 @@ export const BLOCK_HARDNESS: Record<BlockKind, number> = {
   [BlockKind.Tnt]: 0.8,
   [BlockKind.Candle]: 0.4,
 };
+
+export const BLOCK_INFO = {
+  ...baseBlockInfo,
+  ...Object.fromEntries(Object.entries(EXTRA_BLOCK_META).map(([kind, meta]) => [kind, { name: meta.name, color: meta.color }])),
+} as Record<BlockKind, { name: string; color: string }>;
+
+export const BLOCK_HARDNESS = {
+  ...baseBlockHardness,
+  ...Object.fromEntries(Object.entries(EXTRA_BLOCK_META).map(([kind, meta]) => [kind, meta.hardness])),
+} as Record<BlockKind, number>;
 
 export const voxelKey = (x: number, y: number, z: number) => `${x},${y},${z}`;
 

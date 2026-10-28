@@ -14,6 +14,7 @@ import { environmentSystem } from '../game/systems/environmentSystem';
 import { meatDropSystem } from '../game/systems/meatDropSystem';
 import { playerSystem } from '../game/systems/playerSystem';
 import { saveSystem } from '../game/systems/saveSystem';
+import { saplingSystem } from '../game/systems/saplingSystem';
 import { BlockTarget, Player, PlayerPosition, TargetMesh } from '../game/traits';
 
 export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } }) {
@@ -40,6 +41,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       meatDropSystem(world, dt);
       bombSystem(world, delta);
       explosionSystem(world, delta);
+      saplingSystem(world, delta);
       blockSystem(world, camera, delta, animalTarget);
     } else {
       cameraSystem(world, camera);

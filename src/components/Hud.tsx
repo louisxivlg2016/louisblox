@@ -34,6 +34,9 @@ export function Hud() {
     useGameStore.getState().setMode('pause');
     if (document.pointerLockElement) document.exitPointerLock();
   };
+  const selectedIndex = HOTBAR_BLOCKS.indexOf(selected as (typeof HOTBAR_BLOCKS)[number]);
+  const visibleBlocks = HOTBAR_BLOCKS.slice(0, 10).map((kind, index) => ({ kind, index }));
+  if (selectedIndex >= 10) visibleBlocks.push({ kind: selected as (typeof HOTBAR_BLOCKS)[number], index: selectedIndex });
 
   return (
     <div className="hud">
@@ -91,7 +94,7 @@ export function Hud() {
         <div className="hotbar-wrap">
           <div className="selected-name">{BLOCK_INFO[selected].name}</div>
           <div className="hotbar">
-            {HOTBAR_BLOCKS.map((kind, index) => (
+            {visibleBlocks.map(({ kind, index }) => (
               <button
                 key={kind}
                 className={`hotbar-slot ${selected === kind ? 'selected' : ''}`}

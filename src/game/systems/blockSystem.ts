@@ -3,6 +3,8 @@ import { Vector3 } from 'three';
 import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
+import { spawnSapling } from '../saplingLifecycle';
+import { isSapling } from '../extraBlocks';
 import { consumeActions, isMouseDown, stopMining } from '../input';
 import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
@@ -113,6 +115,17 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
           const chunk = chunkEntity.get(Chunk)!;
           if (chunk.x !== cx || chunk.z !== cz) continue;
           chunkEntity.get(ChunkData)!.bombs.push(bomb);
+          break;
+        }
+      }
+      if (isSapling(kind)) {
+        const sapling = spawnSapling(world, kind, x, y, z);
+        const cx = chunkCoordinate(x);
+        const cz = chunkCoordinate(z);
+        for (const chunkEntity of world.query(Chunk, ChunkData)) {
+          const chunk = chunkEntity.get(Chunk)!;
+          if (chunk.x !== cx || chunk.z !== cz) continue;
+          chunkEntity.get(ChunkData)!.saplings.push(sapling);
           break;
         }
       }

@@ -25,10 +25,13 @@ export const ChunkData = trait(() => ({
   water: [] as import('./levels').WaterTile[],
   animals: [] as import('koota').Entity[],
   bombs: [] as import('koota').Entity[],
+  saplings: [] as import('koota').Entity[],
 }));
 
 export const Bomb = trait({ fuse: 3 });
 export const BombPosition = trait(() => new Vector3());
+export const Sapling = trait({ kind: 0 as import('./voxel').BlockKind, age: 0 });
+export const SaplingPosition = trait(() => new Vector3());
 export const Explosion = trait({ time: 0.45, maxTime: 0.45 });
 export const ExplosionPosition = trait(() => new Vector3());
 export const ExplosionMesh = trait(() => ({ value: null as import('three').Object3D | null }));
