@@ -97,21 +97,31 @@ export function initInput() {
   });
 
   window.addEventListener('pointerdown', (event) => {
-    const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
-    if (event.pointerType !== 'touch' || event.target !== canvas || useGameStore.getState().mode !== 'play') return;
+    if (event.pointerType !== 'touch' || !(event.target instanceof HTMLCanvasElement) || useGameStore.getState().mode !== 'play') return;
+    event.preventDefault();
+    const canvas = event.target;
     touchLookPointer = event.pointerId;
     touchLookX = event.clientX;
     touchLookY = event.clientY;
+    try {
+      canvas.setPointerCapture(event.pointerId);
+    } catch {
+      touchLookPointer = event.pointerId;
+    }
   });
   window.addEventListener('pointermove', (event) => {
     if (event.pointerId !== touchLookPointer) return;
-    look.x += (event.clientX - touchLookX) * 1.5;
-    look.y += (event.clientY - touchLookY) * 1.5;
+    event.preventDefault();
+    look.x += (event.clientX - touchLookX) * 2;
+    look.y += (event.clientY - touchLookY) * 2;
     touchLookX = event.clientX;
     touchLookY = event.clientY;
   });
   const endTouchLook = (event: PointerEvent) => {
-    if (event.pointerId === touchLookPointer) touchLookPointer = null;
+    if (event.pointerId !== touchLookPointer) return;
+    const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas canvas');
+    if (canvas?.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    touchLookPointer = null;
   };
   window.addEventListener('pointerup', endTouchLook);
   window.addEventListener('pointercancel', endTouchLook);
@@ -149,7 +159,7 @@ export function initInput() {
 }
 
 export async function requestPlay() {
-  const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
+  const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas canvas');
   if (!canvas) return;
 
   startMusic();

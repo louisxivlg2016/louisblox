@@ -31,8 +31,8 @@ export function playerSystem(
 
   const mouse = consumeLook();
   const edge = getEdgeLook();
-  const yaw = state.yaw - mouse.x * 0.0021 - edge.x * dt * 2.2;
-  const pitch = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, state.pitch - mouse.y * 0.0021 - edge.y * dt * 2.2));
+  const yaw = state.yaw - mouse.x * 0.004 - edge.x * dt * 3.2;
+  const pitch = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, state.pitch - mouse.y * 0.004 - edge.y * dt * 3.2));
 
   const flying = consumeFlightToggle() % 2 === 1 ? !state.flying : state.flying;
   const touch = getTouchMovement();
