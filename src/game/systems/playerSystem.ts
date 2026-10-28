@@ -1,6 +1,6 @@
 import type { World } from 'koota';
 import type { useRapier } from '@react-three/rapier';
-import { consumeFlightToggle, consumeLook, getTouchMovement, isDown } from '../input';
+import { consumeFlightToggle, consumeLook, getEdgeLook, getTouchMovement, isDown } from '../input';
 import { MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
 import { Player, PlayerBody, PlayerCollider, PlayerPosition, PlayerState, PlayerVelocity } from '../traits';
@@ -30,8 +30,9 @@ export function playerSystem(
   if (!body || !collider || !position || !velocity || !state) return;
 
   const mouse = consumeLook();
-  const yaw = state.yaw - mouse.x * 0.0021;
-  const pitch = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, state.pitch - mouse.y * 0.0021));
+  const edge = getEdgeLook();
+  const yaw = state.yaw - mouse.x * 0.0021 - edge.x * dt * 2.2;
+  const pitch = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, state.pitch - mouse.y * 0.0021 - edge.y * dt * 2.2));
 
   const flying = consumeFlightToggle() % 2 === 1 ? !state.flying : state.flying;
   const touch = getTouchMovement();

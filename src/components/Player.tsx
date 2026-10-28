@@ -1,6 +1,7 @@
 import { CapsuleCollider, RigidBody } from '@react-three/rapier';
 import { useQueryFirst } from 'koota/react';
 import { Player, PlayerBody, PlayerCollider, PlayerPosition } from '../game/traits';
+import { PlayerAvatar } from './PlayerAvatar';
 
 export function PlayerView() {
   const entity = useQueryFirst(Player);
@@ -28,6 +29,7 @@ export function PlayerView() {
         position={[0, 0.9, 0]}
         friction={0}
       />
+      <PlayerAvatar />
     </RigidBody>
   );
 }

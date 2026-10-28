@@ -57,6 +57,7 @@ export function Hud() {
             <span><strong>2× ESPACE</strong> activer / quitter le vol</span>
             <span><strong>MAJ</strong> accélérer</span>
             <span><strong>C</strong> descendre en vol</span>
+            <span><strong>F5</strong> changer de caméra</span>
           </div>
           <div className="action-hint">Clic gauche <strong>casser / frapper</strong> · Clic droit <strong>poser</strong> · <strong>E</strong> poser / cueillir</div>
           <TouchControls />

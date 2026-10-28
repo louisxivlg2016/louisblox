@@ -1,17 +1,19 @@
 import { Canvas } from '@react-three/fiber';
 import { WorldProvider } from 'koota/react';
+import { useGameStore } from '../game/store';
 import { world } from '../game/world';
 import { Game } from './Game';
 import { Hud } from './Hud';
 
 export function App() {
+  const mode = useGameStore((state) => state.mode);
   return (
-    <main className="game-shell">
+    <main className={`game-shell ${mode === 'play' ? 'playing' : ''}`}>
       <Canvas
         id="game-canvas"
-        dpr={[1, 1.5]}
-        camera={{ fov: 72, near: 0.05, far: 180, position: [0, 10, 0] }}
-        gl={{ antialias: true, powerPreference: 'high-performance' }}
+        dpr={1}
+        camera={{ fov: 72, near: 0.05, far: 130, position: [0, 10, 0] }}
+        gl={{ antialias: false, powerPreference: 'high-performance' }}
       >
         <WorldProvider world={world}>
           <Game />

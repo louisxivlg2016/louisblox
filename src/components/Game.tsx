@@ -49,7 +49,7 @@ function Atmosphere() {
   const skyDaylight = Math.max(0, (daylight - 0.2) / 0.8);
   const center = camera.position;
   const ground = heightAt(Math.floor(center.x), Math.floor(center.z), getWorldSeed(world));
-  const underwater = ground < SEA_LEVEL && center.y < SEA_LEVEL + 0.32 && center.y > ground + 0.5;
+  const underwater = ground < SEA_LEVEL && center.y < SEA_LEVEL + 0.05 && center.y > ground + 0.5;
   const waterColor = new Color('#217fac');
   const skyColor = underwater
     ? waterColor

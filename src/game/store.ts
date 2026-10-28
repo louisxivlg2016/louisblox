@@ -19,6 +19,7 @@ type GameStore = {
   meat: Record<AnimalKind, number>;
   miningProgress: number;
   flying: boolean;
+  cameraMode: 'first' | 'third';
   backpackOpen: boolean;
   coordinates: Coordinates;
   environment: EnvironmentSnapshot;
@@ -29,6 +30,7 @@ type GameStore = {
   setEnvironment: (environment: EnvironmentSnapshot) => void;
   setMiningProgress: (progress: number) => void;
   setFlying: (flying: boolean) => void;
+  toggleCamera: () => void;
   setBackpack: (open: boolean) => void;
   collectApple: () => void;
   collectMeat: (kind: AnimalKind) => void;
@@ -46,6 +48,7 @@ export const useGameStore = create<GameStore>((set) => ({
   meat: createMeatInventory(),
   miningProgress: 0,
   flying: false,
+  cameraMode: 'first',
   backpackOpen: false,
   coordinates: { x: 0, y: 8, z: 0 },
   environment: { dayProgress: 0.38, biome: 'prairie', weather: 'clear' },
@@ -56,6 +59,7 @@ export const useGameStore = create<GameStore>((set) => ({
   setEnvironment: (environment) => set({ environment }),
   setMiningProgress: (miningProgress) => set({ miningProgress }),
   setFlying: (flying) => set({ flying }),
+  toggleCamera: () => set((state) => ({ cameraMode: state.cameraMode === 'first' ? 'third' : 'first' })),
   setBackpack: (backpackOpen) => set({ backpackOpen }),
   collectApple: () => set((state) => ({ apples: state.apples + 1 })),
   collectMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: state.meat[kind] + 1 } })),

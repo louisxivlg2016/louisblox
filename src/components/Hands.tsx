@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { createPortal, useThree } from '@react-three/fiber';
 import { CanvasTexture, NearestFilter, SRGBColorSpace } from 'three';
+import type { MeshLambertMaterial } from 'three';
 import { useGameStore } from '../game/store';
 import { blockGeometry, blockMaterials } from '../game/textures';
 
@@ -28,7 +29,13 @@ export function Hands() {
   const camera = useThree((state) => state.camera);
   const scene = useThree((state) => state.scene);
   const selected = useGameStore((state) => state.selected);
+  const cameraMode = useGameStore((state) => state.cameraMode);
   const skinTexture = useMemo(createSkinTexture, []);
+  const heldMaterials = useMemo(() => blockMaterials[selected].map((material) => {
+    const clone = material.clone() as MeshLambertMaterial;
+    clone.fog = false;
+    return clone;
+  }), [selected]);
 
   useEffect(() => {
     scene.add(camera);
@@ -36,19 +43,21 @@ export function Hands() {
       scene.remove(camera);
     };
   }, [camera, scene]);
+  useEffect(() => () => heldMaterials.forEach((material) => material.dispose()), [heldMaterials]);
 
+  if (cameraMode === 'third') return null;
   return createPortal(
     <group>
       <mesh position={[-0.43, -0.43, -0.72]} rotation={[-0.35, 0.08, -0.22]} renderOrder={10} frustumCulled={false}>
         <boxGeometry args={[0.2, 0.52, 0.2]} />
-        <meshLambertMaterial map={skinTexture} depthTest={false} />
+        <meshLambertMaterial map={skinTexture} depthTest={false} fog={false} />
       </mesh>
       <mesh position={[0.42, -0.45, -0.72]} rotation={[-0.35, -0.08, 0.22]} renderOrder={10} frustumCulled={false}>
         <boxGeometry args={[0.2, 0.52, 0.2]} />
-        <meshLambertMaterial map={skinTexture} depthTest={false} />
+        <meshLambertMaterial map={skinTexture} depthTest={false} fog={false} />
       </mesh>
       <mesh
-        args={[blockGeometry, blockMaterials[selected]]}
+        args={[blockGeometry, heldMaterials]}
         position={[0.36, -0.26, -0.72]}
         rotation={[0.2, 0.55, 0.05]}
         scale={0.24}

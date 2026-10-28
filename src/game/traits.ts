@@ -7,6 +7,7 @@ export const PlayerPosition = trait(() => new Vector3());
 export const PlayerVelocity = trait(() => new Vector3());
 export const PlayerBody = trait(() => ({ value: null as RapierRigidBody | null }));
 export const PlayerCollider = trait(() => ({ value: null as RapierCollider | null }));
+export const PlayerMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 export const PlayerState = trait({ grounded: false, flying: false, yaw: 0, pitch: 0 });
 
 export const BlockTarget = trait(() => ({

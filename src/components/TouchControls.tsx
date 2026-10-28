@@ -8,6 +8,7 @@ import {
   setTouchMovement,
   toggleMining,
 } from '../game/input';
+import { useGameStore } from '../game/store';
 
 function HoldButton({ code, label, className = '' }: { code: string; label: string; className?: string }) {
   const release = () => setTouchKey(code, false);
@@ -86,6 +87,16 @@ export function TouchControls() {
           Vol
         </button>
         <HoldButton code="KeyC" label="Descendre" />
+        <button
+          className="touch-button"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            useGameStore.getState().toggleCamera();
+          }}
+        >
+          Caméra
+        </button>
         <button
           className="touch-button touch-attack"
           onPointerDown={(event) => {

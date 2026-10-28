@@ -7,6 +7,7 @@ const touchKeys = new Set<string>();
 const mouseButtons = new Set<number>();
 const touchMouseButtons = new Set<number>();
 const look = { x: 0, y: 0 };
+const edgeLook = { x: 0, y: 0 };
 const touchMovement = { x: 0, y: 0 };
 const actions = { place: 0, harvest: 0 };
 let lastSpacePress = 0;
@@ -28,6 +29,8 @@ export function clearInput() {
   miningLatched = false;
   look.x = 0;
   look.y = 0;
+  edgeLook.x = 0;
+  edgeLook.y = 0;
   touchMovement.x = 0;
   touchMovement.y = 0;
   touchLookPointer = null;
@@ -43,6 +46,11 @@ export function initInput() {
 
   window.addEventListener('keydown', (event) => {
     keys.add(event.code);
+    if (event.code === 'F5') {
+      event.preventDefault();
+      if (!event.repeat) useGameStore.getState().toggleCamera();
+      return;
+    }
     if (event.code === 'Escape') {
       if (document.pointerLockElement !== null) document.exitPointerLock();
       else if (pointerLockFallback && useGameStore.getState().mode === 'play') {
@@ -78,6 +86,11 @@ export function initInput() {
   window.addEventListener('blur', clearInput);
 
   window.addEventListener('mousemove', (event) => {
+    if (pointerLockFallback && useGameStore.getState().mode === 'play') {
+      const margin = 36;
+      edgeLook.x = event.clientX <= margin ? -1 : event.clientX >= window.innerWidth - margin ? 1 : 0;
+      edgeLook.y = event.clientY <= margin ? -1 : event.clientY >= window.innerHeight - margin ? 1 : 0;
+    }
     if (!hasMouseControl()) return;
     look.x += event.movementX;
     look.y += event.movementY;
@@ -162,6 +175,7 @@ export async function requestPlay() {
 export const isDown = (code: string) => keys.has(code) || touchKeys.has(code);
 export const isMouseDown = (button: number) => mouseButtons.has(button) || touchMouseButtons.has(button) || (button === 0 && miningLatched);
 export const getTouchMovement = () => touchMovement;
+export const getEdgeLook = () => edgeLook;
 
 export function toggleMining() {
   miningLatched = !miningLatched;

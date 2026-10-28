@@ -13,6 +13,7 @@ import {
   Player,
   PlayerBody,
   PlayerCollider,
+  PlayerMesh,
   PlayerPosition,
   PlayerState,
   PlayerVelocity,
@@ -240,6 +241,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     Player,
     PlayerBody(),
     PlayerCollider(),
+    PlayerMesh(),
     PlayerPosition(new Vector3(spawn.x, spawn.y, spawn.z)),
     PlayerVelocity(),
     PlayerState({
