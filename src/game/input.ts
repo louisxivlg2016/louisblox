@@ -97,6 +97,10 @@ export function initInput() {
   });
 
   window.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch' && event.target instanceof HTMLCanvasElement && useGameStore.getState().mode === 'play' && document.pointerLockElement === null) {
+      void requestPlay();
+      return;
+    }
     if (event.pointerType !== 'touch' || !(event.target instanceof HTMLCanvasElement) || useGameStore.getState().mode !== 'play') return;
     event.preventDefault();
     const canvas = event.target;
