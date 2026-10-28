@@ -34,6 +34,10 @@ export function Hands() {
   const heldMaterials = useMemo(() => blockMaterials[selected].map((material) => {
     const clone = material.clone() as MeshLambertMaterial;
     clone.fog = false;
+    clone.transparent = true;
+    clone.opacity = 1;
+    clone.depthTest = false;
+    clone.depthWrite = false;
     return clone;
   }), [selected]);
 
@@ -50,11 +54,11 @@ export function Hands() {
     <group>
       <mesh position={[-0.43, -0.43, -0.72]} rotation={[-0.35, 0.08, -0.22]} renderOrder={10} frustumCulled={false}>
         <boxGeometry args={[0.2, 0.52, 0.2]} />
-        <meshLambertMaterial map={skinTexture} depthTest={false} fog={false} />
+        <meshLambertMaterial map={skinTexture} depthTest={false} depthWrite={false} fog={false} transparent opacity={1} />
       </mesh>
       <mesh position={[0.42, -0.45, -0.72]} rotation={[-0.35, -0.08, 0.22]} renderOrder={10} frustumCulled={false}>
         <boxGeometry args={[0.2, 0.52, 0.2]} />
-        <meshLambertMaterial map={skinTexture} depthTest={false} fog={false} />
+        <meshLambertMaterial map={skinTexture} depthTest={false} depthWrite={false} fog={false} transparent opacity={1} />
       </mesh>
       <mesh
         args={[blockGeometry, heldMaterials]}
