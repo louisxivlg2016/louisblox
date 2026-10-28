@@ -21,7 +21,7 @@ const models: Record<AnimalKind, Model> = {
   horse: { body: '#875533', head: '#6f4128', legs: '#3f2b21', scale: 1.1 },
   pig: { body: '#df8f98', head: '#eda3aa', legs: '#b96570', scale: 0.85 },
   sheep: { body: '#e5e1d4', head: '#66564b', legs: '#54483f', scale: 0.95 },
-  chicken: { body: '#f1eee0', head: '#f7f3e8', legs: '#d69a38', scale: 0.65, bird: true },
+  chicken: { body: '#f1eee0', head: '#f7f3e8', legs: '#d69a38', scale: 0.8, bird: true },
   duck: { body: '#e8e6d8', head: '#2e6848', legs: '#d69a38', scale: 0.75, bird: true },
   bear: { body: '#5a3b2a', head: '#6a4732', legs: '#3d291f', scale: 1.25 },
   deer: { body: '#a87643', head: '#ba8b55', legs: '#62442d', scale: 0.95, antlers: true },
@@ -54,6 +54,9 @@ function Bird({ model, kind }: { model: Model; kind: AnimalKind }) {
         <>
           <Box position={[0, 1.01, 0.24]} size={[0.13, 0.14, 0.13]} color="#bd3b35" />
           <Box position={[0, 0.61, 0.43]} size={[0.1, 0.15, 0.08]} color="#bd3b35" />
+          <Box position={[-0.34, 0.47, -0.05]} size={[0.08, 0.22, 0.28]} color="#bd3b35" />
+          <Box position={[0.34, 0.47, -0.05]} size={[0.08, 0.22, 0.28]} color="#bd3b35" />
+          <Box position={[0, 0.55, -0.34]} size={[0.22, 0.22, 0.18]} color="#bd3b35" />
         </>
       )}
     </>
@@ -62,12 +65,16 @@ function Bird({ model, kind }: { model: Model; kind: AnimalKind }) {
 
 function Quadruped({ model, kind }: { model: Model; kind: AnimalKind }) {
   const camel = kind === 'camel';
-  const headY = camel ? 1.72 : 0.98;
-  const headZ = camel ? 0.93 : 0.73;
+  const horse = kind === 'horse';
+  const wolf = kind === 'wolf' || kind === 'snowWolf';
+  const headY = camel ? 1.72 : horse ? 1.5 : 0.98;
+  const headZ = camel ? 0.93 : horse ? 0.88 : 0.73;
   return (
     <>
       <Box position={[0, 0.86, 0]} size={[0.62, 0.68, 1.25]} color={model.body} />
       {camel && <Box position={[0, 1.3, 0.62]} size={[0.3, 0.95, 0.32]} color={model.head} />}
+      {horse && <Box position={[0, 1.22, 0.55]} size={[0.34, 0.72, 0.36]} color={model.body} />}
+      {wolf && <Box position={[0, 1.08, 0.52]} size={[0.3, 0.3, 0.38]} color={model.body} />}
       <Box position={[0, headY, headZ]} size={[0.48, 0.48, 0.48]} color={model.head} />
       <Box position={[0.22, 0.3, 0.42]} size={[0.16, 0.6, 0.16]} color={model.legs} />
       <Box position={[-0.22, 0.3, 0.42]} size={[0.16, 0.6, 0.16]} color={model.legs} />
@@ -76,6 +83,7 @@ function Quadruped({ model, kind }: { model: Model; kind: AnimalKind }) {
       <Box position={[-0.16, headY + 0.05, headZ + 0.27]} size={[0.06, 0.06, 0.04]} color="#151515" />
       <Box position={[0.16, headY + 0.05, headZ + 0.27]} size={[0.06, 0.06, 0.04]} color="#151515" />
       <Box position={[0, headY - 0.12, headZ + 0.31]} size={[0.28, 0.2, 0.18]} color={model.head} />
+      {wolf && <Box position={[0, headY - 0.1, headZ + 0.48]} size={[0.26, 0.22, 0.34]} color={model.head} />}
       {model.humps && (
         <>
           <Box position={[0, 1.35, 0.28]} size={[0.38, 0.36, 0.38]} color={model.body} />

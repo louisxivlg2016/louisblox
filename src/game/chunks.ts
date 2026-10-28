@@ -182,6 +182,20 @@ export function removeVoxel(world: World, hit: VoxelHit) {
   touchNeighbors(state, cx, cz);
 }
 
+export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind) {
+  const state = stateFor(world);
+  const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
+  if (!block) return;
+  block.kind = kind;
+  const cx = chunkCoordinate(hit.x);
+  const cz = chunkCoordinate(hit.z);
+  const chunkEntity = state.chunks.get(chunkKey(cx, cz));
+  if (!chunkEntity) return;
+  editsFor(state, cx, cz).set(voxelKey(hit.x, hit.y, hit.z), kind);
+  touchChunk(chunkEntity);
+  touchNeighbors(state, cx, cz);
+}
+
 export function addVoxel(world: World, x: number, y: number, z: number, kind: BlockKind) {
   const state = stateFor(world);
   const cx = chunkCoordinate(x);

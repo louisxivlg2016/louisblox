@@ -3,6 +3,7 @@ import { BIOME_NAMES } from '../game/levels';
 import { MEAT_NAMES } from '../game/meats';
 import { useGameStore } from '../game/store';
 import { BLOCK_INFO, HOTBAR_BLOCKS } from '../game/voxel';
+import { Backpack } from './Backpack';
 import { TouchControls } from './TouchControls';
 
 const WEATHER_NAMES = { clear: 'Ciel clair', rain: 'Pluie', snow: 'Neige' } as const;
@@ -15,9 +16,11 @@ export function Hud() {
   const meat = useGameStore((state) => state.meat);
   const miningProgress = useGameStore((state) => state.miningProgress);
   const flying = useGameStore((state) => state.flying);
+  const backpackOpen = useGameStore((state) => state.backpackOpen);
   const coordinates = useGameStore((state) => state.coordinates);
   const environment = useGameStore((state) => state.environment);
   const selectBlock = useGameStore((state) => state.selectBlock);
+  const setBackpack = useGameStore((state) => state.setBackpack);
   const regenerate = useGameStore((state) => state.regenerate);
   const totalMinutes = Math.floor(environment.dayProgress * 24 * 60);
   const hours = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
@@ -26,6 +29,11 @@ export function Hud() {
     .filter(([, count]) => count > 0)
     .map(([kind, count]) => `${MEAT_NAMES[kind as keyof typeof MEAT_NAMES]} ×${count}`)
     .join(' · ');
+  const openBackpack = () => {
+    setBackpack(true);
+    useGameStore.getState().setMode('pause');
+    if (document.pointerLockElement) document.exitPointerLock();
+  };
 
   return (
     <div className="hud">
@@ -42,6 +50,7 @@ export function Hud() {
             <span className="weather-info meat-count">Viandes : {meatSummary || 'aucune'}</span>
             {flying && <span className="weather-info flight-status">Vol activé</span>}
           </div>
+          <button className="backpack-toggle" onClick={openBackpack}>Sac à dos</button>
           <div className="controls-hint">
             <span><strong>WASD / FLÈCHES</strong> se déplacer</span>
             <span><strong>ESPACE</strong> sauter / monter en vol</span>
@@ -54,7 +63,7 @@ export function Hud() {
         </>
       )}
 
-      {mode !== 'play' && (
+      {mode !== 'play' && !backpackOpen && (
         <div className="menu-backdrop">
           <section className="menu-panel">
             <div className="brand-mark" aria-hidden="true"><span>L</span></div>
@@ -70,7 +79,7 @@ export function Hud() {
             <div className="menu-help">
               <span><kbd>WASD / FLÈCHES</kbd> Déplacement</span>
               <span><kbd>SOURIS</kbd> Regarder</span>
-              <span><kbd>1 — 8</kbd> Choisir un bloc</span>
+              <span><kbd>1 — 0</kbd> Choisir un bloc</span>
               <span><kbd>ÉCHAP</kbd> Pause</span>
             </div>
           </section>
@@ -88,13 +97,14 @@ export function Hud() {
                 onClick={() => selectBlock(kind)}
                 aria-label={`${index + 1} : ${BLOCK_INFO[kind].name}`}
               >
-                <span className="slot-number">{index + 1}</span>
+                <span className="slot-number">{index === 9 ? '0' : index + 1}</span>
                 <span className="block-swatch" style={{ backgroundColor: BLOCK_INFO[kind].color }} />
               </button>
             ))}
           </div>
         </div>
       )}
+      <Backpack />
     </div>
   );
 }

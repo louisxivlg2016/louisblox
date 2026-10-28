@@ -2,7 +2,7 @@ import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Camera } from 'three';
 import type { AnimalKind } from '../animals';
-import { isMouseDown } from '../input';
+import { isMouseDown, stopMining } from '../input';
 import { useGameStore } from '../store';
 import { Animal, AnimalHealth, AnimalPosition, ChunkData, Player, PlayerPosition } from '../traits';
 
@@ -46,6 +46,7 @@ export function animalCombatSystem(world: World, camera: Camera, dt: number) {
         data.animals = data.animals.filter((animal) => animal !== target!.entity);
       }
       target.entity.destroy();
+      stopMining();
       useGameStore.getState().collectMeat(target.kind);
     } else {
       target.entity.set(AnimalHealth, { value: remaining });

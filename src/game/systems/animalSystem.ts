@@ -18,16 +18,23 @@ export function animalSystem(world: World, dt: number) {
     let x = position.x + Math.sin(motion.yaw) * speed * dt;
     let z = position.z + Math.cos(motion.yaw) * speed * dt;
     const ground = heightAt(Math.round(x), Math.round(z), seed);
+    const ahead = heightAt(
+      Math.round(x + Math.sin(motion.yaw) * 0.55),
+      Math.round(z + Math.cos(motion.yaw) * 0.55),
+      seed,
+    );
 
     if (animal.kind === 'duck') {
-      if (ground >= SEA_LEVEL) {
+      if (ground >= SEA_LEVEL || ahead < SEA_LEVEL) {
         motion.yaw += Math.PI * 0.7;
         x = position.x;
         z = position.z;
       }
       position.set(x, SEA_LEVEL + 0.35 + Math.sin(motion.phase) * 0.05, z);
-    } else if (ground <= SEA_LEVEL + 1 || ground > 25) {
-      motion.yaw += Math.PI * 0.65;
+    } else if (ground <= SEA_LEVEL + 1 || ahead <= SEA_LEVEL + 1 || ground > 25) {
+      motion.yaw += Math.PI;
+      x = position.x;
+      z = position.z;
     } else {
       position.set(x, ground + 0.5, z);
     }

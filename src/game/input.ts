@@ -16,6 +16,7 @@ let pointerLockFallback = false;
 let touchLookPointer: number | null = null;
 let touchLookX = 0;
 let touchLookY = 0;
+let miningLatched = false;
 
 const hasMouseControl = () => document.pointerLockElement !== null || pointerLockFallback;
 
@@ -24,6 +25,7 @@ export function clearInput() {
   touchKeys.clear();
   mouseButtons.clear();
   touchMouseButtons.clear();
+  miningLatched = false;
   look.x = 0;
   look.y = 0;
   touchMovement.x = 0;
@@ -65,8 +67,9 @@ export function initInput() {
       }
     }
 
-    if (/^Digit[1-8]$/.test(event.code)) {
-      const index = Number(event.code.slice(-1)) - 1;
+    if (/^Digit[0-9]$/.test(event.code)) {
+      const digit = Number(event.code.slice(-1));
+      const index = digit === 0 ? 9 : digit - 1;
       useGameStore.getState().selectBlock(HOTBAR_BLOCKS[index]);
     }
   });
@@ -106,6 +109,7 @@ export function initInput() {
     if (!hasMouseControl() || useGameStore.getState().mode !== 'play') return;
     if (document.pointerLockElement === null && event.target instanceof Element && event.target.closest('button')) return;
     mouseButtons.add(event.button);
+    if (event.button === 0) miningLatched = !miningLatched;
     if (event.button === 2) actions.place += 1;
   });
   window.addEventListener('mouseup', (event) => mouseButtons.delete(event.button));
@@ -156,8 +160,18 @@ export async function requestPlay() {
 }
 
 export const isDown = (code: string) => keys.has(code) || touchKeys.has(code);
-export const isMouseDown = (button: number) => mouseButtons.has(button) || touchMouseButtons.has(button);
+export const isMouseDown = (button: number) => mouseButtons.has(button) || touchMouseButtons.has(button) || (button === 0 && miningLatched);
 export const getTouchMovement = () => touchMovement;
+
+export function toggleMining() {
+  miningLatched = !miningLatched;
+}
+
+export function stopMining() {
+  miningLatched = false;
+  mouseButtons.delete(0);
+  touchMouseButtons.delete(0);
+}
 
 export function setTouchMovement(x: number, y: number) {
   touchMovement.x = x;

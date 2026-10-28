@@ -32,7 +32,7 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
     [BlockKind.GoldOre]: ['#7e7e7e', '#8c8c8c', '#747474', '#969696', '#696969'],
     [BlockKind.DiamondOre]: ['#7e7e7e', '#8c8c8c', '#747474', '#969696', '#696969'],
     [BlockKind.Bedrock]: ['#292929', '#383838', '#454545', '#202020', '#505050'],
-    [BlockKind.Ice]: ['#a8d5e2', '#bce4ee', '#c9edf4', '#98c9da', '#d7f3f7'],
+    [BlockKind.Ice]: ['#287fc4', '#3599dc', '#4caceb', '#226db1', '#69c2f2'],
   };
 
   const grassy = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass;
@@ -87,12 +87,15 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   }
 
   if (kind === BlockKind.Wood && face !== 'side') {
-    context.fillStyle = '#b18b54';
-    context.fillRect(0, 0, 16, 16);
-    context.strokeStyle = '#806238';
-    context.lineWidth = 1;
-    context.strokeRect(2.5, 2.5, 11, 11);
-    context.strokeRect(5.5, 5.5, 5, 5);
+    const rings = ['#684824', '#b18b54', '#92703f'];
+    for (let x = 0; x < 16; x += 1) {
+      for (let y = 0; y < 16; y += 1) {
+        const distance = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5));
+        context.fillStyle = rings[Math.floor(distance) % rings.length];
+        if (random(x, y, 112) > 0.86) context.fillStyle = '#c09a61';
+        context.fillRect(x, y, 1, 1);
+      }
+    }
   }
 
   const map = new CanvasTexture(canvas);

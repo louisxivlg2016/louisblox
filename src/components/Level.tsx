@@ -81,6 +81,11 @@ function ChunkView({ entity }: { entity: Entity }) {
       const group = groups.get(block.kind) ?? [];
       group.push(block);
       groups.set(block.kind, group);
+      if (block.kind === BlockKind.Apple) {
+        const leaves = groups.get(BlockKind.Leaves) ?? [];
+        leaves.push(block);
+        groups.set(BlockKind.Leaves, leaves);
+      }
     }
   }
 

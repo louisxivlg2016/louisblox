@@ -1,8 +1,8 @@
 import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Camera } from 'three';
-import { addVoxel, getBlockIndex, removeVoxel } from '../chunks';
-import { consumeActions, isMouseDown } from '../input';
+import { addVoxel, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
+import { consumeActions, isMouseDown, stopMining } from '../input';
 import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
 import { BlockTarget, Player, PlayerPosition, TargetMesh } from '../traits';
@@ -59,6 +59,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   if (mining && hit && kind !== undefined) {
     const key = voxelKey(hit.x, hit.y, hit.z);
     if (target.miningKey !== key) {
+      if (target.miningKey !== '') stopMining();
       target.miningKey = key;
       target.miningProgress = 0;
     }
@@ -67,6 +68,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     if (Math.abs(store.miningProgress - progress) >= 0.01) store.setMiningProgress(progress);
 
     if (progress >= 1) {
+      stopMining();
       removeVoxel(world, hit);
       target.visible = false;
       target.miningKey = '';
@@ -76,6 +78,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       return;
     }
   } else {
+    if (target.miningKey !== '') stopMining();
     target.miningKey = '';
     target.miningProgress = 0;
     if (store.miningProgress !== 0) store.setMiningProgress(0);
@@ -85,7 +88,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   if (useGameStore.getState().mode !== 'play' || !hit) return;
 
   if (actions.harvest > 0 && hit.block.kind === BlockKind.Apple) {
-    removeVoxel(world, hit);
+    replaceVoxel(world, hit, BlockKind.Leaves);
     store.collectApple();
     target.visible = false;
     if (mesh) mesh.visible = false;

@@ -6,6 +6,7 @@ import {
   setTouchKey,
   setTouchMouseButton,
   setTouchMovement,
+  toggleMining,
 } from '../game/input';
 
 function HoldButton({ code, label, className = '' }: { code: string; label: string; className?: string }) {
@@ -92,6 +93,7 @@ export function TouchControls() {
             event.stopPropagation();
             event.currentTarget.setPointerCapture(event.pointerId);
             setTouchMouseButton(0, true);
+            toggleMining();
           }}
           onPointerUp={() => setTouchMouseButton(0, false)}
           onPointerCancel={() => setTouchMouseButton(0, false)}

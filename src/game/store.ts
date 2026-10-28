@@ -19,6 +19,7 @@ type GameStore = {
   meat: Record<AnimalKind, number>;
   miningProgress: number;
   flying: boolean;
+  backpackOpen: boolean;
   coordinates: Coordinates;
   environment: EnvironmentSnapshot;
   setMode: (mode: GameMode) => void;
@@ -28,8 +29,11 @@ type GameStore = {
   setEnvironment: (environment: EnvironmentSnapshot) => void;
   setMiningProgress: (progress: number) => void;
   setFlying: (flying: boolean) => void;
+  setBackpack: (open: boolean) => void;
   collectApple: () => void;
   collectMeat: (kind: AnimalKind) => void;
+  discardApple: () => void;
+  discardMeat: (kind: AnimalKind) => void;
   regenerate: () => void;
 };
 
@@ -42,6 +46,7 @@ export const useGameStore = create<GameStore>((set) => ({
   meat: createMeatInventory(),
   miningProgress: 0,
   flying: false,
+  backpackOpen: false,
   coordinates: { x: 0, y: 8, z: 0 },
   environment: { dayProgress: 0.38, biome: 'prairie', weather: 'clear' },
   setMode: (mode) => set({ mode }),
@@ -51,7 +56,10 @@ export const useGameStore = create<GameStore>((set) => ({
   setEnvironment: (environment) => set({ environment }),
   setMiningProgress: (miningProgress) => set({ miningProgress }),
   setFlying: (flying) => set({ flying }),
+  setBackpack: (backpackOpen) => set({ backpackOpen }),
   collectApple: () => set((state) => ({ apples: state.apples + 1 })),
   collectMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: state.meat[kind] + 1 } })),
-  regenerate: () => set((state) => ({ generation: state.generation + 1, apples: 0, meat: createMeatInventory(), miningProgress: 0, flying: false, mode: 'menu' })),
+  discardApple: () => set((state) => ({ apples: Math.max(0, state.apples - 1) })),
+  discardMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: Math.max(0, state.meat[kind] - 1) } })),
+  regenerate: () => set((state) => ({ generation: state.generation + 1, apples: 0, meat: createMeatInventory(), miningProgress: 0, flying: false, backpackOpen: false, mode: 'menu' })),
 }));
