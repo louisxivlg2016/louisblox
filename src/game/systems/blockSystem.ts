@@ -1,0 +1,105 @@
+import type { World } from 'koota';
+import { Vector3 } from 'three';
+import type { Camera } from 'three';
+import { addVoxel, getBlockIndex, removeVoxel } from '../chunks';
+import { consumeActions, isMouseDown } from '../input';
+import { MAX_BUILD_Y } from '../levels';
+import { useGameStore } from '../store';
+import { BlockTarget, Player, PlayerPosition, TargetMesh } from '../traits';
+import { BLOCK_HARDNESS, BlockKind, raycastVoxel, voxelKey } from '../voxel';
+
+const direction = new Vector3();
+const origin = new Vector3();
+
+function intersectsPlayer(x: number, y: number, z: number, player: Vector3) {
+  const horizontal = Math.abs(player.x - x) < 0.86 && Math.abs(player.z - z) < 0.86;
+  const vertical = y - 0.5 < player.y + 1.8 && y + 0.5 > player.y;
+  return horizontal && vertical;
+}
+
+export function blockSystem(world: World, camera: Camera, dt: number, disabled = false) {
+  const playerEntity = world.queryFirst(Player);
+  const targetEntity = world.queryFirst(BlockTarget);
+  const player = playerEntity?.get(PlayerPosition);
+  const target = targetEntity?.get(BlockTarget);
+  if (!player || !target) return;
+
+  origin.copy(player);
+  origin.y += 1.62;
+  camera.getWorldDirection(direction);
+  const blocks = getBlockIndex(world);
+  const store = useGameStore.getState();
+  if (disabled) {
+    target.visible = false;
+    target.miningKey = '';
+    target.miningProgress = 0;
+    const mesh = targetEntity?.get(TargetMesh)?.value;
+    if (mesh) mesh.visible = false;
+    if (store.miningProgress !== 0) store.setMiningProgress(0);
+    consumeActions();
+    return;
+  }
+  if (store.blockCount !== blocks.size) store.setBlockCount(blocks.size);
+  const hit = raycastVoxel(blocks, origin, direction);
+
+  target.visible = hit !== null;
+  if (hit) {
+    target.position.set(hit.x, hit.y, hit.z);
+    target.normal.set(hit.normal.x, hit.normal.y, hit.normal.z);
+  }
+
+  const mesh = targetEntity?.get(TargetMesh)?.value;
+  if (mesh) {
+    mesh.visible = target.visible;
+    mesh.position.copy(target.position);
+  }
+
+  const kind = hit?.block.kind;
+  const mining = isMouseDown(0) && hit !== null && kind !== BlockKind.Bedrock && useGameStore.getState().mode === 'play';
+  if (mining && hit && kind !== undefined) {
+    const key = voxelKey(hit.x, hit.y, hit.z);
+    if (target.miningKey !== key) {
+      target.miningKey = key;
+      target.miningProgress = 0;
+    }
+    target.miningProgress += dt;
+    const progress = Math.min(1, target.miningProgress / BLOCK_HARDNESS[kind]);
+    if (Math.abs(store.miningProgress - progress) >= 0.01) store.setMiningProgress(progress);
+
+    if (progress >= 1) {
+      removeVoxel(world, hit);
+      target.visible = false;
+      target.miningKey = '';
+      target.miningProgress = 0;
+      store.setMiningProgress(0);
+      if (mesh) mesh.visible = false;
+      return;
+    }
+  } else {
+    target.miningKey = '';
+    target.miningProgress = 0;
+    if (store.miningProgress !== 0) store.setMiningProgress(0);
+  }
+
+  const actions = consumeActions();
+  if (useGameStore.getState().mode !== 'play' || !hit) return;
+
+  if (actions.harvest > 0 && hit.block.kind === BlockKind.Apple) {
+    removeVoxel(world, hit);
+    store.collectApple();
+    target.visible = false;
+    if (mesh) mesh.visible = false;
+    return;
+  }
+
+  if (actions.place > 0 || actions.harvest > 0) {
+    const x = hit.x + hit.normal.x;
+    const y = hit.y + hit.normal.y;
+    const z = hit.z + hit.normal.z;
+    const inBounds = y >= 1 && y <= MAX_BUILD_Y;
+
+    if (inBounds && !blocks.has(voxelKey(x, y, z)) && !intersectsPlayer(x, y, z, player)) {
+      addVoxel(world, x, y, z, useGameStore.getState().selected);
+    }
+  }
+}
