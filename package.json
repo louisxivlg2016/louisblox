@@ -15,6 +15,7 @@
     "koota": "^0.6.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "tencentcloud-sdk-nodejs-common": "^4.1.220",
     "three": "^0.186.1",
     "zustand": "^5.0.16"
   },
