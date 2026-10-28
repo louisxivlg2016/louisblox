@@ -10,6 +10,7 @@ import { blockSystem } from '../game/systems/blockSystem';
 import { cameraSystem } from '../game/systems/cameraSystem';
 import { collisionSystem } from '../game/systems/collisionSystem';
 import { environmentSystem } from '../game/systems/environmentSystem';
+import { meatDropSystem } from '../game/systems/meatDropSystem';
 import { playerSystem } from '../game/systems/playerSystem';
 import { saveSystem } from '../game/systems/saveSystem';
 import { BlockTarget, Player, PlayerPosition, TargetMesh } from '../game/traits';
@@ -50,6 +51,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
     if (player) streamChunks(world, player.x, player.z);
     environmentSystem(world, delta, camera);
     animalSystem(world, dt);
+    meatDropSystem(world, dt);
     saveSystem(world, delta);
   });
 

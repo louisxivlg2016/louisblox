@@ -27,9 +27,15 @@ export const ChunkData = trait(() => ({
 
 export const Animal = trait({ kind: '' as import('./animals').AnimalKind });
 export const AnimalHealth = trait({ value: 3 });
+export const AnimalHit = trait({ time: 0, panic: 0, flashed: false });
 export const AnimalPosition = trait(() => new Vector3());
 export const AnimalMotion = trait({ yaw: 0, turnIn: 0, phase: 0, speed: 0.5 });
 export const AnimalMesh = trait(() => ({ value: null as import('three').Object3D | null }));
+
+export const MeatDrop = trait({ kind: '' as import('./animals').AnimalKind });
+export const MeatDropPosition = trait(() => new Vector3());
+export const MeatDropMotion = trait({ age: 0, baseY: 0 });
+export const MeatDropMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 
 export const Environment = trait(() => ({
   elapsed: 0,

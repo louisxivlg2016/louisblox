@@ -5,6 +5,7 @@ import type { LevelData } from './levels';
 import { spawnChunkAnimals } from './animals';
 import {
   Animal,
+  MeatDrop,
   BlockTarget,
   Chunk,
   ChunkData,
@@ -219,6 +220,7 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
 export function loadLevel(world: World, generation = 0, saved: WorldSave | null = null): LevelData {
   for (const entity of [...world.query(Chunk)]) entity.destroy();
   for (const entity of [...world.query(Animal)]) entity.destroy();
+  for (const entity of [...world.query(MeatDrop)]) entity.destroy();
   for (const entity of [...world.query(Player)]) entity.destroy();
   for (const entity of [...world.query(BlockTarget)]) entity.destroy();
   for (const entity of [...world.query(Environment)]) entity.destroy();

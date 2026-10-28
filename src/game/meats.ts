@@ -15,6 +15,21 @@ export const MEAT_NAMES: Record<AnimalKind, string> = {
   snowBear: 'Viande d’ours blanc',
 };
 
+export const MEAT_COLORS: Record<AnimalKind, string> = {
+  camel: '#b77b50',
+  cow: '#9f3e3a',
+  horse: '#895037',
+  pig: '#ed929f',
+  sheep: '#e5c7b8',
+  chicken: '#f0d8c5',
+  duck: '#c77d55',
+  bear: '#63382e',
+  deer: '#b85146',
+  wolf: '#8c6663',
+  snowWolf: '#d9c6c5',
+  snowBear: '#ead9d4',
+};
+
 export function createMeatInventory(): Record<AnimalKind, number> {
   return Object.fromEntries((Object.keys(MEAT_NAMES) as AnimalKind[]).map((kind) => [kind, 0])) as Record<AnimalKind, number>;
 }

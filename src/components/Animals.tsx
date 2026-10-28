@@ -1,5 +1,6 @@
 import { useQuery } from 'koota/react';
 import type { Entity } from 'koota';
+import { Mesh } from 'three';
 import type { AnimalKind } from '../game/animals';
 import { animalMaterial } from '../game/animalTextures';
 import { Animal, AnimalMesh, AnimalPosition } from '../game/traits';
@@ -133,6 +134,14 @@ function AnimalView({ entity }: { entity: Entity }) {
   return (
     <group
       ref={(group) => {
+        if (group && !group.userData.flashReady) {
+          group.traverse((object) => {
+            if (!(object instanceof Mesh)) return;
+            if (Array.isArray(object.material)) object.material = object.material.map((material) => material.clone());
+            else object.material = object.material.clone();
+          });
+          group.userData.flashReady = true;
+        }
         const holder = entity.get(AnimalMesh);
         if (holder) holder.value = group;
       }}
