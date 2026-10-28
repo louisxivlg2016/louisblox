@@ -8,6 +8,7 @@ import { heightAt, SEA_LEVEL } from '../game/levels';
 import { readWorldSave } from '../game/save';
 import { useGameStore } from '../game/store';
 import { Animals } from './Animals';
+import { Explosions } from './Explosions';
 import { Hands } from './Hands';
 import { Level } from './Level';
 import { MeatDrops } from './MeatDrops';
@@ -97,6 +98,7 @@ export function Game() {
       <Weather key={`weather-${generation}`} />
       <Animals key={`animals-${generation}`} />
       <MeatDrops key={`meat-${generation}`} />
+      <Explosions key={`explosions-${generation}`} />
       <Physics gravity={[0, 0, 0]} paused={mode !== 'play'}>
         <Level key={`level-${generation}`} />
         <PlayerView key={`player-${generation}`} />

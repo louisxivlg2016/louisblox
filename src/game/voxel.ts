@@ -20,6 +20,8 @@ export const BlockKind = {
   DiamondOre: 16,
   Bedrock: 17,
   Ice: 18,
+  Tnt: 19,
+  Candle: 20,
 } as const;
 
 export type BlockKind = (typeof BlockKind)[keyof typeof BlockKind];
@@ -53,6 +55,8 @@ export const HOTBAR_BLOCKS = [
   BlockKind.IronOre,
   BlockKind.GoldOre,
   BlockKind.DiamondOre,
+  BlockKind.Tnt,
+  BlockKind.Candle,
 ] as const;
 
 export const BLOCK_INFO: Record<BlockKind, { name: string; color: string }> = {
@@ -75,6 +79,8 @@ export const BLOCK_INFO: Record<BlockKind, { name: string; color: string }> = {
   [BlockKind.DiamondOre]: { name: 'Diamant', color: '#45c8cf' },
   [BlockKind.Bedrock]: { name: 'Bedrock', color: '#2d2d2d' },
   [BlockKind.Ice]: { name: 'Glace', color: '#a8d5e2' },
+  [BlockKind.Tnt]: { name: 'Bombe TNT', color: '#c93d32' },
+  [BlockKind.Candle]: { name: 'Bougie', color: '#f2d68a' },
 };
 
 export const BLOCK_HARDNESS: Record<BlockKind, number> = {
@@ -97,6 +103,8 @@ export const BLOCK_HARDNESS: Record<BlockKind, number> = {
   [BlockKind.DiamondOre]: 10,
   [BlockKind.Bedrock]: 30,
   [BlockKind.Ice]: 1.5,
+  [BlockKind.Tnt]: 0.8,
+  [BlockKind.Candle]: 0.4,
 };
 
 export const voxelKey = (x: number, y: number, z: number) => `${x},${y},${z}`;

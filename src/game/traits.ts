@@ -24,7 +24,15 @@ export const ChunkData = trait(() => ({
   blocks: [] as import('./voxel').Voxel[],
   water: [] as import('./levels').WaterTile[],
   animals: [] as import('koota').Entity[],
+  bombs: [] as import('koota').Entity[],
 }));
+
+export const Bomb = trait({ fuse: 3 });
+export const BombPosition = trait(() => new Vector3());
+export const Explosion = trait({ time: 0.45, maxTime: 0.45 });
+export const ExplosionPosition = trait(() => new Vector3());
+export const ExplosionMesh = trait(() => ({ value: null as import('three').Object3D | null }));
+export const ExplosionMaterial = trait(() => ({ value: null as import('three').MeshBasicMaterial | null }));
 
 export const Animal = trait({ kind: '' as import('./animals').AnimalKind });
 export const AnimalHealth = trait({ value: 3 });

@@ -33,6 +33,8 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
     [BlockKind.DiamondOre]: ['#7e7e7e', '#8c8c8c', '#747474', '#969696', '#696969'],
     [BlockKind.Bedrock]: ['#292929', '#383838', '#454545', '#202020', '#505050'],
     [BlockKind.Ice]: ['#287fc4', '#3599dc', '#4caceb', '#226db1', '#69c2f2'],
+    [BlockKind.Tnt]: ['#b52e29', '#c93d32', '#a92522', '#dc4b3c', '#93201e'],
+    [BlockKind.Candle]: ['#e6c877', '#f2d68a', '#d9b965', '#ffe6a0', '#cfa954'],
   };
 
   const grassy = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass;
@@ -148,6 +150,8 @@ export const blockMaterials: Record<BlockKind, Material[]> = {
   [BlockKind.DiamondOre]: repeated(material(BlockKind.DiamondOre, 'side')),
   [BlockKind.Bedrock]: repeated(material(BlockKind.Bedrock, 'side')),
   [BlockKind.Ice]: repeated(material(BlockKind.Ice, 'side')),
+  [BlockKind.Tnt]: repeated(material(BlockKind.Tnt, 'side')),
+  [BlockKind.Candle]: repeated(material(BlockKind.Candle, 'side')),
 };
 
 export const blockGeometry = new BoxGeometry(1, 1, 1);

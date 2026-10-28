@@ -3,9 +3,12 @@ import { Vector3 } from 'three';
 import { CHUNK_SIZE, VIEW_DISTANCE, generateChunk, heightAt } from './levels';
 import type { LevelData } from './levels';
 import { spawnChunkAnimals } from './animals';
+import { spawnBomb } from './bombLifecycle';
 import {
   Animal,
   MeatDrop,
+  Bomb,
+  Explosion,
   BlockTarget,
   Chunk,
   ChunkData,
@@ -23,8 +26,8 @@ import {
 } from './traits';
 import { createMeatInventory } from './meats';
 import { useGameStore } from './store';
-import { voxelKey } from './voxel';
-import type { BlockKind, Voxel, VoxelHit } from './voxel';
+import { BlockKind, voxelKey } from './voxel';
+import type { Voxel, VoxelHit } from './voxel';
 
 type ChunkEdit = BlockKind | null;
 export type WorldSave = {
@@ -111,6 +114,9 @@ function loadChunk(world: World, cx: number, cz: number) {
     state.blocks.set(voxelKey(block.x, block.y, block.z), block);
   }
   data.animals = spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
+  for (const block of data.blocks) {
+    if (block.kind === BlockKind.Tnt) data.bombs.push(spawnBomb(world, block.x, block.y, block.z));
+  }
 
   touchNeighbors(state, cx, cz);
 }
@@ -125,7 +131,9 @@ function unloadChunk(world: World, entity: Entity) {
     state.blocks.delete(voxelKey(block.x, block.y, block.z));
   }
   for (const animal of data.animals) animal.destroy();
+  for (const bomb of data.bombs) bomb.destroy();
   data.animals = [];
+  data.bombs = [];
   state.chunks.delete(chunkKey(chunk.x, chunk.z));
   entity.destroy();
   touchNeighbors(state, chunk.x, chunk.z);
@@ -184,6 +192,42 @@ export function removeVoxel(world: World, hit: VoxelHit) {
   touchNeighbors(state, cx, cz);
 }
 
+export function explodeVoxels(world: World, x: number, y: number, z: number, radius: number) {
+  const state = stateFor(world);
+  const touched = new Set<Entity>();
+  let destroyed = 0;
+
+  for (const entity of world.query(Chunk, ChunkData)) {
+    const chunk = entity.get(Chunk)!;
+    const data = entity.get(ChunkData)!;
+    const remaining = [];
+    let changed = false;
+    for (const block of data.blocks) {
+      const distance = Math.hypot(block.x - x, block.y - y, block.z - z);
+      if (distance <= radius && block.kind !== BlockKind.Bedrock) {
+        const position = voxelKey(block.x, block.y, block.z);
+        state.blocks.delete(position);
+        editsFor(state, chunk.x, chunk.z).set(position, null);
+        destroyed += 1;
+        changed = true;
+      } else {
+        remaining.push(block);
+      }
+    }
+    if (changed) {
+      data.blocks = remaining;
+      touched.add(entity);
+    }
+  }
+
+  for (const entity of touched) {
+    const chunk = entity.get(Chunk)!;
+    touchChunk(entity);
+    touchNeighbors(state, chunk.x, chunk.z);
+  }
+  return destroyed;
+}
+
 export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind) {
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
@@ -222,6 +266,8 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   for (const entity of [...world.query(Chunk)]) entity.destroy();
   for (const entity of [...world.query(Animal)]) entity.destroy();
   for (const entity of [...world.query(MeatDrop)]) entity.destroy();
+  for (const entity of [...world.query(Bomb)]) entity.destroy();
+  for (const entity of [...world.query(Explosion)]) entity.destroy();
   for (const entity of [...world.query(Player)]) entity.destroy();
   for (const entity of [...world.query(BlockTarget)]) entity.destroy();
   for (const entity of [...world.query(Environment)]) entity.destroy();

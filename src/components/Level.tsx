@@ -7,6 +7,7 @@ import { SEA_LEVEL } from '../game/levels';
 import type { WaterTile } from '../game/levels';
 import { Chunk, ChunkData } from '../game/traits';
 import { blockGeometry, blockMaterials } from '../game/textures';
+import { SpecialBlocks } from './SpecialBlocks';
 import { BlockKind, voxelKey } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 
@@ -70,6 +71,8 @@ function ChunkView({ entity }: { entity: Entity }) {
   const groups = new Map<BlockKind, Voxel[]>();
   const blockIndex = getBlockIndex(world);
   const blocks: Voxel[] = [];
+  const tntBlocks: Voxel[] = [];
+  const candleBlocks: Voxel[] = [];
 
   if (chunk && data) {
     for (const block of data.blocks) {
@@ -78,6 +81,14 @@ function ChunkView({ entity }: { entity: Entity }) {
       );
       if (!exposed) continue;
       blocks.push(block);
+      if (block.kind === BlockKind.Tnt) {
+        tntBlocks.push(block);
+        continue;
+      }
+      if (block.kind === BlockKind.Candle) {
+        candleBlocks.push(block);
+        continue;
+      }
       const group = groups.get(block.kind) ?? [];
       group.push(block);
       groups.set(block.kind, group);
@@ -95,6 +106,8 @@ function ChunkView({ entity }: { entity: Entity }) {
       {[...groups.entries()].map(([kind, values]) => (
         <BlockInstances key={kind} kind={kind} blocks={values} />
       ))}
+      <SpecialBlocks kind={BlockKind.Tnt} blocks={tntBlocks} />
+      <SpecialBlocks kind={BlockKind.Candle} blocks={candleBlocks} />
       <WaterTiles tiles={data.water} />
     </group>
   );

@@ -55,6 +55,19 @@ export function initInput() {
 
   window.addEventListener('keydown', (event) => {
     keys.add(event.code);
+    if (event.code === 'Tab') {
+      event.preventDefault();
+      const state = useGameStore.getState();
+      if (state.backpackOpen) {
+        state.setBackpack(false);
+        void requestPlay();
+      } else if (state.mode === 'play') {
+        state.setBackpack(true);
+        state.setMode('pause');
+        if (document.pointerLockElement) document.exitPointerLock();
+      }
+      return;
+    }
     if (event.code === 'F5') {
       event.preventDefault();
       if (!event.repeat) useGameStore.getState().toggleCamera();

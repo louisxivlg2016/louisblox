@@ -1,11 +1,12 @@
 import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Camera } from 'three';
-import { addVoxel, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
+import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
+import { spawnBomb } from '../bombLifecycle';
 import { consumeActions, isMouseDown, stopMining } from '../input';
 import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
-import { BlockTarget, Player, PlayerPosition, TargetMesh } from '../traits';
+import { BlockTarget, Chunk, ChunkData, Player, PlayerPosition, TargetMesh } from '../traits';
 import { BLOCK_HARDNESS, BlockKind, raycastVoxel, voxelKey } from '../voxel';
 
 const direction = new Vector3();
@@ -102,7 +103,19 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     const inBounds = y >= MIN_WORLD_Y && y <= MAX_BUILD_Y;
 
     if (inBounds && !blocks.has(voxelKey(x, y, z)) && !intersectsPlayer(x, y, z, player)) {
-      addVoxel(world, x, y, z, useGameStore.getState().selected);
+      const kind = useGameStore.getState().selected;
+      addVoxel(world, x, y, z, kind);
+      if (kind === BlockKind.Tnt) {
+        const bomb = spawnBomb(world, x, y, z);
+        const cx = chunkCoordinate(x);
+        const cz = chunkCoordinate(z);
+        for (const chunkEntity of world.query(Chunk, ChunkData)) {
+          const chunk = chunkEntity.get(Chunk)!;
+          if (chunk.x !== cx || chunk.z !== cz) continue;
+          chunkEntity.get(ChunkData)!.bombs.push(bomb);
+          break;
+        }
+      }
     }
   }
 }

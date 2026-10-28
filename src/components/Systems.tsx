@@ -7,6 +7,7 @@ import { useGameStore } from '../game/store';
 import { animalCombatSystem } from '../game/systems/animalCombatSystem';
 import { animalSystem } from '../game/systems/animalSystem';
 import { blockSystem } from '../game/systems/blockSystem';
+import { bombSystem, explosionSystem } from '../game/systems/bombSystem';
 import { cameraSystem } from '../game/systems/cameraSystem';
 import { collisionSystem } from '../game/systems/collisionSystem';
 import { environmentSystem } from '../game/systems/environmentSystem';
@@ -37,6 +38,8 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const animalTarget = animalCombatSystem(world, camera, delta);
       animalSystem(world, dt);
       meatDropSystem(world, dt);
+      bombSystem(world, delta);
+      explosionSystem(world, delta);
       blockSystem(world, camera, delta, animalTarget);
     } else {
       cameraSystem(world, camera);
