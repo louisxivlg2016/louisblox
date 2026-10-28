@@ -1,6 +1,7 @@
 import type { World } from 'koota';
 import type { useRapier } from '@react-three/rapier';
 import { consumeFlightToggle, consumeLook, getTouchMovement, isDown } from '../input';
+import { MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
 import { Player, PlayerBody, PlayerCollider, PlayerPosition, PlayerState, PlayerVelocity } from '../traits';
 
@@ -71,7 +72,7 @@ export function playerSystem(
   if (grounded && velocity.y < 0) velocity.y = -0.1;
   if (movement.y > velocity.y * dt + 0.001) velocity.y = 0;
 
-  if (next.y < -12) {
+  if (next.y < MIN_WORLD_Y - 12) {
     next.x = spawn.x;
     next.y = spawn.y;
     next.z = spawn.z;

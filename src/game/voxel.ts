@@ -95,7 +95,7 @@ export const BLOCK_HARDNESS: Record<BlockKind, number> = {
   [BlockKind.IronOre]: 6,
   [BlockKind.GoldOre]: 7,
   [BlockKind.DiamondOre]: 10,
-  [BlockKind.Bedrock]: Infinity,
+  [BlockKind.Bedrock]: 30,
   [BlockKind.Ice]: 1.5,
 };
 

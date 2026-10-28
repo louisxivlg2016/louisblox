@@ -33,8 +33,8 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
     if (useGameStore.getState().mode === 'play') {
       playerSystem(world, dt, physicsWorld, controller, spawn);
       cameraSystem(world, camera);
-      const animalTarget = animalCombatSystem(world, camera, dt);
-      blockSystem(world, camera, dt, animalTarget);
+      const animalTarget = animalCombatSystem(world, camera, delta);
+      blockSystem(world, camera, delta, animalTarget);
     } else {
       cameraSystem(world, camera);
       const targetEntity = world.queryFirst(BlockTarget);

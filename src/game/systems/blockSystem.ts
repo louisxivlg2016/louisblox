@@ -3,7 +3,7 @@ import { Vector3 } from 'three';
 import type { Camera } from 'three';
 import { addVoxel, getBlockIndex, removeVoxel } from '../chunks';
 import { consumeActions, isMouseDown } from '../input';
-import { MAX_BUILD_Y } from '../levels';
+import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
 import { BlockTarget, Player, PlayerPosition, TargetMesh } from '../traits';
 import { BLOCK_HARDNESS, BlockKind, raycastVoxel, voxelKey } from '../voxel';
@@ -55,7 +55,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   const kind = hit?.block.kind;
-  const mining = isMouseDown(0) && hit !== null && kind !== BlockKind.Bedrock && useGameStore.getState().mode === 'play';
+  const mining = isMouseDown(0) && hit !== null && useGameStore.getState().mode === 'play';
   if (mining && hit && kind !== undefined) {
     const key = voxelKey(hit.x, hit.y, hit.z);
     if (target.miningKey !== key) {
@@ -96,7 +96,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     const x = hit.x + hit.normal.x;
     const y = hit.y + hit.normal.y;
     const z = hit.z + hit.normal.z;
-    const inBounds = y >= 1 && y <= MAX_BUILD_Y;
+    const inBounds = y >= MIN_WORLD_Y && y <= MAX_BUILD_Y;
 
     if (inBounds && !blocks.has(voxelKey(x, y, z)) && !intersectsPlayer(x, y, z, player)) {
       addVoxel(world, x, y, z, useGameStore.getState().selected);

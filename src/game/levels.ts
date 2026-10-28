@@ -4,6 +4,7 @@ import type { Voxel } from './voxel';
 export const CHUNK_SIZE = 16;
 export const VIEW_DISTANCE = 1;
 export const SEA_LEVEL = 5;
+export const MIN_WORLD_Y = -64;
 export const MAX_BUILD_Y = 80;
 
 export type Biome = 'prairie' | 'forest' | 'winter' | 'desert' | 'autumn';
@@ -92,11 +93,11 @@ export function heightAt(x: number, z: number, seed: number) {
 }
 
 function stoneAt(x: number, y: number, z: number, seed: number): BlockKind {
-  if (y === 0) return BlockKind.Bedrock;
+  if (y === MIN_WORLD_Y) return BlockKind.Bedrock;
   const value = hash(x + y * 31, z - y * 17, seed + 907);
-  if (y <= 6 && value > 0.992) return BlockKind.DiamondOre;
-  if (y <= 11 && value > 0.985) return BlockKind.GoldOre;
-  if (y <= 20 && value > 0.97) return BlockKind.IronOre;
+  if (y <= -24 && value > 0.992) return BlockKind.DiamondOre;
+  if (y <= 0 && value > 0.985) return BlockKind.GoldOre;
+  if (y <= 32 && value > 0.97) return BlockKind.IronOre;
   if (value > 0.955) return BlockKind.CoalOre;
   return BlockKind.Stone;
 }
@@ -110,7 +111,7 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
   const maxZ = minZ + CHUNK_SIZE;
 
   const put = (x: number, y: number, z: number, kind: BlockKind, overwrite = true) => {
-    if (x < minX || x >= maxX || z < minZ || z >= maxZ || y < 0 || y > MAX_BUILD_Y) return;
+    if (x < minX || x >= maxX || z < minZ || z >= maxZ || y < MIN_WORLD_Y || y > MAX_BUILD_Y) return;
     const treePart = kind === BlockKind.Wood || kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.Apple;
     if (treePart && biomeAt(x, z, seed) === 'winter' && heightAt(x, z, seed) > 14) return;
     const key = voxelKey(x, y, z);
@@ -123,7 +124,7 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
       const biome = biomeAt(x, z, seed);
       const beach = height < SEA_LEVEL;
 
-      for (let y = 0; y <= height; y += 1) {
+      for (let y = MIN_WORLD_Y; y <= height; y += 1) {
         let kind: BlockKind = stoneAt(x, y, z, seed);
         if (y === height) {
           if (beach || biome === 'desert') kind = BlockKind.Sand;

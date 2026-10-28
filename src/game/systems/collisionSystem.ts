@@ -1,6 +1,7 @@
 import type { World } from 'koota';
 import type { useRapier } from '@react-three/rapier';
 import { getBlockIndex, getWorldSeed } from '../chunks';
+import { MIN_WORLD_Y } from '../levels';
 import { Chunk, Player, PlayerPosition } from '../traits';
 import { voxelKey } from '../voxel';
 import type { Voxel } from '../voxel';
@@ -57,7 +58,7 @@ export function collisionSystem(
   const blocks = getBlockIndex(world);
   const desired = new Map<string, Voxel>();
   for (let x = px - 8; x <= px + 8; x += 1) {
-    for (let y = Math.max(0, py - 7); y <= py + 7; y += 1) {
+    for (let y = Math.max(MIN_WORLD_Y, py - 7); y <= py + 7; y += 1) {
       for (let z = pz - 8; z <= pz + 8; z += 1) {
         const block = blocks.get(voxelKey(x, y, z));
         if (!block) continue;
