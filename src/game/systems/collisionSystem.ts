@@ -3,7 +3,7 @@ import type { useRapier } from '@react-three/rapier';
 import { getBlockIndex, getWorldSeed } from '../chunks';
 import { MIN_WORLD_Y } from '../levels';
 import { Chunk, Player, PlayerPosition } from '../traits';
-import { voxelKey } from '../voxel';
+import { BlockKind, voxelKey } from '../voxel';
 import type { Voxel } from '../voxel';
 
 type RapierWorld = ReturnType<typeof useRapier>['world'];
@@ -61,7 +61,7 @@ export function collisionSystem(
     for (let y = Math.max(MIN_WORLD_Y, py - 7); y <= py + 7; y += 1) {
       for (let z = pz - 8; z <= pz + 8; z += 1) {
         const block = blocks.get(voxelKey(x, y, z));
-        if (!block) continue;
+        if (!block || block.kind === BlockKind.Water) continue;
         const exposed = neighborOffsets.some(([dx, dy, dz]) => !blocks.has(voxelKey(x + dx, y + dy, z + dz)));
         if (exposed) desired.set(voxelKey(x, y, z), block);
       }

@@ -1,25 +1,24 @@
 import { useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import {
-  queuePlacement,
-  requestFlightToggle,
-  setTouchKey,
-  setTouchMouseButton,
-  setTouchMovement,
-  toggleMining,
-} from '../game/input';
+import { requestFlightToggle, setTouchKey, setTouchMovement } from '../game/input';
 import { useGameStore } from '../game/store';
 
-function HoldButton({ code, label, className = '' }: { code: string; label: string; className?: string }) {
+function HoldButton({ code, label, onDoubleTap }: { code: string; label: string; onDoubleTap?: () => void }) {
+  const lastTap = useRef(0);
   const release = () => setTouchKey(code, false);
   return (
     <button
-      className={`touch-button ${className}`}
+      className="touch-button"
       onPointerDown={(event) => {
         event.preventDefault();
         event.stopPropagation();
         event.currentTarget.setPointerCapture(event.pointerId);
         setTouchKey(code, true);
+        if (onDoubleTap) {
+          const now = performance.now();
+          if (now - lastTap.current < 5000) onDoubleTap();
+          lastTap.current = now;
+        }
       }}
       onPointerUp={release}
       onPointerCancel={release}
@@ -75,7 +74,7 @@ export function TouchControls() {
         <div ref={knob} className="touch-knob" />
       </div>
       <div className="touch-actions">
-        <HoldButton code="Space" label="Sauter" />
+        <HoldButton code="Space" label="Sauter" onDoubleTap={requestFlightToggle} />
         <button
           className="touch-button touch-flight"
           onPointerDown={(event) => {
@@ -96,31 +95,6 @@ export function TouchControls() {
           }}
         >
           Caméra
-        </button>
-        <button
-          className="touch-button touch-attack"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            event.currentTarget.setPointerCapture(event.pointerId);
-            setTouchMouseButton(0, true);
-            toggleMining();
-          }}
-          onPointerUp={() => setTouchMouseButton(0, false)}
-          onPointerCancel={() => setTouchMouseButton(0, false)}
-          onLostPointerCapture={() => setTouchMouseButton(0, false)}
-        >
-          Frapper
-        </button>
-        <button
-          className="touch-button"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            queuePlacement();
-          }}
-        >
-          Poser
         </button>
       </div>
     </div>

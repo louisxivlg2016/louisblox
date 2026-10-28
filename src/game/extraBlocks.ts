@@ -22,6 +22,9 @@ export const EXTRA_BLOCKS = {
   OakSapling: 41,
   PineSapling: 42,
   AutumnSapling: 43,
+  OakPlanks: 44,
+  PinePlanks: 45,
+  AutumnPlanks: 46,
 } as const;
 
 export type ExtraBlockKind = (typeof EXTRA_BLOCKS)[keyof typeof EXTRA_BLOCKS];
@@ -68,4 +71,7 @@ export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.OakSapling]: block('Pousse de chêne', '#4b8e3d', 0.15),
   [EXTRA_BLOCKS.PineSapling]: block('Pousse de sapin', '#2d6241', 0.15),
   [EXTRA_BLOCKS.AutumnSapling]: block('Pousse d’arbre d’automne', '#d8752f', 0.15),
+  [EXTRA_BLOCKS.OakPlanks]: block('Planches de chêne', '#b98a53', 1.8),
+  [EXTRA_BLOCKS.PinePlanks]: block('Planches de sapin', '#765334', 1.8),
+  [EXTRA_BLOCKS.AutumnPlanks]: block('Planches d’arbre d’automne', '#a76738', 1.8),
 };

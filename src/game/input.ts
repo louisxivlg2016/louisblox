@@ -1,6 +1,5 @@
 import { startMusic } from './audio';
 import { useGameStore } from './store';
-import { HOTBAR_BLOCKS } from './voxel';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -19,6 +18,11 @@ let touchLookX = 0;
 let touchLookY = 0;
 let miningLatched = false;
 let edgeResetTimer: ReturnType<typeof setTimeout> | null = null;
+const touchPointers = new Set<number>();
+const touchPoints = new Map<number, { x: number; y: number }>();
+let touchGestureMoved = false;
+let twoFingerGesture = false;
+let touchStartedAt = 0;
 
 const hasMouseControl = () => document.pointerLockElement !== null || pointerLockFallback;
 
@@ -43,6 +47,11 @@ export function clearInput() {
   touchMovement.x = 0;
   touchMovement.y = 0;
   touchLookPointer = null;
+  touchPointers.clear();
+  touchPoints.clear();
+  touchGestureMoved = false;
+  twoFingerGesture = false;
+  touchStartedAt = 0;
   actions.place = 0;
   actions.harvest = 0;
   lastSpacePress = 0;
@@ -68,7 +77,20 @@ export function initInput() {
       }
       return;
     }
-    if (event.code === 'F5') {
+    if (event.code === 'KeyT') {
+      event.preventDefault();
+      const state = useGameStore.getState();
+      if (state.teleportOpen) {
+        state.setTeleportOpen(false);
+        void requestPlay();
+      } else if (state.mode === 'play') {
+        state.setTeleportOpen(true);
+        state.setMode('pause');
+        if (document.pointerLockElement) document.exitPointerLock();
+      }
+      return;
+    }
+    if (event.code === 'F5' || event.code === 'KeyP') {
       event.preventDefault();
       if (!event.repeat) useGameStore.getState().toggleCamera();
       return;
@@ -100,7 +122,7 @@ export function initInput() {
     if (/^Digit[0-9]$/.test(event.code)) {
       const digit = Number(event.code.slice(-1));
       const index = digit === 0 ? 9 : digit - 1;
-      useGameStore.getState().selectBlock(HOTBAR_BLOCKS[index]);
+      useGameStore.getState().selectBlock(useGameStore.getState().hotbarSlots[index]);
     }
   });
 
@@ -128,9 +150,19 @@ export function initInput() {
     if (event.pointerType !== 'touch' || !(event.target instanceof HTMLCanvasElement) || useGameStore.getState().mode !== 'play') return;
     event.preventDefault();
     const canvas = event.target;
-    touchLookPointer = event.pointerId;
-    touchLookX = event.clientX;
-    touchLookY = event.clientY;
+    touchPointers.add(event.pointerId);
+    touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (touchPointers.size === 1) {
+      touchLookPointer = event.pointerId;
+      touchLookX = event.clientX;
+      touchLookY = event.clientY;
+      touchGestureMoved = false;
+      twoFingerGesture = false;
+      touchStartedAt = performance.now();
+    } else if (touchPointers.size === 2) {
+      twoFingerGesture = true;
+      touchGestureMoved = false;
+    }
     try {
       canvas.setPointerCapture(event.pointerId);
     } catch {
@@ -138,18 +170,34 @@ export function initInput() {
     }
   });
   window.addEventListener('pointermove', (event) => {
-    if (event.pointerId !== touchLookPointer) return;
+    if (!touchPointers.has(event.pointerId)) return;
     event.preventDefault();
+    const previous = touchPoints.get(event.pointerId);
+    if (previous && Math.hypot(event.clientX - previous.x, event.clientY - previous.y) > 10) touchGestureMoved = true;
+    touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (event.pointerId !== touchLookPointer) return;
     look.x += (event.clientX - touchLookX) * 2;
     look.y += (event.clientY - touchLookY) * 2;
     touchLookX = event.clientX;
     touchLookY = event.clientY;
   });
   const endTouchLook = (event: PointerEvent) => {
-    if (event.pointerId !== touchLookPointer) return;
+    if (!touchPointers.has(event.pointerId)) return;
     const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas canvas');
     if (canvas?.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
-    touchLookPointer = null;
+    touchPointers.delete(event.pointerId);
+    touchPoints.delete(event.pointerId);
+    if (touchPointers.size === 0) {
+      const duration = performance.now() - touchStartedAt;
+      if (!touchGestureMoved && (twoFingerGesture || duration < 800)) {
+        if (twoFingerGesture) queuePlacement();
+        else toggleMining();
+      }
+      touchLookPointer = null;
+      touchGestureMoved = false;
+      twoFingerGesture = false;
+      touchStartedAt = 0;
+    }
   };
   window.addEventListener('pointerup', endTouchLook);
   window.addEventListener('pointercancel', endTouchLook);
@@ -173,9 +221,9 @@ export function initInput() {
   window.addEventListener('wheel', (event) => {
     if (useGameStore.getState().mode !== 'play') return;
     const state = useGameStore.getState();
-    const current = HOTBAR_BLOCKS.indexOf(state.selected as (typeof HOTBAR_BLOCKS)[number]);
-    const next = (current + (event.deltaY > 0 ? 1 : -1) + HOTBAR_BLOCKS.length) % HOTBAR_BLOCKS.length;
-    state.selectBlock(HOTBAR_BLOCKS[next]);
+    const current = state.hotbarSlots.indexOf(state.selected as (typeof state.hotbarSlots)[number]);
+    const next = (current + (event.deltaY > 0 ? 1 : -1) + state.hotbarSlots.length) % state.hotbarSlots.length;
+    state.selectBlock(state.hotbarSlots[next]);
   });
 
   document.addEventListener('pointerlockchange', () => {

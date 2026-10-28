@@ -2,7 +2,7 @@ import type { World } from 'koota';
 import { getWorldSeed, snapshotWorldEdits } from './chunks';
 import type { WorldSave } from './chunks';
 import { useGameStore } from './store';
-import { Environment, Player, PlayerPosition, PlayerState } from './traits';
+import { Environment, Player, PlayerHealth, PlayerPosition, PlayerState } from './traits';
 
 const SAVE_KEY = 'louisblox-save-v1';
 
@@ -22,6 +22,7 @@ export function saveWorld(world: World) {
   const environment = world.queryFirst(Environment)?.get(Environment);
   const position = playerEntity?.get(PlayerPosition);
   const state = playerEntity?.get(PlayerState);
+  const health = playerEntity?.get(PlayerHealth);
   if (!position || !state || !environment) return;
 
   const store = useGameStore.getState();
@@ -38,6 +39,8 @@ export function saveWorld(world: World) {
       flying: state.flying,
     },
     selected: store.selected,
+    lives: health?.value ?? 10,
+    hotbar: store.hotbarSlots,
     apples: store.apples,
     meat: store.meat,
     elapsed: environment.elapsed,

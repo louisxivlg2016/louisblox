@@ -141,6 +141,7 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
 
       if (height < SEA_LEVEL) {
         water.push({ x, z });
+        for (let y = height + 1; y <= SEA_LEVEL; y += 1) put(x, y, z, BlockKind.Water);
         if (biome === 'winter') put(x, SEA_LEVEL, z, BlockKind.Ice);
       }
     }

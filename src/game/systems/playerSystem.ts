@@ -3,7 +3,7 @@ import type { useRapier } from '@react-three/rapier';
 import { consumeFlightToggle, consumeLook, getEdgeLook, getTouchMovement, isDown } from '../input';
 import { MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
-import { Player, PlayerBody, PlayerCollider, PlayerPosition, PlayerState, PlayerVelocity } from '../traits';
+import { Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerPosition, PlayerState, PlayerVelocity } from '../traits';
 
 type RapierWorld = ReturnType<typeof useRapier>['world'];
 export type CharacterController = ReturnType<RapierWorld['createCharacterController']>;
@@ -27,6 +27,7 @@ export function playerSystem(
   const position = entity.get(PlayerPosition);
   const velocity = entity.get(PlayerVelocity);
   const state = entity.get(PlayerState);
+  const health = entity.get(PlayerHealth);
   if (!body || !collider || !position || !velocity || !state) return;
 
   const mouse = consumeLook();
@@ -87,6 +88,14 @@ export function playerSystem(
     velocity.set(0, 0, 0);
   }
 
+  if (health && health.value <= 0) {
+    next.x = spawn.x;
+    next.y = spawn.y;
+    next.z = spawn.z;
+    velocity.set(0, 0, 0);
+    entity.set(PlayerHealth, { value: health.max });
+  }
+
   body.setNextKinematicTranslation(next);
   position.set(next.x, next.y, next.z);
   entity.set(PlayerState, { grounded, flying: nextFlying, yaw, pitch });
@@ -97,6 +106,7 @@ export function playerSystem(
     z: Math.round(next.z * 100) / 100,
   };
   const hud = useGameStore.getState();
+  if (health && hud.lives !== health.value) hud.setLives(health.value);
   if (hud.flying !== nextFlying) hud.setFlying(nextFlying);
   if (hud.coordinates.x !== coordinates.x || hud.coordinates.y !== coordinates.y || hud.coordinates.z !== coordinates.z) {
     hud.setCoordinates(coordinates);

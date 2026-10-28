@@ -7,9 +7,12 @@ import { BLOCK_INFO, HOTBAR_BLOCKS } from '../game/voxel';
 export function Backpack() {
   const open = useGameStore((state) => state.backpackOpen);
   const selected = useGameStore((state) => state.selected);
+  const hotbarSlots = useGameStore((state) => state.hotbarSlots);
+  const backpackItem = useGameStore((state) => state.backpackItem);
   const apples = useGameStore((state) => state.apples);
   const meat = useGameStore((state) => state.meat);
-  const selectBlock = useGameStore((state) => state.selectBlock);
+  const setHotbarSlot = useGameStore((state) => state.setHotbarSlot);
+  const setBackpackItem = useGameStore((state) => state.setBackpackItem);
   const setBackpack = useGameStore((state) => state.setBackpack);
   const discardApple = useGameStore((state) => state.discardApple);
   const discardMeat = useGameStore((state) => state.discardMeat);
@@ -18,6 +21,10 @@ export function Backpack() {
   const close = () => {
     setBackpack(false);
     void requestPlay();
+  };
+  const assign = (index: number) => {
+    setHotbarSlot(index, backpackItem ?? hotbarSlots[index]);
+    close();
   };
   const resources = (Object.entries(meat) as Array<[AnimalKind, number]>).filter(([, count]) => count > 0);
 
@@ -28,16 +35,36 @@ export function Backpack() {
           <h2>Sac à dos</h2>
           <button className="secondary-button" onClick={close}>Fermer et reprendre</button>
         </div>
-        <p className="backpack-label">Blocs</p>
+        <p className="backpack-label">Cases actives · choisis un objet puis une case, ou fais glisser</p>
+        <div className="backpack-active-slots">
+          {hotbarSlots.map((kind, index) => (
+            <button
+              key={`${kind}-${index}`}
+              className={`backpack-block active-slot ${selected === kind ? 'selected' : ''}`}
+              onClick={() => assign(index)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault();
+                assign(index);
+              }}
+            >
+              <span className="block-swatch" style={{ backgroundColor: BLOCK_INFO[kind].color }} />
+              <span>{index === 9 ? '0' : index + 1} · {BLOCK_INFO[kind].name}</span>
+            </button>
+          ))}
+        </div>
+        <p className="backpack-label">Objets</p>
         <div className="backpack-blocks">
           {HOTBAR_BLOCKS.map((kind, index) => (
             <button
               key={kind}
-              className={`backpack-block ${selected === kind ? 'selected' : ''}`}
-              onClick={() => {
-                selectBlock(kind);
-                close();
+              className={`backpack-block ${backpackItem === kind ? 'selected' : ''}`}
+              draggable
+              onDragStart={(event) => {
+                event.dataTransfer.setData('text/plain', String(index));
+                setBackpackItem(kind);
               }}
+              onClick={() => setBackpackItem(kind)}
             >
               <span className="block-swatch" style={{ backgroundColor: BLOCK_INFO[kind].color }} />
               <span>{index === 9 ? '0' : index + 1} · {BLOCK_INFO[kind].name}</span>

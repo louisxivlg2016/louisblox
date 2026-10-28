@@ -2,7 +2,7 @@ import type { World } from 'koota';
 import { Mesh } from 'three';
 import { getWorldSeed } from '../chunks';
 import { heightAt, SEA_LEVEL } from '../levels';
-import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition } from '../traits';
+import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition, Player, PlayerHealth, PlayerPosition } from '../traits';
 
 function tint(mesh: import('three').Object3D, color: string) {
   mesh.traverse((object) => {
@@ -14,10 +14,19 @@ function tint(mesh: import('three').Object3D, color: string) {
 
 export function animalSystem(world: World, dt: number) {
   const seed = getWorldSeed(world);
+  const playerEntity = world.queryFirst(Player);
+  const player = playerEntity?.get(PlayerPosition);
+  const health = playerEntity?.get(PlayerHealth);
 
   world.query(Animal, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, hit, position, motion, mesh], entity) => {
     hit.time = Math.max(0, hit.time - dt);
     hit.panic = Math.max(0, hit.panic - dt);
+    hit.attackIn = Math.max(0, hit.attackIn - dt);
+    const aggressive = animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf';
+    if (aggressive && playerEntity && player && health && hit.attackIn <= 0 && position.distanceToSquared(player) < 2.2 * 2.2) {
+      hit.attackIn = 1.2;
+      playerEntity.set(PlayerHealth, { value: Math.max(0, health.value - 1) });
+    }
     if (mesh.value) {
       if (hit.time > 0 && !hit.flashed) {
         tint(mesh.value, '#ff3028');

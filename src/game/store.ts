@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { AnimalKind } from './animals';
 import type { Biome } from './levels';
 import { createMeatInventory } from './meats';
-import { BlockKind } from './voxel';
+import { BlockKind, HOTBAR_BLOCKS } from './voxel';
 
 export type GameMode = 'menu' | 'play' | 'pause';
 export type WeatherKind = 'clear' | 'rain' | 'snow';
@@ -13,23 +13,31 @@ type EnvironmentSnapshot = { dayProgress: number; biome: Biome; weather: Weather
 type GameStore = {
   mode: GameMode;
   selected: BlockKind;
+  hotbarSlots: BlockKind[];
+  backpackItem: BlockKind | null;
+  teleportOpen: boolean;
   generation: number;
   blockCount: number;
   apples: number;
   meat: Record<AnimalKind, number>;
   miningProgress: number;
   flying: boolean;
+  lives: number;
   cameraMode: 'first' | 'third';
   backpackOpen: boolean;
   coordinates: Coordinates;
   environment: EnvironmentSnapshot;
   setMode: (mode: GameMode) => void;
   selectBlock: (kind: BlockKind) => void;
+  setHotbarSlot: (index: number, kind: BlockKind) => void;
+  setBackpackItem: (kind: BlockKind | null) => void;
+  setTeleportOpen: (open: boolean) => void;
   setBlockCount: (count: number) => void;
   setCoordinates: (coordinates: Coordinates) => void;
   setEnvironment: (environment: EnvironmentSnapshot) => void;
   setMiningProgress: (progress: number) => void;
   setFlying: (flying: boolean) => void;
+  setLives: (lives: number) => void;
   toggleCamera: () => void;
   setBackpack: (open: boolean) => void;
   collectApple: () => void;
@@ -42,28 +50,40 @@ type GameStore = {
 export const useGameStore = create<GameStore>((set) => ({
   mode: 'menu',
   selected: BlockKind.Grass,
+  hotbarSlots: HOTBAR_BLOCKS.slice(0, 10),
+  backpackItem: null,
+  teleportOpen: false,
   generation: 0,
   blockCount: 0,
   apples: 0,
   meat: createMeatInventory(),
   miningProgress: 0,
   flying: false,
+  lives: 10,
   cameraMode: 'first',
   backpackOpen: false,
   coordinates: { x: 0, y: 8, z: 0 },
   environment: { dayProgress: 0.38, biome: 'prairie', weather: 'clear' },
   setMode: (mode) => set({ mode }),
   selectBlock: (selected) => set({ selected }),
+  setHotbarSlot: (index, kind) => set((state) => {
+    const hotbarSlots = [...state.hotbarSlots];
+    hotbarSlots[index] = kind;
+    return { hotbarSlots, selected: kind, backpackItem: null };
+  }),
+  setBackpackItem: (backpackItem) => set({ backpackItem }),
+  setTeleportOpen: (teleportOpen) => set({ teleportOpen }),
   setBlockCount: (blockCount) => set({ blockCount }),
   setCoordinates: (coordinates) => set({ coordinates }),
   setEnvironment: (environment) => set({ environment }),
   setMiningProgress: (miningProgress) => set({ miningProgress }),
   setFlying: (flying) => set({ flying }),
+  setLives: (lives) => set({ lives }),
   toggleCamera: () => set((state) => ({ cameraMode: state.cameraMode === 'first' ? 'third' : 'first' })),
-  setBackpack: (backpackOpen) => set({ backpackOpen }),
+  setBackpack: (backpackOpen) => set({ backpackOpen, backpackItem: null }),
   collectApple: () => set((state) => ({ apples: state.apples + 1 })),
   collectMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: state.meat[kind] + 1 } })),
   discardApple: () => set((state) => ({ apples: Math.max(0, state.apples - 1) })),
   discardMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: Math.max(0, state.meat[kind] - 1) } })),
-  regenerate: () => set((state) => ({ generation: state.generation + 1, apples: 0, meat: createMeatInventory(), miningProgress: 0, flying: false, backpackOpen: false, mode: 'menu' })),
+  regenerate: () => set((state) => ({ generation: state.generation + 1, hotbarSlots: HOTBAR_BLOCKS.slice(0, 10), backpackItem: null, teleportOpen: false, apples: 0, meat: createMeatInventory(), miningProgress: 0, flying: false, backpackOpen: false, mode: 'menu' })),
 }));

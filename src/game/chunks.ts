@@ -19,6 +19,7 @@ import {
   Player,
   PlayerBody,
   PlayerCollider,
+  PlayerHealth,
   PlayerMesh,
   PlayerPosition,
   PlayerState,
@@ -39,6 +40,8 @@ export type WorldSave = {
   seed: number;
   player: { x: number; y: number; z: number; yaw: number; pitch: number; flying: boolean };
   selected: BlockKind;
+  lives?: number;
+  hotbar?: BlockKind[];
   apples: number;
   meat?: Record<import('./animals').AnimalKind, number>;
   elapsed: number;
@@ -246,6 +249,22 @@ export function growSapling(world: World, kind: BlockKind, x: number, y: number,
     ? BlockKind.PineLeaves
     : kind === BlockKind.AutumnSapling ? BlockKind.AutumnLeaves : BlockKind.Leaves;
   const winter = biomeAt(x, z, getWorldSeed(world)) === 'winter';
+  if (kind === BlockKind.PineSapling) {
+    for (let layer = 0; layer <= 4; layer += 1) {
+      const radius = Math.max(0, 2 - Math.floor(layer / 2));
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        for (let dz = -radius; dz <= radius; dz += 1) {
+          if (dx === 0 && dz === 0) continue;
+          addVoxel(world, x + dx, y + 2 + layer, z + dz, BlockKind.PineLeaves);
+          if (winter && layer >= 2 && Math.abs(dx * 7 + dz * 11 + layer) % 3 === 0) {
+            addVoxel(world, x + dx, y + 3 + layer, z + dz, BlockKind.Snow);
+          }
+        }
+      }
+    }
+    addVoxel(world, x, y + 6, z, BlockKind.PineLeaves);
+    return;
+  }
   for (let dx = -2; dx <= 2; dx += 1) {
     for (let dz = -2; dz <= 2; dz += 1) {
       for (let dy = -1; dy <= 1; dy += 1) {
@@ -254,9 +273,7 @@ export function growSapling(world: World, kind: BlockKind, x: number, y: number,
         if (leafY > MAX_BUILD_Y) continue;
         const apple = kind === BlockKind.OakSapling && Math.abs(dx * 13 + dz * 17 + dy * 19) % 9 === 0;
         addVoxel(world, x + dx, leafY, z + dz, apple ? BlockKind.Apple : leafKind);
-        if (kind === BlockKind.PineSapling && winter && dy === 1 && Math.abs(dx * 7 + dz * 11) % 3 === 0) {
-          addVoxel(world, x + dx, leafY + 1, z + dz, BlockKind.Snow);
-        }
+
       }
     }
   }
@@ -286,7 +303,9 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
   const chunkEntity = state.chunks.get(key)!;
   const data = chunkEntity.get(ChunkData)!;
   const position = voxelKey(x, y, z);
-  if (state.blocks.has(position)) return;
+  const existing = state.blocks.get(position);
+  if (existing && existing.kind !== BlockKind.Water) return;
+  if (existing) data.blocks = data.blocks.filter((block) => voxelKey(block.x, block.y, block.z) !== position);
 
   const block = { x, y, z, kind };
   data.blocks.push(block);
@@ -323,6 +342,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     PlayerBody(),
     PlayerCollider(),
     PlayerMesh(),
+    PlayerHealth({ value: restore?.lives ?? 10, max: 10 }),
     PlayerPosition(new Vector3(spawn.x, spawn.y, spawn.z)),
     PlayerVelocity(),
     PlayerState({
@@ -336,7 +356,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   useGameStore.setState({ meat: { ...createMeatInventory(), ...restore?.meat } });
   if (restore) {
     environmentEntity.get(Environment)!.elapsed = restore.elapsed;
-    useGameStore.setState({ selected: restore.selected, apples: restore.apples, flying: restore.player.flying });
+    useGameStore.setState({ selected: restore.selected, hotbarSlots: restore.hotbar ?? useGameStore.getState().hotbarSlots, lives: restore.lives ?? 10, apples: restore.apples, flying: restore.player.flying });
   }
   streamChunks(world, spawn.x, spawn.z);
   return { spawn };

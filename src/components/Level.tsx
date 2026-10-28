@@ -3,8 +3,6 @@ import { useQuery, useTrait, useWorld } from 'koota/react';
 import type { Entity } from 'koota';
 import { InstancedMesh, Matrix4 } from 'three';
 import { getBlockIndex } from '../game/chunks';
-import { SEA_LEVEL } from '../game/levels';
-import type { WaterTile } from '../game/levels';
 import { Chunk, ChunkData } from '../game/traits';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { SpecialBlocks } from './SpecialBlocks';
@@ -46,25 +44,50 @@ function BlockInstances({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }) 
   return <instancedMesh ref={ref} args={[blockGeometry, blockMaterials[kind], blocks.length]} receiveShadow />;
 }
 
-function WaterTiles({ tiles }: { tiles: WaterTile[] }) {
-  const ref = useRef<InstancedMesh>(null);
+function SaplingInstances({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }) {
+  const trunk = useRef<InstancedMesh>(null);
+  const bottom = useRef<InstancedMesh>(null);
+  const middle = useRef<InstancedMesh>(null);
+  const top = useRef<InstancedMesh>(null);
+  const pine = kind === BlockKind.PineSapling;
+  const leafKind = pine ? BlockKind.PineLeaves : kind === BlockKind.AutumnSapling ? BlockKind.AutumnLeaves : BlockKind.Leaves;
 
   useLayoutEffect(() => {
-    if (!ref.current) return;
-    tiles.forEach((tile, index) => {
-      matrix.makeRotationX(-Math.PI / 2);
-      matrix.setPosition(tile.x, SEA_LEVEL + 0.32, tile.z);
-      ref.current!.setMatrixAt(index, matrix);
+    const update = (ref: typeof trunk, transform: (block: Voxel) => void) => {
+      if (!ref.current) return;
+      blocks.forEach((block, index) => {
+        transform(block);
+        ref.current!.setMatrixAt(index, matrix);
+      });
+      ref.current.instanceMatrix.needsUpdate = true;
+      ref.current.computeBoundingSphere();
+    };
+    update(trunk, (block) => {
+      matrix.makeScale(0.14, 0.45, 0.14);
+      matrix.setPosition(block.x, block.y - 0.275, block.z);
     });
-    ref.current.instanceMatrix.needsUpdate = true;
-    if (tiles.length > 0) ref.current.computeBoundingSphere();
-  }, [tiles]);
+    update(bottom, (block) => {
+      if (pine) matrix.makeScale(0.5, 0.25, 0.5);
+      else matrix.makeScale(0.38, 0.38, 0.38);
+      matrix.setPosition(block.x, block.y - (pine ? 0.1 : 0.05), block.z);
+    });
+    update(middle, (block) => {
+      matrix.makeScale(0.35, 0.3, 0.35);
+      matrix.setPosition(block.x, block.y + 0.12, block.z);
+    });
+    update(top, (block) => {
+      matrix.makeScale(0.18, 0.28, 0.18);
+      matrix.setPosition(block.x, block.y + 0.32, block.z);
+    });
+  }, [blocks, pine]);
 
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, tiles.length]} frustumCulled={false} renderOrder={1}>
-      <planeGeometry args={[1, 1]} />
-      <meshStandardMaterial color="#4ba6c8" transparent opacity={0.68} roughness={0.18} metalness={0.08} depthWrite={false} />
-    </instancedMesh>
+    <>
+      <instancedMesh ref={trunk} args={[blockGeometry, blockMaterials[BlockKind.Wood], blocks.length]} />
+      <instancedMesh ref={bottom} args={[blockGeometry, blockMaterials[leafKind], blocks.length]} />
+      {pine && <instancedMesh ref={middle} args={[blockGeometry, blockMaterials[leafKind], blocks.length]} />}
+      {pine && <instancedMesh ref={top} args={[blockGeometry, blockMaterials[leafKind], blocks.length]} />}
+    </>
   );
 }
 
@@ -77,12 +100,14 @@ function ChunkView({ entity }: { entity: Entity }) {
   const blocks: Voxel[] = [];
   const tntBlocks: Voxel[] = [];
   const candleBlocks: Voxel[] = [];
+  const saplingGroups = new Map<BlockKind, Voxel[]>();
 
   if (chunk && data) {
     for (const block of data.blocks) {
-      const exposed = neighborOffsets.some(([x, y, z]) =>
-        !blockIndex.has(voxelKey(block.x + x, block.y + y, block.z + z)),
-      );
+      const exposed = neighborOffsets.some(([x, y, z]) => {
+        const neighbor = blockIndex.get(voxelKey(block.x + x, block.y + y, block.z + z));
+        return !neighbor || neighbor.kind === BlockKind.Water || neighbor.kind === BlockKind.Glass;
+      });
       if (!exposed) continue;
       blocks.push(block);
       if (block.kind === BlockKind.Tnt) {
@@ -91,6 +116,12 @@ function ChunkView({ entity }: { entity: Entity }) {
       }
       if (block.kind === BlockKind.Candle) {
         candleBlocks.push(block);
+        continue;
+      }
+      if (isSapling(block.kind)) {
+        const group = saplingGroups.get(block.kind) ?? [];
+        group.push(block);
+        saplingGroups.set(block.kind, group);
         continue;
       }
       const group = groups.get(block.kind) ?? [];
@@ -110,9 +141,11 @@ function ChunkView({ entity }: { entity: Entity }) {
       {[...groups.entries()].map(([kind, values]) => (
         <BlockInstances key={kind} kind={kind} blocks={values} />
       ))}
+      {[...saplingGroups.entries()].map(([kind, values]) => (
+        <SaplingInstances key={kind} kind={kind} blocks={values} />
+      ))}
       <SpecialBlocks kind={BlockKind.Tnt} blocks={tntBlocks} />
       <SpecialBlocks kind={BlockKind.Candle} blocks={candleBlocks} />
-      <WaterTiles tiles={data.water} />
     </group>
   );
 }

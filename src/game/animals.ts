@@ -22,12 +22,12 @@ const health: Record<AnimalKind, number> = {
   horse: 4,
   pig: 3,
   sheep: 3,
-  chicken: 2,
-  duck: 2,
+  chicken: 3,
+  duck: 3,
   bear: 6,
   deer: 3,
-  wolf: 4,
-  snowWolf: 4,
+  wolf: 5,
+  snowWolf: 5,
   snowBear: 6,
 };
 

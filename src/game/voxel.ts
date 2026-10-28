@@ -24,6 +24,7 @@ export const BlockKind = {
   Tnt: 19,
   Candle: 20,
   ...EXTRA_BLOCKS,
+  Water: 47,
 } as const;
 
 export type BlockKind = (typeof BlockKind)[keyof typeof BlockKind];
@@ -84,6 +85,7 @@ const baseBlockInfo = {
   [BlockKind.Ice]: { name: 'Glace', color: '#a8d5e2' },
   [BlockKind.Tnt]: { name: 'Bombe TNT', color: '#c93d32' },
   [BlockKind.Candle]: { name: 'Bougie', color: '#f2d68a' },
+  [BlockKind.Water]: { name: 'Eau', color: '#3b9bd5' },
 };
 
 const baseBlockHardness = {
@@ -108,6 +110,7 @@ const baseBlockHardness = {
   [BlockKind.Ice]: 1.5,
   [BlockKind.Tnt]: 0.8,
   [BlockKind.Candle]: 0.4,
+  [BlockKind.Water]: 0.1,
 };
 
 export const BLOCK_INFO = {
@@ -146,7 +149,7 @@ export function raycastVoxel(
 
   for (let steps = 0; steps < 128 && distance <= maxDistance; steps += 1) {
     const block = blocks.get(voxelKey(x, y, z));
-    if (block !== undefined) {
+    if (block !== undefined && block.kind !== BlockKind.Water) {
       return { block, x, y, z, normal, distance };
     }
 

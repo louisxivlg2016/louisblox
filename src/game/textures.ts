@@ -1,7 +1,8 @@
-import { BoxGeometry, CanvasTexture, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
+import { BoxGeometry, CanvasTexture, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { BlockKind } from './voxel';
 import { EXTRA_BLOCK_META, isSapling } from './extraBlocks';
+import type { ExtraBlockKind } from './extraBlocks';
 
 function random(x: number, y: number, seed: number) {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
@@ -36,6 +37,7 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
     [BlockKind.Ice]: ['#287fc4', '#3599dc', '#4caceb', '#226db1', '#69c2f2'],
     [BlockKind.Tnt]: ['#b52e29', '#c93d32', '#a92522', '#dc4b3c', '#93201e'],
     [BlockKind.Candle]: ['#e6c877', '#f2d68a', '#d9b965', '#ffe6a0', '#cfa954'],
+    [BlockKind.Water]: ['#2c8bc4', '#3b9bd5', '#55b5e8', '#2578b0', '#6ac6ef'],
   };
 
   for (const [kind, meta] of Object.entries(EXTRA_BLOCK_META)) palettes[Number(kind) as BlockKind] = meta.palette;
@@ -65,11 +67,20 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   }
 
   if (kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick) {
-    context.fillStyle = 'rgba(45, 45, 45, 0.28)';
+    context.fillStyle = kind === BlockKind.WhiteBrick ? '#8f8f8f' : kind === BlockKind.BeigeBrick ? '#6f4f2c' : '#454545';
     for (const y of [4, 9, 14]) context.fillRect(0, y, 16, 1);
     for (let row = 0; row < 4; row += 1) {
       const offset = row % 2 === 0 ? 4 : 0;
       for (let x = offset; x < 16; x += 8) context.fillRect(x, row * 5, 1, 5);
+    }
+  }
+
+  if (kind === BlockKind.OakPlanks || kind === BlockKind.PinePlanks || kind === BlockKind.AutumnPlanks) {
+    context.fillStyle = 'rgba(63, 39, 22, 0.55)';
+    for (const y of [3, 7, 11, 15]) context.fillRect(0, y, 16, 1);
+    for (let row = 0; row < 4; row += 1) {
+      const offset = row % 2 === 0 ? 5 : 1;
+      context.fillRect(offset, row * 4, 1, 4);
     }
   }
 
@@ -133,14 +144,20 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
 }
 
 function material(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
+  if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) {
+    return new MeshLambertMaterial({ color: EXTRA_BLOCK_META[kind as ExtraBlockKind].color });
+  }
+  if (kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick) {
+    return new MeshBasicMaterial({ map: texture(kind, face) });
+  }
   const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves;
   const glass = kind === BlockKind.Glass;
   return new MeshLambertMaterial({
     map: texture(kind, face),
     alphaTest: foliage || isSapling(kind) ? 0.35 : glass ? 0.05 : 0,
-    transparent: glass,
-    opacity: glass ? 0.7 : 1,
-    depthWrite: !glass,
+    transparent: glass || kind === BlockKind.Water,
+    opacity: glass ? 0.7 : kind === BlockKind.Water ? 0.55 : 1,
+    depthWrite: !(glass || kind === BlockKind.Water),
   });
 }
 
@@ -180,6 +197,7 @@ const baseBlockMaterials = {
   [BlockKind.Ice]: repeated(material(BlockKind.Ice, 'side')),
   [BlockKind.Tnt]: repeated(material(BlockKind.Tnt, 'side')),
   [BlockKind.Candle]: repeated(material(BlockKind.Candle, 'side')),
+  [BlockKind.Water]: repeated(material(BlockKind.Water, 'side')),
 };
 
 export const blockMaterials = {

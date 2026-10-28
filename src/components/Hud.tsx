@@ -1,26 +1,34 @@
 import { requestPlay } from '../game/input';
 import { BIOME_NAMES } from '../game/levels';
+import type { Biome } from '../game/levels';
 import { MEAT_NAMES } from '../game/meats';
 import { useGameStore } from '../game/store';
-import { BLOCK_INFO, HOTBAR_BLOCKS } from '../game/voxel';
+import { teleportToBiome } from '../game/teleport';
+import { BLOCK_INFO } from '../game/voxel';
+import { world } from '../game/world';
 import { Backpack } from './Backpack';
 import { TouchControls } from './TouchControls';
 
 const WEATHER_NAMES = { clear: 'Ciel clair', rain: 'Pluie', snow: 'Neige' } as const;
+const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'prairie'];
 
 export function Hud() {
   const mode = useGameStore((state) => state.mode);
   const selected = useGameStore((state) => state.selected);
+  const hotbarSlots = useGameStore((state) => state.hotbarSlots);
   const blockCount = useGameStore((state) => state.blockCount);
   const apples = useGameStore((state) => state.apples);
   const meat = useGameStore((state) => state.meat);
   const miningProgress = useGameStore((state) => state.miningProgress);
   const flying = useGameStore((state) => state.flying);
+  const lives = useGameStore((state) => state.lives);
   const backpackOpen = useGameStore((state) => state.backpackOpen);
+  const teleportOpen = useGameStore((state) => state.teleportOpen);
   const coordinates = useGameStore((state) => state.coordinates);
   const environment = useGameStore((state) => state.environment);
   const selectBlock = useGameStore((state) => state.selectBlock);
   const setBackpack = useGameStore((state) => state.setBackpack);
+  const setTeleportOpen = useGameStore((state) => state.setTeleportOpen);
   const regenerate = useGameStore((state) => state.regenerate);
   const totalMinutes = Math.floor(environment.dayProgress * 24 * 60);
   const hours = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
@@ -34,9 +42,16 @@ export function Hud() {
     useGameStore.getState().setMode('pause');
     if (document.pointerLockElement) document.exitPointerLock();
   };
-  const selectedIndex = HOTBAR_BLOCKS.indexOf(selected as (typeof HOTBAR_BLOCKS)[number]);
-  const visibleBlocks = HOTBAR_BLOCKS.slice(0, 10).map((kind, index) => ({ kind, index }));
-  if (selectedIndex >= 10) visibleBlocks.push({ kind: selected as (typeof HOTBAR_BLOCKS)[number], index: selectedIndex });
+  const openTeleport = () => {
+    setTeleportOpen(true);
+    useGameStore.getState().setMode('pause');
+    if (document.pointerLockElement) document.exitPointerLock();
+  };
+  const travel = (biome: Biome) => {
+    teleportToBiome(world, biome);
+    setTeleportOpen(false);
+    void requestPlay();
+  };
 
   return (
     <div className="hud">
@@ -51,23 +66,34 @@ export function Hud() {
             <span className={`weather-info ${environment.weather}`}>{WEATHER_NAMES[environment.weather]}</span>
             <span className="weather-info apple-count">Pommes : {apples}</span>
             <span className="weather-info meat-count">Viandes : {meatSummary || 'aucune'}</span>
+            <span className="weather-info lives-count">Vies : {lives}/10</span>
             {flying && <span className="weather-info flight-status">Vol activé</span>}
           </div>
           <button className="backpack-toggle" onClick={openBackpack}>Sac à dos</button>
+          <button className="teleport-toggle" onClick={openTeleport}>Téléportation · T</button>
           <div className="controls-hint">
             <span><strong>WASD / FLÈCHES</strong> se déplacer</span>
             <span><strong>ESPACE</strong> sauter / monter en vol</span>
             <span><strong>2× ESPACE</strong> activer / quitter le vol</span>
             <span><strong>MAJ</strong> accélérer</span>
             <span><strong>C</strong> descendre en vol</span>
-            <span><strong>F5</strong> changer de caméra</span>
+            <span><strong>P / F5</strong> changer de caméra</span>
           </div>
           <div className="action-hint">Clic gauche <strong>casser / frapper</strong> · Clic droit <strong>poser</strong> · <strong>E</strong> poser / cueillir</div>
           <TouchControls />
         </>
       )}
 
-      {mode !== 'play' && !backpackOpen && (
+      {teleportOpen && (
+        <div className="teleport-panel">
+          <strong>Se téléporter</strong>
+          {DESTINATIONS.map((biome) => (
+            <button key={biome} onClick={() => travel(biome)}>{BIOME_NAMES[biome]}</button>
+          ))}
+        </div>
+      )}
+
+      {mode !== 'play' && !backpackOpen && !teleportOpen && (
         <div className="menu-backdrop">
           <section className="menu-panel">
             <div className="brand-mark" aria-hidden="true"><span>L</span></div>
@@ -94,9 +120,9 @@ export function Hud() {
         <div className="hotbar-wrap">
           <div className="selected-name">{BLOCK_INFO[selected].name}</div>
           <div className="hotbar">
-            {visibleBlocks.map(({ kind, index }) => (
+            {hotbarSlots.map((kind, index) => (
               <button
-                key={kind}
+                key={`${kind}-${index}`}
                 className={`hotbar-slot ${selected === kind ? 'selected' : ''}`}
                 onClick={() => selectBlock(kind)}
                 aria-label={`${index + 1} : ${BLOCK_INFO[kind].name}`}
