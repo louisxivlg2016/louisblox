@@ -18,8 +18,15 @@ let touchLookPointer: number | null = null;
 let touchLookX = 0;
 let touchLookY = 0;
 let miningLatched = false;
+let edgeResetTimer: ReturnType<typeof setTimeout> | null = null;
 
 const hasMouseControl = () => document.pointerLockElement !== null || pointerLockFallback;
+
+function resetEdgeLook() {
+  edgeLook.x = 0;
+  edgeLook.y = 0;
+  edgeResetTimer = null;
+}
 
 export function clearInput() {
   keys.clear();
@@ -27,6 +34,8 @@ export function clearInput() {
   mouseButtons.clear();
   touchMouseButtons.clear();
   miningLatched = false;
+  if (edgeResetTimer) clearTimeout(edgeResetTimer);
+  resetEdgeLook();
   look.x = 0;
   look.y = 0;
   edgeLook.x = 0;
@@ -90,6 +99,8 @@ export function initInput() {
       const margin = 36;
       edgeLook.x = event.clientX <= margin ? -1 : event.clientX >= window.innerWidth - margin ? 1 : 0;
       edgeLook.y = event.clientY <= margin ? -1 : event.clientY >= window.innerHeight - margin ? 1 : 0;
+      if (edgeResetTimer) clearTimeout(edgeResetTimer);
+      edgeResetTimer = setTimeout(resetEdgeLook, 120);
     }
     if (!hasMouseControl()) return;
     look.x += event.movementX;
@@ -139,7 +150,11 @@ export function initInput() {
     if (event.button === 0) miningLatched = !miningLatched;
     if (event.button === 2) actions.place += 1;
   });
-  window.addEventListener('mouseup', (event) => mouseButtons.delete(event.button));
+  window.addEventListener('mouseup', (event) => {
+    mouseButtons.delete(event.button);
+    if (edgeResetTimer) clearTimeout(edgeResetTimer);
+    resetEdgeLook();
+  });
 
   window.addEventListener('contextmenu', (event) => event.preventDefault());
   window.addEventListener('wheel', (event) => {

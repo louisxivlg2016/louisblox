@@ -35,6 +35,8 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       playerSystem(world, dt, physicsWorld, controller, spawn);
       cameraSystem(world, camera);
       const animalTarget = animalCombatSystem(world, camera, delta);
+      animalSystem(world, dt);
+      meatDropSystem(world, dt);
       blockSystem(world, camera, delta, animalTarget);
     } else {
       cameraSystem(world, camera);
@@ -50,8 +52,6 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
     const player = world.queryFirst(Player)?.get(PlayerPosition);
     if (player) streamChunks(world, player.x, player.z);
     environmentSystem(world, delta, camera);
-    animalSystem(world, dt);
-    meatDropSystem(world, dt);
     saveSystem(world, delta);
   });
 

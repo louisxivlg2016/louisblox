@@ -28,19 +28,25 @@ export function animalSystem(world: World, dt: number) {
       }
     }
 
-    motion.turnIn -= dt;
+    motion.idle = Math.max(0, motion.idle - dt);
+    motion.turnIn -= motion.idle > 0 ? 0 : dt;
     motion.phase += dt * 3;
     if (hit.panic > 0) {
+      motion.idle = 0;
       motion.turnIn = Math.min(motion.turnIn, 0.3);
       motion.yaw += Math.sin(entity * 3.17 + motion.phase * 2) * dt * 2;
     }
     if (motion.turnIn <= 0) {
       motion.yaw += Math.sin(entity * 17.31 + motion.phase) * 1.8;
       motion.turnIn = hit.panic > 0 ? 0.3 : 2 + (Math.sin(entity * 7.13) + 1) * 1.5;
+      if (hit.panic === 0 && Math.sin(entity * 5.73 + motion.phase) > 0.25) {
+        motion.idle = 1 + (Math.sin(entity * 9.37 + motion.phase) + 1) * 1.25;
+      }
     }
 
-    const normalSpeed = animal.kind === 'duck' ? motion.speed * 0.35 : motion.speed;
-    const speed = hit.panic > 0 ? Math.min(animal.kind === 'duck' ? 0.65 : 1.4, normalSpeed * 1.8) : normalSpeed;
+    const baseSpeed = animal.kind === 'duck' ? motion.speed * 0.35 : motion.speed;
+    const normalSpeed = motion.idle > 0 ? 0 : baseSpeed;
+    const speed = hit.panic > 0 ? Math.min(animal.kind === 'duck' ? 0.65 : 1.4, baseSpeed * 1.8) : normalSpeed;
     let x = position.x + Math.sin(motion.yaw) * speed * dt;
     let z = position.z + Math.cos(motion.yaw) * speed * dt;
     const ground = heightAt(Math.round(x), Math.round(z), seed);
