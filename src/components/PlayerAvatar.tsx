@@ -67,7 +67,7 @@ export function PlayerAvatar() {
       )}
       <group position={[0.52, 0.92, -0.24]} scale={typeof selected === 'string' && getItemMeta(selected).category === 'vehicle' ? 0.2 : 0.72}>
         {typeof selected === 'number'
-          ? selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : selected === BlockKind.Campfire ? <CampfireModel /> : isUtilityBlock(selected) ? <UtilityBlockModel kind={selected} /> : <mesh args={[blockGeometry, blockMaterials[selected]]} />
+          ? selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : selected === BlockKind.Campfire || selected === BlockKind.Wildfire ? <CampfireModel destructive={selected === BlockKind.Wildfire} /> : isUtilityBlock(selected) ? <UtilityBlockModel kind={selected} /> : <mesh args={[blockGeometry, blockMaterials[selected]]} />
           : <ItemModel kind={selected} />}
       </group>
     </group>

@@ -31,6 +31,8 @@ export const ChunkData = trait(() => ({
 
 export const Bomb = trait({ fuse: 3 });
 export const BombPosition = trait(() => new Vector3());
+export const Fire = trait({ kind: 105 as 105 | 106, age: 0, spreadIn: 2, generation: 0 });
+export const FirePosition = trait(() => new Vector3());
 export const Sapling = trait({ kind: 0 as import('./voxel').BlockKind, age: 0 });
 export const SaplingPosition = trait(() => new Vector3());
 export const Explosion = trait({ time: 0.45, maxTime: 0.45 });

@@ -64,9 +64,9 @@ export function Hands() {
         </mesh>
       ))}
       {typeof selected === 'number' ? (
-        selected === BlockKind.Tnt || selected === BlockKind.Candle || selected === BlockKind.Campfire ? (
+        selected === BlockKind.Tnt || selected === BlockKind.Candle || selected === BlockKind.Campfire || selected === BlockKind.Wildfire ? (
           <group position={[0.34, -0.42, -0.86]} rotation={[0.08, 0.15, 0]} scale={0.48}>
-            {selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : <CampfireModel />}
+            {selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : <CampfireModel destructive={selected === BlockKind.Wildfire} />}
           </group>
         ) : isUtilityBlock(selected) ? (
           <group position={[0.36, -0.4, -0.78]} scale={0.48}><UtilityBlockModel kind={selected} /></group>

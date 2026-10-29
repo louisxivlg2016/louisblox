@@ -5,6 +5,8 @@ import { PixelPart } from './ItemModel';
 
 const flameOrange = new MeshBasicMaterial({ color: '#ff9b28' });
 const flameYellow = new MeshBasicMaterial({ color: '#ffe890' });
+const wildfireOrange = new MeshBasicMaterial({ color: '#ef4925' });
+const wildfireYellow = new MeshBasicMaterial({ color: '#ffb12b' });
 
 export function BombModel() {
   return (
@@ -55,15 +57,17 @@ export function CandleModel() {
   );
 }
 
-export function CampfireModel() {
+export function CampfireModel({ destructive = false, withLight = true }: { destructive?: boolean; withLight?: boolean }) {
+  const outerFlame = destructive ? wildfireOrange : flameOrange;
+  const innerFlame = destructive ? wildfireYellow : flameYellow;
   return (
     <group>
-      <PixelPart position={[0, 0.1, 0]} size={[0.7, 0.14, 0.18]} color="#69432a" rotation={[0, Math.PI / 4, 0]} />
-      <PixelPart position={[0, 0.1, 0]} size={[0.7, 0.14, 0.18]} color="#805333" rotation={[0, -Math.PI / 4, 0]} />
-      <mesh position={[0, 0.35, 0]} material={flameOrange}><boxGeometry args={[0.26, 0.38, 0.26]} /></mesh>
-      <mesh position={[0, 0.42, -0.02]} material={flameYellow}><boxGeometry args={[0.13, 0.3, 0.13]} /></mesh>
-      <mesh position={[0, 0.62, 0]} material={flameOrange}><boxGeometry args={[0.12, 0.16, 0.12]} /></mesh>
-      <pointLight position={[0, 0.65, 0]} color="#ff9b45" intensity={1.8} distance={9} decay={2} />
+      <PixelPart position={[0, 0.1, 0]} size={[0.7, 0.14, 0.18]} color={destructive ? '#30231f' : '#69432a'} rotation={[0, Math.PI / 4, 0]} />
+      <PixelPart position={[0, 0.1, 0]} size={[0.7, 0.14, 0.18]} color={destructive ? '#453025' : '#805333'} rotation={[0, -Math.PI / 4, 0]} />
+      <mesh position={[0, 0.35, 0]} material={outerFlame}><boxGeometry args={[0.26, 0.38, 0.26]} /></mesh>
+      <mesh position={[0, 0.42, -0.02]} material={innerFlame}><boxGeometry args={[0.13, 0.3, 0.13]} /></mesh>
+      <mesh position={[0, 0.62, 0]} material={outerFlame}><boxGeometry args={[0.12, 0.16, 0.12]} /></mesh>
+      {withLight && <pointLight position={[0, 0.65, 0]} color={destructive ? '#ff632e' : '#ff9b45'} intensity={destructive ? 2.6 : 1.8} distance={destructive ? 13 : 9} decay={2} />}
     </group>
   );
 }

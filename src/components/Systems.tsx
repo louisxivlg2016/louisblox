@@ -19,6 +19,7 @@ import { projectileSystem } from '../game/systems/projectileSystem';
 import { saveSystem } from '../game/systems/saveSystem';
 import { saplingSystem } from '../game/systems/saplingSystem';
 import { waterSystem } from '../game/systems/waterSystem';
+import { fireSystem } from '../game/systems/fireSystem';
 import { sleepSystem } from '../game/systems/sleepSystem';
 import { vehicleInteractionSystem, vehicleMovementSystem } from '../game/vehicles';
 import { BlockTarget, Player, PlayerPosition, Sleep, TargetMesh } from '../game/traits';
@@ -53,6 +54,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       projectileSystem(world, dt);
       explosionSystem(world, dt);
       saplingSystem(world, dt);
+      fireSystem(world, dt);
       waterSystem(world, dt);
       sleepSystem(world, dt);
       const remainingActions = sleeping || vehicleHandled || itemHandled ? { place: 0, harvest: 0 } : actions;

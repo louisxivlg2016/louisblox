@@ -93,7 +93,7 @@ function groupFor(kind: BlockKind) {
 }
 
 function usesSeparateModel(kind: BlockKind) {
-  return kind === BlockKind.Tnt || kind === BlockKind.Candle || kind === BlockKind.Campfire || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind);
+  return kind === BlockKind.Tnt || kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind);
 }
 
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {

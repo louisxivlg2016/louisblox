@@ -5,7 +5,8 @@ import type { LevelData } from './levels';
 import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
-import { isChest, isCrop, isDoor, isLadder, isSapling, isTrapdoor } from './extraBlocks';
+import { isChest, isCrop, isDoor, isFireBlock, isLadder, isSapling, isTrapdoor } from './extraBlocks';
+import { clearFires, extinguishFireAt, extinguishFiresInChunk, spawnFire } from './fireLifecycle';
 import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
 import type { ArmorKind, SelectedKind } from './items';
 import {
@@ -185,6 +186,7 @@ function loadChunk(world: World, cx: number, cz: number) {
   for (const block of data.blocks) {
     if (block.kind === BlockKind.Tnt) data.bombs.push(spawnBomb(world, block.x, block.y, block.z));
     if (isSapling(block.kind) || (isCrop(block.kind) && (block.growth ?? 3) < 3)) data.saplings.push(spawnSapling(world, block.kind, block.x, block.y, block.z));
+    if (isFireBlock(block.kind)) spawnFire(world, block);
   }
 
   touchNeighbors(state, cx, cz);
@@ -209,6 +211,7 @@ function unloadChunk(world: World, entity: Entity) {
   }
   for (const bomb of data.bombs) bomb.destroy();
   for (const sapling of data.saplings) sapling.destroy();
+  extinguishFiresInChunk(world, chunk.x, chunk.z);
   data.animals = [];
   data.bombs = [];
   data.saplings = [];
@@ -268,6 +271,7 @@ export function removeVoxel(world: World, hit: VoxelHit) {
   const position = voxelKey(hit.x, hit.y, hit.z);
   data.blocks = data.blocks.filter((block) => voxelKey(block.x, block.y, block.z) !== position);
   state.blocks.delete(position);
+  if (isFireBlock(hit.block.kind)) extinguishFireAt(world, hit.x, hit.y, hit.z);
   editsFor(state, cx, cz).set(position, null);
   recordVoxelEdit(state, cx, cz, hit.x, hit.z);
 }
@@ -287,6 +291,7 @@ export function explodeVoxels(world: World, x: number, y: number, z: number, rad
         if (distance <= radius && block.kind !== BlockKind.Bedrock) {
           const position = voxelKey(block.x, block.y, block.z);
           state.blocks.delete(position);
+          if (isFireBlock(block.kind)) extinguishFireAt(world, block.x, block.y, block.z);
           editsFor(state, chunk.x, chunk.z).set(position, null);
           recordVoxelEdit(state, chunk.x, chunk.z, block.x, block.z);
           destroyed += 1;
@@ -351,6 +356,7 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
   if (!block) return;
+  const wasFire = isFireBlock(block.kind);
   block.kind = kind;
   if (open !== undefined) block.open = open;
   if (isCrop(kind)) block.growth = growth ?? block.growth ?? 3;
@@ -369,9 +375,13 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
         : isLadder(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
   editsFor(state, cx, cz).set(voxelKey(hit.x, hit.y, hit.z), edit);
   recordVoxelEdit(state, cx, cz, hit.x, hit.z);
+  if (wasFire || isFireBlock(kind)) {
+    extinguishFireAt(world, hit.x, hit.y, hit.z);
+    if (isFireBlock(kind)) spawnFire(world, block);
+  }
 }
 
-export function addVoxel(world: World, x: number, y: number, z: number, kind: BlockKind, growth?: number, facing?: Voxel['facing']) {
+export function addVoxel(world: World, x: number, y: number, z: number, kind: BlockKind, growth?: number, facing?: Voxel['facing'], fireGeneration = 0) {
   const state = stateFor(world);
   const cx = chunkCoordinate(x);
   const cz = chunkCoordinate(z);
@@ -396,9 +406,12 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
       : isLadder(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
   editsFor(state, cx, cz).set(position, edit);
   recordVoxelEdit(state, cx, cz, x, z);
+  if (isFireBlock(kind)) spawnFire(world, block, fireGeneration);
+  return block;
 }
 
 export function loadLevel(world: World, generation = 0, saved: WorldSave | null = null): LevelData {
+  clearFires(world);
   for (const entity of [...world.query(Chunk)]) entity.destroy();
   for (const entity of [...world.query(Animal)]) entity.destroy();
   for (const entity of [...world.query(MeatDrop)]) entity.destroy();

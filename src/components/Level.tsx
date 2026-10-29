@@ -78,7 +78,6 @@ function ChunkView({ entity }: { entity: Entity }) {
   const blockIndex = getBlockIndex(world);
   const tntBlocks: Voxel[] = [];
   const candleBlocks: Voxel[] = [];
-  const fireBlocks: Voxel[] = [];
   const doorBlocks: Voxel[] = [];
   const cropBlocks: Voxel[] = [];
   const utilityBlocks: Voxel[] = [];
@@ -103,10 +102,7 @@ function ChunkView({ entity }: { entity: Entity }) {
         candleBlocks.push(block);
         continue;
       }
-      if (block.kind === BlockKind.Campfire) {
-        fireBlocks.push(block);
-        continue;
-      }
+      if (block.kind === BlockKind.Campfire || block.kind === BlockKind.Wildfire) continue;
       if (isCrop(block.kind)) {
         cropBlocks.push(block);
         continue;
@@ -140,7 +136,6 @@ function ChunkView({ entity }: { entity: Entity }) {
       <UtilityBlocks blocks={utilityBlocks} />
       <SpecialBlocks kind={BlockKind.Tnt} blocks={tntBlocks} />
       <SpecialBlocks kind={BlockKind.Candle} blocks={candleBlocks} />
-      <SpecialBlocks kind={BlockKind.Campfire} blocks={fireBlocks} />
       <DoorInstances blocks={doorBlocks} />
     </group>
   );

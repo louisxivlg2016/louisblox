@@ -18,6 +18,7 @@ import { Systems } from './Systems';
 import { TargetHighlight } from './TargetHighlight';
 import { Vehicles } from './Vehicles';
 import { Weather } from './Weather';
+import { Fires } from './Fires';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -100,6 +101,7 @@ export function Game() {
       <Weather key={`weather-${generation}`} />
       <Animals key={`animals-${generation}`} />
       <Vehicles key={`vehicles-${generation}`} />
+      <Fires key={`fires-${generation}`} />
       <Projectiles key={`projectiles-${generation}`} />
       <MeatDrops key={`meat-${generation}`} />
       <Explosions key={`explosions-${generation}`} />
