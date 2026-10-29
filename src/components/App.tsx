@@ -14,6 +14,15 @@ export function App() {
         dpr={1}
         camera={{ fov: 72, near: 0.05, far: 130, position: [0, 10, 0] }}
         gl={{ antialias: false, powerPreference: 'high-performance' }}
+        onCreated={({ gl }) => {
+          if (import.meta.env?.DEV) Object.assign(window, {
+            louisbloxRenderer: gl,
+            louisbloxDebug: async () => {
+              const [traits, chunks] = await Promise.all([import('../game/traits'), import('../game/chunks')]);
+              return { world, gl, ...traits, ...chunks };
+            },
+          });
+        }}
       >
         <WorldProvider world={world}>
           <Game />

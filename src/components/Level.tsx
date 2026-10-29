@@ -1,10 +1,11 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useQuery, useTrait, useWorld } from 'koota/react';
 import type { Entity } from 'koota';
 import { InstancedMesh, Matrix4 } from 'three';
 import { getBlockIndex } from '../game/chunks';
-import { Chunk, ChunkData } from '../game/traits';
+import { buildChunkGeometry } from '../game/chunkGeometry';
 import { blockGeometry, blockMaterials } from '../game/textures';
+import { Chunk, ChunkData } from '../game/traits';
 import { SpecialBlocks } from './SpecialBlocks';
 import { DoorInstances } from './DoorInstances';
 import { CropInstances } from './CropInstances';
@@ -22,30 +23,6 @@ const neighborOffsets = [
   [0, 0, 1],
   [0, 0, -1],
 ] as const;
-
-function BlockInstances({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }) {
-  const ref = useRef<InstancedMesh>(null);
-
-  useLayoutEffect(() => {
-    if (!ref.current) return;
-    blocks.forEach((block, index) => {
-      if (kind === BlockKind.Apple) {
-        matrix.makeScale(0.35, 0.35, 0.35);
-        matrix.setPosition(block.x, block.y - 0.28, block.z);
-      } else if (isSapling(kind)) {
-        matrix.makeScale(0.35, 0.6, 0.35);
-        matrix.setPosition(block.x, block.y - 0.2, block.z);
-      } else {
-        matrix.makeTranslation(block.x, block.y, block.z);
-      }
-      ref.current!.setMatrixAt(index, matrix);
-    });
-    ref.current.instanceMatrix.needsUpdate = true;
-    ref.current.computeBoundingSphere();
-  }, [blocks]);
-
-  return <instancedMesh ref={ref} args={[blockGeometry, blockMaterials[kind], blocks.length]} receiveShadow />;
-}
 
 function SaplingInstances({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }) {
   const trunk = useRef<InstancedMesh>(null);
@@ -98,15 +75,17 @@ function ChunkView({ entity }: { entity: Entity }) {
   const world = useWorld();
   const chunk = useTrait(entity, Chunk);
   const data = entity.get(ChunkData);
-  const groups = new Map<BlockKind, Voxel[]>();
   const blockIndex = getBlockIndex(world);
-  const blocks: Voxel[] = [];
   const tntBlocks: Voxel[] = [];
   const candleBlocks: Voxel[] = [];
   const doorBlocks: Voxel[] = [];
   const cropBlocks: Voxel[] = [];
   const utilityBlocks: Voxel[] = [];
   const saplingGroups = new Map<BlockKind, Voxel[]>();
+  const geometries = useMemo(() => data ? buildChunkGeometry(data.blocks, blockIndex) : [], [data, blockIndex, chunk?.revision]);
+  useEffect(() => () => {
+    for (const { geometry } of geometries) geometry.dispose();
+  }, [geometries]);
 
   if (chunk && data) {
     for (const block of data.blocks) {
@@ -115,7 +94,6 @@ function ChunkView({ entity }: { entity: Entity }) {
         return !neighbor || neighbor.kind === BlockKind.Water || neighbor.kind === BlockKind.Glass;
       });
       if (!exposed) continue;
-      blocks.push(block);
       if (block.kind === BlockKind.Tnt) {
         tntBlocks.push(block);
         continue;
@@ -140,15 +118,6 @@ function ChunkView({ entity }: { entity: Entity }) {
         const group = saplingGroups.get(block.kind) ?? [];
         group.push(block);
         saplingGroups.set(block.kind, group);
-        continue;
-      }
-      const group = groups.get(block.kind) ?? [];
-      group.push(block);
-      groups.set(block.kind, group);
-      if (block.kind === BlockKind.Apple) {
-        const leaves = groups.get(BlockKind.Leaves) ?? [];
-        leaves.push(block);
-        groups.set(BlockKind.Leaves, leaves);
       }
     }
   }
@@ -156,8 +125,8 @@ function ChunkView({ entity }: { entity: Entity }) {
   if (!chunk || !data) return null;
   return (
     <group>
-      {[...groups.entries()].map(([kind, values]) => (
-        <BlockInstances key={kind} kind={kind} blocks={values} />
+      {geometries.map(({ geometry, material }, index) => (
+        <mesh key={index} geometry={geometry} material={material} dispose={null} />
       ))}
       {[...saplingGroups.entries()].map(([kind, values]) => (
         <SaplingInstances key={kind} kind={kind} blocks={values} />

@@ -9,7 +9,7 @@ function random(x: number, y: number, seed: number) {
   return value - Math.floor(value);
 }
 
-function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
+export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   const canvas = document.createElement('canvas');
   canvas.width = 16;
   canvas.height = 16;

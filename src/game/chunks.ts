@@ -46,6 +46,10 @@ type WorldChunks = {
   blocks: Map<string, Voxel>;
   edits: Map<string, Map<string, ChunkEdit>>;
   saddledHorses: SavedHorse[];
+  streamCenter: string | null;
+  streamOrder: Array<{ x: number; z: number }>;
+  batchDepth: number;
+  pendingRevisions: Set<Entity>;
 };
 
 const worlds = new WeakMap<World, WorldChunks>();
@@ -96,6 +100,33 @@ function touchNeighbors(state: WorldChunks, cx: number, cz: number) {
   touchChunk(state.chunks.get(chunkKey(cx - 1, cz)));
   touchChunk(state.chunks.get(chunkKey(cx, cz + 1)));
   touchChunk(state.chunks.get(chunkKey(cx, cz - 1)));
+}
+
+function touchVoxel(state: WorldChunks, cx: number, cz: number, x: number, z: number, touched = new Set<Entity>()) {
+  touched.add(state.chunks.get(chunkKey(cx, cz))!);
+  if (x === cx * CHUNK_SIZE) touched.add(state.chunks.get(chunkKey(cx - 1, cz))!);
+  if (x === cx * CHUNK_SIZE + CHUNK_SIZE - 1) touched.add(state.chunks.get(chunkKey(cx + 1, cz))!);
+  if (z === cz * CHUNK_SIZE) touched.add(state.chunks.get(chunkKey(cx, cz - 1))!);
+  if (z === cz * CHUNK_SIZE + CHUNK_SIZE - 1) touched.add(state.chunks.get(chunkKey(cx, cz + 1))!);
+  return touched;
+}
+
+function recordVoxelEdit(state: WorldChunks, cx: number, cz: number, x: number, z: number) {
+  if (state.batchDepth > 0) touchVoxel(state, cx, cz, x, z, state.pendingRevisions);
+  else for (const entity of touchVoxel(state, cx, cz, x, z)) touchChunk(entity);
+}
+
+export function batchVoxelEdits(world: World, edit: () => void) {
+  const state = stateFor(world);
+  state.batchDepth += 1;
+  try {
+    edit();
+  } finally {
+    state.batchDepth -= 1;
+    if (state.batchDepth > 0) return;
+    for (const entity of state.pendingRevisions) touchChunk(entity);
+    state.pendingRevisions.clear();
+  }
 }
 
 function editsFor(state: WorldChunks, cx: number, cz: number) {
@@ -190,25 +221,28 @@ export function streamChunks(world: World, x: number, z: number) {
   const state = stateFor(world);
   const centerX = chunkCoordinate(x);
   const centerZ = chunkCoordinate(z);
-  const desired = new Map<string, { x: number; z: number }>();
+  const center = chunkKey(centerX, centerZ);
+  const chunkCount = (VIEW_DISTANCE * 2 + 1) ** 2;
+  if (state.streamCenter === center && state.chunks.size === chunkCount) return;
 
-  for (let dx = -VIEW_DISTANCE; dx <= VIEW_DISTANCE; dx += 1) {
-    for (let dz = -VIEW_DISTANCE; dz <= VIEW_DISTANCE; dz += 1) {
-      const cx = centerX + dx;
-      const cz = centerZ + dz;
-      desired.set(chunkKey(cx, cz), { x: cx, z: cz });
+  if (state.streamCenter !== center) {
+    state.streamCenter = center;
+    state.streamOrder = [];
+    for (let dx = -VIEW_DISTANCE; dx <= VIEW_DISTANCE; dx += 1) {
+      for (let dz = -VIEW_DISTANCE; dz <= VIEW_DISTANCE; dz += 1) {
+        state.streamOrder.push({ x: centerX + dx, z: centerZ + dz });
+      }
+    }
+    state.streamOrder.sort((a, b) =>
+      (a.x - centerX) ** 2 + (a.z - centerZ) ** 2 - (b.x - centerX) ** 2 - (b.z - centerZ) ** 2,
+    );
+    for (const entity of [...world.query(Chunk)]) {
+      const chunk = entity.get(Chunk)!;
+      if (Math.abs(chunk.x - centerX) > VIEW_DISTANCE || Math.abs(chunk.z - centerZ) > VIEW_DISTANCE) unloadChunk(world, entity);
     }
   }
 
-  for (const entity of [...world.query(Chunk)]) {
-    const chunk = entity.get(Chunk)!;
-    if (!desired.has(chunkKey(chunk.x, chunk.z))) unloadChunk(world, entity);
-  }
-
-  const ordered = [...desired.values()].sort((a, b) =>
-    Math.hypot(a.x - centerX, a.z - centerZ) - Math.hypot(b.x - centerX, b.z - centerZ),
-  );
-  for (const chunk of ordered) {
+  for (const chunk of state.streamOrder) {
     if (state.chunks.has(chunkKey(chunk.x, chunk.z))) continue;
     loadChunk(world, chunk.x, chunk.z);
     break;
@@ -235,47 +269,39 @@ export function removeVoxel(world: World, hit: VoxelHit) {
   data.blocks = data.blocks.filter((block) => voxelKey(block.x, block.y, block.z) !== position);
   state.blocks.delete(position);
   editsFor(state, cx, cz).set(position, null);
-  touchChunk(chunkEntity);
-  touchNeighbors(state, cx, cz);
+  recordVoxelEdit(state, cx, cz, hit.x, hit.z);
 }
 
 export function explodeVoxels(world: World, x: number, y: number, z: number, radius: number) {
-  const state = stateFor(world);
-  const touched = new Set<Entity>();
   let destroyed = 0;
-
-  for (const entity of world.query(Chunk, ChunkData)) {
-    const chunk = entity.get(Chunk)!;
-    const data = entity.get(ChunkData)!;
-    const remaining = [];
-    let changed = false;
-    for (const block of data.blocks) {
-      const distance = Math.hypot(block.x - x, block.y - y, block.z - z);
-      if (distance <= radius && block.kind !== BlockKind.Bedrock) {
-        const position = voxelKey(block.x, block.y, block.z);
-        state.blocks.delete(position);
-        editsFor(state, chunk.x, chunk.z).set(position, null);
-        destroyed += 1;
-        changed = true;
-      } else {
-        remaining.push(block);
+  batchVoxelEdits(world, () => {
+    const state = stateFor(world);
+    for (const entity of world.query(Chunk, ChunkData)) {
+      const chunk = entity.get(Chunk)!;
+      const data = entity.get(ChunkData)!;
+      if (Math.abs(chunk.x * CHUNK_SIZE + CHUNK_SIZE / 2 - x) > radius + CHUNK_SIZE || Math.abs(chunk.z * CHUNK_SIZE + CHUNK_SIZE / 2 - z) > radius + CHUNK_SIZE) continue;
+      const remaining = [];
+      let changed = false;
+      for (const block of data.blocks) {
+        const distance = Math.hypot(block.x - x, block.y - y, block.z - z);
+        if (distance <= radius && block.kind !== BlockKind.Bedrock) {
+          const position = voxelKey(block.x, block.y, block.z);
+          state.blocks.delete(position);
+          editsFor(state, chunk.x, chunk.z).set(position, null);
+          recordVoxelEdit(state, chunk.x, chunk.z, block.x, block.z);
+          destroyed += 1;
+          changed = true;
+        } else {
+          remaining.push(block);
+        }
       }
+      if (changed) data.blocks = remaining;
     }
-    if (changed) {
-      data.blocks = remaining;
-      touched.add(entity);
-    }
-  }
-
-  for (const entity of touched) {
-    const chunk = entity.get(Chunk)!;
-    touchChunk(entity);
-    touchNeighbors(state, chunk.x, chunk.z);
-  }
+  });
   return destroyed;
 }
 
-export function growSapling(world: World, kind: BlockKind, x: number, y: number, z: number) {
+function growTree(world: World, kind: BlockKind, x: number, y: number, z: number) {
   const block = getBlockIndex(world).get(voxelKey(x, y, z));
   if (!block) return;
   replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, BlockKind.Wood);
@@ -317,6 +343,10 @@ export function growSapling(world: World, kind: BlockKind, x: number, y: number,
   }
 }
 
+export function growSapling(world: World, kind: BlockKind, x: number, y: number, z: number) {
+  batchVoxelEdits(world, () => growTree(world, kind, x, y, z));
+}
+
 export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?: boolean, growth?: number, items?: SelectedKind[]) {
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
@@ -338,8 +368,7 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
       : isChest(kind) ? { kind, items: block.items ?? [] }
         : isLadder(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
   editsFor(state, cx, cz).set(voxelKey(hit.x, hit.y, hit.z), edit);
-  touchChunk(chunkEntity);
-  touchNeighbors(state, cx, cz);
+  recordVoxelEdit(state, cx, cz, hit.x, hit.z);
 }
 
 export function addVoxel(world: World, x: number, y: number, z: number, kind: BlockKind, growth?: number, facing?: Voxel['facing']) {
@@ -366,8 +395,7 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
     : isChest(kind) ? { kind, items: [] }
       : isLadder(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
   editsFor(state, cx, cz).set(position, edit);
-  touchChunk(chunkEntity);
-  touchNeighbors(state, cx, cz);
+  recordVoxelEdit(state, cx, cz, x, z);
 }
 
 export function loadLevel(world: World, generation = 0, saved: WorldSave | null = null): LevelData {
@@ -387,7 +415,17 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3) && saved.generation === generation ? saved : null;
   const seed = restore?.seed ?? 73421 + generation * 977;
   const edits: WorldChunks['edits'] = restore ? new Map(restore.edits.map(([chunk, values]) => [chunk, new Map(values)])) : new Map();
-  worlds.set(world, { seed, chunks: new Map(), blocks: new Map(), edits, saddledHorses: restore?.saddledHorses ?? [] });
+  worlds.set(world, {
+    seed,
+    chunks: new Map(),
+    blocks: new Map(),
+    edits,
+    saddledHorses: restore?.saddledHorses ?? [],
+    streamCenter: null,
+    streamOrder: [],
+    batchDepth: 0,
+    pendingRevisions: new Set(),
+  });
   const restorePosition = restore?.version === 2 || restore?.version === 3;
   const spawn = restore && restorePosition
     ? { x: restore.player.x, y: restore.player.y, z: restore.player.z }
