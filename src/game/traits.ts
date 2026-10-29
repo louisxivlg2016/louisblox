@@ -44,7 +44,7 @@ export const Animal = trait({ kind: '' as import('./animals').AnimalKind });
 export const AnimalHealth = trait({ value: 3 });
 export const AnimalHit = trait({ time: 0, panic: 0, flashed: false, attackIn: 0 });
 export const AnimalPosition = trait(() => new Vector3());
-export const AnimalMotion = trait({ yaw: 0, displayYaw: 0, turnIn: 0, phase: 0, speed: 0.5, idle: 0, velocityY: 0, grounded: true });
+export const AnimalMotion = trait({ yaw: 0, displayYaw: 0, turnIn: 0, phase: 0, speed: 0.5, idle: 0, velocityY: 0, grounded: true, avoid: 0 });
 export const AnimalMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 
 export const MeatDrop = trait({ kind: '' as import('./animals').AnimalKind });

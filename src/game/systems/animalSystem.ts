@@ -19,6 +19,7 @@ type Motion = {
   idle: number;
   velocityY: number;
   grounded: boolean;
+  avoid: number;
 };
 
 function tint(mesh: import('three').Object3D, color: string) {
@@ -51,10 +52,32 @@ function bodyClear(world: World, x: number, z: number, feetY: number) {
   return true;
 }
 
+function canAdvance(world: World, kind: AnimalKind, position: Vector3, yaw: number) {
+  const x = position.x + Math.sin(yaw) * 0.8;
+  const z = position.z + Math.cos(yaw) * 0.8;
+  if (!isLoaded(world, x, z)) return false;
+  if (kind === 'duck') {
+    const ground = groundAt(world, x, z, MAX_BUILD_Y);
+    return ground < SEA_LEVEL + 0.5 && blockAt(world, x, SEA_LEVEL, z)?.kind === BlockKind.Water;
+  }
+  const ground = groundAt(world, x, z, position.y + 1.05);
+  return ground >= SEA_LEVEL + 0.5 && ground <= position.y + 1.05 && bodyClear(world, x, z, ground);
+}
+
+function avoidWall(world: World, kind: AnimalKind, position: Vector3, motion: Motion, entity: Entity) {
+  const direction = entity % 2 === 0 ? 1 : -1;
+  const candidates = [motion.yaw + direction * Math.PI / 2, motion.yaw - direction * Math.PI / 2, motion.yaw + Math.PI, motion.yaw];
+  const open = candidates.find((yaw) => canAdvance(world, kind, position, yaw));
+  if (open !== undefined) motion.yaw = open;
+  motion.avoid = 0.55;
+  motion.turnIn = Math.max(motion.turnIn, 1.2);
+}
+
 export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0) {
+  motion.avoid = Math.max(0, (motion.avoid ?? 0) - dt);
   const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : motion.speed;
-  const normalSpeed = motion.idle > 0 ? 0 : baseSpeed;
-  const speed = panic > 0 ? Math.min(kind === 'duck' ? 0.65 : 1.4, baseSpeed * 1.8) : normalSpeed;
+  const normalSpeed = motion.idle > 0 || motion.avoid > 0 ? 0 : baseSpeed;
+  const speed = motion.avoid > 0 ? 0 : panic > 0 ? Math.min(kind === 'duck' ? 0.65 : 1.4, baseSpeed * 1.8) : normalSpeed;
   const x = position.x + Math.sin(motion.yaw) * speed * dt;
   const z = position.z + Math.cos(motion.yaw) * speed * dt;
   let blocked = false;
@@ -103,14 +126,17 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
     }
   }
 
-  if (blocked) {
-    motion.yaw += dt * (entity % 2 === 0 ? 1 : -1) * 1.5;
-    motion.turnIn = Math.max(motion.turnIn, 1.5);
-  }
+  if (blocked) avoidWall(world, kind, position, motion, entity);
   return true;
 }
 
+const clocks = new WeakMap<World, number>();
+
 export function animalSystem(world: World, dt: number) {
+  const elapsed = (clocks.get(world) ?? 0) + dt;
+  if (elapsed < 1 / 30) return;
+  clocks.set(world, 0);
+  dt = elapsed;
   const playerEntity = world.queryFirst(Player);
   const player = playerEntity?.get(PlayerPosition);
   const health = playerEntity?.get(PlayerHealth);
