@@ -65,33 +65,46 @@ export function Backpack() {
           <h2>Sac à dos</h2>
           <button className="secondary-button" onClick={close}>Fermer et reprendre</button>
         </div>
-        <p className="backpack-label">Choisis un objet puis une case, ou fais-le glisser. La souris revient à la fermeture.</p>
-        <div className="backpack-active-slots">{hotbarSlots.map((kind, index) => (
-          <button key={`${kind}-${index}`} className="backpack-block active-slot" onClick={() => assign(index)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); assign(index); }}>
-            <ItemIcon kind={kind} /><span>{index === 9 ? '0' : index + 1} · {selectionInfo(kind).name}</span>
-          </button>
-        ))}</div>
-        <p className="backpack-label">Blocs, portes et trappes</p>
-        <div className="backpack-blocks">{HOTBAR_BLOCKS.filter((kind) => !isCrop(kind)).map(itemButton)}</div>
-        <p className="backpack-label">Graines et plants · sur herbe ou terre · E pour récolter quand c’est mûr</p>
-        <div className="backpack-blocks">{CROP_KINDS.map(itemButton)}</div>
-        <p className="backpack-label">Épées, armures, arcs, pistolets, voitures et selle · E pour utiliser</p>
-        <div className="backpack-blocks">{ITEM_ORDER.map(itemButton)}</div>
-        <p className="backpack-label">Manger pour récupérer des vies</p>
-        <div className="backpack-resources">
-          {ITEM_ORDER.filter((kind) => ITEM_META[kind].category === 'food').map((kind) => (
-            <div className="backpack-resource" key={kind}>
-              <span>{ITEM_META[kind].name} · +{ITEM_META[kind].healing} vies</span>
-              <button onClick={() => eatItem(world, kind)}>Manger</button>
-            </div>
-          ))}
-          <div className="backpack-resource"><span>Pommes cueillies ×{apples}</span><button onClick={discardApple} disabled={apples === 0}>Jeter 1</button></div>
-          {resources.map(([kind, count]) => (
-            <div className="backpack-resource" key={kind}>
-              <span>{MEAT_NAMES[kind]} ×{count}</span>
-              <span><button onClick={() => eatMeat(world, kind)}>Manger</button> <button onClick={() => discardMeat(kind)}>Jeter 1</button></span>
-            </div>
-          ))}
+        <div className="backpack-content">
+          <p className="backpack-label">Blocs, portes et trappes</p>
+          <div className="backpack-blocks">{HOTBAR_BLOCKS.filter((kind) => !isCrop(kind)).map(itemButton)}</div>
+          <p className="backpack-label">Graines et plants · sur herbe ou terre · E pour récolter quand c’est mûr</p>
+          <div className="backpack-blocks">{CROP_KINDS.map(itemButton)}</div>
+          <p className="backpack-label">Épées, armures, arcs, pistolets, voitures et selle · E pour utiliser</p>
+          <div className="backpack-blocks">{ITEM_ORDER.map(itemButton)}</div>
+          <p className="backpack-label">Manger pour récupérer des vies</p>
+          <div className="backpack-resources">
+            {ITEM_ORDER.filter((kind) => ITEM_META[kind].category === 'food').map((kind) => (
+              <div className="backpack-resource" key={kind}>
+                <span>{ITEM_META[kind].name} · +{ITEM_META[kind].healing} vies</span>
+                <button onClick={() => eatItem(world, kind)}>Manger</button>
+              </div>
+            ))}
+            <div className="backpack-resource"><span>Pommes cueillies ×{apples}</span><button onClick={discardApple} disabled={apples === 0}>Jeter 1</button></div>
+            {resources.map(([kind, count]) => (
+              <div className="backpack-resource" key={kind}>
+                <span>{MEAT_NAMES[kind]} ×{count}</span>
+                <span><button onClick={() => eatMeat(world, kind)}>Manger</button> <button onClick={() => discardMeat(kind)}>Jeter 1</button></span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="backpack-active-area">
+          <p className="backpack-label">Cases actives · choisis un objet puis une case, ou fais-le glisser</p>
+          <div className="backpack-active-slots">{hotbarSlots.map((kind, index) => (
+            <button
+              key={`${kind}-${index}`}
+              className="backpack-block active-slot"
+              onClick={() => assign(index)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => { event.preventDefault(); assign(index); }}
+              aria-label={`Case ${index === 9 ? '0' : index + 1} : ${selectionInfo(kind).name}`}
+              title={selectionInfo(kind).name}
+            >
+              <span className="active-slot-number">{index === 9 ? '0' : index + 1}</span>
+              <ItemIcon kind={kind} />
+            </button>
+          ))}</div>
         </div>
       </section>
     </div>
