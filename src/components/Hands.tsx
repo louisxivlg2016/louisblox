@@ -7,6 +7,7 @@ import { useGameStore } from '../game/store';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { BlockKind } from '../game/voxel';
 import { ItemModel } from './ItemModel';
+import { BombModel, CandleModel } from './SpecialBlocks';
 
 function createSkinTexture() {
   const canvas = document.createElement('canvas');
@@ -60,7 +61,13 @@ export function Hands() {
         </mesh>
       ))}
       {typeof selected === 'number' ? (
-        <mesh args={[blockGeometry, heldMaterials]} position={[0.36, -0.26, -0.72]} rotation={[0.2, 0.55, 0.05]} scale={0.24} renderOrder={11} frustumCulled={false} />
+        selected === BlockKind.Tnt || selected === BlockKind.Candle ? (
+          <group position={[0.36, -0.43, -0.72]} rotation={[0.08, 0.15, 0]} scale={0.5}>
+            {selected === BlockKind.Tnt ? <BombModel /> : <CandleModel />}
+          </group>
+        ) : (
+          <mesh args={[blockGeometry, heldMaterials]} position={[0.36, -0.26, -0.72]} rotation={[0.2, 0.55, 0.05]} scale={0.24} renderOrder={11} frustumCulled={false} />
+        )
       ) : (
         <group position={[0.36, -0.32, -0.78]} rotation={[0.08, 0.15, 0]} scale={ITEM_META[selected].category === 'vehicle' ? 0.17 : 0.65}>
           <ItemModel kind={selected} held />

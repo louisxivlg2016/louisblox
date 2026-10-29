@@ -4,6 +4,8 @@ import { useGameStore } from '../game/store';
 import { Player, PlayerMesh } from '../game/traits';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { ItemModel, PixelPart } from './ItemModel';
+import { BombModel, CandleModel } from './SpecialBlocks';
+import { BlockKind } from '../game/voxel';
 
 export function PlayerAvatar() {
   const entity = useQueryFirst(Player);
@@ -63,7 +65,7 @@ export function PlayerAvatar() {
       )}
       <group position={[0.52, 0.92, -0.24]} scale={typeof selected === 'string' && ITEM_META[selected].category === 'vehicle' ? 0.1 : 0.36}>
         {typeof selected === 'number'
-          ? <mesh args={[blockGeometry, blockMaterials[selected]]} />
+          ? selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : <mesh args={[blockGeometry, blockMaterials[selected]]} />
           : <ItemModel kind={selected} />}
       </group>
     </group>
