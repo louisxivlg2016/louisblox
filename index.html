@@ -304,6 +304,8 @@
       @media (pointer: coarse) {
         .mobile-controls { display: block; }
         .controls-hint, .action-hint { display: none; }
+        .teleport-toggle { right: 12px; bottom: 252px; }
+        .world-stats { font-size: 9px; }
       }
       @media (max-width: 650px) {
         .menu-panel { padding: 28px 24px 24px; }
@@ -316,6 +318,39 @@
         .touch-actions { right: 12px; bottom: 134px; grid-template-columns: repeat(2, minmax(68px, 1fr)); gap: 7px; }
         .touch-button { min-height: 45px; padding: 6px 8px; font-size: 10px; }
         .world-stats { top: 10px; right: 10px; min-width: 160px; }
+      }
+      .item-icon { position: relative; display: inline-block; flex: 0 0 auto; width: 32px; height: 34px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,.45)); }
+      .item-icon i, .item-icon b, .item-icon em { position: absolute; display: block; font-style: normal; }
+      .item-sword i { left: 10px; bottom: 2px; width: 6px; height: 13px; background: #69452b; transform: rotate(-35deg); }
+      .item-sword b { left: 16px; top: 0; width: 7px; height: 23px; background: var(--item-color); border-left: 2px solid #e2eff0; transform: rotate(-35deg); }
+      .item-sword em { left: 8px; bottom: 11px; width: 17px; height: 4px; background: var(--item-color); transform: rotate(-35deg); }
+      .item-armor i { left: 6px; top: 11px; width: 21px; height: 19px; background: var(--item-color); box-shadow: -4px 1px 0 var(--item-color), 4px 1px 0 var(--item-color); }
+      .item-armor b { left: 9px; top: 0; width: 15px; height: 11px; background: var(--item-color); border-bottom: 3px solid #33434f; }
+      .item-armor em { left: 9px; bottom: 0; width: 5px; height: 8px; background: var(--item-color); box-shadow: 10px 0 0 var(--item-color); }
+      .item-food i { left: 6px; top: 10px; width: 21px; height: 18px; background: var(--item-color); box-shadow: inset -4px -4px 0 rgba(0,0,0,.15); }
+      .item-food b { left: 15px; top: 3px; width: 4px; height: 8px; background: #6b4329; }
+      .item-food em { left: 19px; top: 5px; width: 8px; height: 4px; background: #79a34c; }
+      .item-bow i { left: 12px; top: 1px; width: 9px; height: 30px; border-right: 5px solid var(--item-color); transform: rotate(15deg); }
+      .item-bow b { left: 11px; top: 3px; width: 2px; height: 28px; background: #e4e1c8; transform: rotate(15deg); }
+      .item-bow em { left: 4px; top: 16px; width: 26px; height: 3px; background: #c7d0ce; }
+      .item-gun i { left: 4px; top: 8px; width: 25px; height: 11px; background: var(--item-color); box-shadow: inset 0 -3px 0 rgba(0,0,0,.25); }
+      .item-gun b { left: 9px; top: 18px; width: 9px; height: 13px; background: #543e30; transform: skew(-10deg); }
+      .item-gun em { left: 20px; top: 4px; width: 4px; height: 5px; background: var(--item-color); }
+      .item-vehicle i { left: 3px; top: 14px; width: 27px; height: 11px; background: var(--item-color); }
+      .item-vehicle b { left: 9px; top: 7px; width: 15px; height: 9px; background: var(--item-color); border-bottom: 4px solid #8ac4d8; }
+      .item-vehicle em { left: 5px; top: 23px; width: 7px; height: 7px; background: #252c33; box-shadow: 16px 0 0 #252c33; }
+      .item-saddle i { left: 4px; top: 10px; width: 25px; height: 12px; background: #71462b; box-shadow: inset 0 4px 0 var(--item-color); }
+      .item-saddle b { left: 8px; top: 5px; width: 18px; height: 6px; background: var(--item-color); }
+      .item-saddle em { left: 14px; top: 20px; width: 5px; height: 10px; background: #d2af61; }
+      .backpack-block { cursor: grab; }
+      .backpack-block .item-icon { width: 27px; height: 29px; transform: scale(.82); }
+      .game-notice { position: absolute; left: 50%; bottom: 104px; transform: translateX(-50%); max-width: min(620px, 90vw); padding: 8px 13px; color: #fff; text-align: center; font-size: 12px; background: rgba(18,29,23,.78); border: 1px solid rgba(255,255,255,.22); text-shadow: 1px 1px #000; }
+      .mobile-controls { position: absolute; inset: 0; z-index: 11; pointer-events: none; }
+      @media (max-width: 650px) {
+        .game-notice { bottom: 120px; width: max-content; font-size: 10px; }
+        .world-stats { max-width: 180px; }
+        .backpack-resource { font-size: 10px; }
+        .backpack-active-slots { grid-template-columns: repeat(2, 1fr); }
       }
     </style>
   </head>

@@ -2,6 +2,7 @@ import type { World } from 'koota';
 import type { useRapier } from '@react-three/rapier';
 import { getBlockIndex, getWorldSeed } from '../chunks';
 import { MIN_WORLD_Y } from '../levels';
+import { isDoor, isTrapdoor } from '../extraBlocks';
 import { Chunk, Player, PlayerPosition } from '../traits';
 import { BlockKind, voxelKey } from '../voxel';
 import type { Voxel } from '../voxel';
@@ -62,6 +63,7 @@ export function collisionSystem(
       for (let z = pz - 8; z <= pz + 8; z += 1) {
         const block = blocks.get(voxelKey(x, y, z));
         if (!block || block.kind === BlockKind.Water) continue;
+        if ((isDoor(block.kind) || isTrapdoor(block.kind)) && block.open) continue;
         const exposed = neighborOffsets.some(([dx, dy, dz]) => !blocks.has(voxelKey(x + dx, y + dy, z + dz)));
         if (exposed) desired.set(voxelKey(x, y, z), block);
       }

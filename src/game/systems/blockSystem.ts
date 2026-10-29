@@ -4,7 +4,7 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isSapling } from '../extraBlocks';
+import { isDoor, isSapling, isTrapdoor } from '../extraBlocks';
 import { consumeActions, isMouseDown, stopMining } from '../input';
 import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
@@ -20,7 +20,7 @@ function intersectsPlayer(x: number, y: number, z: number, player: Vector3) {
   return horizontal && vertical;
 }
 
-export function blockSystem(world: World, camera: Camera, dt: number, disabled = false) {
+export function blockSystem(world: World, camera: Camera, dt: number, disabled = false, pendingActions?: { place: number; harvest: number }) {
   const playerEntity = world.queryFirst(Player);
   const targetEntity = world.queryFirst(BlockTarget);
   const player = playerEntity?.get(PlayerPosition);
@@ -58,7 +58,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   const kind = hit?.block.kind;
-  const mining = isMouseDown(0) && hit !== null && useGameStore.getState().mode === 'play';
+  const canMine = typeof store.selected === 'number' || (typeof store.selected === 'string' && store.selected.startsWith('sword_'));
+  const mining = canMine && isMouseDown(0) && hit !== null && useGameStore.getState().mode === 'play';
   if (mining && hit && kind !== undefined) {
     const key = voxelKey(hit.x, hit.y, hit.z);
     if (target.miningKey !== key) {
@@ -87,8 +88,13 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     if (store.miningProgress !== 0) store.setMiningProgress(0);
   }
 
-  const actions = consumeActions();
+  const actions = pendingActions ?? consumeActions();
   if (useGameStore.getState().mode !== 'play' || !hit) return;
+
+  if ((actions.place > 0 || actions.harvest > 0) && (isDoor(hit.block.kind) || isTrapdoor(hit.block.kind))) {
+    replaceVoxel(world, hit, hit.block.kind, !hit.block.open);
+    return;
+  }
 
   if (actions.harvest > 0 && hit.block.kind === BlockKind.Apple) {
     replaceVoxel(world, hit, BlockKind.Leaves);
@@ -106,6 +112,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
 
     if (inBounds && !blocks.has(voxelKey(x, y, z)) && !intersectsPlayer(x, y, z, player)) {
       const kind = useGameStore.getState().selected;
+      if (typeof kind !== 'number') return;
       addVoxel(world, x, y, z, kind);
       if (kind === BlockKind.Tnt) {
         const bomb = spawnBomb(world, x, y, z);

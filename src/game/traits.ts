@@ -9,7 +9,7 @@ export const PlayerBody = trait(() => ({ value: null as RapierRigidBody | null }
 export const PlayerCollider = trait(() => ({ value: null as RapierCollider | null }));
 export const PlayerMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 export const PlayerState = trait({ grounded: false, flying: false, yaw: 0, pitch: 0 });
-export const PlayerHealth = trait({ value: 10, max: 10 });
+export const PlayerHealth = trait({ value: 10, max: 10, absorbed: 0 });
 
 export const BlockTarget = trait(() => ({
   position: new Vector3(),
@@ -49,6 +49,17 @@ export const MeatDrop = trait({ kind: '' as import('./animals').AnimalKind });
 export const MeatDropPosition = trait(() => new Vector3());
 export const MeatDropMotion = trait({ age: 0, baseY: 0 });
 export const MeatDropMesh = trait(() => ({ value: null as import('three').Object3D | null }));
+
+export const PlayerMount = trait(() => ({ vehicle: null as import('koota').Entity | null, kind: null as 'car' | 'horse' | null }));
+export const Vehicle = trait({ color: '#d63935' });
+export const VehiclePosition = trait(() => new Vector3());
+export const VehicleMotion = trait({ speed: 0, yaw: 0, mounted: false });
+export const VehicleMesh = trait(() => ({ value: null as import('three').Object3D | null }));
+export const HorseRider = trait({ saddled: false, mounted: false, speed: 0 });
+export const Projectile = trait({ kind: 'arrow' as 'arrow' | 'bullet' | 'bomb', life: 8, damage: 1 });
+export const ProjectilePosition = trait(() => new Vector3());
+export const ProjectileVelocity = trait(() => new Vector3());
+export const ProjectileMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 
 export const Environment = trait(() => ({
   elapsed: 0,

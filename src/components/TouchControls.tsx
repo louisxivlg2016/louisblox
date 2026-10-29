@@ -16,7 +16,7 @@ function HoldButton({ code, label, onDoubleTap }: { code: string; label: string;
         setTouchKey(code, true);
         if (onDoubleTap) {
           const now = performance.now();
-          if (now - lastTap.current < 5000) onDoubleTap();
+          if (now - lastTap.current < 300) onDoubleTap();
           lastTap.current = now;
         }
       }}

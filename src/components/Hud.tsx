@@ -4,7 +4,8 @@ import type { Biome } from '../game/levels';
 import { MEAT_NAMES } from '../game/meats';
 import { useGameStore } from '../game/store';
 import { teleportToBiome } from '../game/teleport';
-import { BLOCK_INFO } from '../game/voxel';
+import { selectionInfo } from '../game/items';
+import { ItemIcon } from './ItemIcon';
 import { world } from '../game/world';
 import { Backpack } from './Backpack';
 import { TouchControls } from './TouchControls';
@@ -21,6 +22,9 @@ export function Hud() {
   const meat = useGameStore((state) => state.meat);
   const miningProgress = useGameStore((state) => state.miningProgress);
   const flying = useGameStore((state) => state.flying);
+  const riding = useGameStore((state) => state.riding);
+  const notice = useGameStore((state) => state.notice);
+  const equippedArmor = useGameStore((state) => state.equippedArmor);
   const lives = useGameStore((state) => state.lives);
   const backpackOpen = useGameStore((state) => state.backpackOpen);
   const teleportOpen = useGameStore((state) => state.teleportOpen);
@@ -67,19 +71,22 @@ export function Hud() {
             <span className="weather-info apple-count">Pommes : {apples}</span>
             <span className="weather-info meat-count">Viandes : {meatSummary || 'aucune'}</span>
             <span className="weather-info lives-count">Vies : {lives}/10</span>
+            {equippedArmor && <span className="weather-info">Armure : {equippedArmor}</span>}
+            {riding && <span className="weather-info">{riding === 'car' ? 'Au volant · E pour sortir' : 'À cheval · E pour descendre'}</span>}
             {flying && <span className="weather-info flight-status">Vol activé</span>}
           </div>
           <button className="backpack-toggle" onClick={openBackpack}>Sac à dos</button>
           <button className="teleport-toggle" onClick={openTeleport}>Téléportation · T</button>
           <div className="controls-hint">
-            <span><strong>WASD / FLÈCHES</strong> se déplacer</span>
-            <span><strong>ESPACE</strong> sauter / monter en vol</span>
+            <span><strong>WASD / FLÈCHES</strong> se déplacer / conduire</span>
+            <span><strong>ESPACE</strong> sauter / remonter / voler</span>
             <span><strong>2× ESPACE</strong> activer / quitter le vol</span>
             <span><strong>MAJ</strong> accélérer</span>
-            <span><strong>C</strong> descendre en vol</span>
+            <span><strong>C</strong> plonger / descendre</span>
             <span><strong>P / F5</strong> changer de caméra</span>
           </div>
-          <div className="action-hint">Clic gauche <strong>casser / frapper</strong> · Clic droit <strong>poser</strong> · <strong>E</strong> poser / cueillir</div>
+          <div className="action-hint">Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</div>
+          {notice && <div className="game-notice">{notice}</div>}
           <TouchControls />
         </>
       )}
@@ -118,17 +125,17 @@ export function Hud() {
 
       {mode !== 'menu' && (
         <div className="hotbar-wrap">
-          <div className="selected-name">{BLOCK_INFO[selected].name}</div>
+          <div className="selected-name">{selectionInfo(selected).name}</div>
           <div className="hotbar">
             {hotbarSlots.map((kind, index) => (
               <button
                 key={`${kind}-${index}`}
                 className={`hotbar-slot ${selected === kind ? 'selected' : ''}`}
                 onClick={() => selectBlock(kind)}
-                aria-label={`${index + 1} : ${BLOCK_INFO[kind].name}`}
+                aria-label={`${index + 1} : ${selectionInfo(kind).name}`}
               >
                 <span className="slot-number">{index === 9 ? '0' : index + 1}</span>
-                <span className="block-swatch" style={{ backgroundColor: BLOCK_INFO[kind].color }} />
+                <ItemIcon kind={kind} />
               </button>
             ))}
           </div>

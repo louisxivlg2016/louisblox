@@ -3,18 +3,20 @@ import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { useWorld } from 'koota/react';
 import { Color } from 'three';
-import { getWorldSeed, loadLevel } from '../game/chunks';
-import { heightAt, SEA_LEVEL } from '../game/levels';
+import { getBlockIndex, loadLevel } from '../game/chunks';
 import { readWorldSave } from '../game/save';
 import { useGameStore } from '../game/store';
+import { BlockKind, voxelKey } from '../game/voxel';
 import { Animals } from './Animals';
 import { Explosions } from './Explosions';
 import { Hands } from './Hands';
 import { Level } from './Level';
 import { MeatDrops } from './MeatDrops';
 import { PlayerView } from './Player';
+import { Projectiles } from './Projectiles';
 import { Systems } from './Systems';
 import { TargetHighlight } from './TargetHighlight';
+import { Vehicles } from './Vehicles';
 import { Weather } from './Weather';
 
 const clouds = [
@@ -49,8 +51,8 @@ function Atmosphere() {
   const rainy = environment.weather !== 'clear';
   const skyDaylight = Math.max(0, (daylight - 0.2) / 0.8);
   const center = camera.position;
-  const ground = heightAt(Math.floor(center.x), Math.floor(center.z), getWorldSeed(world));
-  const underwater = ground < SEA_LEVEL && center.y < SEA_LEVEL + 0.05 && center.y > ground + 0.5;
+  const cameraBlock = getBlockIndex(world).get(voxelKey(Math.floor(center.x + 0.5), Math.floor(center.y + 0.5), Math.floor(center.z + 0.5)));
+  const underwater = cameraBlock?.kind === BlockKind.Water;
   const waterColor = new Color('#217fac');
   const skyColor = underwater
     ? waterColor
@@ -97,6 +99,8 @@ export function Game() {
       <Atmosphere />
       <Weather key={`weather-${generation}`} />
       <Animals key={`animals-${generation}`} />
+      <Vehicles key={`vehicles-${generation}`} />
+      <Projectiles key={`projectiles-${generation}`} />
       <MeatDrops key={`meat-${generation}`} />
       <Explosions key={`explosions-${generation}`} />
       <Physics gravity={[0, 0, 0]} paused={mode !== 'play'}>

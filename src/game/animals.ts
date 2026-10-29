@@ -37,7 +37,7 @@ function hash(x: number, z: number, seed: number) {
   return ((value ^ (value >>> 16)) >>> 0) / 4294967295;
 }
 
-function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number, z: number, seed: number) {
+export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number, z: number, seed: number) {
   return world.spawn(
     Animal({ kind }),
     AnimalHealth({ value: health[kind] }),
@@ -64,6 +64,7 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
   if (cx === 0 && cz === 0) {
     entities.push(spawnAnimal(world, 'cow', -3, heightAt(-3, -4, seed) + 0.5, -4, seed));
     entities.push(spawnAnimal(world, 'sheep', 4, heightAt(4, -5, seed) + 0.5, -5, seed));
+    entities.push(spawnAnimal(world, 'horse', 5, heightAt(5, 3, seed) + 0.5, 3, seed));
   }
 
   if (hash(cx, cz, seed + 802) < 0.58) return entities;

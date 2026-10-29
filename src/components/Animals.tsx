@@ -1,14 +1,15 @@
 import { Suspense } from 'react';
-import { useQuery } from 'koota/react';
+import { useQuery, useTrait } from 'koota/react';
 import type { Entity } from 'koota';
 import { Mesh } from 'three';
-import { Animal, AnimalMesh, AnimalPosition } from '../game/traits';
+import { Animal, AnimalMesh, AnimalPosition, HorseRider } from '../game/traits';
 import { AnimalGlb } from './AnimalGlb';
+import { SaddleModel } from './ItemModel';
 
 function AnimalView({ entity }: { entity: Entity }) {
   const kind = entity.get(Animal)!.kind;
   const position = entity.get(AnimalPosition)!;
-
+  const rider = useTrait(entity, HorseRider);
   return (
     <group
       ref={(group) => {
@@ -28,6 +29,7 @@ function AnimalView({ entity }: { entity: Entity }) {
       <Suspense fallback={null}>
         <AnimalGlb kind={kind} />
       </Suspense>
+      {kind === 'horse' && rider?.saddled && <group position={[0, 1.28, 0]} scale={0.85}><SaddleModel /></group>}
     </group>
   );
 }

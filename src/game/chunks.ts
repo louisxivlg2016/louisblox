@@ -2,46 +2,38 @@ import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
 import { CHUNK_SIZE, MAX_BUILD_Y, VIEW_DISTANCE, biomeAt, generateChunk, heightAt } from './levels';
 import type { LevelData } from './levels';
-import { spawnChunkAnimals } from './animals';
+import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
-import { isSapling } from './extraBlocks';
+import { isDoor, isSapling, isTrapdoor } from './extraBlocks';
+import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
+import type { ArmorKind, ItemKind, SelectedKind } from './items';
 import {
-  Animal,
-  MeatDrop,
-  Bomb,
-  Explosion,
-  Sapling,
-  BlockTarget,
-  Chunk,
-  ChunkData,
-  Environment,
-  Player,
-  PlayerBody,
-  PlayerCollider,
-  PlayerHealth,
-  PlayerMesh,
-  PlayerPosition,
-  PlayerState,
-  PlayerVelocity,
-  RainMaterial,
-  SnowMaterial,
-  TargetMesh,
+  Animal, AnimalPosition, MeatDrop, Bomb, Explosion, Sapling, BlockTarget, Chunk, ChunkData,
+  Environment, HorseRider, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMesh, PlayerMount,
+  PlayerPosition, PlayerState, PlayerVelocity, Projectile, RainMaterial, SnowMaterial, TargetMesh,
+  Vehicle, VehicleMesh, VehicleMotion, VehiclePosition,
 } from './traits';
 import { createMeatInventory } from './meats';
 import { useGameStore } from './store';
 import { BlockKind, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
 
-type ChunkEdit = BlockKind | null;
+type ChunkEdit = BlockKind | { kind: BlockKind; open: boolean } | null;
+export type SavedCar = { x: number; y: number; z: number; yaw: number; color: string };
+export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   generation: number;
   seed: number;
   player: { x: number; y: number; z: number; yaw: number; pitch: number; flying: boolean };
-  selected: BlockKind;
+  selected: SelectedKind;
   lives?: number;
-  hotbar?: BlockKind[];
+  hotbar?: SelectedKind[];
+  itemCounts?: Partial<Record<ItemKind, number>>;
+  equippedArmor?: ArmorKind | null;
+  vehicles?: SavedCar[];
+  saddledHorses?: SavedHorse[];
   apples: number;
   meat?: Record<import('./animals').AnimalKind, number>;
   elapsed: number;
@@ -53,6 +45,7 @@ type WorldChunks = {
   chunks: Map<string, Entity>;
   blocks: Map<string, Voxel>;
   edits: Map<string, Map<string, ChunkEdit>>;
+  saddledHorses: SavedHorse[];
 };
 
 const worlds = new WeakMap<World, WorldChunks>();
@@ -67,6 +60,29 @@ function stateFor(world: World) {
 
 export function snapshotWorldEdits(world: World): WorldSave['edits'] {
   return [...stateFor(world).edits].map(([chunk, edits]) => [chunk, [...edits]]);
+}
+
+export function snapshotVehicles(world: World): SavedCar[] {
+  return world.query(Vehicle, VehiclePosition, VehicleMotion).map((entity) => {
+    const position = entity.get(VehiclePosition)!;
+    const motion = entity.get(VehicleMotion)!;
+    return { x: position.x, y: position.y, z: position.z, yaw: motion.yaw, color: entity.get(Vehicle)!.color };
+  });
+}
+
+export function snapshotSaddledHorses(world: World): SavedHorse[] {
+  const state = stateFor(world);
+  const horses = [...state.saddledHorses];
+  for (const entity of world.query(Animal, AnimalPosition, HorseRider)) {
+    if (!entity.get(HorseRider)!.saddled) continue;
+    const position = entity.get(AnimalPosition)!;
+    for (let index = horses.length - 1; index >= 0; index -= 1) {
+      if (Math.hypot(horses[index].x - position.x, horses[index].z - position.z) < 3) horses.splice(index, 1);
+    }
+    horses.push({ x: position.x, y: position.y, z: position.z });
+  }
+  state.saddledHorses = horses;
+  return horses;
 }
 
 function touchChunk(entity: Entity | undefined) {
@@ -105,7 +121,8 @@ function loadChunk(world: World, cx: number, cz: number) {
       if (kind === null) blockMap.delete(position);
       else {
         const [x, y, z] = position.split(',').map(Number);
-        blockMap.set(position, { x, y, z, kind });
+        const data = typeof kind === 'number' ? { kind, open: false } : kind;
+        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open });
       }
     }
   }
@@ -120,6 +137,20 @@ function loadChunk(world: World, cx: number, cz: number) {
     state.blocks.set(voxelKey(block.x, block.y, block.z), block);
   }
   data.animals = spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
+  for (const savedHorse of state.saddledHorses) {
+    if (chunkCoordinate(savedHorse.x) !== cx || chunkCoordinate(savedHorse.z) !== cz) continue;
+    const existing = data.animals.find((animal) => {
+      if (animal.get(Animal)?.kind !== 'horse') return false;
+      const position = animal.get(AnimalPosition)!;
+      return Math.hypot(position.x - savedHorse.x, position.z - savedHorse.z) < 2;
+    });
+    if (existing) existing.add(HorseRider({ saddled: true }));
+    else {
+      const horse = spawnAnimal(world, 'horse', savedHorse.x, savedHorse.y, savedHorse.z, state.seed);
+      horse.add(HorseRider({ saddled: true }));
+      data.animals.push(horse);
+    }
+  }
   for (const block of data.blocks) {
     if (block.kind === BlockKind.Tnt) data.bombs.push(spawnBomb(world, block.x, block.y, block.z));
     if (isSapling(block.kind)) data.saplings.push(spawnSapling(world, block.kind, block.x, block.y, block.z));
@@ -137,7 +168,10 @@ function unloadChunk(world: World, entity: Entity) {
   for (const block of data.blocks) {
     state.blocks.delete(voxelKey(block.x, block.y, block.z));
   }
-  for (const animal of data.animals) animal.destroy();
+  const mounted = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
+  for (const animal of data.animals) {
+    if (animal !== mounted) animal.destroy();
+  }
   for (const bomb of data.bombs) bomb.destroy();
   for (const sapling of data.saplings) sapling.destroy();
   data.animals = [];
@@ -279,16 +313,18 @@ export function growSapling(world: World, kind: BlockKind, x: number, y: number,
   }
 }
 
-export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind) {
+export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?: boolean) {
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
   if (!block) return;
   block.kind = kind;
+  if (open !== undefined) block.open = open;
   const cx = chunkCoordinate(hit.x);
   const cz = chunkCoordinate(hit.z);
   const chunkEntity = state.chunks.get(chunkKey(cx, cz));
   if (!chunkEntity) return;
-  editsFor(state, cx, cz).set(voxelKey(hit.x, hit.y, hit.z), kind);
+  const door = isDoor(kind) || isTrapdoor(kind);
+  editsFor(state, cx, cz).set(voxelKey(hit.x, hit.y, hit.z), door ? { kind, open: block.open ?? false } : kind);
   touchChunk(chunkEntity);
   touchNeighbors(state, cx, cz);
 }
@@ -325,23 +361,23 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   for (const entity of [...world.query(Player)]) entity.destroy();
   for (const entity of [...world.query(BlockTarget)]) entity.destroy();
   for (const entity of [...world.query(Environment)]) entity.destroy();
+  for (const entity of [...world.query(Projectile)]) entity.destroy();
+  for (const entity of [...world.query(Vehicle)]) entity.destroy();
 
-  const restore = saved && (saved.version === 1 || saved.version === 2) && saved.generation === generation ? saved : null;
+  const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3) && saved.generation === generation ? saved : null;
   const seed = restore?.seed ?? 73421 + generation * 977;
-  const edits: WorldChunks['edits'] = restore
-    ? new Map(restore.edits.map(([chunk, values]) => [chunk, new Map(values)]))
-    : new Map();
-  worlds.set(world, { seed, chunks: new Map(), blocks: new Map(), edits });
-  const restorePosition = restore?.version === 2;
+  const edits: WorldChunks['edits'] = restore ? new Map(restore.edits.map(([chunk, values]) => [chunk, new Map(values)])) : new Map();
+  worlds.set(world, { seed, chunks: new Map(), blocks: new Map(), edits, saddledHorses: restore?.saddledHorses ?? [] });
+  const restorePosition = restore?.version === 2 || restore?.version === 3;
   const spawn = restore && restorePosition
     ? { x: restore.player.x, y: restore.player.y, z: restore.player.z }
     : { x: 0, y: heightAt(0, 0, seed) + 1.01, z: 0 };
-
   world.spawn(
     Player,
     PlayerBody(),
     PlayerCollider(),
     PlayerMesh(),
+    PlayerMount(),
     PlayerHealth({ value: restore?.lives ?? 10, max: 10 }),
     PlayerPosition(new Vector3(spawn.x, spawn.y, spawn.z)),
     PlayerVelocity(),
@@ -353,10 +389,24 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   );
   world.spawn(BlockTarget(), TargetMesh());
   const environmentEntity = world.spawn(Environment(), RainMaterial(), SnowMaterial());
-  useGameStore.setState({ meat: { ...createMeatInventory(), ...restore?.meat } });
-  if (restore) {
-    environmentEntity.get(Environment)!.elapsed = restore.elapsed;
-    useGameStore.setState({ selected: restore.selected, hotbarSlots: restore.hotbar ?? useGameStore.getState().hotbarSlots, lives: restore.lives ?? 10, apples: restore.apples, flying: restore.player.flying });
+  if (restore) environmentEntity.get(Environment)!.elapsed = restore.elapsed;
+  const hotbar = restore?.hotbar?.length === 10 && restore.hotbar.every(isSelectedKind)
+    ? restore.hotbar
+    : useGameStore.getState().hotbarSlots;
+  useGameStore.setState({
+    meat: { ...createMeatInventory(), ...restore?.meat },
+    selected: restore && isSelectedKind(restore.selected) ? restore.selected : BlockKind.Grass,
+    hotbarSlots: hotbar,
+    itemCounts: { ...DEFAULT_ITEM_COUNTS, ...restore?.itemCounts },
+    equippedArmor: restore?.equippedArmor ?? null,
+    riding: null,
+    lives: restore?.lives ?? 10,
+    apples: restore?.apples ?? 0,
+    flying: restore?.player.flying ?? false,
+    notice: '',
+  });
+  for (const car of restore?.vehicles ?? []) {
+    world.spawn(Vehicle({ color: car.color }), VehiclePosition(new Vector3(car.x, car.y, car.z)), VehicleMotion({ yaw: car.yaw }), VehicleMesh());
   }
   streamChunks(world, spawn.x, spawn.z);
   return { spawn };

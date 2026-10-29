@@ -106,10 +106,10 @@ export function initInput() {
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code) && useGameStore.getState().mode === 'play') {
       event.preventDefault();
     }
-    if (event.code === 'KeyE' && !event.repeat && hasMouseControl() && useGameStore.getState().mode === 'play') {
+    if (event.code === 'KeyE' && !event.repeat && useGameStore.getState().mode === 'play') {
       actions.harvest += 1;
     }
-    if (event.code === 'Space' && !event.repeat && hasMouseControl() && useGameStore.getState().mode === 'play') {
+    if (event.code === 'Space' && !event.repeat && useGameStore.getState().mode === 'play') {
       const now = performance.now();
       if (now - lastSpacePress <= 300) {
         flightToggles += 1;

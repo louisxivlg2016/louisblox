@@ -2,8 +2,11 @@ import { useEffect, useMemo } from 'react';
 import { createPortal, useThree } from '@react-three/fiber';
 import { CanvasTexture, NearestFilter, SRGBColorSpace } from 'three';
 import type { MeshLambertMaterial } from 'three';
+import { ITEM_META } from '../game/items';
 import { useGameStore } from '../game/store';
 import { blockGeometry, blockMaterials } from '../game/textures';
+import { BlockKind } from '../game/voxel';
+import { ItemModel } from './ItemModel';
 
 function createSkinTexture() {
   const canvas = document.createElement('canvas');
@@ -31,7 +34,8 @@ export function Hands() {
   const selected = useGameStore((state) => state.selected);
   const cameraMode = useGameStore((state) => state.cameraMode);
   const skinTexture = useMemo(createSkinTexture, []);
-  const heldMaterials = useMemo(() => blockMaterials[selected].map((material) => {
+  const selectedBlock = typeof selected === 'number' ? selected : BlockKind.Grass;
+  const heldMaterials = useMemo(() => blockMaterials[selectedBlock].map((material) => {
     const clone = material.clone() as MeshLambertMaterial;
     clone.fog = false;
     clone.transparent = true;
@@ -39,35 +43,29 @@ export function Hands() {
     clone.depthTest = false;
     clone.depthWrite = false;
     return clone;
-  }), [selected]);
-
+  }), [selectedBlock]);
   useEffect(() => {
     scene.add(camera);
-    return () => {
-      scene.remove(camera);
-    };
+    return () => { scene.remove(camera); };
   }, [camera, scene]);
   useEffect(() => () => heldMaterials.forEach((material) => material.dispose()), [heldMaterials]);
 
   if (cameraMode === 'third') return null;
   return createPortal(
     <group>
-      <mesh position={[-0.43, -0.43, -0.72]} rotation={[-0.35, 0.08, -0.22]} renderOrder={10} frustumCulled={false}>
-        <boxGeometry args={[0.2, 0.52, 0.2]} />
-        <meshLambertMaterial map={skinTexture} depthTest={false} depthWrite={false} fog={false} transparent opacity={1} />
-      </mesh>
-      <mesh position={[0.42, -0.45, -0.72]} rotation={[-0.35, -0.08, 0.22]} renderOrder={10} frustumCulled={false}>
-        <boxGeometry args={[0.2, 0.52, 0.2]} />
-        <meshLambertMaterial map={skinTexture} depthTest={false} depthWrite={false} fog={false} transparent opacity={1} />
-      </mesh>
-      <mesh
-        args={[blockGeometry, heldMaterials]}
-        position={[0.36, -0.26, -0.72]}
-        rotation={[0.2, 0.55, 0.05]}
-        scale={0.24}
-        renderOrder={11}
-        frustumCulled={false}
-      />
+      {[-0.43, 0.42].map((x) => (
+        <mesh key={x} position={[x, -0.45, -0.72]} rotation={[-0.35, x * 0.2, x * 0.5]} renderOrder={10} frustumCulled={false}>
+          <boxGeometry args={[0.2, 0.52, 0.2]} />
+          <meshLambertMaterial map={skinTexture} depthTest={false} depthWrite={false} fog={false} transparent opacity={1} />
+        </mesh>
+      ))}
+      {typeof selected === 'number' ? (
+        <mesh args={[blockGeometry, heldMaterials]} position={[0.36, -0.26, -0.72]} rotation={[0.2, 0.55, 0.05]} scale={0.24} renderOrder={11} frustumCulled={false} />
+      ) : (
+        <group position={[0.36, -0.32, -0.78]} rotation={[0.08, 0.15, 0]} scale={ITEM_META[selected].category === 'vehicle' ? 0.17 : 0.65}>
+          <ItemModel kind={selected} held />
+        </group>
+      )}
     </group>,
     camera,
   );

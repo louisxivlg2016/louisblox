@@ -34,6 +34,7 @@ export type Voxel = {
   y: number;
   z: number;
   kind: BlockKind;
+  open?: boolean;
 };
 
 export type VoxelHit = {
@@ -149,7 +150,7 @@ export function raycastVoxel(
 
   for (let steps = 0; steps < 128 && distance <= maxDistance; steps += 1) {
     const block = blocks.get(voxelKey(x, y, z));
-    if (block !== undefined && block.kind !== BlockKind.Water) {
+    if (block !== undefined && block.kind !== BlockKind.Water && !block.open) {
       return { block, x, y, z, normal, distance };
     }
 

@@ -1,9 +1,12 @@
 import type { World } from 'koota';
 import type { useRapier } from '@react-three/rapier';
 import { consumeFlightToggle, consumeLook, getEdgeLook, getTouchMovement, isDown } from '../input';
+import { getBlockIndex } from '../chunks';
 import { MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
-import { Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerPosition, PlayerState, PlayerVelocity } from '../traits';
+import { getSwimState, swimVerticalVelocity } from '../swimming';
+import { dismount } from '../vehicles';
+import { AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, VehiclePosition } from '../traits';
 
 type RapierWorld = ReturnType<typeof useRapier>['world'];
 export type CharacterController = ReturnType<RapierWorld['createCharacterController']>;
@@ -21,7 +24,6 @@ export function playerSystem(
 ) {
   const entity = world.queryFirst(Player);
   if (!entity) return;
-
   const body = entity.get(PlayerBody)?.value;
   const collider = entity.get(PlayerCollider)?.value;
   const position = entity.get(PlayerPosition);
@@ -34,8 +36,25 @@ export function playerSystem(
   const edge = getEdgeLook();
   const yaw = state.yaw - mouse.x * 0.004 - edge.x * dt * 3.2;
   const pitch = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, state.pitch - mouse.y * 0.004 - edge.y * dt * 3.2));
-
   const flying = consumeFlightToggle() % 2 === 1 ? !state.flying : state.flying;
+  if (health && health.value <= 0 && entity.get(PlayerMount)?.vehicle) dismount(world);
+
+  const mount = entity.get(PlayerMount);
+  if (mount?.vehicle) {
+    const vehiclePosition = mount.kind === 'car' ? mount.vehicle.get(VehiclePosition) : mount.vehicle.get(AnimalPosition);
+    if (vehiclePosition) {
+      position.set(vehiclePosition.x, vehiclePosition.y + (mount.kind === 'car' ? 0.55 : 1.05), vehiclePosition.z);
+      body.setNextKinematicTranslation(position);
+      velocity.set(0, 0, 0);
+      entity.set(PlayerState, { grounded: true, flying: false, yaw, pitch });
+      updateHud(position, health, false);
+      return;
+    }
+    mount.vehicle = null;
+    mount.kind = null;
+    useGameStore.getState().setRiding(null);
+  }
+
   const touch = getTouchMovement();
   const keyboardForward = Number(isDown('KeyW') || isDown('ArrowUp')) - Number(isDown('KeyS') || isDown('ArrowDown'));
   const keyboardStrafe = Number(isDown('KeyD') || isDown('ArrowRight')) - Number(isDown('KeyA') || isDown('ArrowLeft'));
@@ -43,14 +62,16 @@ export function playerSystem(
   const strafe = Math.max(-1, Math.min(1, keyboardStrafe + touch.x));
   const length = Math.max(1, Math.hypot(forward, strafe));
   const shifting = isDown('ShiftLeft') || isDown('ShiftRight');
-  const speed = flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8;
+  const swimming = getSwimState(getBlockIndex(world), position);
+  const inWater = !flying && swimming.inWater;
+  const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1);
   const normalizedForward = forward / length;
   const normalizedStrafe = strafe / length;
-
   velocity.x = (-Math.sin(yaw) * normalizedForward + Math.cos(yaw) * normalizedStrafe) * speed;
   velocity.z = (-Math.cos(yaw) * normalizedForward - Math.sin(yaw) * normalizedStrafe) * speed;
 
   if (flying) velocity.y = (Number(isDown('Space')) - Number(isDown('KeyC'))) * FLY_SPEED;
+  else if (inWater) velocity.y = swimVerticalVelocity(swimming, velocity.y, isDown('KeyC'), isDown('Space'), position.y);
   else if (state.grounded && isDown('Space')) velocity.y = JUMP_SPEED;
   else velocity.y -= GRAVITY * dt;
 
@@ -59,56 +80,31 @@ export function playerSystem(
     y: velocity.y * dt,
     z: velocity.z * dt,
   });
-
   const movement = controller.computedMovement();
   const current = body.translation();
-  const next = {
-    x: current.x + movement.x,
-    y: current.y + movement.y,
-    z: current.z + movement.z,
-  };
+  const next = { x: current.x + movement.x, y: current.y + movement.y, z: current.z + movement.z };
   const grounded = controller.computedGrounded();
-  const landedWithDescent = flying && grounded && isDown('KeyC');
-  const nextFlying = landedWithDescent ? false : flying;
-
+  const nextFlying = flying && grounded && isDown('KeyC') ? false : flying;
   if (grounded && velocity.y < 0) velocity.y = -0.1;
   if (movement.y > velocity.y * dt + 0.001) velocity.y = 0;
 
-  if (next.y < MIN_WORLD_Y - 12) {
+  if (next.y < MIN_WORLD_Y - 12 || !Number.isFinite(next.x + next.y + next.z) || (health && health.value <= 0)) {
     next.x = spawn.x;
     next.y = spawn.y;
     next.z = spawn.z;
     velocity.set(0, 0, 0);
+    if (health && health.value <= 0) entity.set(PlayerHealth, { value: health.max, absorbed: 0 });
   }
-
-  if (!Number.isFinite(next.x + next.y + next.z)) {
-    next.x = spawn.x;
-    next.y = spawn.y;
-    next.z = spawn.z;
-    velocity.set(0, 0, 0);
-  }
-
-  if (health && health.value <= 0) {
-    next.x = spawn.x;
-    next.y = spawn.y;
-    next.z = spawn.z;
-    velocity.set(0, 0, 0);
-    entity.set(PlayerHealth, { value: health.max });
-  }
-
   body.setNextKinematicTranslation(next);
   position.set(next.x, next.y, next.z);
   entity.set(PlayerState, { grounded, flying: nextFlying, yaw, pitch });
+  updateHud(next, health, nextFlying);
+}
 
-  const coordinates = {
-    x: Math.round(next.x * 100) / 100,
-    y: Math.round(next.y * 100) / 100,
-    z: Math.round(next.z * 100) / 100,
-  };
+function updateHud(position: { x: number; y: number; z: number }, health: { value: number } | undefined, flying: boolean) {
+  const coordinates = { x: Math.round(position.x * 100) / 100, y: Math.round(position.y * 100) / 100, z: Math.round(position.z * 100) / 100 };
   const hud = useGameStore.getState();
   if (health && hud.lives !== health.value) hud.setLives(health.value);
-  if (hud.flying !== nextFlying) hud.setFlying(nextFlying);
-  if (hud.coordinates.x !== coordinates.x || hud.coordinates.y !== coordinates.y || hud.coordinates.z !== coordinates.z) {
-    hud.setCoordinates(coordinates);
-  }
+  if (hud.flying !== flying) hud.setFlying(flying);
+  if (hud.coordinates.x !== coordinates.x || hud.coordinates.y !== coordinates.y || hud.coordinates.z !== coordinates.z) hud.setCoordinates(coordinates);
 }
