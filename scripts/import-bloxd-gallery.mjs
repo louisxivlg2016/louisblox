@@ -51,8 +51,8 @@ function categoryHeading(line) {
 }
 
 function caption(line) {
-  const value = line.split('|').at(-1).trim();
-  return value.replaceAll(/\[\[[^]|]+\|([^]]+)\]\]/g, '$1').replaceAll(/\[\[|\]\]/g, '');
+  const value = line.slice(line.indexOf('|') + 1).trim();
+  return value.replaceAll(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (_match, target, label) => label ?? target);
 }
 
 function colorFor(name, category) {

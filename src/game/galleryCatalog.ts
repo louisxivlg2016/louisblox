@@ -89,10 +89,10 @@ export const GALLERY_ITEMS = [
     "shape": "axe"
   },
   {
-    "id": "gallery_tools_weapons_rtisan_axe",
+    "id": "gallery_tools_weapons_artisan_axe",
     "category": "Tools & Weapons",
-    "name": "rtisan Axe",
-    "color": "#96a6ac",
+    "name": "Artisan Axe",
+    "color": "#d38f48",
     "shape": "axe"
   },
   {
@@ -957,93 +957,93 @@ export const GALLERY_ITEMS = [
     "shape": "plant"
   },
   {
-    "id": "gallery_plants_oppy",
+    "id": "gallery_plants_poppy",
     "category": "Plants",
-    "name": "oppy",
+    "name": "Poppy",
     "color": "#5e9949",
     "shape": "flower"
   },
   {
-    "id": "gallery_plants_range_tulip",
+    "id": "gallery_plants_orange_tulip",
     "category": "Plants",
-    "name": "range Tulip",
+    "name": "Orange Tulip",
+    "color": "#df8730",
+    "shape": "flower"
+  },
+  {
+    "id": "gallery_plants_pink_tulip",
+    "category": "Plants",
+    "name": "Pink Tulip",
+    "color": "#db87a7",
+    "shape": "flower"
+  },
+  {
+    "id": "gallery_plants_white_tulip",
+    "category": "Plants",
+    "name": "White Tulip",
+    "color": "#e4e7df",
+    "shape": "flower"
+  },
+  {
+    "id": "gallery_plants_daisy",
+    "category": "Plants",
+    "name": "Daisy",
     "color": "#5e9949",
     "shape": "flower"
   },
   {
-    "id": "gallery_plants_ink_tulip",
+    "id": "gallery_plants_bluebell",
     "category": "Plants",
-    "name": "ink Tulip",
+    "name": "Bluebell",
     "color": "#5e9949",
     "shape": "flower"
   },
   {
-    "id": "gallery_plants_hite_tulip",
+    "id": "gallery_plants_allium",
     "category": "Plants",
-    "name": "hite Tulip",
+    "name": "Allium",
     "color": "#5e9949",
     "shape": "flower"
   },
   {
-    "id": "gallery_plants_aisy",
+    "id": "gallery_plants_forget_me_not",
     "category": "Plants",
-    "name": "aisy",
+    "name": "Forget-me-not",
     "color": "#5e9949",
     "shape": "flower"
   },
   {
-    "id": "gallery_plants_luebell",
+    "id": "gallery_plants_red_tulip",
     "category": "Plants",
-    "name": "luebell",
+    "name": "Red Tulip",
+    "color": "#c93d35",
+    "shape": "flower"
+  },
+  {
+    "id": "gallery_plants_dandelion",
+    "category": "Plants",
+    "name": "Dandelion",
     "color": "#5e9949",
     "shape": "flower"
   },
   {
-    "id": "gallery_plants_llium",
+    "id": "gallery_plants_shadow_rose",
     "category": "Plants",
-    "name": "llium",
+    "name": "Shadow Rose",
     "color": "#5e9949",
     "shape": "flower"
   },
   {
-    "id": "gallery_plants_orget_me_not",
+    "id": "gallery_plants_lily_of_the_valley",
     "category": "Plants",
-    "name": "orget-me-not",
+    "name": "Lily of the Valley",
     "color": "#5e9949",
     "shape": "flower"
   },
   {
-    "id": "gallery_plants_ed_tulip",
+    "id": "gallery_plants_azure_bluet",
     "category": "Plants",
-    "name": "ed Tulip",
-    "color": "#5e9949",
-    "shape": "flower"
-  },
-  {
-    "id": "gallery_plants_andelion",
-    "category": "Plants",
-    "name": "andelion",
-    "color": "#5e9949",
-    "shape": "flower"
-  },
-  {
-    "id": "gallery_plants_hadow_rose",
-    "category": "Plants",
-    "name": "hadow Rose",
-    "color": "#5e9949",
-    "shape": "flower"
-  },
-  {
-    "id": "gallery_plants_ily_of_the_valley",
-    "category": "Plants",
-    "name": "ily of the Valley",
-    "color": "#5e9949",
-    "shape": "flower"
-  },
-  {
-    "id": "gallery_plants_zure_bluet",
-    "category": "Plants",
-    "name": "zure Bluet",
+    "name": "Azure Bluet",
     "color": "#5e9949",
     "shape": "flower"
   },
@@ -1153,16 +1153,16 @@ export const GALLERY_ITEMS = [
     "shape": "seed"
   },
   {
-    "id": "gallery_minerals_oal",
+    "id": "gallery_minerals_coal",
     "category": "Minerals",
-    "name": "oal",
+    "name": "Coal",
     "color": "#b6c1c7",
     "shape": "gem"
   },
   {
-    "id": "gallery_minerals_aw_iron",
+    "id": "gallery_minerals_raw_iron",
     "category": "Minerals",
-    "name": "aw Iron",
+    "name": "Raw Iron",
     "color": "#d4dce0",
     "shape": "gem"
   },
@@ -1181,9 +1181,9 @@ export const GALLERY_ITEMS = [
     "shape": "fragment"
   },
   {
-    "id": "gallery_minerals_aw_gold",
+    "id": "gallery_minerals_raw_gold",
     "category": "Minerals",
-    "name": "aw Gold",
+    "name": "Raw Gold",
     "color": "#e5bd3c",
     "shape": "gem"
   },
@@ -1202,37 +1202,37 @@ export const GALLERY_ITEMS = [
     "shape": "fragment"
   },
   {
-    "id": "gallery_minerals_iamond",
+    "id": "gallery_minerals_diamond",
     "category": "Minerals",
-    "name": "iamond",
-    "color": "#b6c1c7",
+    "name": "Diamond",
+    "color": "#54cdd4",
     "shape": "gem"
   },
   {
-    "id": "gallery_minerals_iamond_fragment",
+    "id": "gallery_minerals_diamond_fragment",
     "category": "Minerals",
-    "name": "iamond Fragment",
-    "color": "#b6c1c7",
+    "name": "Diamond Fragment",
+    "color": "#54cdd4",
     "shape": "fragment"
   },
   {
-    "id": "gallery_minerals_oonstone",
+    "id": "gallery_minerals_moonstone",
     "category": "Minerals",
-    "name": "oonstone",
-    "color": "#90989d",
+    "name": "Moonstone",
+    "color": "#9c83dc",
     "shape": "gem"
   },
   {
-    "id": "gallery_minerals_oonstone_fragment",
+    "id": "gallery_minerals_moonstone_fragment",
     "category": "Minerals",
-    "name": "oonstone Fragment",
-    "color": "#90989d",
+    "name": "Moonstone Fragment",
+    "color": "#9c83dc",
     "shape": "fragment"
   },
   {
-    "id": "gallery_minerals_unite",
+    "id": "gallery_minerals_lunite",
     "category": "Minerals",
-    "name": "unite",
+    "name": "Lunite",
     "color": "#b6c1c7",
     "shape": "gem"
   },
@@ -4681,220 +4681,220 @@ export const GALLERY_ITEMS = [
     "shape": "arrow_sign"
   },
   {
-    "id": "gallery_mob_spawn_orbs_pirit_bear",
+    "id": "gallery_mob_spawn_orbs_spirit_bear",
     "category": "Mob Spawn Orbs",
-    "name": "pirit Bear",
+    "name": "Spirit Bear",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_pirit_wolf",
+    "id": "gallery_mob_spawn_orbs_spirit_wolf",
     "category": "Mob Spawn Orbs",
-    "name": "pirit Wolf",
+    "name": "Spirit Wolf",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_pirit_stag",
+    "id": "gallery_mob_spawn_orbs_spirit_stag",
     "category": "Mob Spawn Orbs",
-    "name": "pirit Stag",
+    "name": "Spirit Stag",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_pirit_gorilla",
+    "id": "gallery_mob_spawn_orbs_spirit_gorilla",
     "category": "Mob Spawn Orbs",
-    "name": "pirit Gorilla",
+    "name": "Spirit Gorilla",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_pirit_golem",
+    "id": "gallery_mob_spawn_orbs_spirit_golem",
     "category": "Mob Spawn Orbs",
-    "name": "pirit Golem",
+    "name": "Spirit Golem",
     "color": "#849198",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_ow",
+    "id": "gallery_mob_spawn_orbs_cow",
     "category": "Mob Spawn Orbs",
-    "name": "ow",
+    "name": "Cow",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_ig",
+    "id": "gallery_mob_spawn_orbs_pig",
     "category": "Mob Spawn Orbs",
-    "name": "ig",
+    "name": "Pig",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_heep",
+    "id": "gallery_mob_spawn_orbs_sheep",
     "category": "Mob Spawn Orbs",
-    "name": "heep",
+    "name": "Sheep",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_eer",
+    "id": "gallery_mob_spawn_orbs_deer",
     "category": "Mob Spawn Orbs",
-    "name": "eer",
+    "name": "Deer",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_olf",
+    "id": "gallery_mob_spawn_orbs_wolf",
     "category": "Mob Spawn Orbs",
-    "name": "olf",
+    "name": "Wolf",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_ildcat",
+    "id": "gallery_mob_spawn_orbs_wildcat",
     "category": "Mob Spawn Orbs",
-    "name": "ildcat",
+    "name": "Wildcat",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_orse",
+    "id": "gallery_mob_spawn_orbs_horse",
     "category": "Mob Spawn Orbs",
-    "name": "orse",
+    "name": "Horse",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_ear",
+    "id": "gallery_mob_spawn_orbs_bear",
     "category": "Mob Spawn Orbs",
-    "name": "ear",
+    "name": "Bear",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_tag",
+    "id": "gallery_mob_spawn_orbs_stag",
     "category": "Mob Spawn Orbs",
-    "name": "tag",
+    "name": "Stag",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_orilla",
+    "id": "gallery_mob_spawn_orbs_gorilla",
     "category": "Mob Spawn Orbs",
-    "name": "orilla",
+    "name": "Gorilla",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_raugr_zombie",
+    "id": "gallery_mob_spawn_orbs_draugr_zombie",
     "category": "Mob Spawn Orbs",
-    "name": "raugr Zombie",
+    "name": "Draugr Zombie",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_raugr_skeleton",
+    "id": "gallery_mob_spawn_orbs_draugr_skeleton",
     "category": "Mob Spawn Orbs",
-    "name": "raugr Skeleton",
+    "name": "Draugr Skeleton",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_ave_golem",
+    "id": "gallery_mob_spawn_orbs_cave_golem",
     "category": "Mob Spawn Orbs",
-    "name": "ave Golem",
+    "name": "Cave Golem",
     "color": "#849198",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_raugr_huntress",
+    "id": "gallery_mob_spawn_orbs_draugr_huntress",
     "category": "Mob Spawn Orbs",
-    "name": "raugr Huntress",
+    "name": "Draugr Huntress",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_rost_zombie",
+    "id": "gallery_mob_spawn_orbs_frost_zombie",
     "category": "Mob Spawn Orbs",
-    "name": "rost Zombie",
+    "name": "Frost Zombie",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_rost_skeleton",
+    "id": "gallery_mob_spawn_orbs_frost_skeleton",
     "category": "Mob Spawn Orbs",
-    "name": "rost Skeleton",
+    "name": "Frost Skeleton",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_rost_golem",
+    "id": "gallery_mob_spawn_orbs_frost_golem",
     "category": "Mob Spawn Orbs",
-    "name": "rost Golem",
+    "name": "Frost Golem",
     "color": "#849198",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_raugr_knight",
+    "id": "gallery_mob_spawn_orbs_draugr_knight",
     "category": "Mob Spawn Orbs",
-    "name": "raugr Knight",
+    "name": "Draugr Knight",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_agma_golem",
+    "id": "gallery_mob_spawn_orbs_magma_golem",
     "category": "Mob Spawn Orbs",
-    "name": "agma Golem",
+    "name": "Magma Golem",
     "color": "#849198",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_old_watermelon_stag",
+    "id": "gallery_mob_spawn_orbs_gold_watermelon_stag",
     "category": "Mob Spawn Orbs",
-    "name": "old Watermelon Stag",
+    "name": "Gold Watermelon Stag",
+    "color": "#e5bd3c",
+    "shape": "spawn_orb"
+  },
+  {
+    "id": "gallery_mob_spawn_orbs_draugr_warper",
+    "category": "Mob Spawn Orbs",
+    "name": "Draugr Warper",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_raugr_warper",
+    "id": "gallery_mob_spawn_orbs_frost_wraith",
     "category": "Mob Spawn Orbs",
-    "name": "raugr Warper",
+    "name": "Frost Wraith",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_rost_wraith",
+    "id": "gallery_mob_spawn_orbs_draugr_reaver",
     "category": "Mob Spawn Orbs",
-    "name": "rost Wraith",
+    "name": "Draugr Reaver",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_raugr_reaver",
+    "id": "gallery_mob_spawn_orbs_stalker",
     "category": "Mob Spawn Orbs",
-    "name": "raugr Reaver",
+    "name": "Stalker",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_talker",
+    "id": "gallery_mob_spawn_orbs_crone",
     "category": "Mob Spawn Orbs",
-    "name": "talker",
+    "name": "Crone",
     "color": "#96a6ac",
     "shape": "spawn_orb"
   },
   {
-    "id": "gallery_mob_spawn_orbs_rone",
+    "id": "gallery_mob_spawn_orbs_slime",
     "category": "Mob Spawn Orbs",
-    "name": "rone",
+    "name": "Slime",
     "color": "#96a6ac",
-    "shape": "spawn_orb"
-  },
-  {
-    "id": "gallery_mob_spawn_orbs_lime",
-    "category": "Mob Spawn Orbs",
-    "name": "lime",
-    "color": "#71ad3f",
     "shape": "spawn_orb"
   },
   {
