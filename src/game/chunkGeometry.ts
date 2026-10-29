@@ -88,8 +88,13 @@ function groupFor(kind: BlockKind) {
   return 'opaque';
 }
 
+function usesSeparateModel(kind: BlockKind) {
+  return kind === BlockKind.Tnt || kind === BlockKind.Candle || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind);
+}
+
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {
   if (!neighbor || neighbor.open) return true;
+  if (usesSeparateModel(neighbor.kind)) return block.kind !== BlockKind.Water && block.kind !== BlockKind.Glass;
   if (block.kind === BlockKind.Water || block.kind === BlockKind.Glass) return neighbor.kind === BlockKind.Water || neighbor.kind === BlockKind.Glass;
   return neighbor.kind === BlockKind.Water || neighbor.kind === BlockKind.Glass;
 }
@@ -146,7 +151,7 @@ export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxe
   createAtlas();
   const groups = new Map<string, GeometryGroup>();
   for (const block of blocks) {
-    if (block.kind === BlockKind.Tnt || block.kind === BlockKind.Candle || isCrop(block.kind) || isSapling(block.kind) || isDoor(block.kind) || isTrapdoor(block.kind) || isUtilityBlock(block.kind)) continue;
+    if (usesSeparateModel(block.kind)) continue;
     const groupName = groupFor(block.kind);
     let group = groups.get(groupName);
     if (!group) {
