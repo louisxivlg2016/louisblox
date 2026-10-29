@@ -70,7 +70,7 @@ export function Backpack() {
           <div className="backpack-blocks">{HOTBAR_BLOCKS.filter((kind) => !isCrop(kind)).map(itemButton)}</div>
           <p className="backpack-label">Graines et plants · sur herbe ou terre · E pour récolter quand c’est mûr</p>
           <div className="backpack-blocks">{CROP_KINDS.map(itemButton)}</div>
-          <p className="backpack-label">Épées, armures, arcs, pistolets, voitures et selle · E pour utiliser</p>
+          <p className="backpack-label">Pioches, pelles, épées, armures et équipement · clic gauche pour miner ou utiliser</p>
           <div className="backpack-blocks">{ITEM_ORDER.map(itemButton)}</div>
           <p className="backpack-label">Manger pour récupérer des vies</p>
           <div className="backpack-resources">

@@ -25,6 +25,31 @@ export function SwordModel({ color }: { color: string }) {
   );
 }
 
+export function ToolModel({ kind }: { kind: ItemKind }) {
+  const color = ITEM_META[kind].color;
+  if (kind.startsWith('pickaxe_')) return (
+    <group rotation={[0, 0, -0.35]}>
+      <PixelPart position={[0, -0.18, 0]} size={[0.12, 0.9, 0.12]} color="#765034" />
+      <PixelPart position={[0, 0.33, 0]} size={[0.7, 0.14, 0.17]} color={color} />
+      <PixelPart position={[-0.36, 0.22, 0]} size={[0.13, 0.25, 0.16]} color={color} />
+      <PixelPart position={[0.36, 0.22, 0]} size={[0.13, 0.25, 0.16]} color={color} />
+      <PixelPart position={[-0.41, 0.1, 0]} size={[0.1, 0.13, 0.13]} color={color} />
+      <PixelPart position={[0.41, 0.1, 0]} size={[0.1, 0.13, 0.13]} color={color} />
+      <PixelPart position={[0, 0.23, 0]} size={[0.18, 0.2, 0.18]} color={color} />
+    </group>
+  );
+  return (
+    <group rotation={[0, 0, -0.25]}>
+      <PixelPart position={[0, -0.16, 0]} size={[0.11, 0.86, 0.11]} color="#765034" />
+      <PixelPart position={[0, -0.64, 0]} size={[0.25, 0.13, 0.15]} color="#604029" />
+      <PixelPart position={[0, 0.38, 0]} size={[0.3, 0.34, 0.14]} color={color} />
+      <PixelPart position={[0, 0.55, 0]} size={[0.35, 0.1, 0.15]} color={color} />
+      <PixelPart position={[0, 0.16, 0]} size={[0.18, 0.15, 0.12]} color={color} />
+      <PixelPart position={[0, 0.07, 0]} size={[0.09, 0.08, 0.1]} color={color} />
+    </group>
+  );
+}
+
 export function BowModel({ crossbow = false }: { crossbow?: boolean }) {
   if (crossbow) return (
     <group>
@@ -167,6 +192,7 @@ export function ItemModel({ kind, held = false }: ModelProps) {
   if (meta.category === 'sword') model = <SwordModel color={meta.color} />;
   else if (meta.category === 'bow') model = <BowModel crossbow={kind === 'crossbow'} />;
   else if (meta.category === 'gun') model = <GunModel color={meta.color} bomb={kind === 'pistol_bomb'} />;
+  else if (meta.category === 'pickaxe' || meta.category === 'shovel') model = <ToolModel kind={kind} />;
   else if (meta.category === 'food') model = <FoodModel kind={kind} />;
   else if (meta.category === 'armor') model = <ArmorModel color={meta.color} />;
   else if (meta.category === 'saddle') model = <SaddleModel />;

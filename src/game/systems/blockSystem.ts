@@ -9,6 +9,7 @@ import { cropDefinition } from '../crops';
 import { consumeActions, isMouseDown, stopMining } from '../input';
 import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
+import { isSword, miningSpeed } from '../items';
 import { BlockTarget, Chunk, ChunkData, Player, PlayerPosition, TargetMesh } from '../traits';
 import { BLOCK_HARDNESS, BlockKind, raycastVoxel, voxelKey } from '../voxel';
 
@@ -71,7 +72,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   const kind = hit?.block.kind;
-  const canMine = typeof store.selected === 'number' || (typeof store.selected === 'string' && store.selected.startsWith('sword_'));
+  const canMine = typeof store.selected === 'number' || isSword(store.selected)
+    || (typeof store.selected === 'string' && (store.selected.startsWith('pickaxe_') || store.selected.startsWith('shovel_')));
   const mining = canMine && isMouseDown(0) && hit !== null && useGameStore.getState().mode === 'play';
   if (mining && hit && kind !== undefined) {
     const key = voxelKey(hit.x, hit.y, hit.z);
@@ -81,7 +83,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       target.miningProgress = 0;
     }
     target.miningProgress += dt;
-    const progress = Math.min(1, target.miningProgress / BLOCK_HARDNESS[kind]);
+    const progress = Math.min(1, target.miningProgress / (BLOCK_HARDNESS[kind] / miningSpeed(store.selected, kind)));
     if (Math.abs(store.miningProgress - progress) >= 0.01) store.setMiningProgress(progress);
 
     if (progress >= 1) {
