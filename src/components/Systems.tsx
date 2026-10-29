@@ -34,11 +34,18 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
     value.setMaxSlopeClimbAngle(Math.PI / 4);
     return value;
   }, [physicsWorld]);
-  useEffect(() => () => controller.free(), [controller]);
+  useEffect(() => {
+    const updateColliders = () => collisionSystem(world, physicsWorld, rapier);
+    updateColliders();
+    const interval = window.setInterval(updateColliders, 1000 / 30);
+    return () => {
+      window.clearInterval(interval);
+      controller.free();
+    };
+  }, [world, physicsWorld, rapier, controller]);
 
   useFrame(({ camera }, delta) => {
     const dt = Math.min(delta, 0.05);
-    collisionSystem(world, physicsWorld, rapier);
     if (useGameStore.getState().mode === 'play') {
       const sleeping = world.queryFirst(Sleep) !== undefined;
       const actions = consumeActions();

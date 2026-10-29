@@ -1,8 +1,8 @@
 import type { Entity, World } from 'koota';
 import { Mesh, Vector3 } from 'three';
-import { chunkCoordinate, getBlockIndex } from '../chunks';
+import { chunkCoordinate, getBlockIndex, getWorldSeed } from '../chunks';
 import { isCrop } from '../extraBlocks';
-import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
+import { biomeAt, MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { BlockKind, voxelKey } from '../voxel';
@@ -20,6 +20,7 @@ type Motion = {
   velocityY: number;
   grounded: boolean;
   avoid: number;
+  climbTarget: number | null;
 };
 
 function tint(mesh: import('three').Object3D, color: string) {
@@ -52,6 +53,10 @@ function bodyClear(world: World, x: number, z: number, feetY: number) {
   return true;
 }
 
+function climbRise(world: World, x: number, z: number) {
+  return biomeAt(Math.floor(x), Math.floor(z), getWorldSeed(world)) === 'winter' ? 4 : 1.05;
+}
+
 function canAdvance(world: World, kind: AnimalKind, position: Vector3, yaw: number) {
   const x = position.x + Math.sin(yaw) * 0.8;
   const z = position.z + Math.cos(yaw) * 0.8;
@@ -60,8 +65,9 @@ function canAdvance(world: World, kind: AnimalKind, position: Vector3, yaw: numb
     const ground = groundAt(world, x, z, MAX_BUILD_Y);
     return ground < SEA_LEVEL + 0.5 && blockAt(world, x, SEA_LEVEL, z)?.kind === BlockKind.Water;
   }
-  const ground = groundAt(world, x, z, position.y + 1.05);
-  return ground >= SEA_LEVEL + 0.5 && ground <= position.y + 1.05 && bodyClear(world, x, z, ground);
+  const rise = climbRise(world, x, z);
+  const ground = groundAt(world, x, z, position.y + rise + 0.05);
+  return ground >= SEA_LEVEL + 0.5 && ground <= position.y + rise && bodyClear(world, x, z, ground);
 }
 
 function avoidWall(world: World, kind: AnimalKind, position: Vector3, motion: Motion, entity: Entity) {
@@ -93,11 +99,15 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
     }
   } else {
     if (isLoaded(world, x, z)) {
-      const ground = groundAt(world, x, z, position.y + 1.05);
-      if (ground >= SEA_LEVEL + 0.5 && ground <= position.y + 1.05 && bodyClear(world, x, z, ground)) {
+      const rise = climbRise(world, x, z);
+      const ground = groundAt(world, x, z, position.y + rise + 0.05);
+      if (ground >= SEA_LEVEL + 0.5 && ground <= position.y + rise && bodyClear(world, x, z, ground)) {
         position.x = x;
         position.z = z;
-        if (motion.grounded && ground > position.y) position.y = ground;
+        if (motion.grounded && ground > position.y) {
+          if (ground - position.y > 1.05) motion.climbTarget = ground;
+          else position.y = ground;
+        }
       } else {
         blocked = true;
       }
@@ -106,7 +116,12 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
     }
 
     const ground = groundAt(world, position.x, position.z, position.y + 0.2);
-    if (position.y <= ground + 0.001 && motion.velocityY <= 0) {
+    if (motion.climbTarget !== null && motion.climbTarget !== undefined) {
+      position.y = Math.min(motion.climbTarget, position.y + dt * 4);
+      motion.velocityY = 0;
+      motion.grounded = position.y >= motion.climbTarget;
+      if (motion.grounded) motion.climbTarget = null;
+    } else if (position.y <= ground + 0.001 && motion.velocityY <= 0) {
       position.y = ground;
       motion.velocityY = 0;
       motion.grounded = true;
