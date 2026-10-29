@@ -36,6 +36,8 @@ export type Voxel = {
   kind: BlockKind;
   open?: boolean;
   growth?: number;
+  items?: import('./items').SelectedKind[];
+  facing?: 'north' | 'south' | 'east' | 'west';
 };
 
 export type VoxelHit = {

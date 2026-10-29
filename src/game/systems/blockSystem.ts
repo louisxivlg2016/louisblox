@@ -4,7 +4,8 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isCrop, isDoor, isSapling, isTrapdoor } from '../extraBlocks';
+import { isChest, isCrop, isDoor, isFurnace, isLadder, isSapling, isTrapdoor } from '../extraBlocks';
+import { openChest, openFurnace } from '../containers';
 import { cropDefinition } from '../crops';
 import { consumeActions, isMouseDown, stopMining } from '../input';
 import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
@@ -106,6 +107,15 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   const actions = pendingActions ?? consumeActions();
   if (useGameStore.getState().mode !== 'play' || !hit) return;
 
+  if ((actions.place > 0 || actions.harvest > 0) && isChest(hit.block.kind)) {
+    openChest(world, hit);
+    return;
+  }
+  if ((actions.place > 0 || actions.harvest > 0) && isFurnace(hit.block.kind)) {
+    openFurnace(hit);
+    return;
+  }
+
   if ((actions.place > 0 || actions.harvest > 0) && (isDoor(hit.block.kind) || isTrapdoor(hit.block.kind))) {
     replaceVoxel(world, hit, hit.block.kind, !hit.block.open);
     return;
@@ -158,7 +168,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         store.setNotice(`${cropDefinition(kind).name} planté. La récolte sera prête dans 24 secondes.`);
         return;
       }
-      addVoxel(world, x, y, z, kind);
+      const facing = hit.normal.x === 1 ? 'east' : hit.normal.x === -1 ? 'west' : hit.normal.z === 1 ? 'south' : 'north';
+      addVoxel(world, x, y, z, kind, undefined, isLadder(kind) ? facing : undefined);
       if (kind === BlockKind.Tnt) {
         const bomb = spawnBomb(world, x, y, z);
         const cx = chunkCoordinate(x);

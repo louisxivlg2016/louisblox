@@ -6,6 +6,8 @@ import { MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
 import { getSwimState, swimVerticalVelocity } from '../swimming';
 import { dismount } from '../vehicles';
+import { isLadder } from '../extraBlocks';
+import { BlockKind, voxelKey } from '../voxel';
 import { AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, VehiclePosition } from '../traits';
 
 type RapierWorld = ReturnType<typeof useRapier>['world'];
@@ -62,8 +64,11 @@ export function playerSystem(
   const strafe = Math.max(-1, Math.min(1, keyboardStrafe + touch.x));
   const length = Math.max(1, Math.hypot(forward, strafe));
   const shifting = isDown('ShiftLeft') || isDown('ShiftRight');
-  const swimming = getSwimState(getBlockIndex(world), position);
+  const blocks = getBlockIndex(world);
+  const swimming = getSwimState(blocks, position);
   const inWater = !flying && swimming.inWater;
+  const ladderAt = (y: number) => blocks.get(voxelKey(Math.round(position.x), Math.round(y), Math.round(position.z)))?.kind === BlockKind.Ladder;
+  const onLadder = !flying && (ladderAt(position.y) || ladderAt(position.y + 0.75) || ladderAt(position.y + 1.5));
   const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1);
   const normalizedForward = forward / length;
   const normalizedStrafe = strafe / length;
@@ -71,6 +76,7 @@ export function playerSystem(
   velocity.z = (-Math.cos(yaw) * normalizedForward - Math.sin(yaw) * normalizedStrafe) * speed;
 
   if (flying) velocity.y = (Number(isDown('Space')) - Number(isDown('KeyC'))) * FLY_SPEED;
+  else if (onLadder) velocity.y = isDown('Space') ? 3.8 : isDown('KeyC') ? -2.8 : Math.max(velocity.y, -0.8);
   else if (inWater) velocity.y = swimVerticalVelocity(swimming, velocity.y, isDown('KeyC'), isDown('Space'), position.y);
   else if (state.grounded && isDown('Space')) velocity.y = JUMP_SPEED;
   else velocity.y -= GRAVITY * dt;

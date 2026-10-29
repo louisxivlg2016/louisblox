@@ -8,6 +8,7 @@ import { selectionInfo } from '../game/items';
 import { ItemIcon } from './ItemIcon';
 import { world } from '../game/world';
 import { Backpack } from './Backpack';
+import { ContainerPanel } from './ContainerPanel';
 import { TouchControls } from './TouchControls';
 
 const WEATHER_NAMES = { clear: 'Ciel clair', rain: 'Pluie', snow: 'Neige' } as const;
@@ -28,6 +29,7 @@ export function Hud() {
   const lives = useGameStore((state) => state.lives);
   const backpackOpen = useGameStore((state) => state.backpackOpen);
   const teleportOpen = useGameStore((state) => state.teleportOpen);
+  const containerOpen = useGameStore((state) => state.container !== null);
   const coordinates = useGameStore((state) => state.coordinates);
   const environment = useGameStore((state) => state.environment);
   const selectBlock = useGameStore((state) => state.selectBlock);
@@ -100,7 +102,7 @@ export function Hud() {
         </div>
       )}
 
-      {mode !== 'play' && !backpackOpen && !teleportOpen && (
+      {mode !== 'play' && !backpackOpen && !teleportOpen && !containerOpen && (
         <div className="menu-backdrop">
           <section className="menu-panel">
             <div className="brand-mark" aria-hidden="true"><span>L</span></div>
@@ -142,6 +144,7 @@ export function Hud() {
         </div>
       )}
       <Backpack />
+      <ContainerPanel />
     </div>
   );
 }

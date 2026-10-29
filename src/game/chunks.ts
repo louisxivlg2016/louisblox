@@ -5,7 +5,7 @@ import type { LevelData } from './levels';
 import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
-import { isCrop, isDoor, isSapling, isTrapdoor } from './extraBlocks';
+import { isChest, isCrop, isDoor, isLadder, isSapling, isTrapdoor } from './extraBlocks';
 import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
 import type { ArmorKind, ItemKind, SelectedKind } from './items';
 import {
@@ -19,7 +19,7 @@ import { useGameStore } from './store';
 import { BlockKind, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
 
-type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number } | null;
+type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing'] } | null;
 export type SavedCar = { x: number; y: number; z: number; yaw: number; color: string };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
@@ -122,7 +122,7 @@ function loadChunk(world: World, cx: number, cz: number) {
       else {
         const [x, y, z] = position.split(',').map(Number);
         const data = typeof kind === 'number' ? { kind, open: false } : kind;
-        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth });
+        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing });
       }
     }
   }
@@ -317,7 +317,7 @@ export function growSapling(world: World, kind: BlockKind, x: number, y: number,
   }
 }
 
-export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?: boolean, growth?: number) {
+export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?: boolean, growth?: number, items?: SelectedKind[]) {
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
   if (!block) return;
@@ -325,18 +325,24 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
   if (open !== undefined) block.open = open;
   if (isCrop(kind)) block.growth = growth ?? block.growth ?? 3;
   else delete block.growth;
+  if (isChest(kind)) block.items = items ?? block.items ?? [];
+  else delete block.items;
+  if (!isLadder(kind)) delete block.facing;
   const cx = chunkCoordinate(hit.x);
   const cz = chunkCoordinate(hit.z);
   const chunkEntity = state.chunks.get(chunkKey(cx, cz));
   if (!chunkEntity) return;
   const door = isDoor(kind) || isTrapdoor(kind);
-  const edit = door ? { kind, open: block.open ?? false } : isCrop(kind) ? { kind, growth: block.growth ?? 0 } : kind;
+  const edit = door ? { kind, open: block.open ?? false }
+    : isCrop(kind) ? { kind, growth: block.growth ?? 0 }
+      : isChest(kind) ? { kind, items: block.items ?? [] }
+        : isLadder(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
   editsFor(state, cx, cz).set(voxelKey(hit.x, hit.y, hit.z), edit);
   touchChunk(chunkEntity);
   touchNeighbors(state, cx, cz);
 }
 
-export function addVoxel(world: World, x: number, y: number, z: number, kind: BlockKind, growth?: number) {
+export function addVoxel(world: World, x: number, y: number, z: number, kind: BlockKind, growth?: number, facing?: Voxel['facing']) {
   const state = stateFor(world);
   const cx = chunkCoordinate(x);
   const cz = chunkCoordinate(z);
@@ -352,9 +358,14 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
 
   const block: Voxel = { x, y, z, kind };
   if (isCrop(kind)) block.growth = growth ?? 3;
+  if (isChest(kind)) block.items = [];
+  if (isLadder(kind)) block.facing = facing ?? 'north';
   data.blocks.push(block);
   state.blocks.set(position, block);
-  editsFor(state, cx, cz).set(position, isCrop(kind) ? { kind, growth: block.growth ?? 0 } : kind);
+  const edit = isCrop(kind) ? { kind, growth: block.growth ?? 0 }
+    : isChest(kind) ? { kind, items: [] }
+      : isLadder(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
+  editsFor(state, cx, cz).set(position, edit);
   touchChunk(chunkEntity);
   touchNeighbors(state, cx, cz);
 }

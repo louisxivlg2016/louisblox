@@ -21,6 +21,10 @@ type GameStore = {
   riding: 'car' | 'horse' | null;
   notice: string;
   teleportOpen: boolean;
+  container: { type: 'chest' | 'furnace'; x: number; y: number; z: number } | null;
+  chestItems: SelectedKind[];
+  openContainer: (type: 'chest' | 'furnace', position: { x: number; y: number; z: number }, items?: SelectedKind[]) => void;
+  closeContainer: () => void;
   generation: number;
   blockCount: number;
   apples: number;
@@ -66,6 +70,8 @@ export const useGameStore = create<GameStore>((set) => ({
   riding: null,
   notice: '',
   teleportOpen: false,
+  container: null,
+  chestItems: [],
   generation: 0,
   blockCount: 0,
   apples: 0,
@@ -90,6 +96,8 @@ export const useGameStore = create<GameStore>((set) => ({
   setRiding: (riding) => set({ riding }),
   setNotice: (notice) => set({ notice }),
   setTeleportOpen: (teleportOpen) => set({ teleportOpen }),
+  openContainer: (type, position, items = []) => set({ container: { type, ...position }, chestItems: items, mode: 'pause', backpackOpen: false, teleportOpen: false, backpackItem: null }),
+  closeContainer: () => set({ container: null, chestItems: [] }),
   setBlockCount: (blockCount) => set({ blockCount }),
   setCoordinates: (coordinates) => set({ coordinates }),
   setEnvironment: (environment) => set({ environment }),
@@ -111,6 +119,8 @@ export const useGameStore = create<GameStore>((set) => ({
     equippedArmor: null,
     riding: null,
     teleportOpen: false,
+    container: null,
+    chestItems: [],
     apples: 0,
     meat: createMeatInventory(),
     miningProgress: 0,

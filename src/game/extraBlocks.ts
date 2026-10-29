@@ -62,6 +62,9 @@ export const EXTRA_BLOCKS = {
   Tomato: 82,
   Carrot: 83,
   Watermelon: 84,
+  Furnace: 85,
+  Chest: 86,
+  Ladder: 87,
 } as const;
 
 export type ExtraBlockKind = (typeof EXTRA_BLOCKS)[keyof typeof EXTRA_BLOCKS];
@@ -72,6 +75,10 @@ export const isDoor = (kind: number) => kind >= EXTRA_BLOCKS.DoorWhite && kind <
 export const isTrapdoor = (kind: number) => kind >= EXTRA_BLOCKS.TrapdoorWhite && kind <= EXTRA_BLOCKS.TrapdoorBlack;
 export const CROP_KINDS = [EXTRA_BLOCKS.Corn, EXTRA_BLOCKS.Wheat, EXTRA_BLOCKS.Tomato, EXTRA_BLOCKS.Carrot, EXTRA_BLOCKS.Watermelon] as const;
 export const isCrop = (kind: number) => (CROP_KINDS as readonly number[]).includes(kind);
+export const isFurnace = (kind: number) => kind === EXTRA_BLOCKS.Furnace;
+export const isChest = (kind: number) => kind === EXTRA_BLOCKS.Chest;
+export const isLadder = (kind: number) => kind === EXTRA_BLOCKS.Ladder;
+export const isUtilityBlock = (kind: number) => isFurnace(kind) || isChest(kind) || isLadder(kind);
 
 function shade(hex: string, amount: number) {
   const value = Number.parseInt(hex.slice(1), 16);
@@ -152,4 +159,7 @@ export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.Tomato]: block('Graines de tomate', '#c84a3c', 0.15),
   [EXTRA_BLOCKS.Carrot]: block('Graines de carotte', '#df913e', 0.15),
   [EXTRA_BLOCKS.Watermelon]: block('Graines de pastèque', '#59944d', 0.15),
+  [EXTRA_BLOCKS.Furnace]: block('Four', '#666c72', 2.5),
+  [EXTRA_BLOCKS.Chest]: block('Coffre', '#a9753c', 1.8),
+  [EXTRA_BLOCKS.Ladder]: block('Échelle', '#a47c49', 0.4),
 };

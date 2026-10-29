@@ -67,7 +67,10 @@ export function initInput() {
     if (event.code === 'Tab') {
       event.preventDefault();
       const state = useGameStore.getState();
-      if (state.backpackOpen) {
+      if (state.container) {
+        state.closeContainer();
+        void requestPlay();
+      } else if (state.backpackOpen) {
         state.setBackpack(false);
         void requestPlay();
       } else if (state.mode === 'play') {
@@ -96,6 +99,11 @@ export function initInput() {
       return;
     }
     if (event.code === 'Escape') {
+      if (useGameStore.getState().container) {
+        useGameStore.getState().closeContainer();
+        void requestPlay();
+        return;
+      }
       if (document.pointerLockElement !== null) document.exitPointerLock();
       else if (pointerLockFallback && useGameStore.getState().mode === 'play') {
         pointerLockFallback = false;

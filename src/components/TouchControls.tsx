@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { requestFlightToggle, setTouchKey, setTouchMovement } from '../game/input';
+import { queuePlacement, requestFlightToggle, setTouchKey, setTouchMovement } from '../game/input';
 import { useGameStore } from '../game/store';
 
 function HoldButton({ code, label, onDoubleTap }: { code: string; label: string; onDoubleTap?: () => void }) {
@@ -86,6 +86,16 @@ export function TouchControls() {
           Vol
         </button>
         <HoldButton code="KeyC" label="Descendre" />
+        <button
+          className="touch-button touch-use"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            queuePlacement();
+          }}
+        >
+          Utiliser
+        </button>
         <button
           className="touch-button"
           onPointerDown={(event) => {

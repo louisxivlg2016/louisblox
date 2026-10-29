@@ -8,6 +8,8 @@ import { blockGeometry, blockMaterials } from '../game/textures';
 import { BlockKind } from '../game/voxel';
 import { ItemModel } from './ItemModel';
 import { BombModel, CandleModel } from './SpecialBlocks';
+import { UtilityBlockModel } from './UtilityBlocks';
+import { isUtilityBlock } from '../game/extraBlocks';
 
 function createSkinTexture() {
   const canvas = document.createElement('canvas');
@@ -62,9 +64,11 @@ export function Hands() {
       ))}
       {typeof selected === 'number' ? (
         selected === BlockKind.Tnt || selected === BlockKind.Candle ? (
-          <group position={[0.36, -0.43, -0.72]} rotation={[0.08, 0.15, 0]} scale={0.5}>
+          <group position={[0.34, -0.42, -0.86]} rotation={[0.08, 0.15, 0]} scale={0.48}>
             {selected === BlockKind.Tnt ? <BombModel /> : <CandleModel />}
           </group>
+        ) : isUtilityBlock(selected) ? (
+          <group position={[0.36, -0.4, -0.78]} scale={0.48}><UtilityBlockModel kind={selected} /></group>
         ) : (
           <mesh args={[blockGeometry, heldMaterials]} position={[0.36, -0.26, -0.72]} rotation={[0.2, 0.55, 0.05]} scale={0.24} renderOrder={11} frustumCulled={false} />
         )
