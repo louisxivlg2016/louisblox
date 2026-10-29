@@ -74,6 +74,33 @@ export function FoodModel({ kind }: { kind: ItemKind }) {
       <PixelPart position={[0, -0.5, 0]} size={[0.23, 0.12, 0.12]} color="#f3e7c9" />
     </group>
   );
+  if (kind === 'corn') return (
+    <group>
+      <PixelPart position={[0, 0, 0]} size={[0.25, 0.68, 0.25]} color="#e7c546" />
+      <PixelPart position={[-0.17, -0.1, 0]} size={[0.1, 0.5, 0.16]} color="#4f893e" />
+      <PixelPart position={[0.17, -0.1, 0]} size={[0.1, 0.5, 0.16]} color="#659d47" />
+      <PixelPart position={[0, 0.4, 0]} size={[0.07, 0.18, 0.07]} color="#b49748" />
+    </group>
+  );
+  if (kind === 'wheat') return (
+    <group>{[-0.2, 0, 0.2].map((x) => <group key={x}><PixelPart position={[x, -0.1, 0]} size={[0.045, 0.7, 0.045]} color="#8c9b4a" /><PixelPart position={[x, 0.28, 0]} size={[0.14, 0.3, 0.14]} color={color} /></group>)}</group>
+  );
+  if (kind === 'carrot') return (
+    <group>
+      <PixelPart position={[0, 0.05, 0]} size={[0.27, 0.42, 0.27]} color={color} />
+      <PixelPart position={[0, -0.25, 0]} size={[0.15, 0.2, 0.15]} color={color} />
+      <PixelPart position={[-0.1, 0.39, 0]} size={[0.09, 0.35, 0.1]} color="#4e8a3f" />
+      <PixelPart position={[0.1, 0.42, 0]} size={[0.09, 0.4, 0.1]} color="#66a54a" />
+    </group>
+  );
+  if (kind === 'watermelon') return (
+    <group>
+      <PixelPart position={[0, 0, 0]} size={[0.62, 0.48, 0.58]} color={color} />
+      <PixelPart position={[-0.18, 0, -0.3]} size={[0.07, 0.48, 0.035]} color="#2f683a" />
+      <PixelPart position={[0.18, 0, -0.3]} size={[0.07, 0.48, 0.035]} color="#2f683a" />
+      <PixelPart position={[0, 0.31, 0]} size={[0.08, 0.16, 0.08]} color="#755335" />
+    </group>
+  );
   return (
     <group>
       <PixelPart position={[0, 0, 0]} size={[0.45, 0.44, 0.43]} color={color} />

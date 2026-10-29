@@ -7,7 +7,8 @@ import { Chunk, ChunkData } from '../game/traits';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { SpecialBlocks } from './SpecialBlocks';
 import { DoorInstances } from './DoorInstances';
-import { isDoor, isSapling, isTrapdoor } from '../game/extraBlocks';
+import { CropInstances } from './CropInstances';
+import { isCrop, isDoor, isSapling, isTrapdoor } from '../game/extraBlocks';
 import { BlockKind, voxelKey } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 
@@ -102,6 +103,7 @@ function ChunkView({ entity }: { entity: Entity }) {
   const tntBlocks: Voxel[] = [];
   const candleBlocks: Voxel[] = [];
   const doorBlocks: Voxel[] = [];
+  const cropBlocks: Voxel[] = [];
   const saplingGroups = new Map<BlockKind, Voxel[]>();
 
   if (chunk && data) {
@@ -118,6 +120,10 @@ function ChunkView({ entity }: { entity: Entity }) {
       }
       if (block.kind === BlockKind.Candle) {
         candleBlocks.push(block);
+        continue;
+      }
+      if (isCrop(block.kind)) {
+        cropBlocks.push(block);
         continue;
       }
       if (isDoor(block.kind) || isTrapdoor(block.kind)) {
@@ -150,6 +156,7 @@ function ChunkView({ entity }: { entity: Entity }) {
       {[...saplingGroups.entries()].map(([kind, values]) => (
         <SaplingInstances key={kind} kind={kind} blocks={values} />
       ))}
+      <CropInstances blocks={cropBlocks} />
       <SpecialBlocks kind={BlockKind.Tnt} blocks={tntBlocks} />
       <SpecialBlocks kind={BlockKind.Candle} blocks={candleBlocks} />
       <DoorInstances blocks={doorBlocks} />

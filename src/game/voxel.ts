@@ -35,6 +35,7 @@ export type Voxel = {
   z: number;
   kind: BlockKind;
   open?: boolean;
+  growth?: number;
 };
 
 export type VoxelHit = {

@@ -4,7 +4,8 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isDoor, isSapling, isTrapdoor } from '../extraBlocks';
+import { isCrop, isDoor, isSapling, isTrapdoor } from '../extraBlocks';
+import { cropDefinition } from '../crops';
 import { consumeActions, isMouseDown, stopMining } from '../input';
 import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
@@ -18,6 +19,18 @@ function intersectsPlayer(x: number, y: number, z: number, player: Vector3) {
   const horizontal = Math.abs(player.x - x) < 0.86 && Math.abs(player.z - z) < 0.86;
   const vertical = y - 0.5 < player.y + 1.8 && y + 0.5 > player.y;
   return horizontal && vertical;
+}
+
+function attachGrowth(world: World, kind: BlockKind, x: number, y: number, z: number) {
+  const sapling = spawnSapling(world, kind, x, y, z);
+  const cx = chunkCoordinate(x);
+  const cz = chunkCoordinate(z);
+  for (const chunkEntity of world.query(Chunk, ChunkData)) {
+    const chunk = chunkEntity.get(Chunk)!;
+    if (chunk.x !== cx || chunk.z !== cz) continue;
+    chunkEntity.get(ChunkData)!.saplings.push(sapling);
+    break;
+  }
 }
 
 export function blockSystem(world: World, camera: Camera, dt: number, disabled = false, pendingActions?: { place: number; harvest: number }) {
@@ -96,6 +109,25 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     return;
   }
 
+  if ((actions.place > 0 || actions.harvest > 0) && isCrop(hit.block.kind)) {
+    const definition = cropDefinition(hit.block.kind);
+    if ((hit.block.growth ?? 3) < 3) {
+      store.setNotice(`${definition.name} pousse encore…`);
+      return;
+    }
+    store.setItemCount(definition.food, store.itemCounts[definition.food] + definition.yield);
+    store.setNotice(`${definition.name} récolté : +${definition.yield} dans le sac.`);
+    if (definition.regrows) {
+      replaceVoxel(world, hit, hit.block.kind, undefined, 0);
+      attachGrowth(world, hit.block.kind, hit.x, hit.y, hit.z);
+    } else {
+      removeVoxel(world, hit);
+      target.visible = false;
+      if (mesh) mesh.visible = false;
+    }
+    return;
+  }
+
   if (actions.harvest > 0 && hit.block.kind === BlockKind.Apple) {
     replaceVoxel(world, hit, BlockKind.Leaves);
     store.collectApple();
@@ -113,6 +145,17 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     if (inBounds && !blocks.has(voxelKey(x, y, z)) && !intersectsPlayer(x, y, z, player)) {
       const kind = useGameStore.getState().selected;
       if (typeof kind !== 'number') return;
+      if (isCrop(kind)) {
+        const soil = hit.block.kind === BlockKind.Grass || hit.block.kind === BlockKind.Dirt || hit.block.kind === BlockKind.ForestGrass || hit.block.kind === BlockKind.AutumnGrass;
+        if (hit.normal.y !== 1 || !soil) {
+          store.setNotice('Les graines se plantent sur le dessus d’un bloc d’herbe ou de terre.');
+          return;
+        }
+        addVoxel(world, x, y, z, kind, 0);
+        attachGrowth(world, kind, x, y, z);
+        store.setNotice(`${cropDefinition(kind).name} planté. La récolte sera prête dans 24 secondes.`);
+        return;
+      }
       addVoxel(world, x, y, z, kind);
       if (kind === BlockKind.Tnt) {
         const bomb = spawnBomb(world, x, y, z);
@@ -125,17 +168,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
           break;
         }
       }
-      if (isSapling(kind)) {
-        const sapling = spawnSapling(world, kind, x, y, z);
-        const cx = chunkCoordinate(x);
-        const cz = chunkCoordinate(z);
-        for (const chunkEntity of world.query(Chunk, ChunkData)) {
-          const chunk = chunkEntity.get(Chunk)!;
-          if (chunk.x !== cx || chunk.z !== cz) continue;
-          chunkEntity.get(ChunkData)!.saplings.push(sapling);
-          break;
-        }
-      }
+      if (isSapling(kind)) attachGrowth(world, kind, x, y, z);
     }
   }
 }

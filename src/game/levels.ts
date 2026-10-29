@@ -1,4 +1,5 @@
 import { BlockKind, voxelKey } from './voxel';
+import { CROP_KINDS } from './extraBlocks';
 import type { Voxel } from './voxel';
 
 export const CHUNK_SIZE = 16;
@@ -145,6 +146,24 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
         if (biome === 'winter') put(x, SEA_LEVEL, z, BlockKind.Ice);
       }
     }
+  }
+
+  for (let x = minX - 3; x < maxX + 3; x += 1) {
+    for (let z = minZ - 3; z < maxZ + 3; z += 1) {
+      const height = heightAt(x, z, seed);
+      if (biomeAt(x, z, seed) !== 'prairie' || height <= SEA_LEVEL + 1) continue;
+      if (hash(x, z, seed + 613) > 0.955) {
+        const crop = CROP_KINDS[Math.floor(hash(Math.floor(x / 4), Math.floor(z / 4), seed + 614) * CROP_KINDS.length)];
+        put(x, height + 1, z, crop, false);
+      }
+    }
+  }
+  if (cx === 0 && cz === 0) {
+    const starterCrops = [[4, -3], [5, -2], [6, -1], [7, 0], [8, 1]];
+    starterCrops.forEach(([x, z], index) => {
+      const height = heightAt(x, z, seed);
+      if (height > SEA_LEVEL + 1) put(x, height + 1, z, CROP_KINDS[index], false);
+    });
   }
 
   for (let x = minX - 3; x < maxX + 3; x += 1) {

@@ -5,7 +5,7 @@ import type { LevelData } from './levels';
 import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
-import { isDoor, isSapling, isTrapdoor } from './extraBlocks';
+import { isCrop, isDoor, isSapling, isTrapdoor } from './extraBlocks';
 import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
 import type { ArmorKind, ItemKind, SelectedKind } from './items';
 import {
@@ -19,7 +19,7 @@ import { useGameStore } from './store';
 import { BlockKind, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
 
-type ChunkEdit = BlockKind | { kind: BlockKind; open: boolean } | null;
+type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number } | null;
 export type SavedCar = { x: number; y: number; z: number; yaw: number; color: string };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
@@ -122,7 +122,7 @@ function loadChunk(world: World, cx: number, cz: number) {
       else {
         const [x, y, z] = position.split(',').map(Number);
         const data = typeof kind === 'number' ? { kind, open: false } : kind;
-        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open });
+        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth });
       }
     }
   }
@@ -153,7 +153,7 @@ function loadChunk(world: World, cx: number, cz: number) {
   }
   for (const block of data.blocks) {
     if (block.kind === BlockKind.Tnt) data.bombs.push(spawnBomb(world, block.x, block.y, block.z));
-    if (isSapling(block.kind)) data.saplings.push(spawnSapling(world, block.kind, block.x, block.y, block.z));
+    if (isSapling(block.kind) || (isCrop(block.kind) && (block.growth ?? 3) < 3)) data.saplings.push(spawnSapling(world, block.kind, block.x, block.y, block.z));
   }
 
   touchNeighbors(state, cx, cz);
@@ -313,23 +313,26 @@ export function growSapling(world: World, kind: BlockKind, x: number, y: number,
   }
 }
 
-export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?: boolean) {
+export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?: boolean, growth?: number) {
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
   if (!block) return;
   block.kind = kind;
   if (open !== undefined) block.open = open;
+  if (isCrop(kind)) block.growth = growth ?? block.growth ?? 3;
+  else delete block.growth;
   const cx = chunkCoordinate(hit.x);
   const cz = chunkCoordinate(hit.z);
   const chunkEntity = state.chunks.get(chunkKey(cx, cz));
   if (!chunkEntity) return;
   const door = isDoor(kind) || isTrapdoor(kind);
-  editsFor(state, cx, cz).set(voxelKey(hit.x, hit.y, hit.z), door ? { kind, open: block.open ?? false } : kind);
+  const edit = door ? { kind, open: block.open ?? false } : isCrop(kind) ? { kind, growth: block.growth ?? 0 } : kind;
+  editsFor(state, cx, cz).set(voxelKey(hit.x, hit.y, hit.z), edit);
   touchChunk(chunkEntity);
   touchNeighbors(state, cx, cz);
 }
 
-export function addVoxel(world: World, x: number, y: number, z: number, kind: BlockKind) {
+export function addVoxel(world: World, x: number, y: number, z: number, kind: BlockKind, growth?: number) {
   const state = stateFor(world);
   const cx = chunkCoordinate(x);
   const cz = chunkCoordinate(z);
@@ -343,10 +346,11 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
   if (existing && existing.kind !== BlockKind.Water) return;
   if (existing) data.blocks = data.blocks.filter((block) => voxelKey(block.x, block.y, block.z) !== position);
 
-  const block = { x, y, z, kind };
+  const block: Voxel = { x, y, z, kind };
+  if (isCrop(kind)) block.growth = growth ?? 3;
   data.blocks.push(block);
   state.blocks.set(position, block);
-  editsFor(state, cx, cz).set(position, kind);
+  editsFor(state, cx, cz).set(position, isCrop(kind) ? { kind, growth: block.growth ?? 0 } : kind);
   touchChunk(chunkEntity);
   touchNeighbors(state, cx, cz);
 }

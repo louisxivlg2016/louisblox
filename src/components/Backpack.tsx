@@ -8,6 +8,7 @@ import { eatItem, eatMeat } from '../game/systems/itemSystem';
 import { HOTBAR_BLOCKS } from '../game/voxel';
 import { world } from '../game/world';
 import { ItemIcon } from './ItemIcon';
+import { CROP_KINDS, isCrop } from '../game/extraBlocks';
 
 export function Backpack() {
   const open = useGameStore((state) => state.backpackOpen);
@@ -71,7 +72,9 @@ export function Backpack() {
           </button>
         ))}</div>
         <p className="backpack-label">Blocs, portes et trappes</p>
-        <div className="backpack-blocks">{HOTBAR_BLOCKS.map(itemButton)}</div>
+        <div className="backpack-blocks">{HOTBAR_BLOCKS.filter((kind) => !isCrop(kind)).map(itemButton)}</div>
+        <p className="backpack-label">Graines et plants · sur herbe ou terre · E pour récolter quand c’est mûr</p>
+        <div className="backpack-blocks">{CROP_KINDS.map(itemButton)}</div>
         <p className="backpack-label">Épées, armures, arcs, pistolets, voitures et selle · E pour utiliser</p>
         <div className="backpack-blocks">{ITEM_ORDER.map(itemButton)}</div>
         <p className="backpack-label">Manger pour récupérer des vies</p>

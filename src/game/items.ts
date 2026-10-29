@@ -6,6 +6,7 @@ export type ItemKind =
   | 'sword_wood' | 'sword_stone' | 'sword_iron' | 'sword_gold' | 'sword_diamond' | 'sword_silver'
   | 'armor_gold' | 'armor_diamond' | 'armor_silver'
   | 'apple' | 'bread' | 'cooked_meat' | 'berries'
+  | 'corn' | 'wheat' | 'tomato' | 'carrot' | 'watermelon'
   | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb'
   | 'car_red' | 'car_blue' | 'saddle';
 export type SelectedKind = BlockKind | ItemKind;
@@ -37,6 +38,11 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   bread: item('Pain', '#d9a75f', 'food', { healing: 3 }),
   cooked_meat: item('Viande cuite', '#a96341', 'food', { healing: 4 }),
   berries: item('Baies', '#a74a82', 'food', { healing: 1 }),
+  corn: item('Maïs', '#e5c442', 'food', { healing: 2 }),
+  wheat: item('Blé', '#cfa853', 'food', { healing: 1 }),
+  tomato: item('Tomate', '#dc4936', 'food', { healing: 2 }),
+  carrot: item('Carotte', '#e78b2f', 'food', { healing: 2 }),
+  watermelon: item('Pastèque', '#4b984b', 'food', { healing: 3 }),
   bow: item('Arc à flèches', '#a77843', 'bow', { cooldown: 0.55 }),
   crossbow: item('Arbalète', '#8c8c83', 'bow', { cooldown: 0.7 }),
   pistol_iron: item('Pistolet en fer', '#9caab3', 'gun', { cooldown: 0.42 }),
