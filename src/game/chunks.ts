@@ -7,7 +7,7 @@ import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
 import { isChest, isCrop, isDoor, isLadder, isSapling, isTrapdoor } from './extraBlocks';
 import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
-import type { ArmorKind, ItemKind, SelectedKind } from './items';
+import type { ArmorKind, SelectedKind } from './items';
 import {
   Animal, AnimalPosition, MeatDrop, Bomb, Explosion, Sapling, BlockTarget, Chunk, ChunkData,
   Environment, Sleep, HorseRider, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMesh, PlayerMount,
@@ -30,7 +30,7 @@ export type WorldSave = {
   selected: SelectedKind;
   lives?: number;
   hotbar?: SelectedKind[];
-  itemCounts?: Partial<Record<ItemKind, number>>;
+  itemCounts?: Partial<Record<string, number>>;
   equippedArmor?: ArmorKind | null;
   vehicles?: SavedCar[];
   saddledHorses?: SavedHorse[];

@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { requestPlay } from '../game/input';
-import { ITEM_META, ITEM_ORDER, selectionInfo } from '../game/items';
+import { getItemMeta, ITEM_ORDER, selectionInfo } from '../game/items';
+import { GALLERY_CATEGORIES, GALLERY_ITEMS } from '../game/galleryCatalog';
 import type { SelectedKind } from '../game/items';
 import { MEAT_NAMES } from '../game/meats';
 import type { AnimalKind } from '../game/animals';
@@ -24,6 +26,8 @@ export function Backpack() {
   const setBackpack = useGameStore((state) => state.setBackpack);
   const discardApple = useGameStore((state) => state.discardApple);
   const discardMeat = useGameStore((state) => state.discardMeat);
+  const [galleryCategory, setGalleryCategory] = useState('Tools & Weapons');
+  const [gallerySearch, setGallerySearch] = useState('');
   if (!open) return null;
   const close = () => {
     setBackpack(false);
@@ -34,12 +38,16 @@ export function Backpack() {
     close();
   };
   const resources = (Object.entries(meat) as Array<[AnimalKind, number]>).filter(([, count]) => count > 0);
+  const visibleGalleryItems = GALLERY_ITEMS.filter((item) =>
+    (galleryCategory === 'all' || item.category === galleryCategory)
+    && item.name.toLowerCase().includes(gallerySearch.toLowerCase()),
+  );
   const itemButton = (kind: SelectedKind) => {
     const meta = selectionInfo(kind);
-    const count = typeof kind === 'string' && ITEM_META[kind].category === 'food'
-      ? kind === 'apple' ? apples : itemCounts[kind]
+    const count = typeof kind === 'string' && getItemMeta(kind).category === 'food'
+      ? kind === 'apple' ? apples : itemCounts[kind] ?? 1
       : null;
-    const equipped = typeof kind === 'string' && ITEM_META[kind].category === 'armor' && ITEM_META[kind].armor === equippedArmor;
+    const equipped = typeof kind === 'string' && getItemMeta(kind).category === 'armor' && getItemMeta(kind).armor === equippedArmor;
     return (
       <button
         key={kind}
@@ -72,11 +80,21 @@ export function Backpack() {
           <div className="backpack-blocks">{CROP_KINDS.map(itemButton)}</div>
           <p className="backpack-label">Pioches, pelles, épées, armures et équipement · clic gauche pour miner ou utiliser</p>
           <div className="backpack-blocks">{ITEM_ORDER.map(itemButton)}</div>
+          <p className="backpack-label">Galerie Bloxd.io · {GALLERY_ITEMS.length} objets</p>
+          <div className="gallery-controls">
+            <select aria-label="Catégorie de la galerie" value={galleryCategory} onChange={(event) => setGalleryCategory(event.target.value)}>
+              <option value="all">Toutes les catégories</option>
+              {GALLERY_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+            <input type="search" aria-label="Rechercher dans la galerie" placeholder="Rechercher…" value={gallerySearch} onChange={(event) => setGallerySearch(event.target.value)} />
+          </div>
+          <p className="backpack-label">{visibleGalleryItems.length} objets affichés</p>
+          <div className="backpack-blocks">{visibleGalleryItems.map((item) => itemButton(item.id))}</div>
           <p className="backpack-label">Manger pour récupérer des vies</p>
           <div className="backpack-resources">
-            {ITEM_ORDER.filter((kind) => ITEM_META[kind].category === 'food').map((kind) => (
+            {ITEM_ORDER.filter((kind) => getItemMeta(kind).category === 'food').map((kind) => (
               <div className="backpack-resource" key={kind}>
-                <span>{ITEM_META[kind].name} · +{ITEM_META[kind].healing} vies</span>
+                <span>{getItemMeta(kind).name} · +{getItemMeta(kind).healing} vies</span>
                 <button onClick={() => eatItem(world, kind)}>Manger</button>
               </div>
             ))}

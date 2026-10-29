@@ -3,7 +3,7 @@ import { Vector3 } from 'three';
 import type { Camera } from 'three';
 import { damageAnimal, findAnimalTarget } from '../combat';
 import { isMouseDown, stopMining } from '../input';
-import { isSword, ITEM_META } from '../items';
+import { getItemMeta, isSword } from '../items';
 import { useGameStore } from '../store';
 import { Player, PlayerPosition } from '../traits';
 
@@ -27,7 +27,7 @@ export function animalCombatSystem(world: World, camera: Camera, dt: number, tou
     cooldowns.set(world, 0.35);
   } else if (isMouseDown(0) && cooldown <= 0) {
     if (damageAnimal(world, target.entity, 1, player)) stopMining();
-    cooldowns.set(world, typeof selected === 'string' ? ITEM_META[selected].cooldown ?? 0.35 : 0.35);
+    cooldowns.set(world, typeof selected === 'string' ? getItemMeta(selected).cooldown ?? 0.35 : 0.35);
   }
   return true;
 }

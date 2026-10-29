@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { createPortal, useThree } from '@react-three/fiber';
 import { CanvasTexture, NearestFilter, SRGBColorSpace } from 'three';
 import type { MeshLambertMaterial } from 'three';
-import { ITEM_META } from '../game/items';
+import { getItemMeta } from '../game/items';
 import { useGameStore } from '../game/store';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { BlockKind } from '../game/voxel';
@@ -74,7 +74,7 @@ export function Hands() {
           <mesh args={[blockGeometry, heldMaterials]} position={[0.36, -0.26, -0.72]} rotation={[0.2, 0.55, 0.05]} scale={0.24} renderOrder={11} frustumCulled={false} />
         )
       ) : (
-        <group position={[0.36, -0.32, -0.78]} rotation={[0.08, 0.15, 0]} scale={ITEM_META[selected].category === 'vehicle' ? 0.17 : 0.65}>
+        <group position={[0.36, -0.32, -0.78]} rotation={[0.08, 0.15, 0]} scale={getItemMeta(selected).category === 'vehicle' ? 0.17 : 0.65}>
           <ItemModel kind={selected} held />
         </group>
       )}

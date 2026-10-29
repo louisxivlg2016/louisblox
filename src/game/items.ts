@@ -1,6 +1,9 @@
 import { BLOCK_INFO, BlockKind } from './voxel';
+import { GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
+import type { GalleryItemId } from './galleryCatalog';
+export type { GalleryItemId } from './galleryCatalog';
 
-export type ItemCategory = 'sword' | 'pickaxe' | 'shovel' | 'bow' | 'gun' | 'armor' | 'food' | 'vehicle' | 'saddle';
+export type ItemCategory = 'sword' | 'pickaxe' | 'shovel' | 'bow' | 'gun' | 'armor' | 'food' | 'vehicle' | 'saddle' | 'resource';
 export type ArmorKind = 'gold' | 'diamond' | 'silver';
 export type ItemKind =
   | 'sword_wood' | 'sword_stone' | 'sword_iron' | 'sword_gold' | 'sword_diamond' | 'sword_silver'
@@ -11,7 +14,7 @@ export type ItemKind =
   | 'corn' | 'wheat' | 'tomato' | 'carrot' | 'watermelon'
   | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb'
   | 'car_red' | 'car_blue' | 'saddle';
-export type SelectedKind = BlockKind | ItemKind;
+export type SelectedKind = BlockKind | ItemKind | GalleryItemId;
 export type ItemMeta = {
   name: string;
   color: string;
@@ -21,6 +24,7 @@ export type ItemMeta = {
   protection?: number;
   cooldown?: number;
   efficiency?: number;
+  shape?: string;
 };
 
 const item = (name: string, color: string, category: ItemCategory, extra: Partial<ItemMeta> = {}): ItemMeta => ({
@@ -73,22 +77,70 @@ export const DEFAULT_ITEM_COUNTS: Record<ItemKind, number> = Object.fromEntries(
   ITEM_ORDER.map((kind) => [kind, kind === 'bread' ? 12 : kind === 'cooked_meat' ? 6 : kind === 'berries' ? 16 : 1]),
 ) as Record<ItemKind, number>;
 
+function galleryCategory(shape: string): ItemCategory {
+  if (['sword', 'spear', 'dagger', 'club', 'mace', 'whip', 'boomerang'].includes(shape)) return 'sword';
+  if (shape === 'bow' || shape === 'crossbow') return 'bow';
+  if (shape === 'gun' || shape === 'rpg') return 'gun';
+  if (['food', 'bowl', 'meat', 'milk', 'cheese', 'fish'].includes(shape)) return 'food';
+  if (shape === 'armor') return 'armor';
+  if (shape === 'car' || shape === 'boat' || shape === 'hovercraft') return 'vehicle';
+  if (shape === 'pickaxe') return 'pickaxe';
+  if (shape === 'spade') return 'shovel';
+  return 'resource';
+}
+
+function toolEfficiency(name: string) {
+  const value = name.toLowerCase();
+  if (value.includes('moonstone') || value.includes('golem') || value.includes('artisan')) return 7;
+  if (value.includes('diamond')) return 6;
+  if (value.includes('gold')) return 4.5;
+  if (value.includes('iron')) return 3.5;
+  if (value.includes('stone')) return 2.5;
+  return 2;
+}
+
+export function getItemMeta(kind: ItemKind | GalleryItemId): ItemMeta {
+  if (isGalleryItem(kind)) {
+    const item = GALLERY_ITEM_MAP[kind];
+    const name = item.name.toLowerCase();
+    const shape = item.shape;
+    const healing = shape === 'meat' ? 4 : shape === 'bowl' ? 3 : ['food', 'fish', 'milk', 'cheese'].includes(shape) ? 2 : undefined;
+    const protection = shape === 'armor'
+      ? name.includes('diamond') ? 0.5 : name.includes('gold') ? 0.35 : name.includes('iron') ? 0.3 : name.includes('military') ? 0.4 : name.includes('fur') ? 0.2 : 0.15
+      : undefined;
+    const armor = shape === 'armor' ? name.includes('diamond') ? 'diamond' as const : name.includes('gold') ? 'gold' as const : 'silver' as const : undefined;
+    const cooldown = shape === 'rpg' ? 1.2 : shape === 'gun' ? 0.4 : shape === 'bow' || shape === 'crossbow' ? 0.6 : undefined;
+    return {
+      name: item.name,
+      color: item.color,
+      category: galleryCategory(shape),
+      shape,
+      healing,
+      protection,
+      armor,
+      cooldown,
+      efficiency: toolEfficiency(name),
+    };
+  }
+  return ITEM_META[kind];
+}
+
 export function selectionInfo(kind: SelectedKind) {
-  return typeof kind === 'number' ? BLOCK_INFO[kind] : ITEM_META[kind];
+  return typeof kind === 'number' ? BLOCK_INFO[kind] : getItemMeta(kind);
 }
 
 export function isSelectedKind(value: unknown): value is SelectedKind {
   return (typeof value === 'number' && Number.isInteger(value) && value in BLOCK_INFO)
-    || (typeof value === 'string' && value in ITEM_META);
+    || (typeof value === 'string' && (value in ITEM_META || isGalleryItem(value)));
 }
 
 export function isSword(kind: SelectedKind) {
-  return typeof kind === 'string' && ITEM_META[kind].category === 'sword';
+  return typeof kind === 'string' && getItemMeta(kind).category === 'sword';
 }
 
 export function miningSpeed(selection: SelectedKind, block: BlockKind) {
   if (typeof selection === 'number' || block === BlockKind.Bedrock) return 1;
-  const meta = ITEM_META[selection];
+  const meta = getItemMeta(selection);
   const hardBlock = block === BlockKind.Stone || block === BlockKind.CoalOre || block === BlockKind.IronOre
     || block === BlockKind.GoldOre || block === BlockKind.DiamondOre || block === BlockKind.Ice
     || (block >= BlockKind.BeigeBrick && block <= BlockKind.ConcreteBlack);

@@ -4,8 +4,8 @@ import type { Camera } from 'three';
 import { findAnimalTarget } from '../combat';
 import { getBlockIndex } from '../chunks';
 import { consumeActions, isMouseDown } from '../input';
-import { ITEM_META } from '../items';
-import type { ItemKind } from '../items';
+import { getItemMeta } from '../items';
+import type { GalleryItemId, ItemKind } from '../items';
 import { SEA_LEVEL } from '../levels';
 import { useGameStore } from '../store';
 import { HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
@@ -17,11 +17,11 @@ const cooldowns = new WeakMap<World, number>();
 const origin = new Vector3();
 const direction = new Vector3();
 
-export function eatItem(world: World, kind: ItemKind) {
-  const meta = ITEM_META[kind];
+export function eatItem(world: World, kind: ItemKind | GalleryItemId) {
+  const meta = getItemMeta(kind);
   const store = useGameStore.getState();
   if (meta.category !== 'food') return false;
-  const count = kind === 'apple' ? store.apples : store.itemCounts[kind];
+  const count = kind === 'apple' ? store.apples : store.itemCounts[kind] ?? 1;
   if (count <= 0) {
     store.setNotice(kind === 'apple' ? 'Cueille des pommes avec E sur un arbre de prairie.' : `Plus de ${meta.name.toLowerCase()}.`);
     return false;
@@ -63,7 +63,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
   cooldowns.set(world, cooldown);
   const selected = useGameStore.getState().selected;
   if (typeof selected === 'number') return false;
-  const meta = ITEM_META[selected];
+  const meta = getItemMeta(selected);
   const actions = pendingActions ?? consumeActions();
   const interact = actions.place + actions.harvest;
   const player = world.queryFirst(Player)?.get(PlayerPosition);
@@ -84,7 +84,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     return true;
   }
   if ((meta.category === 'bow' || meta.category === 'gun') && (interact > 0 || isMouseDown(0)) && cooldown <= 0) {
-    fireProjectile(world, origin, direction, meta.category === 'bow' ? 'arrow' : selected === 'pistol_bomb' ? 'bomb' : 'bullet');
+    fireProjectile(world, origin, direction, meta.category === 'bow' ? 'arrow' : meta.shape === 'rpg' || selected === 'pistol_bomb' ? 'bomb' : 'bullet');
     cooldowns.set(world, meta.cooldown ?? 0.5);
     return true;
   }

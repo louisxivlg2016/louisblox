@@ -362,6 +362,23 @@
       .touch-use { background: rgba(119,103,55,.86); }
       .sleep-overlay { position: absolute; inset: 0; z-index: 40; display: grid; place-items: center; pointer-events: none; }
       .sleep-overlay p { padding: 12px 20px; color: #eef3e8; font-size: 18px; text-shadow: 2px 2px #000; }
+      .gallery-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+      .gallery-controls select, .gallery-controls input { min-height: 38px; padding: 7px 9px; color: #eef4e9; background: #24362a; border: 1px solid #61715f; font: inherit; font-size: 11px; }
+      .gallery-controls select { flex: 1 1 190px; }
+      .gallery-controls input { flex: 1 1 140px; min-width: 0; }
+      .item-potion i { left: 8px; top: 10px; width: 16px; height: 17px; background: var(--item-color); border: 2px solid #d5d6c3; }
+      .item-potion b { left: 12px; top: 4px; width: 8px; height: 7px; background: #d5d6c3; }
+      .item-potion em { left: 11px; top: 1px; width: 10px; height: 4px; background: #5f4b3d; }
+      .item-plant i { left: 15px; top: 12px; width: 4px; height: 20px; background: #4d803d; }
+      .item-plant b { left: 8px; top: 19px; width: 12px; height: 4px; background: #699e4d; transform: rotate(-25deg); }
+      .item-plant em { left: 10px; top: 3px; width: 14px; height: 11px; background: var(--item-color); }
+      .item-firecracker i { left: 11px; top: 10px; width: 11px; height: 20px; background: var(--item-color); }
+      .item-firecracker b { left: 15px; top: 5px; width: 4px; height: 6px; background: #b89854; }
+      .item-firecracker em { left: 17px; top: 1px; width: 4px; height: 5px; background: #f4c852; }
+      .item-mineral i { left: 6px; top: 12px; width: 21px; height: 12px; background: var(--item-color); box-shadow: inset -4px -3px 0 rgba(0,0,0,.2); }
+      .item-mineral b { left: 9px; top: 9px; width: 13px; height: 3px; background: rgba(255,255,255,.25); }
+      .item-resource i { left: 7px; top: 8px; width: 19px; height: 19px; background: var(--item-color); box-shadow: inset -4px -4px 0 rgba(0,0,0,.18); }
+      .item-resource b { left: 10px; top: 11px; width: 10px; height: 3px; background: rgba(255,255,255,.4); }
       .backpack-block { cursor: grab; }
       .backpack-block .item-icon { width: 27px; height: 29px; transform: scale(.82); }
       .game-notice { position: absolute; left: 50%; bottom: 104px; transform: translateX(-50%); max-width: min(620px, 90vw); padding: 8px 13px; color: #fff; text-align: center; font-size: 12px; background: rgba(18,29,23,.78); border: 1px solid rgba(255,255,255,.22); text-shadow: 1px 1px #000; }

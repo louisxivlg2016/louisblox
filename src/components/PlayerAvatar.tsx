@@ -1,5 +1,5 @@
 import { useQueryFirst } from 'koota/react';
-import { ITEM_META } from '../game/items';
+import { getItemMeta } from '../game/items';
 import { useGameStore } from '../game/store';
 import { Player, PlayerMesh } from '../game/traits';
 import { blockGeometry, blockMaterials } from '../game/textures';
@@ -16,7 +16,7 @@ export function PlayerAvatar() {
   const selected = useGameStore((state) => state.selected);
   const riding = useGameStore((state) => state.riding);
   if (!entity) return null;
-  const armor = equipped ? ITEM_META[`armor_${equipped}`].color : null;
+  const armor = equipped ? getItemMeta(`armor_${equipped}`).color : null;
   const body = armor ?? '#4d83a7';
   const limbs = armor ?? '#e7a0aa';
   return (
@@ -65,7 +65,7 @@ export function PlayerAvatar() {
           <PixelPart position={[0.4, 1.34, 0]} size={[0.28, 0.2, 0.32]} color={armor} />
         </>
       )}
-      <group position={[0.52, 0.92, -0.24]} scale={typeof selected === 'string' && ITEM_META[selected].category === 'vehicle' ? 0.1 : 0.36}>
+      <group position={[0.52, 0.92, -0.24]} scale={typeof selected === 'string' && getItemMeta(selected).category === 'vehicle' ? 0.1 : 0.36}>
         {typeof selected === 'number'
           ? selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : isUtilityBlock(selected) ? <UtilityBlockModel kind={selected} /> : <mesh args={[blockGeometry, blockMaterials[selected]]} />
           : <ItemModel kind={selected} />}

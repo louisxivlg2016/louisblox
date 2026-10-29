@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AnimalKind } from './animals';
 import type { ArmorKind, ItemKind, SelectedKind } from './items';
+import type { GalleryItemId } from './galleryCatalog';
 import { DEFAULT_ITEM_COUNTS } from './items';
 import type { Biome } from './levels';
 import { createMeatInventory } from './meats';
@@ -16,7 +17,7 @@ type GameStore = {
   selected: SelectedKind;
   hotbarSlots: SelectedKind[];
   backpackItem: SelectedKind | null;
-  itemCounts: Record<ItemKind, number>;
+  itemCounts: Record<string, number>;
   equippedArmor: ArmorKind | null;
   riding: 'car' | 'horse' | null;
   notice: string;
@@ -42,7 +43,7 @@ type GameStore = {
   selectBlock: (kind: SelectedKind) => void;
   setHotbarSlot: (index: number, kind: SelectedKind) => void;
   setBackpackItem: (kind: SelectedKind | null) => void;
-  setItemCount: (kind: ItemKind, count: number) => void;
+  setItemCount: (kind: ItemKind | GalleryItemId, count: number) => void;
   equipArmor: (kind: ArmorKind | null) => void;
   setRiding: (riding: 'car' | 'horse' | null) => void;
   setNotice: (notice: string) => void;
