@@ -1,6 +1,6 @@
 import { useQuery, useQueryFirst, useTrait } from 'koota/react';
 import type { Entity } from 'koota';
-import { Player, PlayerMount, Vehicle, VehicleMesh, VehicleMotion, VehiclePosition } from '../game/traits';
+import { Player, PlayerMount, PlayerPosition, Vehicle, VehicleMesh, VehicleMotion, VehiclePosition } from '../game/traits';
 import { useGameStore } from '../game/store';
 import { VehicleGlb } from './VehicleGlb';
 import { VehicleInterior } from './TransportInterior';
@@ -12,7 +12,9 @@ function VehicleView({ entity }: { entity: Entity }) {
   const cameraMode = useGameStore((state) => state.cameraMode);
   const position = entity.get(VehiclePosition)!;
   const mount = player?.get(PlayerMount);
+  const playerPosition = player?.get(PlayerPosition);
   const kind = vehicle?.kind ?? 'car';
+  const showInterior = mount?.vehicle === entity || (playerPosition && position.distanceTo(playerPosition) < 16);
   return (
     <group
       ref={(group) => {
@@ -22,12 +24,11 @@ function VehicleView({ entity }: { entity: Entity }) {
       position={[position.x, position.y, position.z]}
     >
       {vehicle && <VehicleGlb kind={kind} color={vehicle.color} interior={mount?.vehicle === entity && cameraMode === 'first'} />}
-      <VehicleInterior
+      {showInterior && <VehicleInterior
         kind={kind}
-        color={vehicle?.color ?? '#d63935'}
         driverPresent={!(mount?.vehicle === entity && mount.role === 'driver' && ridingRole === 'driver')}
         passengerSeat={mount?.vehicle === entity && mount.role === 'passenger' ? mount.seat : null}
-      />
+      />}
     </group>
   );
 }

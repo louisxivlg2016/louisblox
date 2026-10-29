@@ -42,6 +42,7 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train'; col
         material.map.needsUpdate = true;
       }
     });
+    if (modelKind === 'raceCar' || modelKind === 'train') clone.rotation.y = Math.PI / 2;
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());

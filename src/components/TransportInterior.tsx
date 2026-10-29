@@ -23,27 +23,13 @@ function Person({ position, color, worker = false }: { position: [number, number
   );
 }
 
-export function VehicleInterior({ kind, color, driverPresent, passengerSeat }: {
+export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
   kind: 'car' | 'plane' | 'train';
-  color: string;
   driverPresent: boolean;
   passengerSeat: number | null;
 }) {
   if (kind === 'car') {
-    const blue = color.toLowerCase() === '#347cd0';
-    return (
-      <group>
-        <SteeringWheel position={[-0.35, 0.8, -0.48]} />
-        {blue && (
-          <>
-            <PixelPart position={[0, 1.25, 0.12]} size={[1.36, 0.12, 1.4]} color={color} />
-            {[-0.64, 0.64].flatMap((x) => [-0.57, 0.74].map((z) => <PixelPart key={`${x},${z}`} position={[x, 0.96, z]} size={[0.09, 0.52, 0.09]} color={color} />))}
-            <mesh position={[0, 0.96, -0.59]}><boxGeometry args={[1.17, 0.47, 0.035]} /><meshLambertMaterial color="#a7d8e8" transparent opacity={0.36} depthWrite={false} /></mesh>
-            {[-0.66, 0.66].map((x) => <mesh key={x} position={[x, 0.96, 0.08]}><boxGeometry args={[0.025, 0.44, 1.05]} /><meshLambertMaterial color="#a7d8e8" transparent opacity={0.3} depthWrite={false} /></mesh>)}
-          </>
-        )}
-      </group>
-    );
+    return <SteeringWheel position={[-0.35, 0.8, -0.48]} />;
   }
 
   if (kind === 'plane') {

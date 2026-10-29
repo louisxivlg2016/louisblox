@@ -62,8 +62,6 @@ export function CampfireModel({ destructive = false, withLight = true }: { destr
   const innerFlame = destructive ? wildfireYellow : flameYellow;
   return (
     <group>
-      <PixelPart position={[0, 0.1, 0]} size={[0.7, 0.14, 0.18]} color={destructive ? '#30231f' : '#69432a'} rotation={[0, Math.PI / 4, 0]} />
-      <PixelPart position={[0, 0.1, 0]} size={[0.7, 0.14, 0.18]} color={destructive ? '#453025' : '#805333'} rotation={[0, -Math.PI / 4, 0]} />
       <mesh position={[0, 0.35, 0]} material={outerFlame}><boxGeometry args={[0.26, 0.38, 0.26]} /></mesh>
       <mesh position={[0, 0.42, -0.02]} material={innerFlame}><boxGeometry args={[0.13, 0.3, 0.13]} /></mesh>
       <mesh position={[0, 0.62, 0]} material={outerFlame}><boxGeometry args={[0.12, 0.16, 0.12]} /></mesh>
