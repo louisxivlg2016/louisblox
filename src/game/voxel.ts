@@ -1,5 +1,5 @@
 import type { Vector3 } from 'three';
-import { EXTRA_BLOCKS, EXTRA_BLOCK_META, EXTRA_BLOCK_ORDER } from './extraBlocks';
+import { EXTRA_BLOCKS, EXTRA_BLOCK_META, EXTRA_BLOCK_ORDER, isDoor, isTrapdoor } from './extraBlocks';
 
 export const BlockKind = {
   Grass: 0,
@@ -153,7 +153,7 @@ export function raycastVoxel(
 
   for (let steps = 0; steps < 128 && distance <= maxDistance; steps += 1) {
     const block = blocks.get(voxelKey(x, y, z));
-    if (block !== undefined && block.kind !== BlockKind.Water && !block.open) {
+    if (block !== undefined && block.kind !== BlockKind.Water && (!block.open || isDoor(block.kind) || isTrapdoor(block.kind))) {
       return { block, x, y, z, normal, distance };
     }
 

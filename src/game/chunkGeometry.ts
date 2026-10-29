@@ -1,6 +1,6 @@
 import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
-import { texture } from './textures';
+import { brickTexture, texture } from './textures';
 import { EXTRA_BLOCK_META, isCrop, isDoor, isSapling, isTrapdoor, isUtilityBlock } from './extraBlocks';
 import type { ExtraBlockKind } from './extraBlocks';
 import { BlockKind, voxelKey } from './voxel';
@@ -80,16 +80,20 @@ function tileUV(key: string) {
   return coordinates;
 }
 
+function isBrick(kind: BlockKind) {
+  return kind >= BlockKind.BeigeBrick && kind <= BlockKind.GrayBrick;
+}
+
 function groupFor(kind: BlockKind) {
   if (kind === BlockKind.Water) return 'water';
   if (kind === BlockKind.Glass) return 'glass';
   if (kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves) return 'foliage';
-  if (kind === BlockKind.WhiteBrick || kind === BlockKind.BeigeBrick) return 'unlit';
+  if (isBrick(kind)) return `brick:${kind}`;
   return 'opaque';
 }
 
 function usesSeparateModel(kind: BlockKind) {
-  return kind === BlockKind.Tnt || kind === BlockKind.Candle || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind);
+  return kind === BlockKind.Tnt || kind === BlockKind.Candle || kind === BlockKind.Campfire || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind);
 }
 
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {
@@ -107,11 +111,13 @@ function faceTexture(block: Voxel, direction: readonly number[]) {
   return `${block.kind}:side`;
 }
 
+const fullFaceUV = { left: 0, right: 1, top: 1, bottom: 0 };
+
 function addFace(group: GeometryGroup, block: Voxel, face: (typeof faces)[number], uv: ReturnType<typeof tileUV>, color: Color | null) {
   const scale = block.kind === BlockKind.Apple ? 0.35 : 1;
   const offsetY = block.kind === BlockKind.Apple ? -0.28 : 0;
   const base = group.positions.length / 3;
-  const tile = block.kind >= BlockKind.ConcreteWhite && block.kind <= BlockKind.ConcreteBlack ? tileUV(WHITE_TILE) : uv;
+  const tile = isBrick(block.kind) ? fullFaceUV : block.kind >= BlockKind.ConcreteWhite && block.kind <= BlockKind.ConcreteBlack ? tileUV(WHITE_TILE) : uv;
   const uvCorners = [[tile.left, tile.top], [tile.right, tile.top], [tile.right, tile.bottom], [tile.left, tile.bottom]];
   face.corners.forEach((corner, index) => {
     group.positions.push(block.x + corner[0] * scale, block.y + corner[1] * scale + offsetY, block.z + corner[2] * scale);
@@ -147,6 +153,20 @@ function getMaterials() {
   return materials;
 }
 
+const brickMaterials = new Map<BlockKind, Material>();
+
+function brickMaterial(kind: BlockKind) {
+  let material = brickMaterials.get(kind);
+  if (!material) {
+    const map = brickTexture(kind);
+    material = kind === BlockKind.GrayBrick
+      ? new MeshLambertMaterial({ map, vertexColors: true })
+      : new MeshBasicMaterial({ map, vertexColors: true });
+    brickMaterials.set(kind, material);
+  }
+  return material;
+}
+
 export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxel>) {
   createAtlas();
   const groups = new Map<string, GeometryGroup>();
@@ -168,5 +188,8 @@ export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxe
     }
   }
   const sharedMaterials = getMaterials();
-  return [...groups.entries()].map(([name, group]) => ({ geometry: makeGeometry(group), material: sharedMaterials[name] }));
+  return [...groups.entries()].map(([name, group]) => ({
+    geometry: makeGeometry(group),
+    material: name.startsWith('brick:') ? brickMaterial(Number(name.slice(6)) as BlockKind) : sharedMaterials[name],
+  }));
 }

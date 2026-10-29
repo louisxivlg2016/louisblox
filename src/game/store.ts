@@ -19,7 +19,10 @@ type GameStore = {
   backpackItem: SelectedKind | null;
   itemCounts: Record<string, number>;
   equippedArmor: ArmorKind | null;
-  riding: 'car' | 'horse' | null;
+  riding: 'car' | 'horse' | 'plane' | 'train' | null;
+  ridingRole: 'driver' | 'passenger' | null;
+  seatChoice: { vehicle: import('koota').Entity; kind: 'car' | 'plane' | 'train' } | null;
+  setSeatChoice: (choice: { vehicle: import('koota').Entity; kind: 'car' | 'plane' | 'train' } | null) => void;
   notice: string;
   teleportOpen: boolean;
   container: { type: 'chest' | 'furnace'; x: number; y: number; z: number } | null;
@@ -37,6 +40,8 @@ type GameStore = {
   lives: number;
   cameraMode: 'first' | 'third';
   backpackOpen: boolean;
+  bookOpen: boolean;
+  setBookOpen: (open: boolean) => void;
   coordinates: Coordinates;
   environment: EnvironmentSnapshot;
   setMode: (mode: GameMode) => void;
@@ -45,7 +50,7 @@ type GameStore = {
   setBackpackItem: (kind: SelectedKind | null) => void;
   setItemCount: (kind: ItemKind | GalleryItemId, count: number) => void;
   equipArmor: (kind: ArmorKind | null) => void;
-  setRiding: (riding: 'car' | 'horse' | null) => void;
+  setRiding: (riding: 'car' | 'horse' | 'plane' | 'train' | null, role?: 'driver' | 'passenger') => void;
   setNotice: (notice: string) => void;
   setTeleportOpen: (open: boolean) => void;
   setBlockCount: (count: number) => void;
@@ -71,6 +76,8 @@ export const useGameStore = create<GameStore>((set) => ({
   itemCounts: { ...DEFAULT_ITEM_COUNTS },
   equippedArmor: null,
   riding: null,
+  ridingRole: null,
+  seatChoice: null,
   notice: '',
   teleportOpen: false,
   container: null,
@@ -86,9 +93,11 @@ export const useGameStore = create<GameStore>((set) => ({
   lives: 10,
   cameraMode: 'first',
   backpackOpen: false,
+  bookOpen: false,
   coordinates: { x: 0, y: 8, z: 0 },
   environment: { dayProgress: 0.38, biome: 'prairie', weather: 'clear' },
   setMode: (mode) => set({ mode }),
+  setBookOpen: (bookOpen) => set({ bookOpen, backpackItem: null }),
   selectBlock: (selected) => set({ selected }),
   setHotbarSlot: (index, kind) => set((state) => {
     const hotbarSlots = [...state.hotbarSlots];
@@ -98,7 +107,8 @@ export const useGameStore = create<GameStore>((set) => ({
   setBackpackItem: (backpackItem) => set({ backpackItem }),
   setItemCount: (kind, count) => set((state) => ({ itemCounts: { ...state.itemCounts, [kind]: Math.max(0, count) } })),
   equipArmor: (equippedArmor) => set({ equippedArmor }),
-  setRiding: (riding) => set({ riding }),
+  setRiding: (riding, role = 'driver') => set({ riding, ridingRole: riding ? role : null }),
+  setSeatChoice: (seatChoice) => set({ seatChoice }),
   setNotice: (notice) => set({ notice }),
   setTeleportOpen: (teleportOpen) => set({ teleportOpen }),
   openContainer: (type, position, items = []) => set({ container: { type, ...position }, chestItems: items, mode: 'pause', backpackOpen: false, teleportOpen: false, backpackItem: null }),
@@ -123,6 +133,9 @@ export const useGameStore = create<GameStore>((set) => ({
     itemCounts: { ...DEFAULT_ITEM_COUNTS },
     equippedArmor: null,
     riding: null,
+    ridingRole: null,
+    seatChoice: null,
+    bookOpen: false,
     teleportOpen: false,
     container: null,
     chestItems: [],

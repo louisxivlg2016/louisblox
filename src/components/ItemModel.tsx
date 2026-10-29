@@ -163,14 +163,23 @@ export function SaddleModel() {
   );
 }
 
+export function SteeringWheel({ position = [0, 0, 0] }: { position?: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[-0.3, 0, 0]}>
+      {[[0, 0.18], [0.13, 0.13], [0.18, 0], [0.13, -0.13], [0, -0.18], [-0.13, -0.13], [-0.18, 0], [-0.13, 0.13]].map(([x, y]) => (
+        <PixelPart key={`${x},${y}`} position={[x, y, 0]} size={[0.075, 0.075, 0.06]} color="#252c32" />
+      ))}
+      <PixelPart position={[0, 0, 0]} size={[0.13, 0.055, 0.06]} color="#65747c" />
+      <PixelPart position={[0, -0.13, 0.12]} size={[0.065, 0.3, 0.065]} color="#46545d" rotation={[0.65, 0, 0]} />
+    </group>
+  );
+}
+
 export function CarModel({ color = '#d63935' }: { color?: string }) {
+  const blue = color.toLowerCase() === '#347cd0';
   return (
     <group>
       <PixelPart position={[0, 0.38, 0]} size={[1.65, 0.38, 3.1]} color={color} />
-      <PixelPart position={[0, 0.73, 0.23]} size={[1.32, 0.46, 1.45]} color={color} />
-      <PixelPart position={[0, 0.81, -0.53]} size={[1.15, 0.3, 0.07]} color="#8ac4d8" />
-      <PixelPart position={[-0.67, 0.79, 0.19]} size={[0.055, 0.26, 0.92]} color="#75b2ca" />
-      <PixelPart position={[0.67, 0.79, 0.19]} size={[0.055, 0.26, 0.92]} color="#75b2ca" />
       <PixelPart position={[0, 0.59, -1.25]} size={[1.5, 0.1, 0.56]} color={color} />
       <PixelPart position={[0, 0.88, 1.42]} size={[1.58, 0.12, 0.3]} color="#333d48" />
       <PixelPart position={[-0.59, 0.7, 1.42]} size={[0.1, 0.35, 0.1]} color="#333d48" />
@@ -184,6 +193,14 @@ export function CarModel({ color = '#d63935' }: { color?: string }) {
       <PixelPart position={[-0.5, 0.42, -1.57]} size={[0.34, 0.16, 0.04]} color="#fff0b3" />
       <PixelPart position={[0.5, 0.42, -1.57]} size={[0.34, 0.16, 0.04]} color="#fff0b3" />
       <PixelPart position={[0, 0.62, 0.3]} size={[0.46, 0.15, 0.5]} color="#4c3b35" />
+      <SteeringWheel position={[-0.35, 0.8, -0.48]} />
+      {blue && (
+        <>
+          <PixelPart position={[0, 1.25, 0.12]} size={[1.36, 0.12, 1.4]} color={color} />
+          <mesh position={[0, 0.96, -0.59]}><boxGeometry args={[1.17, 0.47, 0.035]} /><meshLambertMaterial color="#a7d8e8" transparent opacity={0.36} depthWrite={false} /></mesh>
+          {[-0.66, 0.66].map((x) => <mesh key={x} position={[x, 0.96, 0.08]}><boxGeometry args={[0.025, 0.44, 1.05]} /><meshLambertMaterial color="#a7d8e8" transparent opacity={0.3} depthWrite={false} /></mesh>)}
+        </>
+      )}
     </group>
   );
 }
@@ -196,6 +213,27 @@ function GalleryFishModel({ color }: { color: string }) {
       <PixelPart position={[0.37, 0, 0]} size={[0.18, 0.32, 0.1]} color={color} />
       <PixelPart position={[0, 0.18, 0]} size={[0.17, 0.08, 0.23]} color={color} />
       <PixelPart position={[-0.38, 0.06, -0.12]} size={[0.045, 0.045, 0.025]} color="#eef5ed" />
+    </group>
+  );
+}
+
+function TransportItemModel({ kind, color }: { kind: 'plane' | 'train'; color: string }) {
+  if (kind === 'plane') return (
+    <group>
+      <PixelPart position={[0, 0, 0]} size={[0.4, 0.35, 1.7]} color={color} />
+      <PixelPart position={[0, 0, 0.1]} size={[1.65, 0.1, 0.42]} color={color} />
+      <PixelPart position={[0, 0.24, -0.42]} size={[0.32, 0.18, 0.45]} color="#80bdd7" />
+      <PixelPart position={[0, 0.32, 0.67]} size={[0.12, 0.48, 0.32]} color={color} />
+      <PixelPart position={[0, 0.18, 0.65]} size={[0.78, 0.08, 0.28]} color={color} />
+    </group>
+  );
+  return (
+    <group>
+      <PixelPart position={[0, 0, 0]} size={[0.7, 0.65, 1.8]} color={color} />
+      <PixelPart position={[0, 0.44, -0.5]} size={[0.62, 0.38, 0.65]} color={color} />
+      <PixelPart position={[0, 0.46, -0.84]} size={[0.45, 0.2, 0.035]} color="#9acddd" />
+      {[-0.27, 0.27].flatMap((x) => [-0.58, 0.58].map((z) => <PixelPart key={`${x},${z}`} position={[x, -0.4, z]} size={[0.16, 0.25, 0.36]} color="#252b31" />))}
+      <PixelPart position={[0, -0.05, 0.25]} size={[0.72, 0.22, 0.035]} color="#9acddd" />
     </group>
   );
 }
@@ -424,6 +462,7 @@ export function ItemModel({ kind, held = false }: ModelProps) {
   else if (meta.category === 'food') model = <FoodModel kind={kind} />;
   else if (meta.category === 'armor') model = <ArmorModel color={meta.color} />;
   else if (meta.category === 'saddle') model = <SaddleModel />;
+  else if (kind === 'plane' || kind === 'train') model = <TransportItemModel kind={kind} color={meta.color} />;
   else model = <CarModel color={meta.color} />;
   return <group scale={held ? 0.58 : 1}>{model}</group>;
 }

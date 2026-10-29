@@ -20,7 +20,7 @@ import { BlockKind, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
 
 type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing'] } | null;
-export type SavedCar = { x: number; y: number; z: number; yaw: number; color: string };
+export type SavedCar = { x: number; y: number; z: number; yaw: number; color: string; kind?: 'car' | 'plane' | 'train' };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
   version: 1 | 2 | 3;
@@ -70,7 +70,7 @@ export function snapshotVehicles(world: World): SavedCar[] {
   return world.query(Vehicle, VehiclePosition, VehicleMotion).map((entity) => {
     const position = entity.get(VehiclePosition)!;
     const motion = entity.get(VehicleMotion)!;
-    return { x: position.x, y: position.y, z: position.z, yaw: motion.yaw, color: entity.get(Vehicle)!.color };
+    return { x: position.x, y: position.y, z: position.z, yaw: motion.yaw, color: entity.get(Vehicle)!.color, kind: entity.get(Vehicle)!.kind };
   });
 }
 
@@ -458,13 +458,21 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     itemCounts: { ...DEFAULT_ITEM_COUNTS, ...restore?.itemCounts },
     equippedArmor: restore?.equippedArmor ?? null,
     riding: null,
+    ridingRole: null,
+    seatChoice: null,
+    bookOpen: false,
     lives: restore?.lives ?? 10,
     apples: restore?.apples ?? 0,
     flying: restore?.player.flying ?? false,
     notice: '',
   });
   for (const car of restore?.vehicles ?? []) {
-    world.spawn(Vehicle({ color: car.color }), VehiclePosition(new Vector3(car.x, car.y, car.z)), VehicleMotion({ yaw: car.yaw }), VehicleMesh());
+    world.spawn(
+      Vehicle({ color: car.color, kind: car.kind ?? 'car' }),
+      VehiclePosition(new Vector3(car.x, car.y, car.z)),
+      VehicleMotion({ yaw: car.yaw, homeX: car.x, homeY: car.y, homeZ: car.z, homeYaw: car.yaw }),
+      VehicleMesh(),
+    );
   }
   streamChunks(world, spawn.x, spawn.z);
   return { spawn };

@@ -10,6 +10,8 @@ import { world } from '../game/world';
 import { Backpack } from './Backpack';
 import { ContainerPanel } from './ContainerPanel';
 import { TouchControls } from './TouchControls';
+import { BookPanel } from './BookPanel';
+import { SeatChoicePanel } from './SeatChoicePanel';
 
 const WEATHER_NAMES = { clear: 'Ciel clair', rain: 'Pluie', snow: 'Neige' } as const;
 const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'prairie'];
@@ -24,12 +26,15 @@ export function Hud() {
   const miningProgress = useGameStore((state) => state.miningProgress);
   const flying = useGameStore((state) => state.flying);
   const riding = useGameStore((state) => state.riding);
+  const ridingRole = useGameStore((state) => state.ridingRole);
   const notice = useGameStore((state) => state.notice);
   const equippedArmor = useGameStore((state) => state.equippedArmor);
   const lives = useGameStore((state) => state.lives);
   const backpackOpen = useGameStore((state) => state.backpackOpen);
   const teleportOpen = useGameStore((state) => state.teleportOpen);
   const containerOpen = useGameStore((state) => state.container !== null);
+  const bookOpen = useGameStore((state) => state.bookOpen);
+  const seatChoice = useGameStore((state) => state.seatChoice);
   const sleepProgress = useGameStore((state) => state.sleepProgress);
   const coordinates = useGameStore((state) => state.coordinates);
   const environment = useGameStore((state) => state.environment);
@@ -75,7 +80,7 @@ export function Hud() {
             <span className="weather-info meat-count">Viandes : {meatSummary || 'aucune'}</span>
             <span className="weather-info lives-count">Vies : {lives}/10</span>
             {equippedArmor && <span className="weather-info">Armure : {equippedArmor}</span>}
-            {riding && <span className="weather-info">{riding === 'car' ? 'Au volant · E pour sortir' : 'À cheval · E pour descendre'}</span>}
+            {riding && <span className="weather-info">{riding === 'car' ? 'Au volant · E pour sortir' : riding === 'horse' ? 'À cheval · E pour descendre' : `${riding === 'plane' ? 'Avion' : 'Train'} · ${ridingRole === 'passenger' ? 'Passager' : 'Conducteur'} · E pour descendre`}</span>}
             {flying && <span className="weather-info flight-status">Vol activé</span>}
           </div>
           <button className="backpack-toggle" onClick={openBackpack}>Sac à dos</button>
@@ -103,7 +108,7 @@ export function Hud() {
         </div>
       )}
 
-      {mode !== 'play' && !backpackOpen && !teleportOpen && !containerOpen && (
+      {mode !== 'play' && !backpackOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && (
         <div className="menu-backdrop">
           <section className="menu-panel">
             <div className="brand-mark" aria-hidden="true"><span>L</span></div>
@@ -146,6 +151,8 @@ export function Hud() {
       )}
       <Backpack />
       <ContainerPanel />
+      <BookPanel />
+      <SeatChoicePanel />
       {sleepProgress !== null && (
         <div className="sleep-overlay" style={{ backgroundColor: `rgba(0, 0, 0, ${0.15 + sleepProgress * 0.8})` }}>
           <p>{sleepProgress > 0.65 ? 'Le jour se lève…' : 'Tu dors…'}</p>

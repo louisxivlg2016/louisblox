@@ -13,7 +13,7 @@ export type ItemKind =
   | 'apple' | 'bread' | 'cooked_meat' | 'berries'
   | 'corn' | 'wheat' | 'tomato' | 'carrot' | 'watermelon'
   | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb'
-  | 'car_red' | 'car_blue' | 'saddle';
+  | 'car_red' | 'car_blue' | 'plane' | 'train' | 'saddle';
 export type SelectedKind = BlockKind | ItemKind | GalleryItemId;
 export type ItemMeta = {
   name: string;
@@ -68,7 +68,9 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   pistol_gold: item('Pistolet en or', '#e5b934', 'gun', { cooldown: 0.32 }),
   pistol_bomb: item('Pistolet lance-bombes', '#686d79', 'gun', { cooldown: 1.1 }),
   car_red: item('Voiture de course rouge', '#d63935', 'vehicle'),
-  car_blue: item('Voiture de course bleue', '#347cd0', 'vehicle'),
+  car_blue: item('Voiture bleue avec cabine', '#347cd0', 'vehicle'),
+  plane: item('Avion de passagers', '#d9e4eb', 'vehicle', { shape: 'plane' }),
+  train: item('Train de passagers', '#a73b38', 'vehicle', { shape: 'train' }),
   saddle: item('Selle pour cheval', '#80502e', 'saddle'),
 };
 

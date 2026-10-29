@@ -9,7 +9,7 @@ import type { GalleryItemId, ItemKind } from '../items';
 import { SEA_LEVEL } from '../levels';
 import { useGameStore } from '../store';
 import { HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
-import { groundAt, spawnCar } from '../vehicles';
+import { groundAt, spawnVehicle } from '../vehicles';
 import { raycastVoxel } from '../voxel';
 import { fireProjectile } from './projectileSystem';
 
@@ -72,6 +72,12 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
   origin.y += 1.62;
   camera.getWorldDirection(direction);
 
+  if (meta.shape === 'book' && interact > 0) {
+    useGameStore.getState().setBookOpen(true);
+    useGameStore.getState().setMode('pause');
+    if (typeof document !== 'undefined' && document.pointerLockElement) document.exitPointerLock();
+    return true;
+  }
   if (meta.category === 'armor' && interact > 0) {
     const store = useGameStore.getState();
     const armor = store.equippedArmor === meta.armor ? null : meta.armor ?? null;
@@ -109,8 +115,9 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
       useGameStore.getState().setNotice('La voiture doit être posée sur la terre ferme.');
       return true;
     }
-    spawnCar(world, x, ground, z, meta.color);
-    useGameStore.getState().setNotice('Voiture prête ! Approche-toi et appuie sur E pour conduire.');
+    const kind = selected === 'plane' ? 'plane' : selected === 'train' ? 'train' : 'car';
+    spawnVehicle(world, kind, x, ground, z, meta.color);
+    useGameStore.getState().setNotice(`${kind === 'plane' ? 'Avion' : kind === 'train' ? 'Train' : 'Voiture'} prêt ! Approche-toi et appuie sur E pour choisir ta place.`);
     return true;
   }
   return false;

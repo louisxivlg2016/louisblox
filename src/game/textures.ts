@@ -1,4 +1,4 @@
-import { BoxGeometry, CanvasTexture, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
+import { BoxGeometry, CanvasTexture, LinearFilter, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { BlockKind } from './voxel';
 import { EXTRA_BLOCK_META, isSapling } from './extraBlocks';
@@ -163,39 +163,64 @@ function paintPlanks(context: CanvasRenderingContext2D, kind: BlockKind) {
 }
 
 function paintBricks(context: CanvasRenderingContext2D, kind: BlockKind) {
-  const styles: Record<number, { base: string; alternate: string; light: string; dark: string; mortar: string }> = {
-    [BlockKind.WhiteBrick]: { base: '#dedecd', alternate: '#d6d7c4', light: '#e9e9da', dark: '#c2c4b3', mortar: '#919487' },
-    [BlockKind.BeigeBrick]: { base: '#c5b183', alternate: '#bda879', light: '#d4c293', dark: '#aa946b', mortar: '#82704f' },
-    [BlockKind.GrayBrick]: { base: '#85888a', alternate: '#7c8083', light: '#969a9c', dark: '#6c7073', mortar: '#45494d' },
+  const styles: Record<number, { base: string; alternate: string; mortar: string }> = {
+    [BlockKind.WhiteBrick]: { base: '#dedecd', alternate: '#d6d7c4', mortar: '#919487' },
+    [BlockKind.BeigeBrick]: { base: '#c5b183', alternate: '#bda879', mortar: '#82704f' },
+    [BlockKind.GrayBrick]: { base: '#85888a', alternate: '#7c8083', mortar: '#45494d' },
   };
   const style = styles[kind];
-  context.clearRect(0, 0, 16, 16);
+  const size = context.canvas.width;
+  const mortar = Math.max(1, Math.round(size / 32));
+  const pattern = document.createElement('canvas');
+  pattern.width = size;
+  pattern.height = size;
+  const brush = pattern.getContext('2d')!;
   for (let row = 0; row < 2; row += 1) {
-    const joint = row === 0 ? 8 : 4;
-    const bricks = [[0, joint - 1], [joint + 1, 15]];
-    bricks.forEach(([start, end], index) => {
-      context.fillStyle = index === 0 ? style.base : style.alternate;
-      context.fillRect(start, row * 8, end - start + 1, 8);
-      for (let patch = 0; patch < 7; patch += 1) {
-        const x = start + Math.floor(random(start + patch, row, kind + 33) * (end - start + 1));
-        const y = row * 8 + 1 + Math.floor(random(row + patch, start, kind + 41) * 6);
-        context.fillStyle = patch % 3 === 0 ? style.dark : style.light;
-        context.fillRect(x, y, patch % 4 === 0 ? 2 : 1, 1);
-      }
-    });
-    context.fillStyle = style.mortar;
-    context.fillRect(joint, row * 8, 1, 8);
+    const joint = row === 0 ? size / 2 : size / 4;
+    brush.fillStyle = style.base;
+    brush.fillRect(0, row * size / 2, size, size / 2);
+    brush.fillStyle = style.alternate;
+    brush.fillRect(joint + mortar, row * size / 2, size - joint - mortar, size / 2);
+    brush.fillStyle = style.mortar;
+    brush.fillRect(joint, row * size / 2, mortar, size / 2);
+    brush.fillRect(0, row * size / 2, size, mortar);
   }
-  context.fillStyle = style.mortar;
-  for (const y of [0, 8, 15]) context.fillRect(0, y, 16, 1);
+  brush.fillRect(0, size - mortar, size, mortar);
+  context.clearRect(0, 0, size, size);
+  context.save();
+  context.translate(size / 2, size / 2);
+  context.rotate(Math.PI / 2);
+  context.drawImage(pattern, -size / 2, -size / 2);
+  context.restore();
+}
+
+const brickTextures = new Map<BlockKind, CanvasTexture>();
+
+export function brickTexture(kind: BlockKind) {
+  let map = brickTextures.get(kind);
+  if (!map) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    paintBricks(canvas.getContext('2d')!, kind);
+    map = new CanvasTexture(canvas);
+    map.magFilter = LinearFilter;
+    map.minFilter = LinearFilter;
+    map.colorSpace = SRGBColorSpace;
+    brickTextures.set(kind, map);
+  }
+  return map;
 }
 
 function material(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
+  if (kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick) {
+    return new MeshBasicMaterial({ map: brickTexture(kind) });
+  }
+  if (kind === BlockKind.GrayBrick) {
+    return new MeshLambertMaterial({ map: brickTexture(kind) });
+  }
   if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) {
     return new MeshLambertMaterial({ color: EXTRA_BLOCK_META[kind as ExtraBlockKind].color });
-  }
-  if (kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick) {
-    return new MeshBasicMaterial({ map: texture(kind, face) });
   }
   const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves;
   const glass = kind === BlockKind.Glass;

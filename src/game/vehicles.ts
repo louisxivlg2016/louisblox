@@ -20,23 +20,40 @@ export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y
   return MIN_WORLD_Y + 0.5;
 }
 
-export function spawnCar(world: World, x: number, y: number, z: number, color = '#d63935', yaw = 0) {
+export function spawnVehicle(world: World, kind: 'car' | 'plane' | 'train', x: number, y: number, z: number, color = '#d63935', yaw = 0) {
   return world.spawn(
-    Vehicle({ color }),
+    Vehicle({ color, kind }),
     VehiclePosition(new Vector3(x, y, z)),
-    VehicleMotion({ yaw }),
+    VehicleMotion({ yaw, homeX: x, homeY: y, homeZ: z, homeYaw: yaw }),
     VehicleMesh(),
   );
 }
 
-export function mountEntity(world: World, vehicle: Entity, kind: 'car' | 'horse') {
+export function spawnCar(world: World, x: number, y: number, z: number, color = '#d63935', yaw = 0) {
+  return spawnVehicle(world, 'car', x, y, z, color, yaw);
+}
+
+export function seatOffset(kind: 'car' | 'plane' | 'train', role: 'driver' | 'passenger', seat = 0): [number, number, number] {
+  if (kind === 'car') return [0, 0.55, 0];
+  if (kind === 'plane') return role === 'driver' ? [-0.5, 1.1, -2.4] : [0.55, 1.1, 0.3 + seat * 1.4];
+  return role === 'driver' ? [-0.65, 1.25, -3.7] : [0.65, 1.25, -1 + seat * 1.5];
+}
+
+export function vehicleSeatPosition(vehicle: Entity, kind: 'car' | 'plane' | 'train', role: 'driver' | 'passenger', seat = 0) {
+  const position = vehicle.get(VehiclePosition)!;
+  const yaw = vehicle.get(VehicleMotion)?.yaw ?? 0;
+  const offset = new Vector3(...seatOffset(kind, role, seat)).applyAxisAngle(new Vector3(0, 1, 0), yaw);
+  return position.clone().add(offset);
+}
+
+export function mountEntity(world: World, vehicle: Entity, kind: 'car' | 'horse' | 'plane' | 'train', role: 'driver' | 'passenger' = 'driver') {
   const player = world.queryFirst(Player);
   const mount = player?.get(PlayerMount);
   if (!player || !mount || mount.vehicle) return false;
-  if (kind === 'car') {
+  if (kind !== 'horse') {
     const motion = vehicle.get(VehicleMotion);
-    if (!motion || motion.mounted) return false;
-    vehicle.set(VehicleMotion, { mounted: true });
+    if (!motion || (role === 'driver' && motion.mounted)) return false;
+    if (role === 'driver') vehicle.set(VehicleMotion, { mounted: true });
   } else {
     const rider = vehicle.get(HorseRider);
     if (!rider?.saddled || rider.mounted) return false;
@@ -44,8 +61,15 @@ export function mountEntity(world: World, vehicle: Entity, kind: 'car' | 'horse'
   }
   mount.vehicle = vehicle;
   mount.kind = kind;
-  useGameStore.getState().setRiding(kind);
-  useGameStore.getState().setNotice(kind === 'car' ? 'WASD / flèches : conduire · E : descendre' : 'Cheval sellé · E : descendre');
+  mount.role = role;
+  mount.seat = 0;
+  useGameStore.getState().setRiding(kind, role);
+  useGameStore.getState().setNotice(
+    kind === 'horse' ? 'Cheval sellé · E : descendre'
+      : role === 'passenger' ? 'Installe-toi : le personnel conduit · E : descendre'
+        : kind === 'plane' ? 'WASD : piloter · Espace/C : monter/descendre · E : sortir'
+          : 'WASD / flèches : conduire · E : descendre',
+  );
   return true;
 }
 
@@ -56,16 +80,17 @@ export function dismount(world: World) {
   const body = player?.get(PlayerBody)?.value;
   if (!player || !mount?.vehicle || !position) return false;
   const vehicle = mount.vehicle;
-  const vehiclePosition = mount.kind === 'car' ? vehicle.get(VehiclePosition) : vehicle.get(AnimalPosition);
+  const vehiclePosition = mount.kind === 'horse' ? vehicle.get(AnimalPosition) : vehicle.get(VehiclePosition);
   if (vehiclePosition) {
     position.set(vehiclePosition.x + 1.6, groundAt(world, vehiclePosition.x + 1.6, vehiclePosition.z, vehiclePosition.y + 2) + 0.02, vehiclePosition.z);
-    body?.setNextKinematicTranslation(position);
     body?.setTranslation(position, true);
   }
-  if (mount.kind === 'car') vehicle.set(VehicleMotion, { mounted: false, speed: 0 });
-  else vehicle.set(HorseRider, { mounted: false, speed: 0 });
+  if (mount.kind === 'horse') vehicle.set(HorseRider, { mounted: false, speed: 0 });
+  else if (mount.role === 'driver') vehicle.set(VehicleMotion, { mounted: false, speed: 0 });
   mount.vehicle = null;
   mount.kind = null;
+  mount.role = 'driver';
+  mount.seat = 0;
   useGameStore.getState().setRiding(null);
   useGameStore.getState().setNotice('');
   return true;
@@ -79,13 +104,14 @@ export function vehicleInteractionSystem(world: World, interact: number) {
   if (!player || !mount || !position) return false;
   if (mount.vehicle) return dismount(world);
   let nearest: Entity | undefined;
-  let kind: 'car' | 'horse' = 'car';
-  let distance = 3.8;
+  let horse = false;
+  let distance = 6;
   for (const entity of world.query(Vehicle, VehiclePosition, VehicleMotion)) {
     const value = entity.get(VehiclePosition)!.distanceTo(position);
-    if (value < distance && !entity.get(VehicleMotion)!.mounted) {
+    if (value < distance) {
       distance = value;
       nearest = entity;
+      horse = false;
     }
   }
   for (const entity of world.query(Animal, AnimalPosition)) {
@@ -94,16 +120,23 @@ export function vehicleInteractionSystem(world: World, interact: number) {
     if (value < distance) {
       distance = value;
       nearest = entity;
-      kind = 'horse';
+      horse = true;
     }
   }
   if (!nearest) return false;
-  if (kind === 'horse' && !nearest.get(HorseRider)?.saddled) {
-    if (useGameStore.getState().selected === 'saddle') return false;
-    useGameStore.getState().setNotice('Choisis la selle dans le sac, vise le cheval puis appuie sur E.');
-    return true;
+  if (horse) {
+    if (!nearest.get(HorseRider)?.saddled) {
+      if (useGameStore.getState().selected === 'saddle') return false;
+      useGameStore.getState().setNotice('Choisis la selle dans le sac, vise le cheval puis appuie sur E.');
+      return true;
+    }
+    return mountEntity(world, nearest, 'horse');
   }
-  return mountEntity(world, nearest, kind);
+  const vehicle = nearest.get(Vehicle)!;
+  useGameStore.getState().setSeatChoice({ vehicle: nearest, kind: vehicle.kind });
+  useGameStore.getState().setMode('pause');
+  if (typeof document !== 'undefined' && document.pointerLockElement) document.exitPointerLock();
+  return true;
 }
 
 function drivingInput() {
@@ -114,16 +147,29 @@ function drivingInput() {
   };
 }
 
-function moveMount(world: World, position: Vector3, yaw: number, speed: number, dt: number) {
+function moveMount(world: World, position: Vector3, yaw: number, speed: number, dt: number, clearance = 1.55) {
   const x = position.x - Math.sin(yaw) * speed * dt;
   const z = position.z - Math.cos(yaw) * speed * dt;
   const ground = groundAt(world, x, z, position.y + 1.01);
   if (ground > position.y + 1.01 || ground < SEA_LEVEL - 0.5 || Math.abs(ground - position.y) > 3) return false;
   const blocks = getBlockIndex(world);
-  for (const height of [0.65, 1.55]) {
+  for (const height of [0.65, clearance]) {
     if (blocks.has(voxelKey(Math.round(x), Math.round(ground + height), Math.round(z)))) return false;
   }
   position.set(x, ground, z);
+  return true;
+}
+
+function movePlane(world: World, position: Vector3, yaw: number, speed: number, dt: number, vertical: number) {
+  const x = position.x - Math.sin(yaw) * speed * dt;
+  const z = position.z - Math.cos(yaw) * speed * dt;
+  const y = Math.min(MAX_BUILD_Y - 5, Math.max(MIN_WORLD_Y + 2, position.y + vertical * dt * 8));
+  const blocks = getBlockIndex(world);
+  for (const height of [0.6, 1.5]) {
+    const block = blocks.get(voxelKey(Math.round(x), Math.round(y + height), Math.round(z)));
+    if (block && block.kind !== BlockKind.Water) return false;
+  }
+  position.set(x, y, z);
   return true;
 }
 
@@ -133,15 +179,43 @@ export function vehicleMovementSystem(world: World, dt: number) {
   const state = playerEntity?.get(PlayerState);
   const input = drivingInput();
   world.query(Vehicle, VehiclePosition, VehicleMotion, VehicleMesh).updateEach(([vehicle, position, motion, mesh], entity) => {
-    const active = mount?.vehicle === entity && mount.kind === 'car' && state;
-    const target = active ? input.forward * (input.forward < 0 ? 5 : 14) : 0;
-    motion.speed += Math.max(-20 * dt, Math.min(20 * dt, target - motion.speed));
-    if (Math.abs(motion.speed) < 0.03) motion.speed = 0;
-    if (active) {
-      motion.yaw = state.yaw;
-      if (input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(motion.speed || 1);
+    const passenger = mount?.vehicle === entity && mount.kind === vehicle.kind && mount.role === 'passenger';
+    if (passenger && vehicle.kind === 'plane') {
+      motion.routeTime += dt;
+      const angle = motion.routeTime * 0.12;
+      const altitude = Math.min(11, motion.routeTime * 3);
+      motion.speed = 2.4;
+      motion.yaw = motion.homeYaw - angle;
+      position.set(
+        motion.homeX + 20 - Math.cos(angle) * 20,
+        motion.homeY + altitude + Math.sin(motion.routeTime * 0.3) * Math.min(2, altitude / 5),
+        motion.homeZ - Math.sin(angle) * 20,
+      );
+    } else if (passenger && vehicle.kind === 'train') {
+      motion.routeTime += dt;
+      const cycle = (motion.routeTime * 4) % 80;
+      const offset = cycle < 20 ? cycle : cycle < 60 ? 40 - cycle : cycle - 80;
+      const x = motion.homeX - Math.sin(motion.homeYaw) * offset;
+      const z = motion.homeZ - Math.cos(motion.homeYaw) * offset;
+      motion.speed = 4;
+      motion.yaw = motion.homeYaw + (cycle < 40 ? 0 : Math.PI);
+      position.set(x, groundAt(world, x, z, position.y + 1.5), z);
+    } else {
+      const active = mount?.vehicle === entity && mount.kind === vehicle.kind && mount.role === 'driver' && state;
+      const target = active ? input.forward * (input.forward < 0 ? 5 : vehicle.kind === 'car' ? 14 : vehicle.kind === 'plane' ? 18 : 12) : 0;
+      motion.speed += Math.max(-20 * dt, Math.min(20 * dt, target - motion.speed));
+      if (Math.abs(motion.speed) < 0.03) motion.speed = 0;
+      if (active) {
+        motion.yaw = state.yaw;
+        if (input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(motion.speed || 1);
+      }
+      if (vehicle.kind === 'plane') {
+        const vertical = active ? Number(isDown('Space')) - Number(isDown('KeyC')) : 0;
+        if ((motion.speed !== 0 || vertical !== 0) && !movePlane(world, position, motion.yaw, motion.speed, dt, vertical)) motion.speed = 0;
+      } else if (motion.speed !== 0 && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' ? 2.55 : 1.55)) {
+        motion.speed = 0;
+      }
     }
-    if (motion.speed !== 0 && !moveMount(world, position, motion.yaw, motion.speed, dt)) motion.speed = 0;
     if (mesh.value) {
       mesh.value.position.copy(position);
       mesh.value.rotation.y = motion.yaw;

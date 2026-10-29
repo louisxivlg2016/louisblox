@@ -55,12 +55,25 @@ export function CandleModel() {
   );
 }
 
+export function CampfireModel() {
+  return (
+    <group>
+      <PixelPart position={[0, 0.1, 0]} size={[0.7, 0.14, 0.18]} color="#69432a" rotation={[0, Math.PI / 4, 0]} />
+      <PixelPart position={[0, 0.1, 0]} size={[0.7, 0.14, 0.18]} color="#805333" rotation={[0, -Math.PI / 4, 0]} />
+      <mesh position={[0, 0.35, 0]} material={flameOrange}><boxGeometry args={[0.26, 0.38, 0.26]} /></mesh>
+      <mesh position={[0, 0.42, -0.02]} material={flameYellow}><boxGeometry args={[0.13, 0.3, 0.13]} /></mesh>
+      <mesh position={[0, 0.62, 0]} material={flameOrange}><boxGeometry args={[0.12, 0.16, 0.12]} /></mesh>
+      <pointLight position={[0, 0.65, 0]} color="#ff9b45" intensity={1.8} distance={9} decay={2} />
+    </group>
+  );
+}
+
 export function SpecialBlocks({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }) {
   return (
     <>
       {blocks.map((block) => (
         <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]}>
-          {kind === BlockKind.Tnt ? <BombModel /> : <CandleModel />}
+          {kind === BlockKind.Tnt ? <BombModel /> : kind === BlockKind.Candle ? <CandleModel /> : <CampfireModel />}
         </group>
       ))}
     </>

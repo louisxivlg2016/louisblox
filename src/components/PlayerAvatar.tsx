@@ -4,7 +4,7 @@ import { useGameStore } from '../game/store';
 import { Player, PlayerMesh } from '../game/traits';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { ItemModel, PixelPart } from './ItemModel';
-import { BombModel, CandleModel } from './SpecialBlocks';
+import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
 import { isUtilityBlock } from '../game/extraBlocks';
 import { BlockKind } from '../game/voxel';
@@ -25,7 +25,7 @@ export function PlayerAvatar() {
         const holder = entity.get(PlayerMesh);
         if (holder) holder.value = group;
       }}
-      visible={cameraMode === 'third'}
+      visible={cameraMode === 'third' && riding !== 'plane' && riding !== 'train'}
     >
       <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />
       <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color="#e7a0aa" />
@@ -65,9 +65,9 @@ export function PlayerAvatar() {
           <PixelPart position={[0.4, 1.34, 0]} size={[0.28, 0.2, 0.32]} color={armor} />
         </>
       )}
-      <group position={[0.52, 0.92, -0.24]} scale={typeof selected === 'string' && getItemMeta(selected).category === 'vehicle' ? 0.1 : 0.36}>
+      <group position={[0.52, 0.92, -0.24]} scale={typeof selected === 'string' && getItemMeta(selected).category === 'vehicle' ? 0.2 : 0.72}>
         {typeof selected === 'number'
-          ? selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : isUtilityBlock(selected) ? <UtilityBlockModel kind={selected} /> : <mesh args={[blockGeometry, blockMaterials[selected]]} />
+          ? selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : selected === BlockKind.Campfire ? <CampfireModel /> : isUtilityBlock(selected) ? <UtilityBlockModel kind={selected} /> : <mesh args={[blockGeometry, blockMaterials[selected]]} />
           : <ItemModel kind={selected} />}
       </group>
     </group>

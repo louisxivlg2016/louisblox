@@ -38,9 +38,11 @@ export function Backpack() {
     close();
   };
   const resources = (Object.entries(meat) as Array<[AnimalKind, number]>).filter(([, count]) => count > 0);
+  const query = gallerySearch.trim().toLowerCase();
+  const matchesSearch = (kind: SelectedKind) => selectionInfo(kind).name.toLowerCase().includes(query)
+    || (kind === 'gallery_tools_weapons_book' && 'livre'.includes(query));
   const visibleGalleryItems = GALLERY_ITEMS.filter((item) =>
-    (galleryCategory === 'all' || item.category === galleryCategory)
-    && item.name.toLowerCase().includes(gallerySearch.toLowerCase()),
+    (query !== '' || galleryCategory === 'all' || item.category === galleryCategory) && matchesSearch(item.id),
   );
   const itemButton = (kind: SelectedKind) => {
     const meta = selectionInfo(kind);
@@ -73,20 +75,22 @@ export function Backpack() {
           <h2>Sac à dos</h2>
           <button className="secondary-button" onClick={close}>Fermer et reprendre</button>
         </div>
+        <div className="gallery-controls backpack-global-search">
+          <input type="search" aria-label="Rechercher dans le sac à dos" placeholder="Rechercher dans tout le sac…" value={gallerySearch} onChange={(event) => setGallerySearch(event.target.value)} />
+        </div>
         <div className="backpack-content">
           <p className="backpack-label">Blocs, portes et trappes</p>
-          <div className="backpack-blocks">{HOTBAR_BLOCKS.filter((kind) => !isCrop(kind)).map(itemButton)}</div>
+          <div className="backpack-blocks">{HOTBAR_BLOCKS.filter((kind) => !isCrop(kind) && matchesSearch(kind)).map(itemButton)}</div>
           <p className="backpack-label">Graines et plants · sur herbe ou terre · E pour récolter quand c’est mûr</p>
-          <div className="backpack-blocks">{CROP_KINDS.map(itemButton)}</div>
+          <div className="backpack-blocks">{CROP_KINDS.filter(matchesSearch).map(itemButton)}</div>
           <p className="backpack-label">Pioches, pelles, épées, armures et équipement · clic gauche pour miner ou utiliser</p>
-          <div className="backpack-blocks">{ITEM_ORDER.map(itemButton)}</div>
+          <div className="backpack-blocks">{ITEM_ORDER.filter(matchesSearch).map(itemButton)}</div>
           <p className="backpack-label">Galerie Bloxd.io · {GALLERY_ITEMS.length} objets</p>
           <div className="gallery-controls">
             <select aria-label="Catégorie de la galerie" value={galleryCategory} onChange={(event) => setGalleryCategory(event.target.value)}>
               <option value="all">Toutes les catégories</option>
               {GALLERY_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
             </select>
-            <input type="search" aria-label="Rechercher dans la galerie" placeholder="Rechercher…" value={gallerySearch} onChange={(event) => setGallerySearch(event.target.value)} />
           </div>
           <p className="backpack-label">{visibleGalleryItems.length} objets affichés</p>
           <div className="backpack-blocks">{visibleGalleryItems.map((item) => itemButton(item.id))}</div>

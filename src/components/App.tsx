@@ -18,8 +18,8 @@ export function App() {
           if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') Object.assign(window, {
             louisbloxRenderer: gl,
             louisbloxDebug: async () => {
-              const [traits, chunks] = await Promise.all([import('../game/traits'), import('../game/chunks')]);
-              return { world, gl, camera, store: useGameStore, ...traits, ...chunks };
+              const [traits, chunks, vehicles] = await Promise.all([import('../game/traits'), import('../game/chunks'), import('../game/vehicles')]);
+              return { world, gl, camera, store: useGameStore, ...traits, ...chunks, ...vehicles };
             },
           });
         }}

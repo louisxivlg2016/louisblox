@@ -5,10 +5,10 @@ import { getBlockIndex } from '../chunks';
 import { MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
 import { getSwimState, swimVerticalVelocity } from '../swimming';
-import { dismount, groundAt } from '../vehicles';
+import { dismount, groundAt, vehicleSeatPosition } from '../vehicles';
 import { isCrop, isLadder } from '../extraBlocks';
 import { BlockKind, voxelKey } from '../voxel';
-import { AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep, VehiclePosition } from '../traits';
+import { AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 
 type RapierWorld = ReturnType<typeof useRapier>['world'];
 export type CharacterController = ReturnType<RapierWorld['createCharacterController']>;
@@ -65,18 +65,17 @@ export function playerSystem(
 
   const mount = entity.get(PlayerMount);
   if (mount?.vehicle) {
-    const vehiclePosition = mount.kind === 'car' ? mount.vehicle.get(VehiclePosition) : mount.vehicle.get(AnimalPosition);
-    if (vehiclePosition) {
-      position.set(vehiclePosition.x, vehiclePosition.y + (mount.kind === 'car' ? 0.55 : 1.05), vehiclePosition.z);
-      body.setNextKinematicTranslation(position);
-      velocity.set(0, 0, 0);
-      entity.set(PlayerState, { grounded: true, flying: false, yaw, pitch });
-      updateHud(position, health, false);
-      return;
+    if (mount.kind === 'horse') {
+      const vehiclePosition = mount.vehicle.get(AnimalPosition);
+      if (vehiclePosition) position.set(vehiclePosition.x, vehiclePosition.y + 1.05, vehiclePosition.z);
+    } else if (mount.kind) {
+      position.copy(vehicleSeatPosition(mount.vehicle, mount.kind, mount.role, mount.seat));
     }
-    mount.vehicle = null;
-    mount.kind = null;
-    useGameStore.getState().setRiding(null);
+    body.setNextKinematicTranslation(position);
+    velocity.set(0, 0, 0);
+    entity.set(PlayerState, { grounded: true, flying: false, yaw, pitch });
+    updateHud(position, health, false);
+    return;
   }
 
   const touch = getTouchMovement();

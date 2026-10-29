@@ -2,7 +2,7 @@ import type { World } from 'koota';
 import { Euler } from 'three';
 import type { Camera } from 'three';
 import { useGameStore } from '../store';
-import { Player, PlayerMesh, PlayerPosition, PlayerState, Sleep } from '../traits';
+import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, Sleep } from '../traits';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
 
@@ -35,14 +35,15 @@ export function cameraSystem(world: World, camera: Camera) {
     avatar.rotation.z = 0;
     avatar.position.set(0, 0, 0);
   }
+  const mount = entity.get(PlayerMount);
   if (useGameStore.getState().cameraMode === 'third') {
-    const distance = 6;
+    const distance = mount?.kind === 'plane' ? 12 : mount?.kind === 'train' ? 14 : 6;
     const height = Math.max(0.6, Math.min(5.5, 2.4 - Math.sin(state.pitch) * 3));
     camera.position.set(position.x + Math.sin(state.yaw) * distance, position.y + height, position.z + Math.cos(state.yaw) * distance);
     camera.lookAt(position.x, position.y + 1.1, position.z);
   } else {
     camera.position.copy(position);
-    camera.position.y += 1.62;
+    camera.position.y += mount?.vehicle && mount.kind !== 'horse' ? mount.kind === 'car' ? 0.4 : 0.55 : 1.62;
     rotation.set(state.pitch, state.yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(rotation);
   }

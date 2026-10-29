@@ -111,6 +111,16 @@ export function initInput() {
       return;
     }
     if (event.code === 'Escape') {
+      if (useGameStore.getState().bookOpen) {
+        useGameStore.getState().setBookOpen(false);
+        void requestPlay();
+        return;
+      }
+      if (useGameStore.getState().seatChoice) {
+        useGameStore.getState().setSeatChoice(null);
+        void requestPlay();
+        return;
+      }
       if (useGameStore.getState().container) {
         useGameStore.getState().closeContainer();
         void requestPlay();
