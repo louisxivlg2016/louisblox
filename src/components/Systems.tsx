@@ -19,8 +19,9 @@ import { projectileSystem } from '../game/systems/projectileSystem';
 import { saveSystem } from '../game/systems/saveSystem';
 import { saplingSystem } from '../game/systems/saplingSystem';
 import { waterSystem } from '../game/systems/waterSystem';
+import { sleepSystem } from '../game/systems/sleepSystem';
 import { vehicleInteractionSystem, vehicleMovementSystem } from '../game/vehicles';
-import { BlockTarget, Player, PlayerPosition, TargetMesh } from '../game/traits';
+import { BlockTarget, Player, PlayerPosition, Sleep, TargetMesh } from '../game/traits';
 
 export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } }) {
   const world = useWorld();
@@ -38,13 +39,14 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
     const dt = Math.min(delta, 0.05);
     collisionSystem(world, physicsWorld, rapier);
     if (useGameStore.getState().mode === 'play') {
+      const sleeping = world.queryFirst(Sleep) !== undefined;
       const actions = consumeActions();
-      const vehicleHandled = vehicleInteractionSystem(world, actions.place + actions.harvest);
+      const vehicleHandled = !sleeping && vehicleInteractionSystem(world, actions.place + actions.harvest);
       playerSystem(world, dt, physicsWorld, controller, spawn);
       vehicleMovementSystem(world, dt);
       cameraSystem(world, camera);
-      const itemHandled = !vehicleHandled && itemSystem(world, camera, dt, actions);
-      const animalTarget = animalCombatSystem(world, camera, dt);
+      const itemHandled = !sleeping && !vehicleHandled && itemSystem(world, camera, dt, actions);
+      const animalTarget = !sleeping && animalCombatSystem(world, camera, dt);
       animalSystem(world, dt);
       meatDropSystem(world, dt);
       bombSystem(world, dt);
@@ -52,8 +54,9 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       explosionSystem(world, dt);
       saplingSystem(world, dt);
       waterSystem(world, dt);
-      const remainingActions = vehicleHandled || itemHandled ? { place: 0, harvest: 0 } : actions;
-      blockSystem(world, camera, dt, animalTarget, remainingActions);
+      sleepSystem(world, dt);
+      const remainingActions = sleeping || vehicleHandled || itemHandled ? { place: 0, harvest: 0 } : actions;
+      blockSystem(world, camera, dt, animalTarget || sleeping, remainingActions);
     } else {
       cameraSystem(world, camera);
       const targetEntity = world.queryFirst(BlockTarget);

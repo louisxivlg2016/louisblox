@@ -10,7 +10,7 @@ import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
 import type { ArmorKind, ItemKind, SelectedKind } from './items';
 import {
   Animal, AnimalPosition, MeatDrop, Bomb, Explosion, Sapling, BlockTarget, Chunk, ChunkData,
-  Environment, HorseRider, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMesh, PlayerMount,
+  Environment, Sleep, HorseRider, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMesh, PlayerMount,
   PlayerPosition, PlayerState, PlayerVelocity, Projectile, RainMaterial, SnowMaterial, TargetMesh,
   Vehicle, VehicleMesh, VehicleMotion, VehiclePosition,
 } from './traits';
@@ -382,6 +382,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   for (const entity of [...world.query(Environment)]) entity.destroy();
   for (const entity of [...world.query(Projectile)]) entity.destroy();
   for (const entity of [...world.query(Vehicle)]) entity.destroy();
+  for (const entity of [...world.query(Sleep)]) entity.destroy();
 
   const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3) && saved.generation === generation ? saved : null;
   const seed = restore?.seed ?? 73421 + generation * 977;

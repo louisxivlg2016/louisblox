@@ -8,7 +8,7 @@ import { getSwimState, swimVerticalVelocity } from '../swimming';
 import { dismount } from '../vehicles';
 import { isLadder } from '../extraBlocks';
 import { BlockKind, voxelKey } from '../voxel';
-import { AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, VehiclePosition } from '../traits';
+import { AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep, VehiclePosition } from '../traits';
 
 type RapierWorld = ReturnType<typeof useRapier>['world'];
 export type CharacterController = ReturnType<RapierWorld['createCharacterController']>;
@@ -33,6 +33,18 @@ export function playerSystem(
   const state = entity.get(PlayerState);
   const health = entity.get(PlayerHealth);
   if (!body || !collider || !position || !velocity || !state) return;
+
+  const sleep = world.queryFirst(Sleep)?.get(Sleep);
+  if (sleep) {
+    consumeLook();
+    consumeFlightToggle();
+    position.set(sleep.x, sleep.y + 0.58, sleep.z);
+    body.setNextKinematicTranslation(position);
+    velocity.set(0, 0, 0);
+    entity.set(PlayerState, { grounded: true, flying: false });
+    updateHud(position, health, false);
+    return;
+  }
 
   const mouse = consumeLook();
   const edge = getEdgeLook();

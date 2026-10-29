@@ -31,6 +31,8 @@ type GameStore = {
   meat: Record<AnimalKind, number>;
   miningProgress: number;
   flying: boolean;
+  sleepProgress: number | null;
+  setSleepProgress: (progress: number | null) => void;
   lives: number;
   cameraMode: 'first' | 'third';
   backpackOpen: boolean;
@@ -78,6 +80,8 @@ export const useGameStore = create<GameStore>((set) => ({
   meat: createMeatInventory(),
   miningProgress: 0,
   flying: false,
+  sleepProgress: null,
+  setSleepProgress: (sleepProgress) => set({ sleepProgress }),
   lives: 10,
   cameraMode: 'first',
   backpackOpen: false,
@@ -125,6 +129,7 @@ export const useGameStore = create<GameStore>((set) => ({
     meat: createMeatInventory(),
     miningProgress: 0,
     flying: false,
+    sleepProgress: null,
     lives: 10,
     backpackOpen: false,
     mode: 'menu',

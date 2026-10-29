@@ -36,6 +36,7 @@ export function Hands() {
   const scene = useThree((state) => state.scene);
   const selected = useGameStore((state) => state.selected);
   const cameraMode = useGameStore((state) => state.cameraMode);
+  const sleeping = useGameStore((state) => state.sleepProgress !== null);
   const skinTexture = useMemo(createSkinTexture, []);
   const selectedBlock = typeof selected === 'number' ? selected : BlockKind.Grass;
   const heldMaterials = useMemo(() => blockMaterials[selectedBlock].map((material) => {
@@ -53,7 +54,7 @@ export function Hands() {
   }, [camera, scene]);
   useEffect(() => () => heldMaterials.forEach((material) => material.dispose()), [heldMaterials]);
 
-  if (cameraMode === 'third') return null;
+  if (cameraMode === 'third' || sleeping) return null;
   return createPortal(
     <group>
       {[-0.43, 0.42].map((x) => (

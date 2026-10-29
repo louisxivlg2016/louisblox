@@ -30,6 +30,7 @@ export function Hud() {
   const backpackOpen = useGameStore((state) => state.backpackOpen);
   const teleportOpen = useGameStore((state) => state.teleportOpen);
   const containerOpen = useGameStore((state) => state.container !== null);
+  const sleepProgress = useGameStore((state) => state.sleepProgress);
   const coordinates = useGameStore((state) => state.coordinates);
   const environment = useGameStore((state) => state.environment);
   const selectBlock = useGameStore((state) => state.selectBlock);
@@ -145,6 +146,11 @@ export function Hud() {
       )}
       <Backpack />
       <ContainerPanel />
+      {sleepProgress !== null && (
+        <div className="sleep-overlay" style={{ backgroundColor: `rgba(0, 0, 0, ${0.15 + sleepProgress * 0.8})` }}>
+          <p>{sleepProgress > 0.65 ? 'Le jour se lève…' : 'Tu dors…'}</p>
+        </div>
+      )}
     </div>
   );
 }

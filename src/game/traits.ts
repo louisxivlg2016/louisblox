@@ -60,6 +60,7 @@ export const Projectile = trait({ kind: 'arrow' as 'arrow' | 'bullet' | 'bomb', 
 export const ProjectilePosition = trait(() => new Vector3());
 export const ProjectileVelocity = trait(() => new Vector3());
 export const ProjectileMesh = trait(() => ({ value: null as import('three').Object3D | null }));
+export const Sleep = trait({ remaining: 2.4, total: 2.4, x: 0, y: 0, z: 0 });
 
 export const Environment = trait(() => ({
   elapsed: 0,

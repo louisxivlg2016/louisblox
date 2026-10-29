@@ -4,7 +4,8 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isChest, isCrop, isDoor, isFurnace, isLadder, isSapling, isTrapdoor } from '../extraBlocks';
+import { isBed, isChest, isCrop, isDoor, isFurnace, isLadder, isSapling, isTrapdoor } from '../extraBlocks';
+import { startSleep } from './sleepSystem';
 import { openChest, openFurnace } from '../containers';
 import { cropDefinition } from '../crops';
 import { consumeActions, isMouseDown, stopMining } from '../input';
@@ -107,6 +108,10 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   const actions = pendingActions ?? consumeActions();
   if (useGameStore.getState().mode !== 'play' || !hit) return;
 
+  if ((actions.place > 0 || actions.harvest > 0) && isBed(hit.block.kind)) {
+    startSleep(world, hit.x, hit.y, hit.z);
+    return;
+  }
   if ((actions.place > 0 || actions.harvest > 0) && isChest(hit.block.kind)) {
     openChest(world, hit);
     return;
