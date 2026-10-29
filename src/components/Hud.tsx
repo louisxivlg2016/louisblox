@@ -9,6 +9,7 @@ import { getWorldSeed } from '../game/chunks';
 import { nearestRuin } from '../game/ruins';
 import { ItemIcon } from './ItemIcon';
 import { world } from '../game/world';
+import { Player } from '../game/traits';
 import { Backpack } from './Backpack';
 import { ContainerPanel } from './ContainerPanel';
 import { TouchControls } from './TouchControls';
@@ -41,7 +42,7 @@ export function Hud() {
   const sleepProgress = useGameStore((state) => state.sleepProgress);
   const coordinates = useGameStore((state) => state.coordinates);
   const environment = useGameStore((state) => state.environment);
-  const nearbyRuin = mode === 'play' ? nearestRuin(coordinates.x, coordinates.z, getWorldSeed(world)) : null;
+  const nearbyRuin = mode === 'play' && world.queryFirst(Player) ? nearestRuin(coordinates.x, coordinates.z, getWorldSeed(world)) : null;
   const selectBlock = useGameStore((state) => state.selectBlock);
   const setBackpack = useGameStore((state) => state.setBackpack);
   const setTeleportOpen = useGameStore((state) => state.setTeleportOpen);
