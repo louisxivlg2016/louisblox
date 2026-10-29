@@ -1,5 +1,6 @@
 import { startMusic } from './audio';
 import { useGameStore } from './store';
+import { BlockKind } from './voxel';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -8,7 +9,8 @@ const touchMouseButtons = new Set<number>();
 const look = { x: 0, y: 0 };
 const edgeLook = { x: 0, y: 0 };
 const touchMovement = { x: 0, y: 0 };
-const actions = { place: 0, harvest: 0 };
+const actions = { place: 0, harvest: 0, tap: 0 };
+const MINERAL_BLOCKS = new Set<number>([BlockKind.CoalOre, BlockKind.IronOre, BlockKind.GoldOre, BlockKind.DiamondOre]);
 let lastSpacePress = 0;
 let flightToggles = 0;
 let initialized = false;
@@ -22,7 +24,6 @@ const touchPointers = new Set<number>();
 const touchPoints = new Map<number, { x: number; y: number }>();
 let touchGestureMoved = false;
 let twoFingerGesture = false;
-let touchStartedAt = 0;
 
 const hasMouseControl = () => document.pointerLockElement !== null || pointerLockFallback;
 
@@ -30,6 +31,17 @@ function resetEdgeLook() {
   edgeLook.x = 0;
   edgeLook.y = 0;
   edgeResetTimer = null;
+}
+
+function queueTouchTap() {
+  actions.tap += 1;
+  const selected = useGameStore.getState().selected;
+  if (typeof selected === 'number' && MINERAL_BLOCKS.has(selected)) {
+    stopMining();
+    actions.place += 1;
+  } else {
+    toggleMining();
+  }
 }
 
 export function clearInput() {
@@ -51,9 +63,9 @@ export function clearInput() {
   touchPoints.clear();
   touchGestureMoved = false;
   twoFingerGesture = false;
-  touchStartedAt = 0;
   actions.place = 0;
   actions.harvest = 0;
+  actions.tap = 0;
   lastSpacePress = 0;
   flightToggles = 0;
 }
@@ -166,7 +178,6 @@ export function initInput() {
       touchLookY = event.clientY;
       touchGestureMoved = false;
       twoFingerGesture = false;
-      touchStartedAt = performance.now();
     } else if (touchPointers.size === 2) {
       twoFingerGesture = true;
       touchGestureMoved = false;
@@ -196,16 +207,14 @@ export function initInput() {
     touchPointers.delete(event.pointerId);
     touchPoints.delete(event.pointerId);
     if (touchPointers.size === 0) {
-      const duration = performance.now() - touchStartedAt;
-      if (!touchGestureMoved && (twoFingerGesture || duration < 800)) {
+      if (!touchGestureMoved) {
         if (twoFingerGesture) queuePlacement();
-        else toggleMining();
+        else queueTouchTap();
       }
       touchLookPointer = null;
       touchGestureMoved = false;
       twoFingerGesture = false;
-      touchStartedAt = 0;
-    }
+        }
   };
   window.addEventListener('pointerup', endTouchLook);
   window.addEventListener('pointercancel', endTouchLook);
@@ -325,5 +334,6 @@ export function consumeActions() {
   const result = { ...actions };
   actions.place = 0;
   actions.harvest = 0;
+  actions.tap = 0;
   return result;
 }
