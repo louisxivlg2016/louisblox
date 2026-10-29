@@ -1,39 +1,20 @@
 import type { World } from 'koota';
-import type { useRapier } from '@react-three/rapier';
 import { consumeFlightToggle, consumeLook, getEdgeLook, getTouchMovement, isDown } from '../input';
 import { getBlockIndex } from '../chunks';
 import { MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
 import { getSwimState, swimVerticalVelocity } from '../swimming';
-import { dismount, groundAt, vehicleSeatPosition } from '../vehicles';
-import { isCrop, isLadder } from '../extraBlocks';
+import { dismount, vehicleSeatPosition } from '../vehicles';
+import { isLadder } from '../extraBlocks';
 import { BlockKind, voxelKey } from '../voxel';
 import { AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
-
-type RapierWorld = ReturnType<typeof useRapier>['world'];
-export type CharacterController = ReturnType<RapierWorld['createCharacterController']>;
+import { moveVoxelCharacter } from './collisionSystem';
 
 const GRAVITY = 24;
 const JUMP_SPEED = 8.4;
 const FLY_SPEED = 5.5;
 
-function hasStepClearance(world: World, x: number, z: number, ground: number) {
-  const blocks = getBlockIndex(world);
-  const top = blocks.get(voxelKey(Math.round(x), Math.round(ground - 0.5), Math.round(z)));
-  if (top && isLadder(top.kind)) return false;
-  return [0.2, 1.05, 1.65].every((height) => {
-    const block = blocks.get(voxelKey(Math.round(x), Math.round(ground + height), Math.round(z)));
-    return !block || block.kind === BlockKind.Water || isCrop(block.kind) || isLadder(block.kind) || block.open;
-  });
-}
-
-export function playerSystem(
-  world: World,
-  dt: number,
-  physicsWorld: RapierWorld,
-  controller: CharacterController,
-  spawn: { x: number; y: number; z: number },
-) {
+export function playerSystem(world: World, dt: number, spawn: { x: number; y: number; z: number }) {
   const entity = world.queryFirst(Player);
   if (!entity) return;
   const body = entity.get(PlayerBody)?.value;
@@ -102,30 +83,18 @@ export function playerSystem(
   else if (state.grounded && isDown('Space')) velocity.y = JUMP_SPEED;
   else velocity.y -= GRAVITY * dt;
 
-  controller.computeColliderMovement(collider, {
+  const next = { ...position };
+  const movement = moveVoxelCharacter(blocks, next, {
     x: velocity.x * dt,
     y: velocity.y * dt,
     z: velocity.z * dt,
-  });
-  const movement = controller.computedMovement();
-  const current = body.translation();
-  const next = { x: current.x + movement.x, y: current.y + movement.y, z: current.z + movement.z };
-  const controllerGrounded = controller.computedGrounded();
-  let stepped = false;
-  if ((state.grounded || controllerGrounded) && !flying && !inWater && !onLadder && Math.hypot(velocity.x, velocity.z) > 0.01) {
-    const stepGround = groundAt(world, current.x + velocity.x * dt, current.z + velocity.z * dt, current.y + 1.05);
-    const rise = stepGround - current.y;
-    if (rise > 0.02 && rise <= 1.05 && hasStepClearance(world, next.x, next.z, stepGround)) {
-      next.y = stepGround;
-      stepped = true;
-    }
-  }
-  const grounded = stepped || controllerGrounded;
+  }, state.grounded && !flying && !inWater && !onLadder);
+  const grounded = movement.grounded;
   const nextFlying = flying && grounded && isDown('KeyC') ? false : flying;
-  if (stepped) velocity.y = 0;
+  if (movement.stepped) velocity.y = 0;
   else {
     if (grounded && velocity.y < 0) velocity.y = -0.1;
-    if (movement.y > velocity.y * dt + 0.001) velocity.y = 0;
+    if (movement.hitCeiling) velocity.y = 0;
   }
 
   if (next.y < MIN_WORLD_Y - 12 || !Number.isFinite(next.x + next.y + next.z) || (health && health.value <= 0)) {

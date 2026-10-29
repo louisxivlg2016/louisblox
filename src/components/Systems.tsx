@@ -1,6 +1,4 @@
-import { useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useRapier } from '@react-three/rapier';
 import { useWorld } from 'koota/react';
 import { streamChunks } from '../game/chunks';
 import { consumeActions } from '../game/input';
@@ -10,7 +8,6 @@ import { animalSystem } from '../game/systems/animalSystem';
 import { blockSystem } from '../game/systems/blockSystem';
 import { bombSystem, explosionSystem } from '../game/systems/bombSystem';
 import { cameraSystem } from '../game/systems/cameraSystem';
-import { collisionSystem } from '../game/systems/collisionSystem';
 import { environmentSystem } from '../game/systems/environmentSystem';
 import { itemSystem } from '../game/systems/itemSystem';
 import { meatDropSystem } from '../game/systems/meatDropSystem';
@@ -26,23 +23,6 @@ import { BlockTarget, Player, PlayerPosition, Sleep, TargetMesh } from '../game/
 
 export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } }) {
   const world = useWorld();
-  const { world: physicsWorld, rapier } = useRapier();
-  const controller = useMemo(() => {
-    const value = physicsWorld.createCharacterController(0.025);
-    value.enableAutostep(1.05, 0.2, true);
-    value.enableSnapToGround(0.5);
-    value.setMaxSlopeClimbAngle(Math.PI / 4);
-    return value;
-  }, [physicsWorld]);
-  useEffect(() => {
-    const updateColliders = () => collisionSystem(world, physicsWorld, rapier);
-    updateColliders();
-    const interval = window.setInterval(updateColliders, 1000 / 30);
-    return () => {
-      window.clearInterval(interval);
-      controller.free();
-    };
-  }, [world, physicsWorld, rapier, controller]);
 
   useFrame(({ camera }, delta) => {
     const dt = Math.min(delta, 0.05);
@@ -50,7 +30,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const sleeping = world.queryFirst(Sleep) !== undefined;
       const actions = consumeActions();
       const vehicleHandled = !sleeping && vehicleInteractionSystem(world, actions.place + actions.harvest);
-      playerSystem(world, dt, physicsWorld, controller, spawn);
+      playerSystem(world, dt, spawn);
       vehicleMovementSystem(world, dt);
       cameraSystem(world, camera);
       const itemHandled = !sleeping && !vehicleHandled && itemSystem(world, camera, dt, actions);

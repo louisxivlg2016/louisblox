@@ -1,93 +1,100 @@
-import type { World } from 'koota';
-import type { useRapier } from '@react-three/rapier';
-import { chunkCoordinate, getBlockIndex, getWorldSeed } from '../chunks';
-import { MIN_WORLD_Y } from '../levels';
 import { isCrop, isDoor, isLadder, isTrapdoor } from '../extraBlocks';
-import { Chunk, Player, PlayerPosition } from '../traits';
 import { BlockKind, voxelKey } from '../voxel';
 import type { Voxel } from '../voxel';
 
-type RapierWorld = ReturnType<typeof useRapier>['world'];
-type RapierCollider = ReturnType<RapierWorld['createCollider']>;
+type Vector = { x: number; y: number; z: number };
+type Axis = keyof Vector;
 
-type CollisionState = {
-  key: string;
-  physicsWorld: RapierWorld;
-  colliders: Map<string, RapierCollider>;
-};
+const RADIUS = 0.35;
+const HEIGHT = 1.8;
+const EPSILON = 0.0001;
+const MAX_SUBSTEP = 0.18;
 
-const states = new WeakMap<World, CollisionState>();
-const neighborOffsets = [
-  [1, 0, 0],
-  [-1, 0, 0],
-  [0, 1, 0],
-  [0, -1, 0],
-  [0, 0, 1],
-  [0, 0, -1],
-] as const;
-
-function isCollidable(block: Voxel | undefined) {
+export function isCollidable(block: Voxel | undefined) {
   if (!block || block.kind === BlockKind.Water || isCrop(block.kind) || isLadder(block.kind)) return false;
   return !(isDoor(block.kind) || isTrapdoor(block.kind)) || !block.open;
 }
 
-export function collisionSystem(
-  world: World,
-  physicsWorld: RapierWorld,
-  rapier: ReturnType<typeof useRapier>['rapier'],
-) {
-  const position = world.queryFirst(Player)?.get(PlayerPosition);
-  if (!position) return;
-
-  const px = Math.floor(position.x + 0.5);
-  const py = Math.floor(position.y + 0.5);
-  const pz = Math.floor(position.z + 0.5);
-  const cx = chunkCoordinate(position.x);
-  const cz = chunkCoordinate(position.z);
-  let revision = 0;
-  for (const entity of world.query(Chunk)) {
-    const chunk = entity.get(Chunk)!;
-    if (Math.abs(chunk.x - cx) <= 1 && Math.abs(chunk.z - cz) <= 1) revision += chunk.revision;
-  }
-  const key = `${getWorldSeed(world)}:${cx}:${cz}:${revision}:${px}:${py}:${pz}`;
-  let state = states.get(world);
-
-  if (state?.physicsWorld !== physicsWorld) {
-    if (state) {
-      for (const collider of state.colliders.values()) state.physicsWorld.removeCollider(collider, false);
-    }
-    state = undefined;
-  }
-  if (state?.key === key) return;
-  if (!state) {
-    state = { key, physicsWorld, colliders: new Map() };
-    states.set(world, state);
-  }
-  state.key = key;
-
-  const blocks = getBlockIndex(world);
-  const desired = new Map<string, Voxel>();
-  for (let x = px - 8; x <= px + 8; x += 1) {
-    for (let y = Math.max(MIN_WORLD_Y, py - 7); y <= py + 7; y += 1) {
-      for (let z = pz - 8; z <= pz + 8; z += 1) {
-        const block = blocks.get(voxelKey(x, y, z));
-        if (!isCollidable(block)) continue;
-        const exposed = neighborOffsets.some(([dx, dy, dz]) => !isCollidable(blocks.get(voxelKey(x + dx, y + dy, z + dz))));
-        if (exposed) desired.set(voxelKey(x, y, z), block!);
+function collides(blocks: ReadonlyMap<string, Voxel>, position: Vector) {
+  const minX = Math.ceil(position.x - RADIUS - 0.5 + EPSILON);
+  const maxX = Math.floor(position.x + RADIUS + 0.5 - EPSILON);
+  const minY = Math.ceil(position.y - 0.5 + EPSILON);
+  const maxY = Math.floor(position.y + HEIGHT + 0.5 - EPSILON);
+  const minZ = Math.ceil(position.z - RADIUS - 0.5 + EPSILON);
+  const maxZ = Math.floor(position.z + RADIUS + 0.5 - EPSILON);
+  for (let x = minX; x <= maxX; x += 1) {
+    for (let y = minY; y <= maxY; y += 1) {
+      for (let z = minZ; z <= maxZ; z += 1) {
+        if (isCollidable(blocks.get(voxelKey(x, y, z)))) return true;
       }
     }
   }
+  return false;
+}
 
-  for (const [positionKey, collider] of state.colliders) {
-    if (desired.has(positionKey)) continue;
-    physicsWorld.removeCollider(collider, false);
-    state.colliders.delete(positionKey);
+function slide(blocks: ReadonlyMap<string, Voxel>, position: Vector, axis: Axis, amount: number) {
+  if (amount === 0) return false;
+  const start = position[axis];
+  position[axis] = start + amount;
+  if (!collides(blocks, position)) return false;
+  let safe = 0;
+  let blocked = 1;
+  for (let iteration = 0; iteration < 12; iteration += 1) {
+    const middle = (safe + blocked) / 2;
+    position[axis] = start + amount * middle;
+    if (collides(blocks, position)) blocked = middle;
+    else safe = middle;
   }
-  for (const [positionKey, block] of desired) {
-    if (state.colliders.has(positionKey)) continue;
-    const description = rapier.ColliderDesc.cuboid(0.5, 0.5, 0.5)
-      .setTranslation(block.x, block.y, block.z)
-      .setFriction(0);
-    state.colliders.set(positionKey, physicsWorld.createCollider(description));
+  position[axis] = start + amount * safe;
+  return true;
+}
+
+function onGround(blocks: ReadonlyMap<string, Voxel>, position: Vector) {
+  return collides(blocks, { ...position, y: position.y - 0.055 });
+}
+
+export function moveVoxelCharacter(
+  blocks: ReadonlyMap<string, Voxel>,
+  position: Vector,
+  movement: Vector,
+  canStep: boolean,
+) {
+  const substeps = Math.max(1, Math.ceil(Math.max(Math.abs(movement.x), Math.abs(movement.y), Math.abs(movement.z)) / MAX_SUBSTEP));
+  let grounded = false;
+  let hitCeiling = false;
+  let stepped = false;
+
+  for (let step = 0; step < substeps; step += 1) {
+    const start = { ...position };
+    const x = movement.x / substeps;
+    const y = movement.y / substeps;
+    const z = movement.z / substeps;
+    const hitX = slide(blocks, position, 'x', x);
+    const hitZ = slide(blocks, position, 'z', z);
+    const horizontalHit = hitX || hitZ;
+    let climbed = false;
+
+    if (canStep && y <= 0 && horizontalHit) {
+      const candidate = { ...start, y: Math.floor(start.y + 0.5) + 0.5 + EPSILON };
+      if (candidate.y - start.y <= 1.05 && !collides(blocks, candidate)) {
+        slide(blocks, candidate, 'x', x);
+        slide(blocks, candidate, 'z', z);
+        slide(blocks, candidate, 'y', -0.15);
+        if (!collides(blocks, candidate) && onGround(blocks, candidate)) {
+          Object.assign(position, candidate);
+          climbed = true;
+          stepped = true;
+          grounded = true;
+        }
+      }
+    }
+
+    if (!climbed) {
+      const verticalHit = slide(blocks, position, 'y', y);
+      if (verticalHit && y < 0) grounded = true;
+      if (verticalHit && y > 0) hitCeiling = true;
+    }
   }
+
+  return { grounded: grounded || (movement.y <= 0 && onGround(blocks, position)), hitCeiling, stepped };
 }

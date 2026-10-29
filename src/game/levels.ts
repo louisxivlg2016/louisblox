@@ -1,4 +1,5 @@
 import { BlockKind, voxelKey } from './voxel';
+import { generateRuinsForChunk } from './ruins';
 import { CROP_KINDS } from './extraBlocks';
 import type { Voxel } from './voxel';
 
@@ -231,5 +232,9 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
     }
   }
 
+  generateRuinsForChunk(cx, cz, seed, put, (x, y, z) => {
+    if (x < minX || x >= maxX || z < minZ || z >= maxZ) return;
+    blocks.delete(voxelKey(x, y, z));
+  });
   return { blocks: [...blocks.values()], water };
 }

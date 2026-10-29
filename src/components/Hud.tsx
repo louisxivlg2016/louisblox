@@ -5,6 +5,8 @@ import { MEAT_NAMES } from '../game/meats';
 import { useGameStore } from '../game/store';
 import { teleportToBiome } from '../game/teleport';
 import { selectionInfo } from '../game/items';
+import { getWorldSeed } from '../game/chunks';
+import { nearestRuin } from '../game/ruins';
 import { ItemIcon } from './ItemIcon';
 import { world } from '../game/world';
 import { Backpack } from './Backpack';
@@ -15,6 +17,7 @@ import { SeatChoicePanel } from './SeatChoicePanel';
 
 const WEATHER_NAMES = { clear: 'Ciel clair', rain: 'Pluie', snow: 'Neige' } as const;
 const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'prairie'];
+const RUIN_NAMES = { church: 'Église', palace: 'Palais', fort: 'Fort' } as const;
 
 export function Hud() {
   const mode = useGameStore((state) => state.mode);
@@ -38,6 +41,7 @@ export function Hud() {
   const sleepProgress = useGameStore((state) => state.sleepProgress);
   const coordinates = useGameStore((state) => state.coordinates);
   const environment = useGameStore((state) => state.environment);
+  const nearbyRuin = mode === 'play' ? nearestRuin(coordinates.x, coordinates.z, getWorldSeed(world)) : null;
   const selectBlock = useGameStore((state) => state.selectBlock);
   const setBackpack = useGameStore((state) => state.setBackpack);
   const setTeleportOpen = useGameStore((state) => state.setTeleportOpen);
@@ -75,6 +79,7 @@ export function Hud() {
             <strong className="block-count">{blockCount.toLocaleString('fr-FR')}</strong> blocs chargés
             <span className="coordinates">XYZ {coordinates.x.toFixed(2)} / {coordinates.y.toFixed(2)} / {coordinates.z.toFixed(2)}</span>
             <span className="biome-info">{BIOME_NAMES[environment.biome]} · {hours}:{minutes}</span>
+            {nearbyRuin && nearbyRuin.distance < 64 && <span className="weather-info">Ruines : {RUIN_NAMES[nearbyRuin.type]} à {Math.round(nearbyRuin.distance)} m</span>}
             <span className={`weather-info ${environment.weather}`}>{WEATHER_NAMES[environment.weather]}</span>
             <span className="weather-info apple-count">Pommes : {apples}</span>
             <span className="weather-info meat-count">Viandes : {meatSummary || 'aucune'}</span>
