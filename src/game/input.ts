@@ -1,6 +1,5 @@
 import { startMusic } from './audio';
 import { useGameStore } from './store';
-import { BlockKind } from './voxel';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -10,7 +9,7 @@ const look = { x: 0, y: 0 };
 const edgeLook = { x: 0, y: 0 };
 const touchMovement = { x: 0, y: 0 };
 const actions = { place: 0, harvest: 0, tap: 0 };
-const MINERAL_BLOCKS = new Set<number>([BlockKind.CoalOre, BlockKind.IronOre, BlockKind.GoldOre, BlockKind.DiamondOre]);
+const TOUCH_MINE_DELAY = 400;
 let lastSpacePress = 0;
 let flightToggles = 0;
 let initialized = false;
@@ -18,8 +17,11 @@ let pointerLockFallback = false;
 let touchLookPointer: number | null = null;
 let touchLookX = 0;
 let touchLookY = 0;
+let touchStartX = 0;
+let touchStartY = 0;
 let miningLatched = false;
 let edgeResetTimer: ReturnType<typeof setTimeout> | null = null;
+let touchMineTimer: ReturnType<typeof setTimeout> | null = null;
 const touchPointers = new Set<number>();
 const touchPoints = new Map<number, { x: number; y: number }>();
 let touchGestureMoved = false;
@@ -33,15 +35,17 @@ function resetEdgeLook() {
   edgeResetTimer = null;
 }
 
-function queueTouchTap() {
+function stopTouchMining() {
+  if (touchMineTimer !== null) clearTimeout(touchMineTimer);
+  touchMineTimer = null;
+  touchMouseButtons.delete(0);
+}
+
+function beginTouchMining() {
+  touchMineTimer = null;
+  if (touchGestureMoved || twoFingerGesture || touchPointers.size !== 1 || useGameStore.getState().mode !== 'play') return;
   actions.tap += 1;
-  const selected = useGameStore.getState().selected;
-  if (typeof selected === 'number' && MINERAL_BLOCKS.has(selected)) {
-    stopMining();
-    actions.place += 1;
-  } else {
-    toggleMining();
-  }
+  touchMouseButtons.add(0);
 }
 
 export function clearInput() {
@@ -50,6 +54,7 @@ export function clearInput() {
   mouseButtons.clear();
   touchMouseButtons.clear();
   miningLatched = false;
+  stopTouchMining();
   if (edgeResetTimer) clearTimeout(edgeResetTimer);
   resetEdgeLook();
   look.x = 0;
@@ -186,11 +191,16 @@ export function initInput() {
       touchLookPointer = event.pointerId;
       touchLookX = event.clientX;
       touchLookY = event.clientY;
+      touchStartX = event.clientX;
+      touchStartY = event.clientY;
       touchGestureMoved = false;
       twoFingerGesture = false;
+      stopTouchMining();
+      touchMineTimer = setTimeout(beginTouchMining, TOUCH_MINE_DELAY);
     } else if (touchPointers.size === 2) {
       twoFingerGesture = true;
       touchGestureMoved = false;
+      stopTouchMining();
     }
     try {
       canvas.setPointerCapture(event.pointerId);
@@ -202,7 +212,12 @@ export function initInput() {
     if (!touchPointers.has(event.pointerId)) return;
     event.preventDefault();
     const previous = touchPoints.get(event.pointerId);
-    if (previous && Math.hypot(event.clientX - previous.x, event.clientY - previous.y) > 10) touchGestureMoved = true;
+    const moved = previous && Math.hypot(event.clientX - previous.x, event.clientY - previous.y) > 10;
+    const cameraDragged = event.pointerId === touchLookPointer && Math.hypot(event.clientX - touchStartX, event.clientY - touchStartY) > 10;
+    if (moved || cameraDragged) {
+      touchGestureMoved = true;
+      stopTouchMining();
+    }
     touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (event.pointerId !== touchLookPointer) return;
     look.x += (event.clientX - touchLookX) * 2;
@@ -212,19 +227,17 @@ export function initInput() {
   });
   const endTouchLook = (event: PointerEvent) => {
     if (!touchPointers.has(event.pointerId)) return;
+    stopTouchMining();
     const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas canvas');
     if (canvas?.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
     touchPointers.delete(event.pointerId);
     touchPoints.delete(event.pointerId);
     if (touchPointers.size === 0) {
-      if (!touchGestureMoved) {
-        if (twoFingerGesture) queuePlacement();
-        else queueTouchTap();
-      }
+      if (!touchGestureMoved && twoFingerGesture) queuePlacement();
       touchLookPointer = null;
       touchGestureMoved = false;
       twoFingerGesture = false;
-        }
+    }
   };
   window.addEventListener('pointerup', endTouchLook);
   window.addEventListener('pointercancel', endTouchLook);
@@ -293,10 +306,6 @@ export const isDown = (code: string) => keys.has(code) || touchKeys.has(code);
 export const isMouseDown = (button: number) => mouseButtons.has(button) || touchMouseButtons.has(button) || (button === 0 && miningLatched);
 export const getTouchMovement = () => touchMovement;
 export const getEdgeLook = () => edgeLook;
-
-export function toggleMining() {
-  miningLatched = !miningLatched;
-}
 
 export function stopMining() {
   miningLatched = false;

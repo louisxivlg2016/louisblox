@@ -54,6 +54,7 @@ export function TouchControls() {
 
   return (
     <div className="mobile-controls">
+      <div className="touch-gesture-hint">Glisser : caméra · Maintenir : casser · 2 doigts : poser</div>
       <div
         ref={joystick}
         className="touch-joystick"

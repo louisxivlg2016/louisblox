@@ -310,11 +310,13 @@
       }
       @media (pointer: coarse) {
         .mobile-controls { display: block; }
+        .touch-gesture-hint { position: absolute; top: 62px; left: 50%; transform: translateX(-50%); width: max-content; max-width: 85vw; color: #fff; font-size: 11px; line-height: 1.5; text-align: center; text-shadow: 1px 1px 0 #000; pointer-events: none; }
         .controls-hint, .action-hint { display: none; }
-        .teleport-toggle { right: 12px; bottom: 252px; }
+        .teleport-toggle { right: 12px; bottom: 312px; }
         .world-stats { font-size: 9px; }
       }
       @media (max-width: 650px) {
+        .touch-gesture-hint { display: none; }
         .menu-panel { padding: 28px 24px 24px; }
         .controls-hint, .action-hint { display: none; }
         .hotbar-wrap { bottom: 14px; }
