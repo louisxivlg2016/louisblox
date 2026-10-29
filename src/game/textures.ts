@@ -67,21 +67,11 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   }
 
   if (kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick) {
-    context.fillStyle = kind === BlockKind.WhiteBrick ? '#8f8f8f' : kind === BlockKind.BeigeBrick ? '#6f4f2c' : '#454545';
-    for (const y of [4, 9, 14]) context.fillRect(0, y, 16, 1);
-    for (let row = 0; row < 4; row += 1) {
-      const offset = row % 2 === 0 ? 4 : 0;
-      for (let x = offset; x < 16; x += 8) context.fillRect(x, row * 5, 1, 5);
-    }
+    paintBricks(context, kind);
   }
 
   if (kind === BlockKind.OakPlanks || kind === BlockKind.PinePlanks || kind === BlockKind.AutumnPlanks) {
-    context.fillStyle = 'rgba(63, 39, 22, 0.55)';
-    for (const y of [3, 7, 11, 15]) context.fillRect(0, y, 16, 1);
-    for (let row = 0; row < 4; row += 1) {
-      const offset = row % 2 === 0 ? 5 : 1;
-      context.fillRect(offset, row * 4, 1, 4);
-    }
+    paintPlanks(context, kind);
   }
 
   if (kind === BlockKind.Glass) {
@@ -141,6 +131,63 @@ function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   map.generateMipmaps = false;
   map.colorSpace = SRGBColorSpace;
   return map;
+}
+
+function paintPlanks(context: CanvasRenderingContext2D, kind: BlockKind) {
+  const styles: Record<number, { boards: string[]; seam: string; dark: string; light: string }> = {
+    [BlockKind.OakPlanks]: { boards: ['#ad874f', '#b58e55', '#a47b45', '#bd955c'], seam: '#654728', dark: '#89653a', light: '#c5a066' },
+    [BlockKind.PinePlanks]: { boards: ['#725136', '#7c5839', '#69492f', '#896441'], seam: '#3f2c1e', dark: '#543b27', light: '#9c744b' },
+    [BlockKind.AutumnPlanks]: { boards: ['#a66c3d', '#b07540', '#976033', '#b98048'], seam: '#5b3924', dark: '#7d4e2d', light: '#c88d52' },
+  };
+  const style = styles[kind];
+  context.clearRect(0, 0, 16, 16);
+  for (let row = 0; row < 4; row += 1) {
+    const joint = row % 2 === 0 ? 8 : 4;
+    const boards = [[0, joint - 1], [joint + 1, 15]];
+    boards.forEach(([start, end], index) => {
+      context.fillStyle = style.boards[(row + index) % style.boards.length];
+      context.fillRect(start, row * 4, end - start + 1, 4);
+      for (let line = 0; line < 3; line += 1) {
+        const width = Math.min(end - start, 2 + Math.floor(random(row, start + line, kind) * 3));
+        const x = start + 1 + Math.floor(random(start + line, row, kind + 13) * Math.max(1, end - start - width));
+        const y = row * 4 + 1 + (line % 2);
+        context.fillStyle = line === 1 ? style.light : style.dark;
+        context.fillRect(x, y, width, 1);
+      }
+    });
+    context.fillStyle = style.seam;
+    context.fillRect(joint, row * 4, 1, 4);
+  }
+  context.fillStyle = style.seam;
+  for (const y of [0, 4, 8, 12, 15]) context.fillRect(0, y, 16, 1);
+}
+
+function paintBricks(context: CanvasRenderingContext2D, kind: BlockKind) {
+  const styles: Record<number, { base: string; alternate: string; light: string; dark: string; mortar: string }> = {
+    [BlockKind.WhiteBrick]: { base: '#dedecd', alternate: '#d6d7c4', light: '#e9e9da', dark: '#c2c4b3', mortar: '#919487' },
+    [BlockKind.BeigeBrick]: { base: '#c5b183', alternate: '#bda879', light: '#d4c293', dark: '#aa946b', mortar: '#82704f' },
+    [BlockKind.GrayBrick]: { base: '#85888a', alternate: '#7c8083', light: '#969a9c', dark: '#6c7073', mortar: '#45494d' },
+  };
+  const style = styles[kind];
+  context.clearRect(0, 0, 16, 16);
+  for (let row = 0; row < 2; row += 1) {
+    const joint = row === 0 ? 8 : 4;
+    const bricks = [[0, joint - 1], [joint + 1, 15]];
+    bricks.forEach(([start, end], index) => {
+      context.fillStyle = index === 0 ? style.base : style.alternate;
+      context.fillRect(start, row * 8, end - start + 1, 8);
+      for (let patch = 0; patch < 7; patch += 1) {
+        const x = start + Math.floor(random(start + patch, row, kind + 33) * (end - start + 1));
+        const y = row * 8 + 1 + Math.floor(random(row + patch, start, kind + 41) * 6);
+        context.fillStyle = patch % 3 === 0 ? style.dark : style.light;
+        context.fillRect(x, y, patch % 4 === 0 ? 2 : 1, 1);
+      }
+    });
+    context.fillStyle = style.mortar;
+    context.fillRect(joint, row * 8, 1, 8);
+  }
+  context.fillStyle = style.mortar;
+  for (const y of [0, 8, 15]) context.fillRect(0, y, 16, 1);
 }
 
 function material(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
