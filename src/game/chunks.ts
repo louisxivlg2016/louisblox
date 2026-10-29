@@ -168,9 +168,13 @@ function unloadChunk(world: World, entity: Entity) {
   for (const block of data.blocks) {
     state.blocks.delete(voxelKey(block.x, block.y, block.z));
   }
-  const mounted = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
+  const playerEntity = world.queryFirst(Player);
+  const mounted = playerEntity?.get(PlayerMount)?.vehicle;
+  const playerPosition = playerEntity?.get(PlayerPosition);
   for (const animal of data.animals) {
-    if (animal !== mounted) animal.destroy();
+    const position = animal.get(AnimalPosition);
+    const nearby = playerPosition && position && position.distanceToSquared(playerPosition) < 48 * 48;
+    if (animal !== mounted && !nearby) animal.destroy();
   }
   for (const bomb of data.bombs) bomb.destroy();
   for (const sapling of data.saplings) sapling.destroy();

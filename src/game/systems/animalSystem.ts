@@ -1,9 +1,25 @@
-import type { World } from 'koota';
-import { Mesh } from 'three';
-import { getWorldSeed } from '../chunks';
-import { heightAt, SEA_LEVEL } from '../levels';
-import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
+import type { Entity, World } from 'koota';
+import { Mesh, Vector3 } from 'three';
+import { chunkCoordinate, getBlockIndex } from '../chunks';
+import { isCrop } from '../extraBlocks';
+import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
+import { turnToward } from '../rotation';
+import { groundAt } from '../vehicles';
+import { BlockKind, voxelKey } from '../voxel';
+import type { AnimalKind } from '../animals';
+import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition, Chunk, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
 import { damagePlayer } from '../combat';
+
+type Motion = {
+  yaw: number;
+  displayYaw: number;
+  turnIn: number;
+  phase: number;
+  speed: number;
+  idle: number;
+  velocityY: number;
+  grounded: boolean;
+};
 
 function tint(mesh: import('three').Object3D, color: string) {
   mesh.traverse((object) => {
@@ -13,8 +29,88 @@ function tint(mesh: import('three').Object3D, color: string) {
   });
 }
 
+function blockAt(world: World, x: number, y: number, z: number) {
+  return getBlockIndex(world).get(voxelKey(Math.round(x), Math.round(y), Math.round(z)));
+}
+
+function isLoaded(world: World, x: number, z: number) {
+  const cx = chunkCoordinate(x);
+  const cz = chunkCoordinate(z);
+  return world.query(Chunk).some((entity) => {
+    const chunk = entity.get(Chunk)!;
+    return chunk.x === cx && chunk.z === cz;
+  });
+}
+
+function bodyClear(world: World, x: number, z: number, feetY: number) {
+  for (const height of [0.35, 1.15]) {
+    const block = blockAt(world, x, feetY + height, z);
+    if (!block || block.kind === BlockKind.Water || isCrop(block.kind) || block.open) continue;
+    return false;
+  }
+  return true;
+}
+
+export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0) {
+  const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : motion.speed;
+  const normalSpeed = motion.idle > 0 ? 0 : baseSpeed;
+  const speed = panic > 0 ? Math.min(kind === 'duck' ? 0.65 : 1.4, baseSpeed * 1.8) : normalSpeed;
+  const x = position.x + Math.sin(motion.yaw) * speed * dt;
+  const z = position.z + Math.cos(motion.yaw) * speed * dt;
+  let blocked = false;
+
+  if (kind === 'duck') {
+    const ground = groundAt(world, x, z, MAX_BUILD_Y);
+    if (!isLoaded(world, x, z) || ground >= SEA_LEVEL + 0.5 || blockAt(world, x, SEA_LEVEL, z)?.kind !== BlockKind.Water) {
+      blocked = true;
+    } else {
+      position.set(x, SEA_LEVEL + 0.35 + Math.sin(motion.phase) * 0.05, z);
+      motion.velocityY = 0;
+      motion.grounded = true;
+    }
+  } else {
+    if (isLoaded(world, x, z)) {
+      const ground = groundAt(world, x, z, position.y + 1.05);
+      if (ground >= SEA_LEVEL + 0.5 && ground <= position.y + 1.05 && bodyClear(world, x, z, ground)) {
+        position.x = x;
+        position.z = z;
+        if (motion.grounded && ground > position.y) position.y = ground;
+      } else {
+        blocked = true;
+      }
+    } else {
+      blocked = true;
+    }
+
+    const ground = groundAt(world, position.x, position.z, position.y + 0.2);
+    if (position.y <= ground + 0.001 && motion.velocityY <= 0) {
+      position.y = ground;
+      motion.velocityY = 0;
+      motion.grounded = true;
+    } else {
+      motion.velocityY -= 18 * dt;
+      position.y += motion.velocityY * dt;
+      motion.grounded = false;
+      if (position.y <= ground) {
+        position.y = ground;
+        motion.velocityY = 0;
+        motion.grounded = true;
+      }
+    }
+    if (position.y < MIN_WORLD_Y - 8) {
+      entity.destroy();
+      return false;
+    }
+  }
+
+  if (blocked) {
+    motion.yaw += dt * (entity % 2 === 0 ? 1 : -1) * 1.5;
+    motion.turnIn = Math.max(motion.turnIn, 1.5);
+  }
+  return true;
+}
+
 export function animalSystem(world: World, dt: number) {
-  const seed = getWorldSeed(world);
   const playerEntity = world.queryFirst(Player);
   const player = playerEntity?.get(PlayerPosition);
   const health = playerEntity?.get(PlayerHealth);
@@ -44,47 +140,21 @@ export function animalSystem(world: World, dt: number) {
     motion.phase += dt * 3;
     if (hit.panic > 0) {
       motion.idle = 0;
-      motion.turnIn = Math.min(motion.turnIn, 0.3);
-      motion.yaw += Math.sin(entity * 3.17 + motion.phase * 2) * dt * 2;
+      motion.turnIn = Math.min(motion.turnIn, 1.2);
+      motion.yaw += Math.sin(entity * 3.17 + motion.phase * 2) * dt * 0.65;
     }
     if (motion.turnIn <= 0) {
-      motion.yaw += Math.sin(entity * 17.31 + motion.phase) * 1.8;
-      motion.turnIn = hit.panic > 0 ? 0.3 : 2 + (Math.sin(entity * 7.13) + 1) * 1.5;
-      if (hit.panic === 0 && Math.sin(entity * 5.73 + motion.phase) > 0.25) {
-        motion.idle = 1 + (Math.sin(entity * 9.37 + motion.phase) + 1) * 1.25;
+      motion.yaw += Math.sin(entity * 17.31 + motion.phase) * 0.75;
+      motion.turnIn = hit.panic > 0 ? 1.5 : 8 + (Math.sin(entity * 7.13 + motion.phase) + 1) * 3.5;
+      if (hit.panic === 0 && Math.sin(entity * 5.73 + motion.phase) > 0.72) {
+        motion.idle = 0.7 + (Math.sin(entity * 9.37 + motion.phase) + 1) * 0.65;
       }
     }
 
-    const baseSpeed = animal.kind === 'duck' ? motion.speed * 0.35 : motion.speed;
-    const normalSpeed = motion.idle > 0 ? 0 : baseSpeed;
-    const speed = hit.panic > 0 ? Math.min(animal.kind === 'duck' ? 0.65 : 1.4, baseSpeed * 1.8) : normalSpeed;
-    let x = position.x + Math.sin(motion.yaw) * speed * dt;
-    let z = position.z + Math.cos(motion.yaw) * speed * dt;
-    const ground = heightAt(Math.round(x), Math.round(z), seed);
-    const ahead = heightAt(
-      Math.round(x + Math.sin(motion.yaw) * 0.55),
-      Math.round(z + Math.cos(motion.yaw) * 0.55),
-      seed,
-    );
-
-    if (animal.kind === 'duck') {
-      if (ground >= SEA_LEVEL || ahead < SEA_LEVEL) {
-        motion.yaw += Math.PI * 0.7;
-        x = position.x;
-        z = position.z;
-      }
-      position.set(x, SEA_LEVEL + 0.35 + Math.sin(motion.phase) * 0.05, z);
-    } else if (ground <= SEA_LEVEL + 1 || ahead <= SEA_LEVEL + 1 || ground > 25) {
-      motion.yaw += Math.PI;
-      x = position.x;
-      z = position.z;
-    } else {
-      position.set(x, ground + 0.5, z);
-    }
-
-    if (mesh.value) {
+    if (moveAnimal(world, animal.kind, position, motion, dt, entity, hit.panic) && mesh.value) {
       mesh.value.position.copy(position);
-      mesh.value.rotation.y = motion.yaw;
+      motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * 6);
+      mesh.value.rotation.y = motion.displayYaw;
     }
   });
 }

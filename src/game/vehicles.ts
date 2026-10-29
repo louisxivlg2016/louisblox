@@ -6,6 +6,8 @@ import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from './levels';
 import { useGameStore } from './store';
 import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, Vehicle, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
 import { BlockKind, voxelKey } from './voxel';
+import { isCrop } from './extraBlocks';
+import { turnToward } from './rotation';
 
 export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y) {
   const blocks = getBlockIndex(world);
@@ -13,7 +15,7 @@ export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y
   const bz = Math.round(z);
   for (let y = Math.min(MAX_BUILD_Y, Math.floor(fromY + 0.5)); y >= MIN_WORLD_Y; y -= 1) {
     const block = blocks.get(voxelKey(bx, y, bz));
-    if (block && block.kind !== BlockKind.Water && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
+    if (block && block.kind !== BlockKind.Water && !isCrop(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
   }
   return MIN_WORLD_Y + 0.5;
 }
@@ -154,9 +156,10 @@ export function vehicleMovementSystem(world: World, dt: number) {
     motion.yaw = state.yaw + Math.PI;
     if (input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(rider.speed || 1);
     if (!moveMount(world, position, motion.yaw - Math.PI, rider.speed, dt)) rider.speed = 0;
+    motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * 7);
     if (mesh.value) {
       mesh.value.position.copy(position);
-      mesh.value.rotation.y = motion.yaw;
+      mesh.value.rotation.y = motion.displayYaw;
     }
   });
 }

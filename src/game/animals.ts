@@ -38,14 +38,16 @@ function hash(x: number, z: number, seed: number) {
 }
 
 export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number, z: number, seed: number) {
+  const yaw = hash(x, z, seed + 41) * Math.PI * 2;
   return world.spawn(
     Animal({ kind }),
     AnimalHealth({ value: health[kind] }),
     AnimalHit(),
     AnimalPosition(new Vector3(x, y, z)),
     AnimalMotion({
-      yaw: hash(x, z, seed + 41) * Math.PI * 2,
-      turnIn: 1 + hash(x, z, seed + 42) * 3,
+      yaw,
+      displayYaw: yaw,
+      turnIn: 6 + hash(x, z, seed + 42) * 7,
       phase: hash(x, z, seed + 43) * Math.PI * 2,
       speed: 0.35 + hash(x, z, seed + 44) * 0.45,
     }),
