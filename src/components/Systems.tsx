@@ -17,6 +17,7 @@ import { saveSystem } from '../game/systems/saveSystem';
 import { saplingSystem } from '../game/systems/saplingSystem';
 import { waterSystem } from '../game/systems/waterSystem';
 import { fireSystem } from '../game/systems/fireSystem';
+import { fishSystem } from '../game/fish';
 import { sleepSystem } from '../game/systems/sleepSystem';
 import { vehicleInteractionSystem, vehicleMovementSystem } from '../game/vehicles';
 import { BlockTarget, Player, PlayerPosition, Sleep, TargetMesh } from '../game/traits';
@@ -36,6 +37,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const itemHandled = !sleeping && !vehicleHandled && itemSystem(world, camera, dt, actions);
       const animalTarget = !sleeping && animalCombatSystem(world, camera, dt, actions.tap);
       animalSystem(world, dt);
+      fishSystem(world, dt);
       meatDropSystem(world, dt);
       bombSystem(world, dt);
       projectileSystem(world, dt);

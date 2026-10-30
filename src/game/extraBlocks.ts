@@ -84,6 +84,7 @@ export const EXTRA_BLOCKS = {
   BedBlack: 104,
   Campfire: 105,
   Wildfire: 106,
+  Rail: 107,
 } as const;
 
 export type ExtraBlockKind = (typeof EXTRA_BLOCKS)[keyof typeof EXTRA_BLOCKS];
@@ -99,7 +100,8 @@ export const isChest = (kind: number) => kind === EXTRA_BLOCKS.Chest;
 export const isLadder = (kind: number) => kind === EXTRA_BLOCKS.Ladder;
 export const isBed = (kind: number) => kind >= EXTRA_BLOCKS.Bed && kind <= EXTRA_BLOCKS.BedBlack;
 export const isFireBlock = (kind: number) => kind === EXTRA_BLOCKS.Campfire || kind === EXTRA_BLOCKS.Wildfire;
-export const isUtilityBlock = (kind: number) => isFurnace(kind) || isChest(kind) || isLadder(kind) || isBed(kind);
+export const isRail = (kind: number) => kind === EXTRA_BLOCKS.Rail;
+export const isUtilityBlock = (kind: number) => isFurnace(kind) || isChest(kind) || isLadder(kind) || isBed(kind) || isRail(kind);
 
 function shade(hex: string, amount: number) {
   const value = Number.parseInt(hex.slice(1), 16);
@@ -202,4 +204,5 @@ export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.BedBlack]: block('Lit noir', '#25282b', 0.6),
   [EXTRA_BLOCKS.Campfire]: block('Feu de camp', '#e88422', 0.4),
   [EXTRA_BLOCKS.Wildfire]: block('Feu destructeur', '#e84b27', 0.25),
+  [EXTRA_BLOCKS.Rail]: block('Rail de train', '#8d9ba5', 1.4),
 };

@@ -1,4 +1,5 @@
 import { PixelPart, SteeringWheel } from './ItemModel';
+import { PLANE_SCALE } from '../game/vehicles';
 
 function Seat({ position }: { position: [number, number, number] }) {
   return (
@@ -35,7 +36,7 @@ export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
   if (kind === 'plane') {
     const passengers: Array<[number, number, number]> = [[0.55, 0.56, 0.3], [-0.55, 0.56, 1.7], [-0.55, 0.56, 3.1]];
     return (
-      <group>
+      <group scale={PLANE_SCALE}>
         <PixelPart position={[0, 0.28, 0.6]} size={[1.75, 0.16, 6.8]} color="#87939a" />
         <SteeringWheel position={[-0.5, 1.03, -2.85]} />
         {passengers.map((position, index) => (

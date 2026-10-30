@@ -1,12 +1,12 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
-import { getBlockIndex } from './chunks';
+import { addVoxel, getBlockIndex } from './chunks';
 import { getTouchMovement, isDown } from './input';
 import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from './levels';
 import { useGameStore } from './store';
 import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, Vehicle, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
 import { BlockKind, voxelKey } from './voxel';
-import { isCrop } from './extraBlocks';
+import { EXTRA_BLOCKS, isCrop, isRail } from './extraBlocks';
 import { turnToward } from './rotation';
 
 export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y) {
@@ -15,27 +15,47 @@ export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y
   const bz = Math.round(z);
   for (let y = Math.min(MAX_BUILD_Y, Math.floor(fromY + 0.5)); y >= MIN_WORLD_Y; y -= 1) {
     const block = blocks.get(voxelKey(bx, y, bz));
-    if (block && block.kind !== BlockKind.Water && !isCrop(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
+    if (block && block.kind !== BlockKind.Water && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
   }
   return MIN_WORLD_Y + 0.5;
 }
 
 export function spawnVehicle(world: World, kind: 'car' | 'plane' | 'train', x: number, y: number, z: number, color = '#d63935', yaw = 0) {
-  return world.spawn(
+  const entity = world.spawn(
     Vehicle({ color, kind }),
     VehiclePosition(new Vector3(x, y, z)),
     VehicleMotion({ yaw, homeX: x, homeY: y, homeZ: z, homeYaw: yaw }),
     VehicleMesh(),
   );
+  if (kind === 'train') {
+    for (let offset = 0; offset < 24; offset += 1) ensureTrainTrack(world, x - Math.sin(yaw) * offset, z - Math.cos(yaw) * offset, yaw, y + 4);
+  }
+  return entity;
+}
+
+function ensureTrainTrack(world: World, x: number, z: number, yaw: number, fromY: number) {
+  const bx = Math.round(x);
+  const bz = Math.round(z);
+  const ground = groundAt(world, bx, bz, fromY);
+  if (ground <= SEA_LEVEL) return;
+  const y = ground + 1;
+  if (getBlockIndex(world).has(voxelKey(bx, y, bz))) return;
+  const facing = Math.abs(Math.sin(yaw)) > Math.abs(Math.cos(yaw)) ? 'east' : 'north';
+  addVoxel(world, bx, y, bz, EXTRA_BLOCKS.Rail, undefined, facing);
 }
 
 export function spawnCar(world: World, x: number, y: number, z: number, color = '#d63935', yaw = 0) {
   return spawnVehicle(world, 'car', x, y, z, color, yaw);
 }
 
+export const PLANE_SCALE = 1.75;
+
 export function seatOffset(kind: 'car' | 'plane' | 'train', role: 'driver' | 'passenger', seat = 0): [number, number, number] {
   if (kind === 'car') return [0, 0.55, 0];
-  if (kind === 'plane') return role === 'driver' ? [-0.5, 1.1, -2.4] : [0.55, 1.1, 0.3 + seat * 1.4];
+  if (kind === 'plane') {
+    const [x, y, z] = role === 'driver' ? [-0.5, 1.1, -2.4] : [0.55, 1.1, 0.3 + seat * 1.4];
+    return [x * PLANE_SCALE, y * PLANE_SCALE, z * PLANE_SCALE];
+  }
   return role === 'driver' ? [-0.65, 1.25, -3.7] : [0.65, 1.25, -1 + seat * 1.5];
 }
 
@@ -154,7 +174,8 @@ function moveMount(world: World, position: Vector3, yaw: number, speed: number, 
   if (ground > position.y + 1.01 || ground < SEA_LEVEL - 0.5 || Math.abs(ground - position.y) > 3) return false;
   const blocks = getBlockIndex(world);
   for (const height of [0.65, clearance]) {
-    if (blocks.has(voxelKey(Math.round(x), Math.round(ground + height), Math.round(z)))) return false;
+    const block = blocks.get(voxelKey(Math.round(x), Math.round(ground + height), Math.round(z)));
+    if (block && !isRail(block.kind)) return false;
   }
   position.set(x, ground, z);
   return true;
@@ -172,6 +193,8 @@ function movePlane(world: World, position: Vector3, yaw: number, speed: number, 
   position.set(x, y, z);
   return true;
 }
+
+const railCells = new WeakMap<object, string>();
 
 export function vehicleMovementSystem(world: World, dt: number) {
   const playerEntity = world.queryFirst(Player);
@@ -214,6 +237,15 @@ export function vehicleMovementSystem(world: World, dt: number) {
         if ((motion.speed !== 0 || vertical !== 0) && !movePlane(world, position, motion.yaw, motion.speed, dt, vertical)) motion.speed = 0;
       } else if (motion.speed !== 0 && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' ? 2.55 : 1.55)) {
         motion.speed = 0;
+      }
+    }
+    if (vehicle.kind === 'train') {
+      const cell = `${Math.round(position.x)},${Math.round(position.z)}`;
+      if (railCells.get(motion) !== cell) {
+        railCells.set(motion, cell);
+        for (let offset = 0; offset < 4; offset += 1) {
+          ensureTrainTrack(world, position.x - Math.sin(motion.yaw) * offset, position.z - Math.cos(motion.yaw) * offset, motion.yaw, position.y + 4);
+        }
       }
     }
     if (mesh.value) {

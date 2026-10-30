@@ -4,7 +4,7 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isBed, isChest, isCrop, isDoor, isFurnace, isLadder, isSapling, isTrapdoor } from '../extraBlocks';
+import { isBed, isChest, isCrop, isDoor, isFurnace, isLadder, isRail, isSapling, isTrapdoor } from '../extraBlocks';
 import { startSleep } from './sleepSystem';
 import { openChest, openFurnace } from '../containers';
 import { cropDefinition } from '../crops';
@@ -173,8 +173,10 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         store.setNotice(`${cropDefinition(kind).name} planté. La récolte sera prête dans 24 secondes.`);
         return;
       }
-      const facing = hit.normal.x === 1 ? 'east' : hit.normal.x === -1 ? 'west' : hit.normal.z === 1 ? 'south' : 'north';
-      addVoxel(world, x, y, z, kind, undefined, isLadder(kind) ? facing : undefined);
+      const facing = isLadder(kind)
+        ? hit.normal.x === 1 ? 'east' : hit.normal.x === -1 ? 'west' : hit.normal.z === 1 ? 'south' : 'north'
+        : Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
+      addVoxel(world, x, y, z, kind, undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) ? facing : undefined);
       if (kind === BlockKind.Tnt) {
         const bomb = spawnBomb(world, x, y, z);
         const cx = chunkCoordinate(x);

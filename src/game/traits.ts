@@ -25,6 +25,7 @@ export const ChunkData = trait(() => ({
   blocks: [] as import('./voxel').Voxel[],
   water: [] as import('./levels').WaterTile[],
   animals: [] as import('koota').Entity[],
+  fish: [] as import('koota').Entity[],
   bombs: [] as import('koota').Entity[],
   saplings: [] as import('koota').Entity[],
 }));
@@ -46,6 +47,11 @@ export const AnimalHit = trait({ time: 0, panic: 0, flashed: false, attackIn: 0 
 export const AnimalPosition = trait(() => new Vector3());
 export const AnimalMotion = trait({ yaw: 0, displayYaw: 0, turnIn: 0, phase: 0, speed: 0.5, idle: 0, velocityY: 0, grounded: true, avoid: 0, climbTarget: null as number | null });
 export const AnimalMesh = trait(() => ({ value: null as import('three').Object3D | null }));
+
+export const Fish = trait({ kind: '' as import('./fish').FishKind });
+export const FishPosition = trait(() => new Vector3());
+export const FishMotion = trait({ yaw: 0, turnIn: 0, phase: 0, speed: 0.8, age: 0 });
+export const FishMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 
 export const MeatDrop = trait({ kind: '' as import('./animals').AnimalKind });
 export const MeatDropPosition = trait(() => new Vector3());

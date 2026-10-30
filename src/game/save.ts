@@ -17,15 +17,15 @@ export function readWorldSave(): WorldSave | null {
   }
 }
 
-export function saveWorld(world: World) {
+export function createWorldSave(world: World): WorldSave | null {
   const playerEntity = world.queryFirst(Player);
   const environment = world.queryFirst(Environment)?.get(Environment);
   const position = playerEntity?.get(PlayerPosition);
   const state = playerEntity?.get(PlayerState);
   const health = playerEntity?.get(PlayerHealth);
-  if (!position || !state || !environment) return;
+  if (!position || !state || !environment) return null;
   const store = useGameStore.getState();
-  const save: WorldSave = {
+  return {
     version: 3,
     generation: store.generation,
     seed: getWorldSeed(world),
@@ -42,6 +42,11 @@ export function saveWorld(world: World) {
     elapsed: environment.elapsed,
     edits: snapshotWorldEdits(world),
   };
+}
+
+export function saveWorld(world: World) {
+  const save = createWorldSave(world);
+  if (!save) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(save));
   } catch {

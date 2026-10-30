@@ -3,14 +3,15 @@ import { Vector3 } from 'three';
 import { CHUNK_SIZE, MAX_BUILD_Y, VIEW_DISTANCE, biomeAt, generateChunk, heightAt } from './levels';
 import type { LevelData } from './levels';
 import { spawnAnimal, spawnChunkAnimals } from './animals';
+import { spawnChunkFish } from './fish';
 import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
-import { isChest, isCrop, isDoor, isFireBlock, isLadder, isSapling, isTrapdoor } from './extraBlocks';
+import { isChest, isCrop, isDoor, isFireBlock, isLadder, isRail, isSapling, isTrapdoor } from './extraBlocks';
 import { clearFires, extinguishFireAt, extinguishFiresInChunk, spawnFire } from './fireLifecycle';
 import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
 import type { ArmorKind, SelectedKind } from './items';
 import {
-  Animal, AnimalPosition, MeatDrop, Bomb, Explosion, Sapling, BlockTarget, Chunk, ChunkData,
+  Animal, AnimalPosition, Fish, MeatDrop, Bomb, Explosion, Sapling, BlockTarget, Chunk, ChunkData,
   Environment, Sleep, HorseRider, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMesh, PlayerMount,
   PlayerPosition, PlayerState, PlayerVelocity, Projectile, RainMaterial, SnowMaterial, TargetMesh,
   Vehicle, VehicleMesh, VehicleMotion, VehiclePosition,
@@ -20,7 +21,7 @@ import { useGameStore } from './store';
 import { BlockKind, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
 
-type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing'] } | null;
+export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing'] } | null;
 export type SavedCar = { x: number; y: number; z: number; yaw: number; color: string; kind?: 'car' | 'plane' | 'train' };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
@@ -42,6 +43,7 @@ export type WorldSave = {
 };
 
 type WorldChunks = {
+  world: World;
   seed: number;
   chunks: Map<string, Entity>;
   blocks: Map<string, Voxel>;
@@ -54,7 +56,18 @@ type WorldChunks = {
 };
 
 const worlds = new WeakMap<World, WorldChunks>();
+const editListeners = new WeakMap<World, Set<(position: string, edit: ChunkEdit) => void>>();
 const chunkKey = (x: number, z: number) => `${x},${z}`;
+
+export function onVoxelEdit(world: World, listener: (position: string, edit: ChunkEdit) => void) {
+  let listeners = editListeners.get(world);
+  if (!listeners) {
+    listeners = new Set();
+    editListeners.set(world, listeners);
+  }
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
 export const chunkCoordinate = (value: number) => Math.floor((value + 0.5) / CHUNK_SIZE);
 
 function stateFor(world: World) {
@@ -65,6 +78,18 @@ function stateFor(world: World) {
 
 export function snapshotWorldEdits(world: World): WorldSave['edits'] {
   return [...stateFor(world).edits].map(([chunk, edits]) => [chunk, [...edits]]);
+}
+
+export function groupVoxelEdits(edits: Array<[string, ChunkEdit]>): WorldSave['edits'] {
+  const groups = new Map<string, Array<[string, ChunkEdit]>>();
+  for (const entry of edits) {
+    const [x, , z] = entry[0].split(',').map(Number);
+    const key = chunkKey(chunkCoordinate(x), chunkCoordinate(z));
+    const group = groups.get(key) ?? [];
+    group.push(entry);
+    groups.set(key, group);
+  }
+  return [...groups];
 }
 
 export function snapshotVehicles(world: World): SavedCar[] {
@@ -112,9 +137,22 @@ function touchVoxel(state: WorldChunks, cx: number, cz: number, x: number, z: nu
   return touched;
 }
 
-function recordVoxelEdit(state: WorldChunks, cx: number, cz: number, x: number, z: number) {
+function blockEdit(block: Voxel): ChunkEdit {
+  const edit = { kind: block.kind } as Exclude<ChunkEdit, number | null>;
+  if (block.open !== undefined) edit.open = block.open;
+  if (block.growth !== undefined) edit.growth = block.growth;
+  if (block.items !== undefined) edit.items = block.items;
+  if (block.facing !== undefined) edit.facing = block.facing;
+  return Object.keys(edit).length === 1 ? block.kind : edit;
+}
+
+function recordVoxelEdit(state: WorldChunks, cx: number, cz: number, x: number, y: number, z: number, removed = false) {
   if (state.batchDepth > 0) touchVoxel(state, cx, cz, x, z, state.pendingRevisions);
   else for (const entity of touchVoxel(state, cx, cz, x, z)) touchChunk(entity);
+  const position = voxelKey(x, y, z);
+  const block = state.blocks.get(position);
+  const edit = removed || !block ? null : blockEdit(block);
+  for (const listener of editListeners.get(state.world) ?? []) listener(position, edit);
 }
 
 export function batchVoxelEdits(world: World, edit: () => void) {
@@ -169,6 +207,7 @@ function loadChunk(world: World, cx: number, cz: number) {
     state.blocks.set(voxelKey(block.x, block.y, block.z), block);
   }
   data.animals = spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
+  data.fish = spawnChunkFish(world, cx, cz, generated.water, state.seed);
   for (const savedHorse of state.saddledHorses) {
     if (chunkCoordinate(savedHorse.x) !== cx || chunkCoordinate(savedHorse.z) !== cz) continue;
     const existing = data.animals.find((animal) => {
@@ -209,10 +248,12 @@ function unloadChunk(world: World, entity: Entity) {
     const nearby = playerPosition && position && position.distanceToSquared(playerPosition) < 48 * 48;
     if (animal !== mounted && !nearby) animal.destroy();
   }
+  for (const fish of data.fish) fish.destroy();
   for (const bomb of data.bombs) bomb.destroy();
   for (const sapling of data.saplings) sapling.destroy();
   extinguishFiresInChunk(world, chunk.x, chunk.z);
   data.animals = [];
+  data.fish = [];
   data.bombs = [];
   data.saplings = [];
   state.chunks.delete(chunkKey(chunk.x, chunk.z));
@@ -273,7 +314,7 @@ export function removeVoxel(world: World, hit: VoxelHit) {
   state.blocks.delete(position);
   if (isFireBlock(hit.block.kind)) extinguishFireAt(world, hit.x, hit.y, hit.z);
   editsFor(state, cx, cz).set(position, null);
-  recordVoxelEdit(state, cx, cz, hit.x, hit.z);
+  recordVoxelEdit(state, cx, cz, hit.x, hit.y, hit.z, true);
 }
 
 export function explodeVoxels(world: World, x: number, y: number, z: number, radius: number) {
@@ -293,7 +334,7 @@ export function explodeVoxels(world: World, x: number, y: number, z: number, rad
           state.blocks.delete(position);
           if (isFireBlock(block.kind)) extinguishFireAt(world, block.x, block.y, block.z);
           editsFor(state, chunk.x, chunk.z).set(position, null);
-          recordVoxelEdit(state, chunk.x, chunk.z, block.x, block.z);
+          recordVoxelEdit(state, chunk.x, chunk.z, block.x, block.y, block.z, true);
           destroyed += 1;
           changed = true;
         } else {
@@ -352,7 +393,7 @@ export function growSapling(world: World, kind: BlockKind, x: number, y: number,
   batchVoxelEdits(world, () => growTree(world, kind, x, y, z));
 }
 
-export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?: boolean, growth?: number, items?: SelectedKind[]) {
+export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?: boolean, growth?: number, items?: SelectedKind[], facing?: Voxel['facing']) {
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
   if (!block) return;
@@ -363,18 +404,19 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
   else delete block.growth;
   if (isChest(kind)) block.items = items ?? block.items ?? [];
   else delete block.items;
-  if (!isLadder(kind)) delete block.facing;
+  if (facing !== undefined) block.facing = facing;
+  if (!isLadder(kind) && !isDoor(kind) && !isTrapdoor(kind) && !isRail(kind)) delete block.facing;
   const cx = chunkCoordinate(hit.x);
   const cz = chunkCoordinate(hit.z);
   const chunkEntity = state.chunks.get(chunkKey(cx, cz));
   if (!chunkEntity) return;
   const door = isDoor(kind) || isTrapdoor(kind);
-  const edit = door ? { kind, open: block.open ?? false }
+  const edit = door ? { kind, open: block.open ?? false, facing: block.facing ?? 'north' }
     : isCrop(kind) ? { kind, growth: block.growth ?? 0 }
       : isChest(kind) ? { kind, items: block.items ?? [] }
-        : isLadder(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
+        : isLadder(kind) || isRail(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
   editsFor(state, cx, cz).set(voxelKey(hit.x, hit.y, hit.z), edit);
-  recordVoxelEdit(state, cx, cz, hit.x, hit.z);
+  recordVoxelEdit(state, cx, cz, hit.x, hit.y, hit.z);
   if (wasFire || isFireBlock(kind)) {
     extinguishFireAt(world, hit.x, hit.y, hit.z);
     if (isFireBlock(kind)) spawnFire(world, block);
@@ -398,22 +440,48 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
   const block: Voxel = { x, y, z, kind };
   if (isCrop(kind)) block.growth = growth ?? 3;
   if (isChest(kind)) block.items = [];
-  if (isLadder(kind)) block.facing = facing ?? 'north';
+  if (isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind)) block.facing = facing ?? 'north';
   data.blocks.push(block);
   state.blocks.set(position, block);
   const edit = isCrop(kind) ? { kind, growth: block.growth ?? 0 }
     : isChest(kind) ? { kind, items: [] }
-      : isLadder(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
+      : isLadder(kind) || isRail(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
   editsFor(state, cx, cz).set(position, edit);
-  recordVoxelEdit(state, cx, cz, x, z);
+  recordVoxelEdit(state, cx, cz, x, y, z);
   if (isFireBlock(kind)) spawnFire(world, block, fireGeneration);
   return block;
+}
+
+export function applyVoxelEdit(world: World, position: string, edit: ChunkEdit) {
+  const [x, y, z] = position.split(',').map(Number);
+  const state = stateFor(world);
+  if (edit === null) {
+    const block = state.blocks.get(position);
+    if (block) removeVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 });
+    else {
+      const cx = chunkCoordinate(x);
+      const cz = chunkCoordinate(z);
+      editsFor(state, cx, cz).set(position, null);
+      recordVoxelEdit(state, cx, cz, x, y, z, true);
+    }
+    return;
+  }
+  const data = typeof edit === 'number' ? { kind: edit } : edit;
+  const block = state.blocks.get(position) ?? addVoxel(world, x, y, z, data.kind, data.growth, data.facing);
+  if (block) replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, data.kind, data.open, data.growth, data.items, data.facing);
+}
+
+export function applyVoxelEdits(world: World, edits: Array<[string, ChunkEdit]>) {
+  batchVoxelEdits(world, () => {
+    for (const [position, edit] of edits) applyVoxelEdit(world, position, edit);
+  });
 }
 
 export function loadLevel(world: World, generation = 0, saved: WorldSave | null = null): LevelData {
   clearFires(world);
   for (const entity of [...world.query(Chunk)]) entity.destroy();
   for (const entity of [...world.query(Animal)]) entity.destroy();
+  for (const entity of [...world.query(Fish)]) entity.destroy();
   for (const entity of [...world.query(MeatDrop)]) entity.destroy();
   for (const entity of [...world.query(Bomb)]) entity.destroy();
   for (const entity of [...world.query(Explosion)]) entity.destroy();
@@ -429,6 +497,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   const seed = restore?.seed ?? 73421 + generation * 977;
   const edits: WorldChunks['edits'] = restore ? new Map(restore.edits.map(([chunk, values]) => [chunk, new Map(values)])) : new Map();
   worlds.set(world, {
+    world,
     seed,
     chunks: new Map(),
     blocks: new Map(),

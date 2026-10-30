@@ -2,7 +2,7 @@ import { MeshBasicMaterial } from 'three';
 import { BlockKind } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { PixelPart } from './ItemModel';
-import { EXTRA_BLOCK_META, isBed } from '../game/extraBlocks';
+import { EXTRA_BLOCK_META, isBed, isRail } from '../game/extraBlocks';
 
 const fire = new MeshBasicMaterial({ color: '#ff9a32' });
 
@@ -47,6 +47,16 @@ export function LadderModel() {
   );
 }
 
+export function RailModel() {
+  return (
+    <group>
+      {[-0.36, -0.12, 0.12, 0.36].map((z) => <PixelPart key={z} position={[0, 0.05, z]} size={[0.88, 0.08, 0.16]} color="#674b32" />)}
+      <PixelPart position={[-0.24, 0.13, 0]} size={[0.08, 0.1, 0.94]} color="#a4afb7" />
+      <PixelPart position={[0.24, 0.13, 0]} size={[0.08, 0.1, 0.94]} color="#a4afb7" />
+    </group>
+  );
+}
+
 export function BedModel({ kind }: { kind: BlockKind }) {
   const color = EXTRA_BLOCK_META[kind as keyof typeof EXTRA_BLOCK_META].color;
   return (
@@ -65,13 +75,16 @@ export function BedModel({ kind }: { kind: BlockKind }) {
 }
 
 export function UtilityBlockModel({ kind }: { kind: BlockKind }) {
-  return kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
+  return kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
 }
 
 export function UtilityBlocks({ blocks }: { blocks: Voxel[] }) {
   return blocks.map((block) => {
-    const oriented = block.kind === BlockKind.Ladder || isBed(block.kind);
-    const rotation = !oriented ? 0 : block.facing === 'north' ? Math.PI : block.facing === 'east' ? -Math.PI / 2 : block.facing === 'west' ? Math.PI / 2 : 0;
+    const rail = isRail(block.kind);
+    const oriented = block.kind === BlockKind.Ladder || isBed(block.kind) || rail;
+    const rotation = rail
+      ? block.facing === 'east' || block.facing === 'west' ? Math.PI / 2 : 0
+      : !oriented ? 0 : block.facing === 'north' ? Math.PI : block.facing === 'east' ? -Math.PI / 2 : block.facing === 'west' ? Math.PI / 2 : 0;
     return <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]} rotation={[0, rotation, 0]}><UtilityBlockModel kind={block.kind} /></group>;
   });
 }

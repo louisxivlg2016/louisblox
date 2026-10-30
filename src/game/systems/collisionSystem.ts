@@ -1,4 +1,4 @@
-import { isCrop, isDoor, isLadder, isTrapdoor } from '../extraBlocks';
+import { isCrop, isDoor, isLadder, isRail, isTrapdoor } from '../extraBlocks';
 import { BlockKind, voxelKey } from '../voxel';
 import type { Voxel } from '../voxel';
 
@@ -11,7 +11,7 @@ const EPSILON = 0.0001;
 const MAX_SUBSTEP = 0.18;
 
 export function isCollidable(block: Voxel | undefined) {
-  if (!block || block.kind === BlockKind.Water || isCrop(block.kind) || isLadder(block.kind)) return false;
+  if (!block || block.kind === BlockKind.Water || isCrop(block.kind) || isLadder(block.kind) || isRail(block.kind)) return false;
   return !(isDoor(block.kind) || isTrapdoor(block.kind)) || !block.open;
 }
 

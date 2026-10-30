@@ -19,6 +19,8 @@ import { TargetHighlight } from './TargetHighlight';
 import { Vehicles } from './Vehicles';
 import { Weather } from './Weather';
 import { Fires } from './Fires';
+import { Fish } from './Fish';
+import { RemoteAvatars } from './Multiplayer';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -100,6 +102,7 @@ export function Game() {
       <Atmosphere />
       <Weather key={`weather-${generation}`} />
       <Animals key={`animals-${generation}`} />
+      <Fish key={`fish-${generation}`} />
       <Vehicles key={`vehicles-${generation}`} />
       <Fires key={`fires-${generation}`} />
       <Projectiles key={`projectiles-${generation}`} />
@@ -111,6 +114,7 @@ export function Game() {
         <TargetHighlight key={`target-${generation}`} />
         <Systems key={`systems-${generation}`} spawn={level.spawn} />
       </Physics>
+      <RemoteAvatars key={`multiplayer-${generation}`} />
       <Hands />
     </>
   );

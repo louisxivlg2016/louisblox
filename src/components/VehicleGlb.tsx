@@ -6,6 +6,7 @@ import blueCarUrl from '../../assets/models/blueCar.glb';
 import airplaneUrl from '../../assets/models/airplane.glb';
 import trainUrl from '../../assets/models/train.glb';
 import { CarModel } from './ItemModel';
+import { PLANE_SCALE } from '../game/vehicles';
 
 const models = {
   raceCar: raceCarUrl,
@@ -16,7 +17,7 @@ const models = {
 const dimensions = {
   raceCar: [1.8, 1.15, 3.3],
   blueCar: [1.9, 1.6, 3.6],
-  airplane: [7.2, 2.5, 8.2],
+  airplane: [7.2 * PLANE_SCALE, 2.5 * PLANE_SCALE, 8.2 * PLANE_SCALE],
   train: [2.8, 3.2, 10.5],
 } as const;
 

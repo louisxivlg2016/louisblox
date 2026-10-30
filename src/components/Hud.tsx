@@ -15,6 +15,8 @@ import { ContainerPanel } from './ContainerPanel';
 import { TouchControls } from './TouchControls';
 import { BookPanel } from './BookPanel';
 import { SeatChoicePanel } from './SeatChoicePanel';
+import { MultiplayerLobby } from './MultiplayerLobby';
+import { useMultiplayerStore } from '../game/multiplayerStore';
 
 const WEATHER_NAMES = { clear: 'Ciel clair', rain: 'Pluie', snow: 'Neige' } as const;
 const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'prairie'];
@@ -42,6 +44,10 @@ export function Hud() {
   const sleepProgress = useGameStore((state) => state.sleepProgress);
   const coordinates = useGameStore((state) => state.coordinates);
   const environment = useGameStore((state) => state.environment);
+  const multiplayerEnabled = useMultiplayerStore((state) => state.enabled);
+  const multiplayerStatus = useMultiplayerStore((state) => state.status);
+  const multiplayerRoom = useMultiplayerStore((state) => state.room);
+  const multiplayerPlayerCount = useMultiplayerStore((state) => state.players.length);
   const nearbyRuin = mode === 'play' && world.queryFirst(Player) ? nearestRuin(coordinates.x, coordinates.z, getWorldSeed(world)) : null;
   const selectBlock = useGameStore((state) => state.selectBlock);
   const setBackpack = useGameStore((state) => state.setBackpack);
@@ -80,6 +86,7 @@ export function Hud() {
             <strong className="block-count">{blockCount.toLocaleString('fr-FR')}</strong> blocs chargés
             <span className="coordinates">XYZ {coordinates.x.toFixed(2)} / {coordinates.y.toFixed(2)} / {coordinates.z.toFixed(2)}</span>
             <span className="biome-info">{BIOME_NAMES[environment.biome]} · {hours}:{minutes}</span>
+            {multiplayerEnabled && <span className={`weather-info multiplayer-hud ${multiplayerStatus}`}>{multiplayerStatus === 'online' ? `En ligne · ${multiplayerRoom} · ${multiplayerPlayerCount} joueur${multiplayerPlayerCount > 1 ? 's' : ''}` : multiplayerStatus === 'connecting' ? `Connexion · ${multiplayerRoom}` : `Hors ligne · ${multiplayerRoom}`}</span>}
             {nearbyRuin && nearbyRuin.distance < 64 && <span className="weather-info">Ruines : {RUIN_NAMES[nearbyRuin.type]} à {Math.round(nearbyRuin.distance)} m</span>}
             <span className={`weather-info ${environment.weather}`}>{WEATHER_NAMES[environment.weather]}</span>
             <span className="weather-info apple-count">Pommes : {apples}</span>
@@ -116,15 +123,16 @@ export function Hud() {
 
       {mode !== 'play' && !backpackOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && (
         <div className="menu-backdrop">
-          <section className="menu-panel">
+          <section className={mode === 'menu' && multiplayerEnabled ? 'menu-panel multiplayer-menu' : 'menu-panel'}>
             <div className="brand-mark" aria-hidden="true"><span>L</span></div>
             <p className="eyebrow">BIENVENUE DANS</p>
             <h1>LOUISBLOX</h1>
             <p className="tagline">Explore. Casse. Construis.</p>
             <div className="menu-rule" />
+            {mode === 'menu' && <MultiplayerLobby />}
             {mode === 'pause' && <p className="pause-label">PARTIE EN PAUSE</p>}
-            <button className="primary-button" onClick={requestPlay}>
-              {mode === 'pause' ? 'Reprendre la partie' : 'Entrer dans le monde'}
+            <button className="primary-button" onClick={requestPlay} disabled={mode === 'menu' && multiplayerEnabled && multiplayerStatus !== 'online'}>
+              {mode === 'pause' ? 'Reprendre la partie' : multiplayerEnabled && multiplayerStatus === 'connecting' ? 'Connexion au salon…' : 'Entrer dans le monde'}
             </button>
             <button className="secondary-button" onClick={regenerate}>Générer un nouveau monde</button>
             <div className="menu-help">

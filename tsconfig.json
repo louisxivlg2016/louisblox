@@ -9,7 +9,7 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["bun", "react", "three"]
+    "types": ["bun", "react", "three", "@cloudflare/workers-types"]
   },
-  "include": ["src"]
+  "include": ["src", "worker", "scripts"]
 }
