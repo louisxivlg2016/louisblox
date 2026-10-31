@@ -4,6 +4,7 @@ import { useMultiplayerStore } from '../game/multiplayerStore';
 import { acceptFriendRequest, listOnlinePlayers, sendFriendRequest, useFriendStore } from '../game/friends';
 import type { FriendPlayer, FriendRequest } from '../game/friends';
 import { PixelAvatar } from './PixelAvatar';
+import { ProfileAvatar, ProfilePhotoPicker } from './ProfileAvatar';
 
 function PlayerRow({ player, action, online = true }: { player: FriendPlayer; action?: React.ReactNode; online?: boolean }) {
   return (
@@ -33,6 +34,7 @@ export function FriendsPanel() {
   const addFriend = useFriendStore((state) => state.addFriend);
   const removeRequest = useFriendStore((state) => state.removeRequest);
   const [editing, setEditing] = useState(false);
+  const [choosingPhoto, setChoosingPhoto] = useState(false);
   const [name, setName] = useState(playerName);
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState('');
@@ -88,8 +90,8 @@ export function FriendsPanel() {
   return (
     <div className="friends-panel">
       <div className="profile-card">
-        <button className="profile-avatar-button" onClick={() => setEditing((value) => !value)} aria-label="Modifier mon pseudo">
-          <PixelAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={58} />
+        <button className="profile-avatar-button" onClick={() => { setChoosingPhoto((value) => !value); setEditing(false); }} aria-label="Choisir ma photo">
+          <ProfileAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={58} />
         </button>
         {editing ? (
           <form className="profile-name-form" onSubmit={(event) => { event.preventDefault(); setPlayerName(name); setEditing(false); }}>
@@ -97,9 +99,10 @@ export function FriendsPanel() {
             <button type="submit">OK</button>
           </form>
         ) : (
-          <button className="profile-name" onClick={() => setEditing(true)}><strong>{playerName}</strong><small>{status === 'online' ? 'En ligne' : 'Modifier mon pseudo'}</small></button>
+          <button className="profile-name" onClick={() => { setEditing(true); setChoosingPhoto(false); }}><strong>{playerName}</strong><small>{status === 'online' ? 'En ligne' : 'Modifier mon pseudo'}</small></button>
         )}
       </div>
+      {choosingPhoto && <ProfilePhotoPicker onClose={() => setChoosingPhoto(false)} />}
 
       {requests.length > 0 && (
         <div className="friend-requests">

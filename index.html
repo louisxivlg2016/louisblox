@@ -551,6 +551,11 @@
       .menu-brand small { display: block; margin-top: 4px; color: #9eabc8; font-size: 10px; }
       .profile-card { display: flex; align-items: center; gap: 10px; min-height: 74px; padding: 8px; background: #35415f; border: 2px solid #53607e; }
       .profile-avatar-button { flex: 0 0 auto; padding: 0; background: none; border: 0; cursor: pointer; }
+      .profile-photo { display: block; flex: 0 0 auto; object-fit: cover; border: 2px solid #151b29; }
+      .profile-photo-picker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 8px; background: #293653; border: 2px solid #53607e; }
+      .profile-photo-choice { display: grid; min-width: 0; justify-items: center; gap: 4px; padding: 5px 3px; color: #d8e1f2; background: #35415f; border: 1px solid #61708f; cursor: pointer; }
+      .profile-photo-choice.active { border-color: #f1cf67; outline: 2px solid #f1cf67; }
+      .profile-photo-choice span { max-width: 100%; overflow: hidden; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
       .profile-name { display: grid; gap: 5px; padding: 0; color: #fff; text-align: left; background: none; border: 0; cursor: pointer; }
       .profile-name small { color: #a6b6d0; font-size: 10px; }
       .profile-name-form { display: flex; flex: 1; gap: 5px; }
