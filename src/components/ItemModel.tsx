@@ -16,7 +16,7 @@ export function PixelPart({ position, size, color, rotation }: PartProps) {
 
 export function SwordModel({ color }: { color: string }) {
   return (
-    <group rotation={[0, 0, -0.35]}>
+    <group position={[0, 0.42, 0]} rotation={[0, 0, -0.35]}>
       <PixelPart position={[0, -0.35, 0]} size={[0.12, 0.42, 0.12]} color="#61412b" />
       <PixelPart position={[0, -0.11, 0]} size={[0.5, 0.11, 0.14]} color={color} />
       <PixelPart position={[0, 0.35, 0]} size={[0.18, 0.82, 0.09]} color={color} />
