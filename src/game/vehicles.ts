@@ -4,7 +4,7 @@ import { addVoxel, getBlockIndex, getColumnTop } from './chunks';
 import { getTouchMovement, isDown } from './input';
 import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from './levels';
 import { useGameStore } from './store';
-import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
+import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerBody, PlayerCollider, PlayerMount, PlayerPosition, PlayerState, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
 import { BlockKind, raycastVoxel, voxelKey } from './voxel';
 import { EXTRA_BLOCKS, isCrop, isDoor, isRail, isSign, isTrapdoor, isUtilityBlock } from './extraBlocks';
 import { turnToward } from './rotation';
@@ -92,6 +92,7 @@ export function mountEntity(world: World, vehicle: Entity, kind: 'car' | 'horse'
     if (!rider?.saddled || rider.mounted) return false;
     vehicle.set(HorseRider, { mounted: true, speed: 0 });
   }
+  player.get(PlayerCollider)?.value?.setEnabled(false);
   mount.vehicle = vehicle;
   mount.kind = kind;
   mount.role = role;
@@ -113,6 +114,7 @@ export function dismount(world: World) {
   const position = player?.get(PlayerPosition);
   const body = player?.get(PlayerBody)?.value;
   if (!player || !mount?.vehicle || !position) return false;
+  player.get(PlayerCollider)?.value?.setEnabled(true);
   const vehicle = mount.vehicle;
   const vehiclePosition = mount.kind === 'horse' ? vehicle.get(AnimalPosition) : vehicle.get(VehiclePosition);
   if (vehiclePosition) {
@@ -241,8 +243,10 @@ export function vehicleMovementSystem(world: World, dt: number) {
   const state = playerEntity?.get(PlayerState);
   const input = drivingInput();
   world.query(Vehicle, VehiclePosition, VehicleMotion, VehicleMesh).updateEach(([vehicle, position, motion, mesh], entity) => {
+    const driving = mount?.vehicle === entity && mount.kind === vehicle.kind && mount.role === 'driver';
     const passenger = mount?.vehicle === entity && mount.kind === vehicle.kind && mount.role === 'passenger';
-    if (passenger && vehicle.kind === 'plane') {
+    const automatic = passenger && !motion.mounted;
+    if (automatic && vehicle.kind === 'plane') {
       motion.routeTime += dt;
       const angle = motion.routeTime * 0.12;
       const altitude = Math.min(11, motion.routeTime * 3);
@@ -253,7 +257,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
         motion.homeY + altitude + Math.sin(motion.routeTime * 0.3) * Math.min(2, altitude / 5),
         motion.homeZ - Math.sin(angle) * 20,
       );
-    } else if (passenger && vehicle.kind === 'train') {
+    } else if (automatic && vehicle.kind === 'train') {
       motion.routeTime += dt;
       const cycle = (motion.routeTime * 4) % 80;
       const offset = cycle < 20 ? cycle : cycle < 60 ? 40 - cycle : cycle - 80;
@@ -263,7 +267,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
       motion.yaw = motion.homeYaw + (cycle < 40 ? 0 : Math.PI);
       position.set(x, groundAt(world, x, z, position.y + 1.5), z);
     } else {
-      const active = mount?.vehicle === entity && mount.kind === vehicle.kind && mount.role === 'driver' && state;
+      const active = driving && state;
       const target = active ? input.forward * (input.forward < 0 ? 2.5 : vehicle.kind === 'car' ? 14 : vehicle.kind === 'plane' ? 18 : vehicle.kind === 'boat' ? 6 : 12) : 0;
       motion.speed += Math.max(-20 * dt, Math.min(20 * dt, target - motion.speed));
       if (Math.abs(motion.speed) < 0.03) motion.speed = 0;
@@ -293,7 +297,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
       mesh.value.position.copy(position);
       mesh.value.rotation.y = motion.yaw;
     }
-    syncVehicleMotion(world, entity);
+    if (driving || automatic) syncVehicleMotion(world, entity);
   });
 
   world.query(Animal, AnimalPosition, AnimalMotion, AnimalMesh, HorseRider).updateEach(([animal, position, motion, mesh, rider], entity) => {

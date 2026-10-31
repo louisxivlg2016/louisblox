@@ -319,8 +319,16 @@ export class GameRoom extends DurableObject<Env> {
       const vehicle = parseVehicle((data as { vehicle?: unknown }).vehicle);
       const playerId = this.attachment(ws)?.playerId;
       if (!vehicle || !playerId) return;
-      if (vehicle.driver && this.vehicles.get(vehicle.id)?.driver !== true) this.vehicleDrivers.set(vehicle.id, playerId);
-      if (!vehicle.driver && this.vehicleDrivers.get(vehicle.id) === playerId) this.vehicleDrivers.delete(vehicle.id);
+      const driverId = this.vehicleDrivers.get(vehicle.id);
+      if (driverId && driverId !== playerId) {
+        if (!vehicle.driver) {
+          const current = this.vehicles.get(vehicle.id);
+          if (current) ws.send(JSON.stringify({ type: 'vehicle-state', vehicle: current }));
+        }
+        return;
+      }
+      if (vehicle.driver) this.vehicleDrivers.set(vehicle.id, playerId);
+      else this.vehicleDrivers.delete(vehicle.id);
       this.vehicles.set(vehicle.id, vehicle);
       this.broadcast({ type, vehicle }, ws);
       return;
