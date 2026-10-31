@@ -6,6 +6,7 @@ export type PlayerSnapshot = {
   pitch: number;
   flying: boolean;
   moving?: boolean;
+  airborne?: boolean;
 };
 
 type EndpointEnvironment = {
@@ -50,5 +51,6 @@ export function isPlayerSnapshot(value: unknown): value is PlayerSnapshot {
   const state = value as Record<string, unknown>;
   return ['x', 'y', 'z', 'yaw', 'pitch'].every((key) => typeof state[key] === 'number' && Number.isFinite(state[key]))
     && typeof state.flying === 'boolean'
-    && (state.moving === undefined || typeof state.moving === 'boolean');
+    && (state.moving === undefined || typeof state.moving === 'boolean')
+    && (state.airborne === undefined || typeof state.airborne === 'boolean');
 }

@@ -30,6 +30,20 @@ function siteFor(type: RuinType, cx: number, cz: number, seed: number): RuinSite
   return { type, x, z, baseY, seed };
 }
 
+export function nearestRuinOfType(x: number, z: number, seed: number, type: RuinType) {
+  const cx = Math.floor(x / 1024);
+  const cz = Math.floor(z / 1024);
+  let nearest: (RuinSite & { distance: number }) | null = null;
+  for (let dx = -1; dx <= 1; dx += 1) {
+    for (let dz = -1; dz <= 1; dz += 1) {
+      const site = siteFor(type, cx + dx, cz + dz, seed);
+      const distance = Math.hypot(site.x - x, site.z - z);
+      if (!nearest || distance < nearest.distance) nearest = { ...site, distance };
+    }
+  }
+  return nearest!;
+}
+
 export function nearestRuin(x: number, z: number, seed: number) {
   const cx = Math.floor(x / 1024);
   const cz = Math.floor(z / 1024);

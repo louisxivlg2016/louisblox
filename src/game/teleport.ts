@@ -2,6 +2,8 @@ import type { World } from 'koota';
 import { getWorldSeed, streamChunks } from './chunks';
 import { biomeAt, heightAt } from './levels';
 import type { Biome } from './levels';
+import { nearestRuinOfType } from './ruins';
+import type { RuinType } from './ruins';
 import { Player, PlayerBody, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
 
 export function teleportToBiome(world: World, biome: Biome) {
@@ -37,4 +39,18 @@ export function teleportToBiome(world: World, biome: Biome) {
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false });
   return best;
+}
+
+export function teleportToRuin(world: World, type: RuinType) {
+  const entity = world.queryFirst(Player);
+  const position = entity?.get(PlayerPosition);
+  if (!entity || !position) return null;
+  const site = nearestRuinOfType(position.x, position.z, getWorldSeed(world), type);
+  const destination = { x: site.x, y: site.baseY + 1.01, z: site.z };
+  streamChunks(world, destination.x, destination.z);
+  position.set(destination.x, destination.y, destination.z);
+  entity.get(PlayerBody)?.value?.setTranslation(destination, true);
+  entity.get(PlayerVelocity)?.set(0, 0, 0);
+  entity.set(PlayerState, { flying: false, grounded: false });
+  return destination;
 }

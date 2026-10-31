@@ -103,7 +103,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
       <PixelPart position={[0.11, 1.74, -0.25]} size={[0.09, 0.07, 0.025]} color="#f4f4ed" />
       <PixelPart position={[-0.11, 1.74, -0.27]} size={[0.035, 0.05, 0.02]} color={current.eyeColor} />
       <PixelPart position={[0.11, 1.74, -0.27]} size={[0.035, 0.05, 0.02]} color={current.eyeColor} />
-      <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} />
+      <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} />
       <group ref={leftArm} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
       <group ref={rightArm} position={[0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
       <group ref={leftLeg} position={[-0.15, 0.78, 0]}>
@@ -442,7 +442,8 @@ export function MultiplayerConnection() {
       const mounted = entity?.get(PlayerMount)?.vehicle;
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving };
+      const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

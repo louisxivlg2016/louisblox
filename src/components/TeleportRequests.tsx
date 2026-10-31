@@ -3,11 +3,17 @@ import { BIOME_NAMES } from '../game/levels';
 import type { Biome } from '../game/levels';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
-import { teleportToBiome } from '../game/teleport';
+import { teleportToBiome, teleportToRuin } from '../game/teleport';
+import type { RuinType } from '../game/ruins';
 import { requestPlayerTeleport, respondToTeleportRequest, useTeleportRequestStore } from '../game/teleportRequests';
 import { world } from '../game/world';
 
-const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'prairie'];
+const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'prairie', 'desert'];
+const RUINS: Array<{ type: RuinType; name: string }> = [
+  { type: 'church', name: 'Église en ruines' },
+  { type: 'palace', name: 'Palais en ruines' },
+  { type: 'fort', name: 'Château fort en ruines' },
+];
 
 export function TeleportPanel() {
   const open = useGameStore((state) => state.teleportOpen);
@@ -24,12 +30,20 @@ export function TeleportPanel() {
     setOpen(false);
     void requestPlay();
   };
+  const travelToRuin = (type: RuinType) => {
+    teleportToRuin(world, type);
+    setOpen(false);
+    void requestPlay();
+  };
 
   return (
     <div className="teleport-panel">
       <strong>Se téléporter</strong>
       {DESTINATIONS.map((biome) => (
         <button key={biome} onClick={() => travel(biome)}>{BIOME_NAMES[biome]}</button>
+      ))}
+      {RUINS.map((ruin) => (
+        <button key={ruin.type} onClick={() => travelToRuin(ruin.type)}>{ruin.name}</button>
       ))}
       {enabled && online && (
         <div className="player-teleport">

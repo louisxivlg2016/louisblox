@@ -11,6 +11,7 @@ type PlayerState = {
   pitch: number;
   flying: boolean;
   moving: boolean;
+  airborne?: boolean;
 };
 
 type VoxelEdit = number | {
@@ -74,6 +75,7 @@ function parseState(value: unknown): PlayerState | null {
     pitch: state.pitch as number,
     flying: state.flying === true,
     moving: state.moving === true,
+    airborne: state.airborne === true,
   };
 }
 

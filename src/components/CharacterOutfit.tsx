@@ -8,7 +8,7 @@ import { Player, PlayerMount, PlayerState, PlayerVelocity, Sleep } from '../game
 import { PixelPart } from './ItemModel';
 import { CostumeGlb, WigGlb } from './WardrobeGlb';
 
-function RoyalCape({ color, moving }: { color: string; moving?: boolean }) {
+function RoyalCape({ color, moving, airborne }: { color: string; moving?: boolean; airborne?: boolean }) {
   const cape = useRef<Group>(null);
   const phase = useRef(0);
   useFrame((_, delta) => {
@@ -19,11 +19,13 @@ function RoyalCape({ color, moving }: { color: string; moving?: boolean }) {
     const sleeping = world.queryFirst(Sleep) !== undefined;
     const speed = velocity ? Math.hypot(velocity.x, velocity.z) : 0;
     const walking = moving ?? (!mounted && !sleeping && state?.grounded && !state.flying && speed > 0.1);
-    phase.current += delta * (walking ? 9 : 1.4);
+    const jumping = airborne ?? (!state?.grounded || state?.flying || Math.abs(velocity?.y ?? 0) > 2);
+    phase.current += delta * (jumping ? 13 : walking ? 9 : 1.4);
     if (!cape.current) return;
-    const strength = walking ? 1 : 0.15;
-    cape.current.rotation.x = 0.08 + Math.sin(phase.current) * 0.16 * strength;
-    cape.current.rotation.z = Math.sin(phase.current * 0.65) * 0.04 * strength;
+    const strength = jumping ? 3.2 : walking ? 1 : 0.15;
+    cape.current.rotation.x = 0.08 + Math.sin(phase.current) * 0.22 * strength;
+    cape.current.rotation.z = Math.sin(phase.current * 0.65) * 0.06 * strength;
+    cape.current.position.z = 0.2 + (jumping ? 0.12 : 0);
   });
   return (
     <group name="king-cape" ref={cape} position={[0, 1.48, 0.2]}>
@@ -50,9 +52,9 @@ function PeriodWig({ large }: { large: boolean }) {
   );
 }
 
-export function CharacterOutfit({ outfit, wig = 'auto', color = null, moving }: { outfit: OutfitKind; wig?: WigSelection; color?: string | null; moving?: boolean }) {
-  const cape = outfit === 'king' ? <RoyalCape color="#9f3040" moving={moving} />
-    : outfit === 'louis14' ? <RoyalCape color="#2d467f" moving={moving} /> : null;
+export function CharacterOutfit({ outfit, wig = 'auto', color = null, moving, airborne }: { outfit: OutfitKind; wig?: WigSelection; color?: string | null; moving?: boolean; airborne?: boolean }) {
+  const cape = outfit === 'king' ? <RoyalCape color="#9f3040" moving={moving} airborne={airborne} />
+    : outfit === 'louis14' ? <RoyalCape color="#2d467f" moving={moving} airborne={airborne} /> : null;
   const selected = selectedWig(outfit, wig);
   const common = (
     <>
