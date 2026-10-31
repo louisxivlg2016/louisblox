@@ -108,6 +108,31 @@ export async function listOnlinePlayers() {
   return Array.isArray(data.players) ? data.players.map(friend).filter((value): value is FriendPlayer => value !== null) : [];
 }
 
+export async function searchPlayers(query: string) {
+  const url = endpoint('/players');
+  url.searchParams.set('q', query.trim());
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error('Recherche indisponible');
+  const data = await response.json() as { players?: unknown };
+  return Array.isArray(data.players) ? data.players.map(friend).filter((value): value is FriendPlayer => value !== null) : [];
+}
+
+export async function fetchFriendRequests() {
+  const self = selfProfile();
+  const url = endpoint('/friend-requests');
+  url.searchParams.set('playerId', self.playerId);
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error('Invitations indisponibles');
+  const data = await response.json() as { requests?: unknown };
+  if (!Array.isArray(data.requests)) return;
+  for (const item of data.requests) {
+    if (!item || typeof item !== 'object') continue;
+    const request = item as { kind?: unknown; requestId?: unknown; from?: unknown };
+    if (request.kind === 'friend-request') receiveFriendRequest(request);
+    else if (request.kind === 'friend-accept') receiveFriendAcceptance(request);
+  }
+}
+
 async function postFriend(path: string, targetId: string, requestId?: string) {
   const from = selfProfile();
   const response = await fetch(endpoint(path), {
@@ -116,8 +141,9 @@ async function postFriend(path: string, targetId: string, requestId?: string) {
     body: JSON.stringify({ targetId, requestId, from }),
   });
   if (!response.ok) throw new Error('Invitation impossible pour le moment.');
-  const result = await response.json() as { sent?: boolean };
+  const result = await response.json() as { sent?: boolean; delivered?: boolean };
   if (!result.sent) throw new Error('Ce joueur n’est plus disponible.');
+  return result.delivered !== false;
 }
 
 export const sendFriendRequest = (target: FriendPlayer) => postFriend('/friend-request', target.playerId);

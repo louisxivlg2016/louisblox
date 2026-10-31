@@ -11,6 +11,7 @@ export type PlayerSnapshot = {
   moving?: boolean;
   airborne?: boolean;
   mounted?: boolean;
+  vehicleKind?: 'car' | 'horse' | 'plane' | 'train' | 'boat';
   selected?: SelectedKind;
 };
 
@@ -59,5 +60,6 @@ export function isPlayerSnapshot(value: unknown): value is PlayerSnapshot {
     && (state.moving === undefined || typeof state.moving === 'boolean')
     && (state.airborne === undefined || typeof state.airborne === 'boolean')
     && (state.mounted === undefined || typeof state.mounted === 'boolean')
+    && (state.vehicleKind === undefined || state.vehicleKind === 'car' || state.vehicleKind === 'horse' || state.vehicleKind === 'plane' || state.vehicleKind === 'train' || state.vehicleKind === 'boat')
     && (state.selected === undefined || isSelectedKind(state.selected));
 }

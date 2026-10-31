@@ -33,10 +33,12 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const flightBlend = state.flying && !sleep ? Math.min(1, previousFlight + dt * 5) : Math.max(0, previousFlight - dt * 5);
   flightBlends.set(world, flightBlend);
   const flightAmount = flightBlend * flightBlend * (3 - 2 * flightBlend);
+  const mountKind = entity.get(PlayerMount)?.kind;
+  const seatedHeight = mounted && mountKind !== 'horse' ? mountKind === 'car' ? -0.9 : -0.7 : 0;
   if (avatar) {
     avatar.rotation.x = -flightAmount * Math.PI / 2;
     avatar.rotation.z = amount * Math.PI / 2;
-    avatar.position.set(-0.9 * amount, 0.35 * amount + flightAmount, 0);
+    avatar.position.set(-0.9 * amount, 0.35 * amount + flightAmount + seatedHeight, 0);
   }
   if (sleep) {
     sleepCameraPosition.set(sleep.x + Math.sin(state.yaw) * 4.5, sleep.y + 2.2, sleep.z + Math.cos(state.yaw) * 4.5);
@@ -63,7 +65,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
       camera.position.y += 0.05;
       camera.position.z -= Math.cos(state.yaw) * 0.35;
     } else {
-      camera.position.y += mount?.vehicle && mount.kind !== 'horse' ? mount.kind === 'car' ? 1.35 : 0.55 : 1.62;
+      camera.position.y += mount?.vehicle && mount.kind !== 'horse' ? mount.kind === 'car' ? 0.65 : 0.55 : 1.62;
     }
     rotation.set(state.pitch, state.yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(rotation);

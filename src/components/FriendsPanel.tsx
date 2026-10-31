@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useCharacterStore } from '../game/characterStore';
 import { useMultiplayerStore } from '../game/multiplayerStore';
-import { acceptFriendRequest, listOnlinePlayers, sendFriendRequest, useFriendStore } from '../game/friends';
+import { acceptFriendRequest, fetchFriendRequests, listOnlinePlayers, searchPlayers, sendFriendRequest, useFriendStore } from '../game/friends';
 import type { FriendPlayer, FriendRequest } from '../game/friends';
 import { PixelAvatar } from './PixelAvatar';
 import { ProfileAvatar, ProfilePhotoPicker } from './ProfileAvatar';
@@ -37,6 +37,7 @@ export function FriendsPanel() {
   const [choosingPhoto, setChoosingPhoto] = useState(false);
   const [name, setName] = useState(playerName);
   const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<FriendPlayer[]>([]);
   const [message, setMessage] = useState('');
   const [pending, setPending] = useState<string[]>([]);
   const selfId = players.find((player) => player.self)?.playerId;
@@ -48,6 +49,10 @@ export function FriendsPanel() {
       try {
         const directory = await listOnlinePlayers();
         if (active) setOnlinePlayers(directory);
+        try {
+          await fetchFriendRequests();
+        } catch {
+        }
       } catch {
         if (active) setMessage('Annuaire indisponible pour le moment.');
       }
@@ -60,11 +65,31 @@ export function FriendsPanel() {
     };
   }, [setOnlinePlayers]);
 
+  useEffect(() => {
+    const query = search.trim();
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void searchPlayers(query).then((players) => {
+        if (active) setSearchResults(players);
+      }).catch(() => {
+        if (active) setMessage('Recherche indisponible pour le moment.');
+      });
+    }, 300);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [search]);
+
   const propose = async (player: FriendPlayer) => {
     try {
-      await sendFriendRequest(player);
+      const delivered = await sendFriendRequest(player);
       setPending((current) => [...current, player.playerId]);
-      setMessage(`Invitation envoyée à ${player.name}.`);
+      setMessage(delivered ? `Invitation envoyée à ${player.name}.` : `Invitation enregistrée. ${player.name} la recevra à sa prochaine connexion.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Invitation impossible.');
     }
@@ -85,7 +110,8 @@ export function FriendsPanel() {
   };
   const online = new Map(onlinePlayers.map((player) => [player.playerId, player]));
   const savedFriends = friends.map((friend) => online.get(friend.playerId) ? { player: online.get(friend.playerId)!, online: true } : { player: friend, online: false });
-  const filteredPlayers = onlinePlayers.filter((player) => player.playerId !== selfId && player.name.toLowerCase().includes(search.toLowerCase().trim()));
+  const filteredPlayers = (search.trim() ? searchResults : onlinePlayers).filter((player) => player.playerId !== selfId);
+  const visiblePlayers = filteredPlayers.map((player) => ({ player, online: online.has(player.playerId) }));
 
   return (
     <div className="friends-panel">
@@ -124,8 +150,8 @@ export function FriendsPanel() {
       <div className="friends-heading"><h3>Tous les joueurs <span>{filteredPlayers.length}</span></h3></div>
       <input className="friends-search" type="search" aria-label="Rechercher un joueur" placeholder="Rechercher…" value={search} onChange={(event) => setSearch(event.target.value)} />
       <div className="friends-list directory-list">
-        {filteredPlayers.map((player) => (
-          <PlayerRow key={player.playerId} player={player} action={friends.some((friend) => friend.playerId === player.playerId)
+        {visiblePlayers.map(({ player, online: isOnline }) => (
+          <PlayerRow key={player.playerId} player={player} online={isOnline} action={friends.some((friend) => friend.playerId === player.playerId)
             ? <span className="friend-added">Ami</span>
             : <button className="friend-add" disabled={pending.includes(player.playerId)} onClick={() => propose(player)}>{pending.includes(player.playerId) ? 'Envoyé' : 'Proposer'}</button>}
           />

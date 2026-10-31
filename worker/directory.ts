@@ -64,45 +64,120 @@ export function parseSocialPlayer(value: unknown): SocialPlayer | null {
   };
 }
 
+type PendingInvitation = {
+  kind: 'friend-request' | 'friend-accept';
+  requestId: string;
+  from: SocialPlayer;
+  createdAt: number;
+};
+
 export class PlayerDirectory extends DurableObject<Env> {
-  private players = new Map<string, SocialPlayer>();
+  private knownPlayers = new Map<string, SocialPlayer>();
+  private onlinePlayers = new Map<string, SocialPlayer>();
+  private invitations = new Map<string, PendingInvitation[]>();
+  private ready?: Promise<void>;
+
+  private async ensureReady() {
+    this.ready ??= this.ctx.blockConcurrencyWhile(async () => {
+      const [known, invitations] = await Promise.all([
+        this.ctx.storage.get<Array<[string, SocialPlayer]>>('known-v1'),
+        this.ctx.storage.get<Array<[string, PendingInvitation[]]>>('invitations-v1'),
+      ]);
+      this.knownPlayers = new Map(known ?? []);
+      this.invitations = new Map(invitations ?? []);
+    });
+    await this.ready;
+  }
+
+  private saveKnown() {
+    return this.ctx.storage.put('known-v1', [...this.knownPlayers]);
+  }
+
+  private saveInvitations() {
+    return this.ctx.storage.put('invitations-v1', [...this.invitations]);
+  }
+
+  private queue(targetId: string, kind: PendingInvitation['kind'], requestId: string, from: SocialPlayer) {
+    const pending = this.invitations.get(targetId) ?? [];
+    if (!pending.some((item) => item.kind === kind && item.requestId === requestId)) {
+      pending.push({ kind, requestId, from, createdAt: Date.now() });
+    }
+    this.invitations.set(targetId, pending);
+  }
+
+  private async deliver(path: string, roomId: string, body: unknown) {
+    try {
+      const room = this.env.GAME_ROOM.get(this.env.GAME_ROOM.idFromName(roomId));
+      const response = await room.fetch('https://room' + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const result = await response.json() as { sent?: boolean };
+      return result.sent === true;
+    } catch {
+      return false;
+    }
+  }
 
   async fetch(request: Request) {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
+    await this.ensureReady();
     const now = Date.now();
-    for (const [playerId, player] of this.players) {
-      if ((player.lastSeen ?? 0) + 30000 < now) this.players.delete(playerId);
+    for (const [playerId, player] of this.onlinePlayers) {
+      if ((player.lastSeen ?? 0) + 30000 < now) this.onlinePlayers.delete(playerId);
     }
     if (url.pathname === '/players' && request.method === 'GET') {
-      return json({ players: [...this.players.values()].sort((a, b) => a.name.localeCompare(b.name)) });
+      const query = (url.searchParams.get('q') ?? '').trim().toLocaleLowerCase();
+      const players = query
+        ? [...this.knownPlayers.values()].filter((player) => player.name.toLocaleLowerCase().includes(query))
+        : [...this.onlinePlayers.values()];
+      return json({
+        players: players
+          .map((player) => ({ ...player, online: this.onlinePlayers.has(player.playerId) }))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      });
+    }
+    if (url.pathname === '/friend-requests' && request.method === 'GET') {
+      const playerId = url.searchParams.get('playerId') ?? '';
+      const requests = this.invitations.get(playerId) ?? [];
+      this.invitations.delete(playerId);
+      if (requests.length > 0) await this.saveInvitations();
+      return json({ requests });
     }
     if (url.pathname === '/presence') {
       if (request.method === 'DELETE') {
         const data = await request.json() as { playerId?: unknown };
-        if (typeof data.playerId === 'string') this.players.delete(data.playerId);
+        if (typeof data.playerId === 'string') this.onlinePlayers.delete(data.playerId);
         return json({ ok: true });
       }
       if (request.method === 'POST') {
         const player = parseSocialPlayer(await request.json());
         if (!player) return json({ ok: false }, 400);
         player.lastSeen = now;
-        this.players.set(player.playerId, player);
+        this.knownPlayers.set(player.playerId, player);
+        this.onlinePlayers.set(player.playerId, player);
+        await this.saveKnown();
         return json({ ok: true });
       }
     }
     if ((url.pathname === '/friend-request' || url.pathname === '/friend-accept') && request.method === 'POST') {
       const data = await request.json() as { targetId?: unknown; requestId?: unknown; from?: unknown };
       const from = parseSocialPlayer(data.from);
-      const target = typeof data.targetId === 'string' ? this.players.get(data.targetId) : undefined;
-      if (!from || !target) return json({ sent: false });
+      const target = typeof data.targetId === 'string' ? this.knownPlayers.get(data.targetId) : undefined;
+      if (!from || !target || target.playerId === from.playerId) return json({ sent: false });
       const requestId = typeof data.requestId === 'string' && data.requestId.length <= 80 ? data.requestId : crypto.randomUUID();
-      const room = this.env.GAME_ROOM.get(this.env.GAME_ROOM.idFromName(target.room));
-      return room.fetch('https://room' + url.pathname, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetId: target.playerId, requestId, from }),
-      });
+      if (url.pathname === '/friend-accept') {
+        const pending = (this.invitations.get(target.playerId) ?? []).filter((item) => !(item.kind === 'friend-request' && item.requestId === requestId));
+        this.invitations.set(target.playerId, pending);
+        this.queue(target.playerId, 'friend-accept', requestId, from);
+      } else {
+        this.queue(target.playerId, 'friend-request', requestId, from);
+      }
+      await this.saveInvitations();
+      const delivered = await this.deliver(url.pathname, target.room, { targetId: target.playerId, requestId, from });
+      return json({ sent: true, delivered });
     }
     return json({ error: 'Not found' }, 404);
   }

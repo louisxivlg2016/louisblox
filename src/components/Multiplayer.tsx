@@ -84,7 +84,8 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
   useFrame((_, delta) => {
     if (!group.current) return;
     const amount = 1 - Math.exp(-delta * 14);
-    target.set(state.x, state.y + (state.flying ? 1 : 0), state.z);
+    const seatedHeight = state.mounted && state.vehicleKind !== 'horse' ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
+    target.set(state.x, state.y + (state.flying ? 1 : 0) - seatedHeight, state.z);
     group.current.position.lerp(target, amount);
     group.current.rotation.order = 'YXZ';
     if (state.moving || state.flying || state.mounted) {
@@ -97,8 +98,9 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
     const swing = state.moving ? Math.sin(phase.current) * 0.85 : 0;
     if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
     if (rightArm.current) rightArm.current.rotation.x += (-swing - rightArm.current.rotation.x) * amount;
-    if (leftLeg.current) leftLeg.current.rotation.x += (-swing - leftLeg.current.rotation.x) * amount;
-    if (rightLeg.current) rightLeg.current.rotation.x += (swing - rightLeg.current.rotation.x) * amount;
+    const legRotation = state.mounted ? -Math.PI / 2 : null;
+    if (leftLeg.current) leftLeg.current.rotation.x += ((legRotation ?? -swing) - leftLeg.current.rotation.x) * amount;
+    if (rightLeg.current) rightLeg.current.rotation.x += ((legRotation ?? swing) - rightLeg.current.rotation.x) * amount;
     if (headRef.current) {
       const headYaw = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
       headRef.current.rotation.order = 'YXZ';
@@ -516,7 +518,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), selected: useGameStore.getState().selected };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, selected: useGameStore.getState().selected };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

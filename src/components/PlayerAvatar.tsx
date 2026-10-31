@@ -97,7 +97,7 @@ export function PlayerAvatar() {
         const holder = entity.get(PlayerMesh);
         if (holder) holder.value = group;
       }}
-      visible={(cameraMode !== 'first' || sleeping) && riding !== 'plane' && riding !== 'train'}
+      visible={cameraMode !== 'first' || sleeping}
     >
       {(!hasWardrobeModel(outfit) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit outfit={outfit} wig={wig} color={appearance.clothingColor} head={headContent} headRef={headRef} />

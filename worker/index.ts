@@ -13,6 +13,7 @@ type PlayerState = {
   moving: boolean;
   airborne?: boolean;
   mounted?: boolean;
+  vehicleKind?: 'car' | 'horse' | 'plane' | 'train' | 'boat';
   selected?: string | number;
 };
 
@@ -83,6 +84,7 @@ function parseState(value: unknown): PlayerState | null {
     moving: state.moving === true,
     airborne: state.airborne === true,
     mounted: state.mounted === true,
+    vehicleKind: state.vehicleKind === 'car' || state.vehicleKind === 'horse' || state.vehicleKind === 'plane' || state.vehicleKind === 'train' || state.vehicleKind === 'boat' ? state.vehicleKind : undefined,
     selected: typeof state.selected === 'string' && state.selected.length > 0 && state.selected.length <= 96
       ? state.selected
       : typeof state.selected === 'number' && Number.isInteger(state.selected) && state.selected >= 0 && state.selected <= 200 ? state.selected : undefined,
@@ -619,7 +621,7 @@ export default {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    if (url.pathname === '/players' || url.pathname === '/presence' || url.pathname === '/friend-request' || url.pathname === '/friend-accept') {
+    if (url.pathname === '/players' || url.pathname === '/presence' || url.pathname === '/friend-request' || url.pathname === '/friend-accept' || url.pathname === '/friend-requests') {
       const id = env.PLAYER_DIRECTORY.idFromName('global');
       return env.PLAYER_DIRECTORY.get(id).fetch(request);
     }
