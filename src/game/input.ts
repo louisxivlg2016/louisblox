@@ -1,6 +1,7 @@
 import { startMusic } from './audio';
 import { useGameStore } from './store';
 import { useSignStore } from './signs';
+import { useChatStore } from './chat';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -139,6 +140,12 @@ export function initInput() {
       return;
     }
     if (event.code === 'Escape') {
+      if (useChatStore.getState().open) {
+        event.preventDefault();
+        useChatStore.getState().setOpen(false);
+        window.setTimeout(() => { void requestPlay(); }, 50);
+        return;
+      }
       if (useSignStore.getState().editing) {
         useSignStore.getState().closeSign();
         void requestPlay();

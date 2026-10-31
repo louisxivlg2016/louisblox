@@ -48,6 +48,7 @@ type PlayerAttachment = {
   presenceAt: number;
   state: PlayerState | null;
   worldInitAccepted?: boolean;
+  lastChatAt?: number;
 };
 
 interface Env {
@@ -316,6 +317,18 @@ export class GameRoom extends DurableObject<Env> {
     if (!data || typeof data !== 'object') return;
     const type = (data as { type?: unknown }).type;
     await this.ensureWorld();
+    if (type === 'chat') {
+      const attachment = this.attachment(ws);
+      const value = (data as { text?: unknown }).text;
+      if (!attachment || typeof value !== 'string') return;
+      const text = value.replace(/[\r\n\0]/g, ' ').trim().slice(0, 200);
+      const sentAt = Date.now();
+      if (!text || sentAt - (attachment.lastChatAt ?? 0) < 750) return;
+      attachment.lastChatAt = sentAt;
+      ws.serializeAttachment(attachment);
+      this.broadcast({ type: 'chat', messageId: crypto.randomUUID(), playerId: attachment.playerId, name: attachment.name, text, sentAt });
+      return;
+    }
     if (type === 'teleport-request' || type === 'teleport-accept' || type === 'teleport-decline') {
       const attachment = this.attachment(ws);
       const targetId = (data as { targetId?: unknown }).targetId;

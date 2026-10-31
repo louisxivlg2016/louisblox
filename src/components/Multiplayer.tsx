@@ -26,6 +26,7 @@ import { sanitizeAppearance } from '../game/appearance';
 import type { CharacterAppearance } from '../game/appearance';
 import { receiveFriendAcceptance, receiveFriendRequest } from '../game/friends';
 import { applyProjectileRemoval, applyProjectileSnapshot, isExplosionSnapshot, isProjectileSnapshot, onProjectileSync } from '../game/projectileSync';
+import { clearChat, receiveChatMessage, setChatSocket } from '../game/chat';
 
 type ServerMessage = {
   type?: unknown;
@@ -182,6 +183,7 @@ export function MultiplayerConnection() {
     pendingEdits.current.clear();
     worldInitSent.current = false;
     clearTeleportRequests();
+    clearChat();
     store.setPlayers([]);
     remote.setPlayers({});
     remote.setCharacters({});
@@ -298,6 +300,7 @@ export function MultiplayerConnection() {
       const next = new WebSocket(endpoint);
       socket.current = next;
       setTeleportSocket(next);
+      setChatSocket(next);
       next.onopen = () => store.setStatus('online');
       next.onmessage = (event) => {
         if (typeof event.data !== 'string') return;
@@ -305,6 +308,10 @@ export function MultiplayerConnection() {
         try {
           data = JSON.parse(event.data) as ServerMessage;
         } catch {
+          return;
+        }
+        if (data.type === 'chat') {
+          receiveChatMessage(data);
           return;
         }
         if (data.type === 'friend-request') {
@@ -443,6 +450,7 @@ export function MultiplayerConnection() {
         if (socket.current === next) {
           socket.current = null;
           clearTeleportRequests();
+          clearChat();
         }
         if (disposed) return;
         localPlayerId.current = null;
@@ -491,6 +499,7 @@ export function MultiplayerConnection() {
       const current = socket.current;
       socket.current = null;
       clearTeleportRequests();
+      clearChat();
       if (current) {
         current.onclose = null;
         current.close();

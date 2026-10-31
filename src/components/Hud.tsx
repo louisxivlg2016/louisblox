@@ -14,6 +14,8 @@ import { GameMenu } from './GameMenu';
 import { WorldStats } from './WorldStats';
 import { TeleportPanel, TeleportRequestDialog } from './TeleportRequests';
 import { useTeleportRequestStore } from '../game/teleportRequests';
+import { useChatStore } from '../game/chat';
+import { ChatPanel } from './ChatPanel';
 
 export function Hud() {
   const mode = useGameStore((state) => state.mode);
@@ -28,6 +30,7 @@ export function Hud() {
   const bookOpen = useGameStore((state) => state.bookOpen);
   const signOpen = useSignStore((state) => state.editing !== null);
   const seatChoice = useGameStore((state) => state.seatChoice);
+  const chatOpen = useChatStore((state) => state.open);
   const sleepProgress = useGameStore((state) => state.sleepProgress);
   const teleportRequestOpen = useTeleportRequestStore((state) => state.incoming !== null);
   const selectBlock = useGameStore((state) => state.selectBlock);
@@ -74,8 +77,9 @@ export function Hud() {
       )}
 
       <TeleportPanel />
+      <ChatPanel />
 
-      {mode !== 'play' && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && (
+      {mode !== 'play' && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && (
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />
       )}
 
