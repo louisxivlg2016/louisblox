@@ -7,6 +7,7 @@ import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, Sleep } f
 const rotation = new Euler(0, 0, 0, 'YXZ');
 
 const sleepBlends = new WeakMap<World, number>();
+const flightBlends = new WeakMap<World, number>();
 const sleepCameraPosition = new Vector3();
 
 export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
@@ -16,15 +17,23 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const state = entity.get(PlayerState);
   if (!position || !state) return;
   const avatar = entity.get(PlayerMesh)?.value;
-  if (avatar) avatar.rotation.y = state.yaw;
+  if (avatar) {
+    avatar.rotation.order = 'YXZ';
+    avatar.rotation.y = state.yaw;
+  }
   const sleep = world.queryFirst(Sleep)?.get(Sleep);
   const previous = sleepBlends.get(world) ?? 0;
   const blend = sleep ? Math.min(1, previous + dt * 3) : Math.max(0, previous - dt * 3);
   sleepBlends.set(world, blend);
   const amount = blend * blend * (3 - 2 * blend);
+  const previousFlight = flightBlends.get(world) ?? 0;
+  const flightBlend = state.flying && !sleep ? Math.min(1, previousFlight + dt * 5) : Math.max(0, previousFlight - dt * 5);
+  flightBlends.set(world, flightBlend);
+  const flightAmount = flightBlend * flightBlend * (3 - 2 * flightBlend);
   if (avatar) {
+    avatar.rotation.x = -flightAmount * Math.PI / 2;
     avatar.rotation.z = amount * Math.PI / 2;
-    avatar.position.set(-0.9 * amount, 0.35 * amount, 0);
+    avatar.position.set(-0.9 * amount, 0.35 * amount + flightAmount, 0);
   }
   if (sleep) {
     sleepCameraPosition.set(sleep.x + Math.sin(state.yaw) * 4.5, sleep.y + 2.2, sleep.z + Math.cos(state.yaw) * 4.5);

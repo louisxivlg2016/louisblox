@@ -79,10 +79,13 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
   useFrame((_, delta) => {
     if (!group.current) return;
     const amount = 1 - Math.exp(-delta * 14);
-    target.set(state.x, state.y, state.z);
+    target.set(state.x, state.y + (state.flying ? 1 : 0), state.z);
     group.current.position.lerp(target, amount);
+    group.current.rotation.order = 'YXZ';
     const angle = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
     group.current.rotation.y += angle * amount;
+    const flightRotation = state.flying ? -Math.PI / 2 : 0;
+    group.current.rotation.x += (flightRotation - group.current.rotation.x) * amount;
     if (state.moving) phase.current += delta * 8;
     const swing = state.moving ? Math.sin(phase.current) * 0.85 : 0;
     if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
