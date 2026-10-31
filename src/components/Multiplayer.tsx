@@ -28,6 +28,7 @@ import type { CharacterAppearance } from '../game/appearance';
 import { receiveFriendAcceptance, receiveFriendRequest } from '../game/friends';
 import { applyProjectileRemoval, applyProjectileSnapshot, isExplosionSnapshot, isProjectileSnapshot, onProjectileSync } from '../game/projectileSync';
 import { clearChat, receiveChatMessage, setChatSocket } from '../game/chat';
+import { clearBattle, receiveBattleElimination, receiveBattleRespawn, receiveBattleState, setBattleLocalPlayer, setBattleSocket, useBattleStore } from '../game/battle';
 
 type ServerMessage = {
   type?: unknown;
@@ -52,7 +53,7 @@ type ServerMessage = {
   appearance?: unknown;
   gameplayMode?: unknown;
 };
-type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: 'survival' | 'creative' };
+type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: 'survival' | 'creative' | 'battle' };
 
 function sendWorldInitialization(socket: WebSocket, world: World, force: boolean) {
   const edits = snapshotWorldEdits(world).flatMap(([, entries]) => entries);
@@ -78,6 +79,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
   const body = current.clothingColor ?? (outfit === 'default' ? (girl ? '#9a5f9f' : `hsl(${hue}, 45%, 48%)`) : OUTFITS[outfit].body);
   const legs = current.clothingColor ?? (outfit === 'default' ? (girl ? '#4b405e' : '#354d6d') : OUTFITS[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
+  const team = useBattleStore((state) => state.teams[playerId]);
 
   useFrame((_, delta) => {
     if (!group.current) return;
@@ -127,6 +129,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
     <group ref={group} position={[state.x, state.y, state.z]}>
       {!hasWardrobeModel(outfit) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} head={headContent} headRef={headRef} />
+      {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={team === 'red' ? '#d64b43' : '#4285d4'} /></group>}
       <group ref={leftArm} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
       <group ref={rightArm} position={[0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" />
@@ -197,6 +200,7 @@ export function MultiplayerConnection() {
     worldInitSent.current = false;
     clearTeleportRequests();
     clearChat();
+    clearBattle();
     store.setPlayers([]);
     remote.setPlayers({});
     remote.setCharacters({});
@@ -314,6 +318,7 @@ export function MultiplayerConnection() {
       socket.current = next;
       setTeleportSocket(next);
       setChatSocket(next);
+      setBattleSocket(next);
       next.onopen = () => store.setStatus('online');
       next.onmessage = (event) => {
         if (typeof event.data !== 'string') return;
@@ -321,6 +326,18 @@ export function MultiplayerConnection() {
         try {
           data = JSON.parse(event.data) as ServerMessage;
         } catch {
+          return;
+        }
+        if (data.type === 'battle-state') {
+          receiveBattleState(data);
+          return;
+        }
+        if (data.type === 'battle-elimination') {
+          receiveBattleElimination(data);
+          return;
+        }
+        if (data.type === 'battle-respawn') {
+          receiveBattleRespawn(data);
           return;
         }
         if (data.type === 'chat') {
@@ -367,7 +384,7 @@ export function MultiplayerConnection() {
           return;
         }
         if (data.type === 'world' && (data.seed === null || typeof data.seed === 'number') && Array.isArray(data.edits)) {
-          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: data.gameplayMode === 'survival' ? 'survival' : 'creative' };
+          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: data.gameplayMode === 'survival' ? 'survival' : data.gameplayMode === 'battle' ? 'battle' : 'creative' };
           applyPendingWorld();
           return;
         }
@@ -391,6 +408,7 @@ export function MultiplayerConnection() {
           const name = typeof data.name === 'string' ? data.name : 'Joueur';
           if (Array.isArray(data.players)) {
             localPlayerId.current = data.playerId;
+            setBattleLocalPlayer(data.playerId);
             roster.current.clear();
             const updated: Record<string, PlayerSnapshot> = {};
             const characters: Record<string, 'boy' | 'girl'> = {};
@@ -464,6 +482,7 @@ export function MultiplayerConnection() {
           socket.current = null;
           clearTeleportRequests();
           clearChat();
+          clearBattle();
         }
         if (disposed) return;
         localPlayerId.current = null;
@@ -513,6 +532,7 @@ export function MultiplayerConnection() {
       socket.current = null;
       clearTeleportRequests();
       clearChat();
+      clearBattle();
       if (current) {
         current.onclose = null;
         current.close();

@@ -141,8 +141,10 @@ export const useGameStore = create<GameStore>((set) => ({
   regenerate: (gameplayMode = 'creative') => set((state) => ({
     generation: state.generation + 1,
     gameplayMode,
-    selected: gameplayMode === 'survival' ? 'hand' : BlockKind.Grass,
-    hotbarSlots: gameplayMode === 'survival' ? Array(10).fill('hand') : [...HOTBAR_BLOCKS.slice(0, 10)],
+    selected: gameplayMode === 'battle' ? 'pistol_iron' : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass,
+    hotbarSlots: gameplayMode === 'battle'
+      ? ['pistol_iron', 'pistol_bomb', 'bow', 'sword_iron', ...HOTBAR_BLOCKS.slice(0, 6)]
+      : gameplayMode === 'survival' ? Array(10).fill('hand') : [...HOTBAR_BLOCKS.slice(0, 10)],
     backpackItem: null,
     itemCounts: gameplayMode === 'survival' ? { hand: 1 } : { ...DEFAULT_ITEM_COUNTS },
     equippedArmor: null,

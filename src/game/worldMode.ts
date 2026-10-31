@@ -1,1 +1,1 @@
-export type GameplayMode = 'survival' | 'creative';
+export type GameplayMode = 'survival' | 'creative' | 'battle';

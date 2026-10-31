@@ -2,6 +2,8 @@ import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Camera } from 'three';
 import { damageAnimal, findAnimalTarget } from '../combat';
+import { findBattleTarget } from '../battleCombat';
+import { requestBattleHit } from '../battle';
 import { isMouseDown, stopMining } from '../input';
 import { getItemMeta, isSword } from '../items';
 import { hasInventory } from '../inventory';
@@ -23,6 +25,14 @@ export function animalCombatSystem(world: World, camera: Camera, dt: number, tou
   origin.copy(player);
   origin.y += 1.62;
   camera.getWorldDirection(direction);
+  const enemy = findBattleTarget(world, origin, direction, 4.5);
+  if (enemy) {
+    if ((touchTaps > 0 || isMouseDown(0)) && cooldown <= 0) {
+      requestBattleHit(enemy.playerId, 'melee');
+      cooldowns.set(world, typeof selected === 'string' ? getItemMeta(selected).cooldown ?? 0.35 : 0.35);
+    }
+    return true;
+  }
   const target = findAnimalTarget(world, origin, direction);
   if (!target) return false;
   if (touchTaps > 0) {

@@ -13,7 +13,7 @@ export function PlayerView() {
     <RigidBody
       ref={(body) => {
         const holder = entity.get(PlayerBody);
-        if (holder) holder.value = body;
+        if (holder && body) holder.value = body;
       }}
       type="kinematicPosition"
       colliders={false}
@@ -23,7 +23,7 @@ export function PlayerView() {
       <CapsuleCollider
         ref={(collider) => {
           const holder = entity.get(PlayerCollider);
-          if (holder) holder.value = collider;
+          if (holder && collider) holder.value = collider;
         }}
         args={[0.55, 0.35]}
         position={[0, 0.9, 0]}

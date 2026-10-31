@@ -25,7 +25,9 @@ type VoxelEdit = number | {
   text?: string;
 } | null;
 type EditEntry = [string, VoxelEdit];
-type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: 'survival' | 'creative' };
+type GameplayMode = 'survival' | 'creative' | 'battle';
+type BattleTeam = 'red' | 'blue';
+type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode };
 type SharedVehicle = {
   id: string;
   kind: 'car' | 'plane' | 'train' | 'boat';
@@ -50,6 +52,7 @@ type PlayerAttachment = {
   state: PlayerState | null;
   worldInitAccepted?: boolean;
   lastChatAt?: number;
+  team?: BattleTeam;
 };
 
 interface Env {
@@ -174,7 +177,10 @@ export class GameRoom extends DurableObject<Env> {
   private worldSeed: number | null = null;
   private worldEdits = new Map<string, VoxelEdit>();
   private vehicles = new Map<string, SharedVehicle>();
-  private gameplayMode: 'survival' | 'creative' = 'creative';
+  private gameplayMode: GameplayMode = 'creative';
+  private battleHealth = new Map<string, number>();
+  private battleScores: Record<BattleTeam, number> = { red: 0, blue: 0 };
+  private battleHits = new Map<string, number>();
   private worldReady?: Promise<void>;
 
   private async ensureWorld() {
@@ -193,6 +199,28 @@ export class GameRoom extends DurableObject<Env> {
 
   private async saveWorld() {
     await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode } satisfies StoredWorld);
+  }
+
+  private battleSnapshot(excludeId?: string) {
+    const teams: Record<string, BattleTeam> = {};
+    const health: Record<string, number> = {};
+    for (const ws of this.ctx.getWebSockets()) {
+      const attachment = this.attachment(ws);
+      if (!attachment?.team || attachment.playerId === excludeId) continue;
+      teams[attachment.playerId] = attachment.team;
+      health[attachment.playerId] = this.battleHealth.get(attachment.playerId) ?? 10;
+    }
+    return { type: 'battle-state', teams, health, scores: this.battleScores };
+  }
+
+  private broadcastBattleState(excludeId?: string) {
+    this.broadcast(this.battleSnapshot(excludeId));
+  }
+
+  private removeBattlePlayer(playerId: string) {
+    this.battleHealth.delete(playerId);
+    this.battleHits.delete(playerId);
+    this.broadcastBattleState(playerId);
   }
 
   private async friendRequest(request: Request) {
@@ -239,6 +267,7 @@ export class GameRoom extends DurableObject<Env> {
     server.send(JSON.stringify({ type: 'join', playerId, name, character, outfit, wig, appearance, players: this.players(playerId) }));
     server.send(JSON.stringify(this.worldSnapshot()));
     server.send(JSON.stringify({ type: 'vehicles', vehicles: [...this.vehicles.values()] }));
+    server.send(JSON.stringify(this.battleSnapshot()));
     this.broadcast({ type: 'join', playerId, joinedAt: attachment.joinedAt, name, character, outfit, wig, appearance, state: null }, server);
     return new Response(null, { status: 101, webSocket: client, headers: corsHeaders });
   }
@@ -321,6 +350,52 @@ export class GameRoom extends DurableObject<Env> {
     if (!data || typeof data !== 'object') return;
     const type = (data as { type?: unknown }).type;
     await this.ensureWorld();
+    if (type === 'battle-team') {
+      const attachment = this.attachment(ws);
+      const team = (data as { team?: unknown }).team;
+      if (this.gameplayMode !== 'battle' || !attachment || (team !== 'red' && team !== 'blue')) return;
+      const changed = attachment.team !== team;
+      attachment.team = team;
+      ws.serializeAttachment(attachment);
+      if (changed) this.battleHealth.set(attachment.playerId, 10);
+      this.broadcastBattleState();
+      return;
+    }
+    if (type === 'battle-hit') {
+      const attacker = this.attachment(ws);
+      const targetId = (data as { targetId?: unknown }).targetId;
+      const kind = (data as { kind?: unknown }).kind;
+      if (this.gameplayMode !== 'battle' || !attacker?.team || typeof targetId !== 'string') return;
+      if (kind !== 'bullet' && kind !== 'arrow' && kind !== 'bomb' && kind !== 'melee') return;
+      const now = Date.now();
+      if (now - (this.battleHits.get(attacker.playerId) ?? 0) < 150) return;
+      const targetSocket = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
+      const target = targetSocket ? this.attachment(targetSocket) : null;
+      if (!targetSocket || !target?.team || target.team === attacker.team || !target.state || !attacker.state) return;
+      const distance = Math.hypot(target.state.x - attacker.state.x, target.state.y - attacker.state.y, target.state.z - attacker.state.z);
+      if (distance > (kind === 'melee' ? 6 : 90)) return;
+      this.battleHits.set(attacker.playerId, now);
+      const damage = kind === 'bomb' ? 3 : kind === 'melee' ? 2 : 1;
+      const remaining = Math.max(0, (this.battleHealth.get(targetId) ?? 10) - damage);
+      if (remaining > 0) {
+        this.battleHealth.set(targetId, remaining);
+        this.broadcastBattleState();
+        return;
+      }
+      this.battleScores[attacker.team] += 1;
+      this.battleHealth.set(targetId, 10);
+      this.broadcast({
+        type: 'battle-elimination',
+        messageId: crypto.randomUUID(),
+        killerId: attacker.playerId,
+        victimId: targetId,
+        killerName: attacker.name,
+        victimName: target.name,
+      });
+      targetSocket.send(JSON.stringify({ type: 'battle-respawn', team: target.team, position: { x: target.team === 'red' ? -16 : 16, y: 8.51, z: 0 } }));
+      this.broadcastBattleState();
+      return;
+    }
     if (type === 'chat') {
       const attachment = this.attachment(ws);
       const value = (data as { text?: unknown }).text;
@@ -415,7 +490,15 @@ export class GameRoom extends DurableObject<Env> {
       if (replace) {
         this.worldSeed = seed;
         this.worldEdits = new Map(edits);
-        this.gameplayMode = (data as { gameplayMode?: unknown }).gameplayMode === 'survival' ? 'survival' : 'creative';
+        const mode = (data as { gameplayMode?: unknown }).gameplayMode;
+        this.gameplayMode = mode === 'survival' || mode === 'battle' ? mode : 'creative';
+        if (this.gameplayMode === 'battle') {
+          this.battleScores = { red: 0, blue: 0 };
+          for (const playerId of this.battleHealth.keys()) this.battleHealth.set(playerId, 10);
+        } else {
+          this.battleHealth.clear();
+        }
+        this.battleHits.clear();
       }
       return;
     }
@@ -430,7 +513,10 @@ export class GameRoom extends DurableObject<Env> {
     if (type === 'world-init-complete') {
       const attachment = this.attachment(ws);
       if (!attachment) return;
-      if (attachment.worldInitAccepted) await this.saveWorld();
+      if (attachment.worldInitAccepted) {
+        await this.saveWorld();
+        this.broadcastBattleState();
+      }
       attachment.worldInitAccepted = false;
       ws.serializeAttachment(attachment);
       if ((data as { force?: unknown }).force === true) {
@@ -506,6 +592,7 @@ export class GameRoom extends DurableObject<Env> {
     const attachment = this.attachment(ws);
     if (attachment) {
       this.releaseDriver(attachment.playerId, ws);
+      this.removeBattlePlayer(attachment.playerId);
       this.removePresence(attachment);
       this.broadcast({ type: 'leave', playerId: attachment.playerId }, ws);
     }
@@ -516,6 +603,7 @@ export class GameRoom extends DurableObject<Env> {
     const attachment = this.attachment(ws);
     if (attachment) {
       this.releaseDriver(attachment.playerId, ws);
+      this.removeBattlePlayer(attachment.playerId);
       this.removePresence(attachment);
       this.broadcast({ type: 'leave', playerId: attachment.playerId }, ws);
     }

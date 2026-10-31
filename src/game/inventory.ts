@@ -1,9 +1,10 @@
 import type { BlockKind } from './voxel';
 import type { SelectedKind } from './items';
+import type { GameplayMode } from './worldMode';
 import { useGameStore } from './store';
 
 export type InventoryState = {
-  gameplayMode: 'survival' | 'creative';
+  gameplayMode: GameplayMode;
   itemCounts: Record<string, number>;
 };
 
@@ -14,7 +15,7 @@ export function inventoryCount(kind: SelectedKind, state: InventoryState) {
 }
 
 export function hasInventory(kind: SelectedKind, state: InventoryState) {
-  return state.gameplayMode === 'creative' || kind === 'hand' || inventoryCount(kind, state) > 0;
+  return state.gameplayMode !== 'survival' || kind === 'hand' || inventoryCount(kind, state) > 0;
 }
 
 export function changeInventory(kind: SelectedKind, amount: number) {

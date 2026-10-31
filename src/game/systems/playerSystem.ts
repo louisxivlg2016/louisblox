@@ -9,6 +9,8 @@ import { isLadder } from '../extraBlocks';
 import { BlockKind, voxelKey } from '../voxel';
 import { AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 import { moveVoxelCharacter } from './collisionSystem';
+import { BATTLE_LIMIT } from '../battleArena';
+import { useBattleStore } from '../battle';
 
 const GRAVITY = 24;
 const JUMP_SPEED = 8.4;
@@ -33,6 +35,15 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     body.setNextKinematicTranslation(position);
     velocity.set(0, 0, 0);
     entity.set(PlayerState, { grounded: true, flying: false });
+    updateHud(world, position, health, false, dt);
+    return;
+  }
+
+  if (useGameStore.getState().gameplayMode === 'battle' && useBattleStore.getState().deadUntil > Date.now()) {
+    consumeLook();
+    consumeFlightToggle();
+    velocity.set(0, 0, 0);
+    entity.set(PlayerState, { flying: false });
     updateHud(world, position, health, false, dt);
     return;
   }
@@ -97,6 +108,10 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     if (movement.hitCeiling) velocity.y = 0;
   }
 
+  if (useGameStore.getState().gameplayMode === 'battle') {
+    next.x = Math.max(-BATTLE_LIMIT, Math.min(BATTLE_LIMIT, next.x));
+    next.z = Math.max(-BATTLE_LIMIT, Math.min(BATTLE_LIMIT, next.z));
+  }
   const invalidPosition = next.y < MIN_WORLD_Y - 12 || !Number.isFinite(next.x + next.y + next.z);
   if (invalidPosition) {
     next.x = spawn.x;

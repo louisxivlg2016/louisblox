@@ -16,6 +16,7 @@ import { TeleportPanel, TeleportRequestDialog } from './TeleportRequests';
 import { useTeleportRequestStore } from '../game/teleportRequests';
 import { useChatStore } from '../game/chat';
 import { ChatPanel } from './ChatPanel';
+import { BattleHud } from './BattleHud';
 
 export function Hud() {
   const mode = useGameStore((state) => state.mode);
@@ -78,6 +79,7 @@ export function Hud() {
 
       <TeleportPanel />
       <ChatPanel />
+      <BattleHud />
 
       {mode !== 'play' && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && (
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />

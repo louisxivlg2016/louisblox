@@ -2,6 +2,8 @@ import type { World } from 'koota';
 import { Vector3 } from 'three';
 import { getBlockIndex, explodeVoxels } from '../chunks';
 import { damageAnimal, findAnimalTarget } from '../combat';
+import { damageBattlePlayersInRadius, findBattleTarget } from '../battleCombat';
+import { requestBattleHit } from '../battle';
 import { syncProjectileMotion, syncProjectileRemoval, syncProjectileSpawn } from '../projectileSync';
 import { AnimalPosition, Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition, Projectile, ProjectileMesh, ProjectilePosition, ProjectileVelocity } from '../traits';
 import { MIN_WORLD_Y } from '../levels';
@@ -25,6 +27,7 @@ export function fireProjectile(world: World, origin: Vector3, direction: Vector3
 
 export function detonateProjectile(world: World, position: Vector3) {
   explodeVoxels(world, position.x, position.y, position.z, 2.8);
+  damageBattlePlayersInRadius(world, position, 3.5);
   world.spawn(
     Explosion({ time: 0.45, maxTime: 0.45 }),
     ExplosionPosition(position.clone()),
@@ -50,6 +53,18 @@ export function projectileSystem(world: World, dt: number) {
       next.copy(position).add(step);
       const direction = step.normalize();
       const hit = raycastVoxel(blocks, position, direction, distance);
+      const playerTarget = findBattleTarget(world, position, direction, distance + 0.7);
+      if (playerTarget && (!hit || playerTarget.distance < hit.distance)) {
+        if (projectile.kind === 'bomb') {
+          position.copy(playerTarget.position);
+          detonateProjectile(world, position);
+        } else {
+          requestBattleHit(playerTarget.playerId, projectile.kind);
+        }
+        syncProjectileRemoval(world, entity, projectile.kind === 'bomb');
+        entity.destroy();
+        return;
+      }
       const target = findAnimalTarget(world, position, direction, distance + 0.7);
       if (target && (!hit || target.distance < hit.distance)) {
         const animalPosition = target.entity.get(AnimalPosition)!;

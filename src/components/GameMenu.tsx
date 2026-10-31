@@ -41,6 +41,11 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               <span className="world-card-label"><strong>Créatif</strong><small>Tous les blocs et objets, sans limite</small></span>
               <span className="world-mode-tag creative">Tout est permis</span>
             </button>
+            <button className="world-card battle-card" onClick={() => create('battle')} disabled={!enabled || status !== 'online'}>
+              <img src={survivalUrl} alt="Arène du mode Bataille" />
+              <span className="world-card-label"><strong>Bataille</strong><small>Arène limitée · Équipes rouge et bleue</small></span>
+              <span className="world-mode-tag">2 contre 1 possible</span>
+            </button>
           </div>
           <section className="lobby-section">
             <div className="lobby-heading"><h2>Jouer ensemble</h2><p>Crée un salon ou rejoins tes amis avec le même nom de salon.</p></div>
