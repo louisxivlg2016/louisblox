@@ -13,6 +13,7 @@ type PlayerState = {
   moving: boolean;
   airborne?: boolean;
   mounted?: boolean;
+  selected?: string | number;
 };
 
 type VoxelEdit = number | {
@@ -79,6 +80,9 @@ function parseState(value: unknown): PlayerState | null {
     moving: state.moving === true,
     airborne: state.airborne === true,
     mounted: state.mounted === true,
+    selected: typeof state.selected === 'string' && state.selected.length > 0 && state.selected.length <= 96
+      ? state.selected
+      : typeof state.selected === 'number' && Number.isInteger(state.selected) && state.selected >= 0 && state.selected <= 200 ? state.selected : undefined,
   };
 }
 

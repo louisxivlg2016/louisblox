@@ -1,3 +1,6 @@
+import { isSelectedKind } from './items';
+import type { SelectedKind } from './items';
+
 export type PlayerSnapshot = {
   x: number;
   y: number;
@@ -8,6 +11,7 @@ export type PlayerSnapshot = {
   moving?: boolean;
   airborne?: boolean;
   mounted?: boolean;
+  selected?: SelectedKind;
 };
 
 type EndpointEnvironment = {
@@ -54,5 +58,6 @@ export function isPlayerSnapshot(value: unknown): value is PlayerSnapshot {
     && typeof state.flying === 'boolean'
     && (state.moving === undefined || typeof state.moving === 'boolean')
     && (state.airborne === undefined || typeof state.airborne === 'boolean')
-    && (state.mounted === undefined || typeof state.mounted === 'boolean');
+    && (state.mounted === undefined || typeof state.mounted === 'boolean')
+    && (state.selected === undefined || isSelectedKind(state.selected));
 }

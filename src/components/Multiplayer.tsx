@@ -13,7 +13,8 @@ import { createWorldSave } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
 import { Chunk, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from '../game/traits';
-import { PixelPart } from './ItemModel';
+import { getItemMeta } from '../game/items';
+import { ItemModel, PixelPart } from './ItemModel';
 import { clearTeleportRequests, receiveTeleportRequest, receiveTeleportResponse, setTeleportSocket } from '../game/teleportRequests';
 import { dismount } from '../game/vehicles';
 import { applyVehicleRemoval, applyVehicleSnapshot, isVehicleSnapshot, onVehicleSync } from '../game/vehicleSync';
@@ -127,7 +128,19 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
       {!hasWardrobeModel(outfit) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} head={headContent} headRef={headRef} />
       <group ref={leftArm} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
-      <group ref={rightArm} position={[0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
+      <group ref={rightArm} position={[0.39, 1.4, 0]}>
+        <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" />
+        {typeof state.selected === 'string' && (
+          <group
+            name="remote-held-item"
+            position={[0.13, -0.48, -0.24]}
+            scale={getItemMeta(state.selected).category === 'vehicle' ? 0.2 : 0.72}
+            userData={{ item: state.selected }}
+          >
+            <ItemModel kind={state.selected} />
+          </group>
+        )}
+      </group>
       <group ref={leftLeg} position={[-0.15, 0.78, 0]}>
         <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
         <PixelPart position={[0, -0.71, -0.04]} size={[0.25, 0.14, 0.34]} color="#302b2b" />
@@ -484,7 +497,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted) };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), selected: useGameStore.getState().selected };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 
