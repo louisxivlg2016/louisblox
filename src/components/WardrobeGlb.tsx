@@ -2,22 +2,24 @@ import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { Box3, Color, Mesh, NearestFilter, Vector3 } from 'three';
 import type { OutfitKind, WigKind } from '../game/outfits';
-import wigLouis14Url from '../../assets/models/wig-louis14.glb';
-import wigLouis15Url from '../../assets/models/wig-louis15.glb';
-import kingUrl from '../../assets/models/costume-king.glb';
-import militaryUrl from '../../assets/models/costume-military.glb';
-import knightUrl from '../../assets/models/costume-knight.glb';
-import explorerUrl from '../../assets/models/costume-explorer.glb';
-import princessUrl from '../../assets/models/costume-princess.glb';
-import louis14Url from '../../assets/models/costume-louis14.glb';
-import louis15Url from '../../assets/models/costume-louis15.glb';
+import wigLouis14Url from '../../assets/models/wig-louis14-v2.glb';
+import wigLouis15Url from '../../assets/models/wig-louis15-v2.glb';
+import kingUrl from '../../assets/models/costume-king-v2.glb';
+import militaryUrl from '../../assets/models/costume-military-v2.glb';
+import knightUrl from '../../assets/models/costume-knight-v2.glb';
+import explorerUrl from '../../assets/models/costume-explorer-v2.glb';
+import princessUrl from '../../assets/models/costume-princess-v2.glb';
+import louis14Url from '../../assets/models/costume-louis14-v2.glb';
+import louis15Url from '../../assets/models/costume-louis15-v2.glb';
+import capeKingUrl from '../../assets/models/cape-king.glb';
+import capeLouis14Url from '../../assets/models/cape-louis14.glb';
 import { PixelPart } from './ItemModel';
 
 const wigModels: Record<WigKind, string> = { louis14: wigLouis14Url, louis15: wigLouis15Url };
 const costumeModels: Partial<Record<OutfitKind, string>> = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url };
 
 export function hasWardrobeModel(kind: OutfitKind) {
-  return kind !== 'knight' && kind !== 'princess' && costumeModels[kind] !== undefined;
+  return costumeModels[kind] !== undefined;
 }
 
 function Model({ url, width, height, depth, centerY, tint = null }: { url: string; width: number; height: number; depth: number; centerY: number; tint?: string | null }) {
@@ -65,6 +67,14 @@ export function CostumeGlb({ kind, color = null }: { kind: OutfitKind; color?: s
   return (
     <Suspense fallback={null}>
       <Model url={url} width={shoulders ? 0.94 : 0.7} height={shoulders ? 0.42 : 0.82} depth={0.44} centerY={shoulders ? 1.36 : 1.08} tint={color} />
+    </Suspense>
+  );
+}
+
+export function CapeGlb({ kind, color }: { kind: 'king' | 'louis14'; color: string }) {
+  return (
+    <Suspense fallback={null}>
+      <Model url={kind === 'king' ? capeKingUrl : capeLouis14Url} width={0.74} height={1.06} depth={0.18} centerY={-0.44} tint={color} />
     </Suspense>
   );
 }

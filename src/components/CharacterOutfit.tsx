@@ -7,9 +7,9 @@ import type { OutfitKind, WigSelection } from '../game/outfits';
 import { world } from '../game/world';
 import { Player, PlayerMount, PlayerState, PlayerVelocity, Sleep } from '../game/traits';
 import { PixelPart } from './ItemModel';
-import { CostumeGlb, WigGlb } from './WardrobeGlb';
+import { CapeGlb, CostumeGlb, WigGlb } from './WardrobeGlb';
 
-function RoyalCape({ color, moving, airborne }: { color: string; moving?: boolean; airborne?: boolean }) {
+function RoyalCape({ kind, color, moving, airborne }: { kind: 'king' | 'louis14'; color: string; moving?: boolean; airborne?: boolean }) {
   const cape = useRef<Group>(null);
   const phase = useRef(0);
   useFrame((_, delta) => {
@@ -21,16 +21,16 @@ function RoyalCape({ color, moving, airborne }: { color: string; moving?: boolea
     const speed = velocity ? Math.hypot(velocity.x, velocity.z) : 0;
     const walking = moving ?? (!mounted && !sleeping && state?.grounded && !state.flying && speed > 0.1);
     const jumping = airborne ?? (!state?.grounded || state?.flying || Math.abs(velocity?.y ?? 0) > 2);
-    phase.current += delta * (jumping ? 13 : walking ? 9 : 1.4);
+    phase.current += delta * (jumping ? 15 : walking ? 9 : 1.4);
     if (!cape.current) return;
-    const strength = jumping ? 3.2 : walking ? 1 : 0.15;
-    cape.current.rotation.x = 0.08 + Math.sin(phase.current) * 0.22 * strength;
-    cape.current.rotation.z = Math.sin(phase.current * 0.65) * 0.06 * strength;
-    cape.current.position.z = 0.2 + (jumping ? 0.12 : 0);
+    const strength = jumping ? 5.2 : walking ? 1 : 0.15;
+    cape.current.rotation.x = 0.08 + Math.sin(phase.current) * 0.28 * strength;
+    cape.current.rotation.z = Math.sin(phase.current * 0.65) * 0.1 * strength;
+    cape.current.position.z = 0.2 + (jumping ? 0.24 : 0);
   });
   return (
     <group name="king-cape" ref={cape} position={[0, 1.48, 0.2]}>
-      <PixelPart position={[0, -0.44, 0.04]} size={[0.62, 0.92, 0.12]} color={color} />
+      <CapeGlb kind={kind} color={color} />
     </group>
   );
 }
@@ -102,8 +102,8 @@ function OutfitHeadwear({ outfit, wig }: { outfit: OutfitKind; wig: WigSelection
 }
 
 export function CharacterOutfit({ outfit, wig = 'auto', color = null, moving, airborne, head, headRef }: { outfit: OutfitKind; wig?: WigSelection; color?: string | null; moving?: boolean; airborne?: boolean; head?: ReactNode; headRef?: Ref<Group> }) {
-  const cape = outfit === 'king' ? <RoyalCape color="#9f3040" moving={moving} airborne={airborne} />
-    : outfit === 'louis14' ? <RoyalCape color="#2d467f" moving={moving} airborne={airborne} /> : null;
+  const cape = outfit === 'king' ? <RoyalCape kind="king" color="#9f3040" moving={moving} airborne={airborne} />
+    : outfit === 'louis14' ? <RoyalCape kind="louis14" color="#2d467f" moving={moving} airborne={airborne} /> : null;
   const common = (
     <>
       {cape}
