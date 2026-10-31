@@ -67,6 +67,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
   const rightArm = useRef<Group>(null);
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
+  const headRef = useRef<Group>(null);
   const phase = useRef(0);
   const target = useMemo(() => new Vector3(), []);
   const hue = [...playerId].reduce((value, character) => (value * 31 + character.charCodeAt(0)) % 360, 0);
@@ -82,8 +83,10 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
     target.set(state.x, state.y + (state.flying ? 1 : 0), state.z);
     group.current.position.lerp(target, amount);
     group.current.rotation.order = 'YXZ';
-    const angle = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
-    group.current.rotation.y += angle * amount;
+    if (state.moving || state.flying || state.mounted) {
+      const angle = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
+      group.current.rotation.y += angle * amount;
+    }
     const flightRotation = state.flying ? -Math.PI / 2 : 0;
     group.current.rotation.x += (flightRotation - group.current.rotation.x) * amount;
     if (state.moving) phase.current += delta * 8;
@@ -92,11 +95,16 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
     if (rightArm.current) rightArm.current.rotation.x += (-swing - rightArm.current.rotation.x) * amount;
     if (leftLeg.current) leftLeg.current.rotation.x += (-swing - leftLeg.current.rotation.x) * amount;
     if (rightLeg.current) rightLeg.current.rotation.x += (swing - rightLeg.current.rotation.x) * amount;
+    if (headRef.current) {
+      const headYaw = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
+      headRef.current.rotation.order = 'YXZ';
+      headRef.current.rotation.y += (headYaw - headRef.current.rotation.y) * amount;
+      headRef.current.rotation.x += (state.pitch - headRef.current.rotation.x) * amount;
+    }
   });
 
-  return (
-    <group ref={group} position={[state.x, state.y, state.z]}>
-      {!hasWardrobeModel(outfit) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
+  const headContent = (
+    <>
       <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color="#e7a0aa" />
       {!hasWig && <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={current.hairColor} />}
       {current.hairStyle === 'long' && !hasWig && (
@@ -110,7 +118,13 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
       <PixelPart position={[0.11, 1.74, -0.25]} size={[0.09, 0.07, 0.025]} color="#f4f4ed" />
       <PixelPart position={[-0.11, 1.74, -0.27]} size={[0.035, 0.05, 0.02]} color={current.eyeColor} />
       <PixelPart position={[0.11, 1.74, -0.27]} size={[0.035, 0.05, 0.02]} color={current.eyeColor} />
-      <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} />
+    </>
+  );
+
+  return (
+    <group ref={group} position={[state.x, state.y, state.z]}>
+      {!hasWardrobeModel(outfit) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
+      <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} head={headContent} headRef={headRef} />
       <group ref={leftArm} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
       <group ref={rightArm} position={[0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
       <group ref={leftLeg} position={[-0.15, 0.78, 0]}>
@@ -462,7 +476,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted) };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

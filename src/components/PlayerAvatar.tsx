@@ -31,6 +31,7 @@ export function PlayerAvatar() {
   const rightArm = useRef<Group>(null);
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
+  const headRef = useRef<Group>(null);
   const phase = useRef(0);
 
   useFrame((_, delta) => {
@@ -47,6 +48,13 @@ export function PlayerAvatar() {
     if (rightArm.current) rightArm.current.rotation.x += (-swing - rightArm.current.rotation.x) * amount;
     if (leftLeg.current) leftLeg.current.rotation.x += (-swing - leftLeg.current.rotation.x) * amount;
     if (rightLeg.current) rightLeg.current.rotation.x += (swing - rightLeg.current.rotation.x) * amount;
+    if (headRef.current && state) {
+      const bodyYaw = entity.get(PlayerMesh)?.value?.rotation.y ?? state.yaw;
+      const headYaw = Math.atan2(Math.sin(state.yaw - bodyYaw), Math.cos(state.yaw - bodyYaw));
+      headRef.current.rotation.order = 'YXZ';
+      headRef.current.rotation.y += (headYaw - headRef.current.rotation.y) * amount;
+      headRef.current.rotation.x += (state.pitch - headRef.current.rotation.x) * amount;
+    }
   });
 
   if (!entity) return null;
@@ -56,15 +64,8 @@ export function PlayerAvatar() {
   const limbs = armor ?? '#e7a0aa';
   const legs = armor ?? appearance.clothingColor ?? (outfit === 'default' ? (girl ? '#4b405e' : '#354d6d') : OUTFITS[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
-  return (
-    <group
-      ref={(group) => {
-        const holder = entity.get(PlayerMesh);
-        if (holder) holder.value = group;
-      }}
-      visible={(cameraMode !== 'first' || sleeping) && riding !== 'plane' && riding !== 'train'}
-    >
-      {(!hasWardrobeModel(outfit) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
+  const headContent = (
+    <>
       <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color="#e7a0aa" />
       {!hasWig && <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={appearance.hairColor} />}
       {appearance.hairStyle === 'long' && !hasWig && (
@@ -88,7 +89,18 @@ export function PlayerAvatar() {
         </>
       )}
       <PixelPart position={[0, 1.62, -0.27]} size={[0.1, 0.08, 0.08]} color="#d98e9b" />
-      <CharacterOutfit outfit={outfit} wig={wig} color={appearance.clothingColor} />
+    </>
+  );
+  return (
+    <group
+      ref={(group) => {
+        const holder = entity.get(PlayerMesh);
+        if (holder) holder.value = group;
+      }}
+      visible={(cameraMode !== 'first' || sleeping) && riding !== 'plane' && riding !== 'train'}
+    >
+      {(!hasWardrobeModel(outfit) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
+      <CharacterOutfit outfit={outfit} wig={wig} color={appearance.clothingColor} head={headContent} headRef={headRef} />
       <group ref={leftArm} position={[-0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
       </group>

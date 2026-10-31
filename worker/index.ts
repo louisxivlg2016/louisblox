@@ -12,6 +12,7 @@ type PlayerState = {
   flying: boolean;
   moving: boolean;
   airborne?: boolean;
+  mounted?: boolean;
 };
 
 type VoxelEdit = number | {
@@ -76,6 +77,7 @@ function parseState(value: unknown): PlayerState | null {
     flying: state.flying === true,
     moving: state.moving === true,
     airborne: state.airborne === true,
+    mounted: state.mounted === true,
   };
 }
 

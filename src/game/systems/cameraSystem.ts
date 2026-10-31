@@ -2,7 +2,7 @@ import type { World } from 'koota';
 import { Euler, Vector3 } from 'three';
 import type { Camera } from 'three';
 import { useGameStore } from '../store';
-import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, Sleep } from '../traits';
+import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
 
@@ -17,9 +17,12 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const state = entity.get(PlayerState);
   if (!position || !state) return;
   const avatar = entity.get(PlayerMesh)?.value;
+  const velocity = entity.get(PlayerVelocity);
+  const mounted = entity.get(PlayerMount)?.vehicle;
+  const speed = velocity ? Math.hypot(velocity.x, velocity.z) : 0;
   if (avatar) {
     avatar.rotation.order = 'YXZ';
-    avatar.rotation.y = state.yaw;
+    if (state.flying || mounted || speed > 0.1) avatar.rotation.y = state.yaw;
   }
   const sleep = world.queryFirst(Sleep)?.get(Sleep);
   const previous = sleepBlends.get(world) ?? 0;
