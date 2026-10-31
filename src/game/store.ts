@@ -6,6 +6,7 @@ import { DEFAULT_ITEM_COUNTS } from './items';
 import type { Biome } from './levels';
 import { createMeatInventory } from './meats';
 import { BlockKind, HOTBAR_BLOCKS } from './voxel';
+import type { GameplayMode } from './worldMode';
 
 export type GameMode = 'menu' | 'play' | 'pause';
 export type WeatherKind = 'clear' | 'rain' | 'snow';
@@ -14,15 +15,16 @@ type EnvironmentSnapshot = { dayProgress: number; biome: Biome; weather: Weather
 
 type GameStore = {
   mode: GameMode;
+  gameplayMode: GameplayMode;
   selected: SelectedKind;
   hotbarSlots: SelectedKind[];
   backpackItem: SelectedKind | null;
   itemCounts: Record<string, number>;
   equippedArmor: ArmorKind | null;
-  riding: 'car' | 'horse' | 'plane' | 'train' | null;
+  riding: 'car' | 'horse' | 'plane' | 'train' | 'boat' | null;
   ridingRole: 'driver' | 'passenger' | null;
-  seatChoice: { vehicle: import('koota').Entity; kind: 'car' | 'plane' | 'train' } | null;
-  setSeatChoice: (choice: { vehicle: import('koota').Entity; kind: 'car' | 'plane' | 'train' } | null) => void;
+  seatChoice: { vehicle: import('koota').Entity; kind: 'car' | 'plane' | 'train' | 'boat' } | null;
+  setSeatChoice: (choice: { vehicle: import('koota').Entity; kind: 'car' | 'plane' | 'train' | 'boat' } | null) => void;
   notice: string;
   teleportOpen: boolean;
   container: { type: 'chest' | 'furnace'; x: number; y: number; z: number } | null;
@@ -38,9 +40,11 @@ type GameStore = {
   sleepProgress: number | null;
   setSleepProgress: (progress: number | null) => void;
   lives: number;
-  cameraMode: 'first' | 'third';
+  cameraMode: 'first' | 'third' | 'front';
   backpackOpen: boolean;
+  shopOpen: boolean;
   bookOpen: boolean;
+  setShopOpen: (open: boolean) => void;
   setBookOpen: (open: boolean) => void;
   coordinates: Coordinates;
   environment: EnvironmentSnapshot;
@@ -50,7 +54,7 @@ type GameStore = {
   setBackpackItem: (kind: SelectedKind | null) => void;
   setItemCount: (kind: ItemKind | GalleryItemId, count: number) => void;
   equipArmor: (kind: ArmorKind | null) => void;
-  setRiding: (riding: 'car' | 'horse' | 'plane' | 'train' | null, role?: 'driver' | 'passenger') => void;
+  setRiding: (riding: 'car' | 'horse' | 'plane' | 'train' | 'boat' | null, role?: 'driver' | 'passenger') => void;
   setNotice: (notice: string) => void;
   setTeleportOpen: (open: boolean) => void;
   setBlockCount: (count: number) => void;
@@ -65,11 +69,12 @@ type GameStore = {
   collectMeat: (kind: AnimalKind) => void;
   discardApple: () => void;
   discardMeat: (kind: AnimalKind) => void;
-  regenerate: () => void;
+  regenerate: (gameplayMode?: GameplayMode) => void;
 };
 
 export const useGameStore = create<GameStore>((set) => ({
   mode: 'menu',
+  gameplayMode: 'creative',
   selected: BlockKind.Grass,
   hotbarSlots: [...HOTBAR_BLOCKS.slice(0, 10)],
   backpackItem: null,
@@ -93,13 +98,21 @@ export const useGameStore = create<GameStore>((set) => ({
   lives: 10,
   cameraMode: 'first',
   backpackOpen: false,
+  shopOpen: false,
   bookOpen: false,
   coordinates: { x: 0, y: 8, z: 0 },
   environment: { dayProgress: 0.38, biome: 'prairie', weather: 'clear' },
   setMode: (mode) => set({ mode }),
+  setShopOpen: (shopOpen) => set({ shopOpen }),
   setBookOpen: (bookOpen) => set({ bookOpen, backpackItem: null }),
-  selectBlock: (selected) => set({ selected }),
+  selectBlock: (selected) => set((state) => {
+    const key = typeof selected === 'number' ? `block_${selected}` : selected;
+    if (state.gameplayMode === 'survival' && selected !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: 'Récolte et fabrique cet objet avant de l’utiliser.' };
+    return { selected };
+  }),
   setHotbarSlot: (index, kind) => set((state) => {
+    const key = typeof kind === 'number' ? `block_${kind}` : kind;
+    if (state.gameplayMode === 'survival' && kind !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: 'Cet objet n’a pas encore été fabriqué.' };
     const hotbarSlots = [...state.hotbarSlots];
     hotbarSlots[index] = kind;
     return { hotbarSlots, selected: kind, backpackItem: null };
@@ -119,18 +132,19 @@ export const useGameStore = create<GameStore>((set) => ({
   setMiningProgress: (miningProgress) => set({ miningProgress }),
   setFlying: (flying) => set({ flying }),
   setLives: (lives) => set({ lives }),
-  toggleCamera: () => set((state) => ({ cameraMode: state.cameraMode === 'first' ? 'third' : 'first' })),
+  toggleCamera: () => set((state) => ({ cameraMode: state.cameraMode === 'first' ? 'third' : state.cameraMode === 'third' ? 'front' : 'first' })),
   setBackpack: (backpackOpen) => set({ backpackOpen, backpackItem: null }),
   collectApple: () => set((state) => ({ apples: state.apples + 1 })),
   collectMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: state.meat[kind] + 1 } })),
   discardApple: () => set((state) => ({ apples: Math.max(0, state.apples - 1) })),
   discardMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: Math.max(0, state.meat[kind] - 1) } })),
-  regenerate: () => set((state) => ({
+  regenerate: (gameplayMode = 'creative') => set((state) => ({
     generation: state.generation + 1,
-    selected: BlockKind.Grass,
-    hotbarSlots: [...HOTBAR_BLOCKS.slice(0, 10)],
+    gameplayMode,
+    selected: gameplayMode === 'survival' ? 'hand' : BlockKind.Grass,
+    hotbarSlots: gameplayMode === 'survival' ? Array(10).fill('hand') : [...HOTBAR_BLOCKS.slice(0, 10)],
     backpackItem: null,
-    itemCounts: { ...DEFAULT_ITEM_COUNTS },
+    itemCounts: gameplayMode === 'survival' ? { hand: 1 } : { ...DEFAULT_ITEM_COUNTS },
     equippedArmor: null,
     riding: null,
     ridingRole: null,
@@ -146,6 +160,7 @@ export const useGameStore = create<GameStore>((set) => ({
     sleepProgress: null,
     lives: 10,
     backpackOpen: false,
+    shopOpen: false,
     mode: 'menu',
   })),
 }));

@@ -33,7 +33,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     body.setNextKinematicTranslation(position);
     velocity.set(0, 0, 0);
     entity.set(PlayerState, { grounded: true, flying: false });
-    updateHud(position, health, false);
+    updateHud(world, position, health, false, dt);
     return;
   }
 
@@ -55,7 +55,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     body.setNextKinematicTranslation(position);
     velocity.set(0, 0, 0);
     entity.set(PlayerState, { grounded: true, flying: false, yaw, pitch });
-    updateHud(position, health, false);
+    updateHud(world, position, health, false, dt);
     return;
   }
 
@@ -97,23 +97,41 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     if (movement.hitCeiling) velocity.y = 0;
   }
 
-  if (next.y < MIN_WORLD_Y - 12 || !Number.isFinite(next.x + next.y + next.z) || (health && health.value <= 0)) {
+  const invalidPosition = next.y < MIN_WORLD_Y - 12 || !Number.isFinite(next.x + next.y + next.z);
+  if (invalidPosition) {
     next.x = spawn.x;
     next.y = spawn.y;
     next.z = spawn.z;
+  }
+  if (health && health.value <= 0) {
+    if (!invalidPosition) {
+      next.x = position.x;
+      next.y = position.y;
+      next.z = position.z;
+    }
     velocity.set(0, 0, 0);
-    if (health && health.value <= 0) entity.set(PlayerHealth, { value: health.max, absorbed: 0 });
+    entity.set(PlayerHealth, { value: health.max, absorbed: 0 });
+  } else if (invalidPosition) {
+    velocity.set(0, 0, 0);
   }
   body.setNextKinematicTranslation(next);
   position.set(next.x, next.y, next.z);
   entity.set(PlayerState, { grounded, flying: nextFlying, yaw, pitch });
-  updateHud(next, health, nextFlying);
+  updateHud(world, next, health, nextFlying, dt);
 }
 
-function updateHud(position: { x: number; y: number; z: number }, health: { value: number } | undefined, flying: boolean) {
-  const coordinates = { x: Math.round(position.x * 100) / 100, y: Math.round(position.y * 100) / 100, z: Math.round(position.z * 100) / 100 };
+const hudClocks = new WeakMap<World, number>();
+
+function updateHud(world: World, position: { x: number; y: number; z: number }, health: { value: number } | undefined, flying: boolean, dt: number) {
   const hud = useGameStore.getState();
   if (health && hud.lives !== health.value) hud.setLives(health.value);
   if (hud.flying !== flying) hud.setFlying(flying);
+  const remaining = (hudClocks.get(world) ?? 0) - dt;
+  if (remaining > 0) {
+    hudClocks.set(world, remaining);
+    return;
+  }
+  hudClocks.set(world, 0.1);
+  const coordinates = { x: Math.round(position.x * 100) / 100, y: Math.round(position.y * 100) / 100, z: Math.round(position.z * 100) / 100 };
   if (hud.coordinates.x !== coordinates.x || hud.coordinates.y !== coordinates.y || hud.coordinates.z !== coordinates.z) hud.setCoordinates(coordinates);
 }

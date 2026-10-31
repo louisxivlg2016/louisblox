@@ -11,10 +11,12 @@ import { HOTBAR_BLOCKS } from '../game/voxel';
 import { world } from '../game/world';
 import { ItemIcon } from './ItemIcon';
 import { CROP_KINDS, isCrop } from '../game/extraBlocks';
+import { inventoryCount } from '../game/inventory';
+import { CraftingPanel } from './CraftingPanel';
 
 export function Backpack() {
   const open = useGameStore((state) => state.backpackOpen);
-  const selected = useGameStore((state) => state.selected);
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
   const hotbarSlots = useGameStore((state) => state.hotbarSlots);
   const backpackItem = useGameStore((state) => state.backpackItem);
   const itemCounts = useGameStore((state) => state.itemCounts);
@@ -28,6 +30,8 @@ export function Backpack() {
   const discardMeat = useGameStore((state) => state.discardMeat);
   const [galleryCategory, setGalleryCategory] = useState('Tools & Weapons');
   const [gallerySearch, setGallerySearch] = useState('');
+  const survival = gameplayMode === 'survival';
+  const inventory = { itemCounts, gameplayMode };
   if (!open) return null;
   const close = () => {
     setBackpack(false);
@@ -42,11 +46,12 @@ export function Backpack() {
   const matchesSearch = (kind: SelectedKind) => selectionInfo(kind).name.toLowerCase().includes(query)
     || (kind === 'gallery_tools_weapons_book' && 'livre'.includes(query));
   const visibleGalleryItems = GALLERY_ITEMS.filter((item) =>
-    (query !== '' || galleryCategory === 'all' || item.category === galleryCategory) && matchesSearch(item.id),
+    (query !== '' || galleryCategory === 'all' || item.category === galleryCategory) && matchesSearch(item.id)
+    && (!survival || inventoryCount(item.id, inventory) > 0),
   );
   const itemButton = (kind: SelectedKind) => {
     const meta = selectionInfo(kind);
-    const count = typeof kind === 'string' && getItemMeta(kind).category === 'food'
+    const count = survival ? inventoryCount(kind, inventory) : typeof kind === 'string' && getItemMeta(kind).category === 'food'
       ? kind === 'apple' ? apples : itemCounts[kind] ?? 1
       : null;
     const equipped = typeof kind === 'string' && getItemMeta(kind).category === 'armor' && getItemMeta(kind).armor === equippedArmor;
@@ -55,6 +60,7 @@ export function Backpack() {
         key={kind}
         className={`backpack-block ${backpackItem === kind ? 'selected' : ''}`}
         draggable
+        disabled={count === 0}
         onDragStart={(event) => {
           event.dataTransfer.setData('text/plain', String(kind));
           event.dataTransfer.effectAllowed = 'move';
@@ -72,19 +78,20 @@ export function Backpack() {
     <div className="backpack-backdrop">
       <section className="backpack-panel" aria-label="Sac à dos">
         <div className="backpack-header">
-          <h2>Sac à dos</h2>
+          <h2>{survival ? 'Survie · récolte et fabrication' : 'Sac à dos'}</h2>
           <button className="secondary-button" onClick={close}>Fermer et reprendre</button>
         </div>
         <div className="gallery-controls backpack-global-search">
           <input type="search" aria-label="Rechercher dans le sac à dos" placeholder="Rechercher dans tout le sac…" value={gallerySearch} onChange={(event) => setGallerySearch(event.target.value)} />
         </div>
         <div className="backpack-content">
-          <p className="backpack-label">Blocs, portes et trappes</p>
-          <div className="backpack-blocks">{HOTBAR_BLOCKS.filter((kind) => !isCrop(kind) && matchesSearch(kind)).map(itemButton)}</div>
+          <p className="backpack-label">{survival ? 'Ressources récoltées' : 'Blocs, portes et trappes'}</p>
+          <div className="backpack-blocks">{HOTBAR_BLOCKS.filter((kind) => !isCrop(kind) && matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div>
           <p className="backpack-label">Graines et plants · sur herbe ou terre · E pour récolter quand c’est mûr</p>
-          <div className="backpack-blocks">{CROP_KINDS.filter(matchesSearch).map(itemButton)}</div>
-          <p className="backpack-label">Pioches, pelles, épées, armures et équipement · clic gauche pour miner ou utiliser</p>
-          <div className="backpack-blocks">{ITEM_ORDER.filter(matchesSearch).map(itemButton)}</div>
+          <div className="backpack-blocks">{CROP_KINDS.filter((kind) => matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div>
+          <p className="backpack-label">{survival ? 'Objets fabriqués' : 'Pioches, pelles, épées, armures et équipement · clic gauche pour miner ou utiliser'}</p>
+          <div className="backpack-blocks">{ITEM_ORDER.filter((kind) => matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div>
+          {survival && <CraftingPanel />}
           <p className="backpack-label">Galerie Bloxd.io · {GALLERY_ITEMS.length} objets</p>
           <div className="gallery-controls">
             <select aria-label="Catégorie de la galerie" value={galleryCategory} onChange={(event) => setGalleryCategory(event.target.value)}>
@@ -96,7 +103,7 @@ export function Backpack() {
           <div className="backpack-blocks">{visibleGalleryItems.map((item) => itemButton(item.id))}</div>
           <p className="backpack-label">Manger pour récupérer des vies</p>
           <div className="backpack-resources">
-            {ITEM_ORDER.filter((kind) => getItemMeta(kind).category === 'food').map((kind) => (
+            {ITEM_ORDER.filter((kind) => getItemMeta(kind).category === 'food' && (!survival || inventoryCount(kind, inventory) > 0)).map((kind) => (
               <div className="backpack-resource" key={kind}>
                 <span>{getItemMeta(kind).name} · +{getItemMeta(kind).healing} vies</span>
                 <button onClick={() => eatItem(world, kind)}>Manger</button>

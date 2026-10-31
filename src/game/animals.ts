@@ -3,10 +3,11 @@ import { Vector3 } from 'three';
 import { biomeAt, heightAt, SEA_LEVEL } from './levels';
 import type { Biome, WaterTile } from './levels';
 import { Animal, AnimalHealth, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition } from './traits';
+import { useGameStore } from './store';
 
 export type AnimalKind =
   | 'camel' | 'cow' | 'horse' | 'pig' | 'sheep' | 'chicken' | 'duck'
-  | 'bear' | 'deer' | 'wolf' | 'snowWolf' | 'snowBear';
+  | 'bear' | 'deer' | 'wolf' | 'snowWolf' | 'snowBear' | 'zombie';
 
 const species: Record<Biome, AnimalKind[]> = {
   prairie: ['cow', 'horse', 'pig', 'sheep', 'chicken'],
@@ -29,6 +30,7 @@ const health: Record<AnimalKind, number> = {
   wolf: 5,
   snowWolf: 5,
   snowBear: 6,
+  zombie: 5,
 };
 
 function hash(x: number, z: number, seed: number) {
@@ -58,7 +60,7 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
 export function spawnChunkAnimals(world: World, cx: number, cz: number, water: WaterTile[], seed: number) {
   const entities: Entity[] = [];
 
-  if (water.length > 0 && hash(cx, cz, seed + 800) > 0.3) {
+  if (water.length > 0 && hash(cx, cz, seed + 800) > 0.8) {
     const tile = water[Math.floor(hash(cx, cz, seed + 801) * water.length)];
     entities.push(spawnAnimal(world, 'duck', tile.x, SEA_LEVEL + 0.35, tile.z, seed));
   }
@@ -69,21 +71,28 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
     entities.push(spawnAnimal(world, 'horse', 5, heightAt(5, 3, seed) + 0.5, 3, seed));
   }
 
-  if (hash(cx, cz, seed + 802) < 0.58) return entities;
+  if (useGameStore.getState().gameplayMode === 'survival' && hash(cx, cz, seed + 820) > 0.3) {
+    const count = hash(cx, cz, seed + 821) > 0.7 ? 3 : 2;
+    for (let index = 0; index < count; index += 1) {
+      const x = cx * 16 + 2 + Math.floor(hash(cx + index, cz, seed + 822) * 12);
+      const z = cz * 16 + 2 + Math.floor(hash(cx, cz + index, seed + 823) * 12);
+      const height = heightAt(x, z, seed);
+      if (height <= SEA_LEVEL + 1 || height > 24) continue;
+      entities.push(spawnAnimal(world, 'zombie', x, height + 0.5, z, seed + index));
+    }
+  }
+
+  if (hash(cx, cz, seed + 802) < 0.9) return entities;
   const centerX = cx * 16 + 8;
   const centerZ = cz * 16 + 8;
   const biome = biomeAt(centerX, centerZ, seed);
   const candidates = species[biome];
-  const count = hash(cx, cz, seed + 803) > 0.86 ? 2 : 1;
-
-  for (let index = 0; index < count; index += 1) {
-    const x = cx * 16 + 2 + Math.floor(hash(cx + index, cz, seed + 804) * 12);
-    const z = cz * 16 + 2 + Math.floor(hash(cx, cz + index, seed + 805) * 12);
-    const height = heightAt(x, z, seed);
-    if (height <= SEA_LEVEL + 1 || height > 24) continue;
-    const kind = candidates[Math.floor(hash(x, z, seed + 806) * candidates.length)];
-    entities.push(spawnAnimal(world, kind, x, height + 0.5, z, seed));
-  }
+  const x = cx * 16 + 2 + Math.floor(hash(cx, cz, seed + 804) * 12);
+  const z = cz * 16 + 2 + Math.floor(hash(cx, cz + 1, seed + 805) * 12);
+  const height = heightAt(x, z, seed);
+  if (height <= SEA_LEVEL + 1 || height > 24) return entities;
+  const kind = candidates[Math.floor(hash(x, z, seed + 806) * candidates.length)];
+  entities.push(spawnAnimal(world, kind, x, height + 0.5, z, seed));
 
   return entities;
 }

@@ -1,5 +1,5 @@
 import type { World } from 'koota';
-import { getWorldSeed } from './chunks';
+import { getWorldSeed, streamChunks } from './chunks';
 import { biomeAt, heightAt } from './levels';
 import type { Biome } from './levels';
 import { Player, PlayerBody, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
@@ -31,6 +31,7 @@ export function teleportToBiome(world: World, biome: Biome) {
   }
   if (!best) return null;
 
+  streamChunks(world, best.x, best.z);
   position.set(best.x, best.y, best.z);
   entity.get(PlayerBody)?.value?.setTranslation(best, true);
   entity.get(PlayerVelocity)?.set(0, 0, 0);

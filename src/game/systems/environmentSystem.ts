@@ -37,17 +37,19 @@ export function environmentSystem(world: World, delta: number, camera: Camera) {
   const rain = entity.get(RainMaterial)?.value;
   const snow = entity.get(SnowMaterial)?.value;
   if (rain) {
+    rain.visible = environment.weather === 'rain';
     rain.uniforms.uTime.value = environment.elapsed;
     rain.uniforms.uOpacity.value = environment.weather === 'rain' ? 1 : 0;
     rain.uniforms.uCamera.value.copy(camera.position);
   }
   if (snow) {
+    snow.visible = environment.weather === 'snow';
     snow.uniforms.uTime.value = environment.elapsed;
     snow.uniforms.uOpacity.value = environment.weather === 'snow' ? 1 : 0;
     snow.uniforms.uCamera.value.copy(camera.position);
   }
 
-  if (environment.uiTimer >= 0.2 || changed) {
+  if (environment.uiTimer >= 0.5 || changed) {
     environment.uiTimer = 0;
     useGameStore.getState().setEnvironment({
       dayProgress: environment.dayProgress,

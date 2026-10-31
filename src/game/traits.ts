@@ -45,7 +45,7 @@ export const Animal = trait({ kind: '' as import('./animals').AnimalKind });
 export const AnimalHealth = trait({ value: 3 });
 export const AnimalHit = trait({ time: 0, panic: 0, flashed: false, attackIn: 0 });
 export const AnimalPosition = trait(() => new Vector3());
-export const AnimalMotion = trait({ yaw: 0, displayYaw: 0, turnIn: 0, phase: 0, speed: 0.5, idle: 0, velocityY: 0, grounded: true, avoid: 0, climbTarget: null as number | null });
+export const AnimalMotion = trait({ yaw: 0, displayYaw: 0, turnIn: 0, phase: 0, speed: 0.5, idle: 0, velocityY: 0, grounded: true, avoid: 0, climbTarget: null as number | null, hunting: false, sightIn: 0 });
 export const AnimalMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 
 export const Fish = trait({ kind: '' as import('./fish').FishKind });
@@ -58,11 +58,12 @@ export const MeatDropPosition = trait(() => new Vector3());
 export const MeatDropMotion = trait({ age: 0, baseY: 0 });
 export const MeatDropMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 
-export const PlayerMount = trait(() => ({ vehicle: null as import('koota').Entity | null, kind: null as 'car' | 'horse' | 'plane' | 'train' | null, role: 'driver' as 'driver' | 'passenger', seat: 0 }));
-export const Vehicle = trait({ color: '#d63935', kind: 'car' as 'car' | 'plane' | 'train' });
+export const PlayerMount = trait(() => ({ vehicle: null as import('koota').Entity | null, kind: null as 'car' | 'horse' | 'plane' | 'train' | 'boat' | null, role: 'driver' as 'driver' | 'passenger', seat: 0 }));
+export const Vehicle = trait({ id: '', color: '#d63935', kind: 'car' as 'car' | 'plane' | 'train' | 'boat' });
 export const VehiclePosition = trait(() => new Vector3());
 export const VehicleMotion = trait({ speed: 0, yaw: 0, mounted: false, routeTime: 0, homeX: 0, homeY: 0, homeZ: 0, homeYaw: 0 });
 export const VehicleMesh = trait(() => ({ value: null as import('three').Object3D | null }));
+export const VehicleHealth = trait({ value: 3, max: 3 });
 export const HorseRider = trait({ saddled: false, mounted: false, speed: 0 });
 export const Projectile = trait({ kind: 'arrow' as 'arrow' | 'bullet' | 'bomb', life: 8, damage: 1 });
 export const ProjectilePosition = trait(() => new Vector3());

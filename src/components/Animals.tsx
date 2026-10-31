@@ -1,9 +1,8 @@
 import { Suspense } from 'react';
-import { useQuery, useTrait, useWorld } from 'koota/react';
-import { useFrame } from '@react-three/fiber';
+import { useQuery, useTrait } from 'koota/react';
 import type { Entity } from 'koota';
 import { Mesh } from 'three';
-import { Animal, AnimalMesh, AnimalPosition, HorseRider, Player, PlayerPosition } from '../game/traits';
+import { Animal, AnimalMesh, AnimalPosition, HorseRider } from '../game/traits';
 import { AnimalGlb } from './AnimalGlb';
 import { SaddleModel } from './ItemModel';
 
@@ -36,15 +35,6 @@ function AnimalView({ entity }: { entity: Entity }) {
 }
 
 export function Animals() {
-  const world = useWorld();
   const animals = useQuery(Animal);
-  useFrame(() => {
-    const playerPosition = world.queryFirst(Player)?.get(PlayerPosition);
-    for (const entity of animals) {
-      const mesh = entity.get(AnimalMesh)?.value;
-      const position = entity.get(AnimalPosition);
-      if (mesh && position && playerPosition) mesh.visible = position.distanceToSquared(playerPosition) < 55 * 55;
-    }
-  });
   return animals.map((entity) => <AnimalView key={entity} entity={entity} />);
 }

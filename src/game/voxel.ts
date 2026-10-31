@@ -37,6 +37,7 @@ export type Voxel = {
   open?: boolean;
   growth?: number;
   items?: import('./items').SelectedKind[];
+  text?: string;
   facing?: 'north' | 'south' | 'east' | 'west';
 };
 
@@ -65,6 +66,7 @@ export const HOTBAR_BLOCKS = [
   BlockKind.Tnt,
   BlockKind.Candle,
   ...EXTRA_BLOCK_ORDER,
+  BlockKind.Water,
 ] as const;
 
 const baseBlockInfo = {

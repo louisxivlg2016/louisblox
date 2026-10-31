@@ -238,14 +238,16 @@ function TransportItemModel({ kind, color }: { kind: 'plane' | 'train'; color: s
   );
 }
 
-function GalleryBoatModel({ color, hovercraft }: { color: string; hovercraft: boolean }) {
+export function BoatModel({ color, hovercraft = false }: { color: string; hovercraft?: boolean }) {
   return (
     <group>
       <PixelPart position={[0, 0.18, 0]} size={[1.3, 0.22, 2.4]} color={color} />
       <PixelPart position={[-0.6, 0.38, 0]} size={[0.13, 0.32, 2.1]} color={color} />
       <PixelPart position={[0.6, 0.38, 0]} size={[0.13, 0.32, 2.1]} color={color} />
       <PixelPart position={[0, 0.33, -1.1]} size={[1.05, 0.28, 0.42]} color={color} />
-      <PixelPart position={[0, 0.36, 0.15]} size={[0.7, 0.14, 0.55]} color="#6a4932" />
+      <PixelPart position={[0, 0.36, 1.05]} size={[1.05, 0.28, 0.3]} color={color} />
+      <PixelPart position={[0, 0.43, -0.65]} size={[0.9, 0.14, 0.42]} color="#6a4932" />
+      <PixelPart position={[0, 0.43, 0.65]} size={[0.9, 0.14, 0.42]} color="#6a4932" />
       {hovercraft && <PixelPart position={[-0.63, 0.1, 0.55]} size={[0.28, 0.16, 0.5]} color="#39434d" />}
       {hovercraft && <PixelPart position={[0.63, 0.1, 0.55]} size={[0.28, 0.16, 0.5]} color="#39434d" />}
     </group>
@@ -439,6 +441,7 @@ function GalleryGenericModel({ shape, color }: { shape: string; color: string })
 function GalleryModel({ kind }: { kind: GalleryItemId }) {
   const meta = getItemMeta(kind);
   const shape = meta.shape ?? 'resource';
+  if (shape === 'axe' || shape === 'hoe' || shape === 'shears') return <GalleryGenericModel shape={shape} color={meta.color} />;
   if (shape === 'pickaxe' || shape === 'spade') return <ToolModel kind={kind} />;
   if (shape === 'sword') return <SwordModel color={meta.color} />;
   if (shape === 'bow' || shape === 'crossbow') return <BowModel crossbow={shape === 'crossbow'} />;
@@ -447,12 +450,13 @@ function GalleryModel({ kind }: { kind: GalleryItemId }) {
   if (shape === 'fish') return <GalleryFishModel color={meta.color} />;
   if (shape === 'food' || shape === 'bowl' || shape === 'meat' || shape === 'milk' || shape === 'cheese') return <FoodModel kind={kind} />;
   if (shape === 'car') return <CarModel color={meta.color} />;
-  if (shape === 'boat' || shape === 'hovercraft') return <GalleryBoatModel color={meta.color} hovercraft={shape === 'hovercraft'} />;
+  if (shape === 'boat' || shape === 'hovercraft') return <BoatModel color={meta.color} hovercraft={shape === 'hovercraft'} />;
   return <GalleryGenericModel shape={shape} color={meta.color} />;
 }
 
 export function ItemModel({ kind, held = false }: ModelProps) {
   const meta = getItemMeta(kind);
+  if (kind === 'hand') return null;
   let model;
   if (isGalleryItem(kind)) model = <GalleryModel kind={kind} />;
   else if (meta.category === 'sword') model = <SwordModel color={meta.color} />;
@@ -462,7 +466,9 @@ export function ItemModel({ kind, held = false }: ModelProps) {
   else if (meta.category === 'food') model = <FoodModel kind={kind} />;
   else if (meta.category === 'armor') model = <ArmorModel color={meta.color} />;
   else if (meta.category === 'saddle') model = <SaddleModel />;
+  else if (meta.shape === 'boat' || meta.shape === 'hovercraft') model = <BoatModel color={meta.color} hovercraft={meta.shape === 'hovercraft'} />;
   else if (kind === 'plane' || kind === 'train') model = <TransportItemModel kind={kind} color={meta.color} />;
+  else if (meta.shape) model = <GalleryGenericModel shape={meta.shape} color={meta.color} />;
   else model = <CarModel color={meta.color} />;
   return <group scale={held ? 0.58 : 1}>{model}</group>;
 }

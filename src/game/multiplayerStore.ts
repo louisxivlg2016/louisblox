@@ -14,6 +14,7 @@ type MultiplayerStore = MultiplayerSettings & {
   configure: (settings: MultiplayerSettings) => MultiplayerSettings;
   setStatus: (status: MultiplayerStatus, error?: string) => void;
   setPlayers: (players: LobbyPlayer[]) => void;
+  setPlayerName: (name: string) => void;
 };
 
 const query = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search);
@@ -49,16 +50,36 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
   },
   setStatus: (status, error = '') => set({ status, error }),
   setPlayers: (players) => set({ players }),
+  setPlayerName: (name) => {
+    const playerName = name.trim().slice(0, 24) || 'Joueur';
+    try {
+      localStorage.setItem('louisblox-player-name', playerName);
+    } catch {
+    }
+    set({ playerName, error: '' });
+  },
 }));
 
 export const useRemotePlayerStore = create<{
   players: Record<string, import('./multiplayer').PlayerSnapshot>;
   characters: Record<string, import('./characterStore').CharacterKind>;
+  outfits: Record<string, import('./outfits').OutfitKind>;
+  wigs: Record<string, import('./outfits').WigSelection>;
+  appearances: Record<string, import('./appearance').CharacterAppearance>;
   setPlayers: (players: Record<string, import('./multiplayer').PlayerSnapshot>) => void;
   setCharacters: (characters: Record<string, import('./characterStore').CharacterKind>) => void;
+  setOutfits: (outfits: Record<string, import('./outfits').OutfitKind>) => void;
+  setWigs: (wigs: Record<string, import('./outfits').WigSelection>) => void;
+  setAppearances: (appearances: Record<string, import('./appearance').CharacterAppearance>) => void;
 }>((set) => ({
   players: {},
   characters: {},
+  outfits: {},
+  wigs: {},
+  appearances: {},
   setPlayers: (players) => set({ players }),
   setCharacters: (characters) => set({ characters }),
+  setOutfits: (outfits) => set({ outfits }),
+  setWigs: (wigs) => set({ wigs }),
+  setAppearances: (appearances) => set({ appearances }),
 }));

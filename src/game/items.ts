@@ -6,6 +6,7 @@ export type { GalleryItemId } from './galleryCatalog';
 export type ItemCategory = 'sword' | 'pickaxe' | 'shovel' | 'bow' | 'gun' | 'armor' | 'food' | 'vehicle' | 'saddle' | 'resource';
 export type ArmorKind = 'gold' | 'diamond' | 'silver';
 export type ItemKind =
+  | 'hand' | 'stick'
   | 'sword_wood' | 'sword_stone' | 'sword_iron' | 'sword_gold' | 'sword_diamond' | 'sword_silver'
   | 'pickaxe_wood' | 'pickaxe_stone' | 'pickaxe_iron' | 'pickaxe_gold' | 'pickaxe_diamond' | 'pickaxe_silver'
   | 'shovel_wood' | 'shovel_stone' | 'shovel_iron' | 'shovel_gold' | 'shovel_diamond' | 'shovel_silver'
@@ -13,7 +14,7 @@ export type ItemKind =
   | 'apple' | 'bread' | 'cooked_meat' | 'berries'
   | 'corn' | 'wheat' | 'tomato' | 'carrot' | 'watermelon'
   | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb'
-  | 'car_red' | 'car_blue' | 'plane' | 'train' | 'saddle';
+  | 'car_red' | 'car_blue' | 'plane' | 'train' | 'boat' | 'saddle';
 export type SelectedKind = BlockKind | ItemKind | GalleryItemId;
 export type ItemMeta = {
   name: string;
@@ -32,6 +33,8 @@ const item = (name: string, color: string, category: ItemCategory, extra: Partia
 });
 
 export const ITEM_META: Record<ItemKind, ItemMeta> = {
+  hand: item('Main', '#e7a0aa', 'resource', { shape: 'hand' }),
+  stick: item('Bâton', '#8b633c', 'resource', { shape: 'stick' }),
   sword_wood: item('Épée en bois', '#b98a53', 'sword', { cooldown: 0.35 }),
   sword_stone: item('Épée en pierre', '#92999e', 'sword', { cooldown: 0.35 }),
   sword_iron: item('Épée en fer', '#e0e8eb', 'sword', { cooldown: 0.32 }),
@@ -71,6 +74,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   car_blue: item('Voiture bleue avec cabine', '#347cd0', 'vehicle'),
   plane: item('Avion de passagers', '#d9e4eb', 'vehicle', { shape: 'plane' }),
   train: item('Train de passagers', '#a73b38', 'vehicle', { shape: 'train' }),
+  boat: item('Bateau à deux places', '#9b6b3f', 'vehicle', { shape: 'boat' }),
   saddle: item('Selle pour cheval', '#80502e', 'saddle'),
 };
 
@@ -80,13 +84,13 @@ export const DEFAULT_ITEM_COUNTS: Record<ItemKind, number> = Object.fromEntries(
 ) as Record<ItemKind, number>;
 
 function galleryCategory(shape: string): ItemCategory {
-  if (['sword', 'spear', 'dagger', 'club', 'mace', 'whip', 'boomerang'].includes(shape)) return 'sword';
+  if (['sword', 'spear', 'dagger', 'club', 'mace', 'whip', 'boomerang', 'stick'].includes(shape)) return 'sword';
   if (shape === 'bow' || shape === 'crossbow') return 'bow';
   if (shape === 'gun' || shape === 'rpg') return 'gun';
   if (['food', 'bowl', 'meat', 'milk', 'cheese', 'fish'].includes(shape)) return 'food';
   if (shape === 'armor') return 'armor';
   if (shape === 'car' || shape === 'boat' || shape === 'hovercraft') return 'vehicle';
-  if (shape === 'pickaxe') return 'pickaxe';
+  if (shape === 'pickaxe' || shape === 'axe') return 'pickaxe';
   if (shape === 'spade') return 'shovel';
   return 'resource';
 }
@@ -148,7 +152,10 @@ export function miningSpeed(selection: SelectedKind, block: BlockKind) {
     || (block >= BlockKind.BeigeBrick && block <= BlockKind.ConcreteBlack);
   const softBlock = block === BlockKind.Grass || block === BlockKind.Dirt || block === BlockKind.Sand
     || block === BlockKind.Snow || block === BlockKind.AutumnGrass || block === BlockKind.ForestGrass;
-  return (meta.category === 'pickaxe' && hardBlock) || (meta.category === 'shovel' && softBlock)
+  const woodBlock = block === BlockKind.Wood || block === BlockKind.OakPlanks || block === BlockKind.PinePlanks || block === BlockKind.AutumnPlanks;
+  const foliage = block === BlockKind.Leaves || block === BlockKind.PineLeaves || block === BlockKind.AutumnLeaves;
+  return (meta.category === 'pickaxe' && meta.shape !== 'axe' && hardBlock) || (meta.category === 'shovel' && softBlock)
+    || (meta.shape === 'axe' && woodBlock) || (meta.shape === 'shears' && foliage)
     ? meta.efficiency ?? 1
     : 1;
 }

@@ -15,15 +15,14 @@ const materials = {
   wildInner: new MeshBasicMaterial({ color: '#ffb12b' }),
 };
 
-function FlameInstances({ kind }: { kind: BlockKind }) {
-  const fires = useQuery(Fire, FirePosition);
+function FlameInstances({ kind, fires }: { kind: BlockKind; fires: readonly Entity[] }) {
   const outer = useRef<InstancedMesh>(null);
   const inner = useRef<InstancedMesh>(null);
   const outerMaterial = kind === BlockKind.Wildfire ? materials.wildOuter : materials.safeOuter;
   const innerMaterial = kind === BlockKind.Wildfire ? materials.wildInner : materials.safeInner;
 
   useFrame(() => {
-    if (!outer.current || !inner.current) return;
+    if (!outer.current || !inner.current || fires.length === 0) return;
     let outerIndex = 0;
     let innerIndex = 0;
     for (const entity of fires) {
@@ -71,8 +70,8 @@ export function Fires() {
   const destructive = nearest?.get(Fire)?.kind === BlockKind.Wildfire;
   return (
     <>
-      <FlameInstances kind={BlockKind.Campfire} />
-      <FlameInstances kind={BlockKind.Wildfire} />
+      <FlameInstances kind={BlockKind.Campfire} fires={fires} />
+      <FlameInstances kind={BlockKind.Wildfire} fires={fires} />
       {position && <pointLight position={[position.x, position.y, position.z]} color={destructive ? '#ff632e' : '#ff9b45'} intensity={destructive ? 2.2 : 1.4} distance={12} decay={2} />}
     </>
   );

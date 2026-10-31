@@ -25,12 +25,22 @@ function Person({ position, color, worker = false }: { position: [number, number
 }
 
 export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
-  kind: 'car' | 'plane' | 'train';
+  kind: 'car' | 'plane' | 'train' | 'boat';
   driverPresent: boolean;
   passengerSeat: number | null;
 }) {
   if (kind === 'car') {
     return <SteeringWheel position={[-0.35, 0.8, -0.48]} />;
+  }
+
+  if (kind === 'boat') {
+    return (
+      <group>
+        <Seat position={[0, 0.45, -0.72]} />
+        <Seat position={[0, 0.45, 0.72]} />
+        <PixelPart position={[-0.9, 0.45, 0.4]} size={[0.1, 0.1, 2.4]} color="#9a7042" rotation={[0, -0.35, 0]} />
+      </group>
+    );
   }
 
   if (kind === 'plane') {

@@ -1,5 +1,6 @@
 import { startMusic } from './audio';
 import { useGameStore } from './store';
+import { useSignStore } from './signs';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -22,6 +23,7 @@ let touchStartY = 0;
 let miningLatched = false;
 let edgeResetTimer: ReturnType<typeof setTimeout> | null = null;
 let touchMineTimer: ReturnType<typeof setTimeout> | null = null;
+let touchDidMine = false;
 const touchPointers = new Set<number>();
 const touchPoints = new Map<number, { x: number; y: number }>();
 let touchGestureMoved = false;
@@ -44,6 +46,7 @@ function stopTouchMining() {
 function beginTouchMining() {
   touchMineTimer = null;
   if (touchGestureMoved || twoFingerGesture || touchPointers.size !== 1 || useGameStore.getState().mode !== 'play') return;
+  touchDidMine = true;
   actions.tap += 1;
   touchMouseButtons.add(0);
 }
@@ -68,6 +71,7 @@ export function clearInput() {
   touchPoints.clear();
   touchGestureMoved = false;
   twoFingerGesture = false;
+  touchDidMine = false;
   actions.place = 0;
   actions.harvest = 0;
   actions.tap = 0;
@@ -81,6 +85,11 @@ export function initInput() {
 
   window.addEventListener('keydown', (event) => {
     keys.add(event.code);
+    const editable = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable);
+    if (editable && event.code !== 'Escape') {
+      keys.delete(event.code);
+      return;
+    }
     if (event.code === 'Tab') {
       event.preventDefault();
       const state = useGameStore.getState();
@@ -92,6 +101,20 @@ export function initInput() {
         void requestPlay();
       } else if (state.mode === 'play') {
         state.setBackpack(true);
+        state.setMode('pause');
+        if (document.pointerLockElement) document.exitPointerLock();
+      }
+      return;
+    }
+    if (event.code === 'KeyB' && !event.repeat) {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return;
+      event.preventDefault();
+      const state = useGameStore.getState();
+      if (state.shopOpen) {
+        state.setShopOpen(false);
+        void requestPlay();
+      } else {
+        state.setShopOpen(true);
         state.setMode('pause');
         if (document.pointerLockElement) document.exitPointerLock();
       }
@@ -116,6 +139,11 @@ export function initInput() {
       return;
     }
     if (event.code === 'Escape') {
+      if (useSignStore.getState().editing) {
+        useSignStore.getState().closeSign();
+        void requestPlay();
+        return;
+      }
       if (useGameStore.getState().bookOpen) {
         useGameStore.getState().setBookOpen(false);
         void requestPlay();
@@ -195,6 +223,7 @@ export function initInput() {
       touchStartY = event.clientY;
       touchGestureMoved = false;
       twoFingerGesture = false;
+      touchDidMine = false;
       stopTouchMining();
       touchMineTimer = setTimeout(beginTouchMining, TOUCH_MINE_DELAY);
     } else if (touchPointers.size === 2) {
@@ -233,10 +262,11 @@ export function initInput() {
     touchPointers.delete(event.pointerId);
     touchPoints.delete(event.pointerId);
     if (touchPointers.size === 0) {
-      if (!touchGestureMoved && twoFingerGesture) queuePlacement();
+      if (event.type === 'pointerup' && !touchGestureMoved && (twoFingerGesture || !touchDidMine)) queuePlacement();
       touchLookPointer = null;
       touchGestureMoved = false;
       twoFingerGesture = false;
+      touchDidMine = false;
     }
   };
   window.addEventListener('pointerup', endTouchLook);

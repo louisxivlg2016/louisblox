@@ -1,14 +1,15 @@
 import type { Entity, World } from 'koota';
 import { Mesh, Vector3 } from 'three';
-import { chunkCoordinate, getBlockIndex, getWorldSeed } from '../chunks';
+import { getBlockIndex, getWorldSeed, isChunkLoaded } from '../chunks';
 import { isCrop } from '../extraBlocks';
 import { biomeAt, MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { BlockKind, voxelKey } from '../voxel';
 import type { AnimalKind } from '../animals';
-import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition, Chunk, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
+import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
 import { damagePlayer } from '../combat';
+import { canSeePlayer } from '../hostility';
 
 type Motion = {
   yaw: number;
@@ -21,6 +22,8 @@ type Motion = {
   grounded: boolean;
   avoid: number;
   climbTarget: number | null;
+  hunting: boolean;
+  sightIn: number;
 };
 
 function tint(mesh: import('three').Object3D, color: string) {
@@ -35,14 +38,7 @@ function blockAt(world: World, x: number, y: number, z: number) {
   return getBlockIndex(world).get(voxelKey(Math.round(x), Math.round(y), Math.round(z)));
 }
 
-function isLoaded(world: World, x: number, z: number) {
-  const cx = chunkCoordinate(x);
-  const cz = chunkCoordinate(z);
-  return world.query(Chunk).some((entity) => {
-    const chunk = entity.get(Chunk)!;
-    return chunk.x === cx && chunk.z === cz;
-  });
-}
+const isLoaded = isChunkLoaded;
 
 function bodyClear(world: World, x: number, z: number, feetY: number) {
   for (const height of [0.35, 1.15]) {
@@ -80,6 +76,7 @@ function avoidWall(world: World, kind: AnimalKind, position: Vector3, motion: Mo
 }
 
 export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0) {
+  if (!isLoaded(world, position.x, position.z)) return true;
   motion.avoid = Math.max(0, (motion.avoid ?? 0) - dt);
   const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : motion.speed;
   const normalSpeed = motion.idle > 0 || motion.avoid > 0 ? 0 : baseSpeed;
@@ -146,6 +143,7 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
 }
 
 const clocks = new WeakMap<World, number>();
+const distantClocks = new WeakMap<Vector3, number>();
 
 export function animalSystem(world: World, dt: number) {
   const elapsed = (clocks.get(world) ?? 0) + dt;
@@ -157,12 +155,35 @@ export function animalSystem(world: World, dt: number) {
   const health = playerEntity?.get(PlayerHealth);
 
   world.query(Animal, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, hit, position, motion, mesh], entity) => {
+    const distanceSquared = player ? position.distanceToSquared(player) : Infinity;
+    if (mesh.value) mesh.value.visible = distanceSquared < (animal.kind === 'zombie' ? 32 * 32 : 40 * 40);
     if (entity.get(HorseRider)?.mounted) return;
-    hit.time = Math.max(0, hit.time - dt);
-    hit.panic = Math.max(0, hit.panic - dt);
-    hit.attackIn = Math.max(0, hit.attackIn - dt);
-    const aggressive = animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf';
-    if (aggressive && playerEntity && player && health && hit.attackIn <= 0 && position.distanceToSquared(player) < 2.2 * 2.2) {
+    let stepDt = dt;
+    if (distanceSquared > 25 * 25) {
+      const remaining = (distantClocks.get(position) ?? 0) - dt;
+      if (remaining > 0) {
+        distantClocks.set(position, remaining);
+        return;
+      }
+      stepDt -= remaining;
+      distantClocks.set(position, 0.1);
+    }
+    hit.time = Math.max(0, hit.time - stepDt);
+    hit.panic = Math.max(0, hit.panic - stepDt);
+    hit.attackIn = Math.max(0, hit.attackIn - stepDt);
+    const aggressive = animal.kind === 'zombie' || animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf';
+    motion.sightIn -= stepDt;
+    if (aggressive && player && motion.sightIn <= 0) {
+      motion.hunting = canSeePlayer(world, position, player);
+      motion.sightIn = 0.35;
+    }
+    if (!aggressive || !player) motion.hunting = false;
+    if (motion.hunting && player) {
+      motion.idle = 0;
+      motion.yaw = Math.atan2(player.x - position.x, player.z - position.z);
+      motion.turnIn = Math.max(motion.turnIn, 0.5);
+    }
+    if (aggressive && playerEntity && player && health && hit.attackIn <= 0 && distanceSquared < 2.2 * 2.2) {
       hit.attackIn = 1.2;
       damagePlayer(world, 1);
     }
@@ -176,15 +197,15 @@ export function animalSystem(world: World, dt: number) {
       }
     }
 
-    motion.idle = Math.max(0, motion.idle - dt);
-    motion.turnIn -= motion.idle > 0 ? 0 : dt;
-    motion.phase += dt * 3;
-    if (hit.panic > 0) {
+    motion.idle = Math.max(0, motion.idle - stepDt);
+    motion.turnIn -= motion.idle > 0 ? 0 : stepDt;
+    motion.phase += stepDt * 3;
+    if (hit.panic > 0 && !motion.hunting) {
       motion.idle = 0;
       motion.turnIn = Math.min(motion.turnIn, 1.2);
-      motion.yaw += Math.sin(entity * 3.17 + motion.phase * 2) * dt * 0.65;
+      motion.yaw += Math.sin(entity * 3.17 + motion.phase * 2) * stepDt * 0.65;
     }
-    if (motion.turnIn <= 0) {
+    if (motion.turnIn <= 0 && !motion.hunting) {
       motion.yaw += Math.sin(entity * 17.31 + motion.phase) * 0.75;
       motion.turnIn = hit.panic > 0 ? 1.5 : 8 + (Math.sin(entity * 7.13 + motion.phase) + 1) * 3.5;
       if (hit.panic === 0 && Math.sin(entity * 5.73 + motion.phase) > 0.72) {
@@ -192,10 +213,11 @@ export function animalSystem(world: World, dt: number) {
       }
     }
 
-    if (moveAnimal(world, animal.kind, position, motion, dt, entity, hit.panic) && mesh.value) {
+    if (moveAnimal(world, animal.kind, position, motion, stepDt, entity, motion.hunting ? 1 : hit.panic) && mesh.value) {
       mesh.value.position.copy(position);
-      motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * 6);
+      motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, stepDt * 6);
       mesh.value.rotation.y = motion.displayYaw;
+      if (animal.kind === 'zombie') mesh.value.rotation.z = Math.sin(motion.phase) * 0.035;
     }
   });
 }

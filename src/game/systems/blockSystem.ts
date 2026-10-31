@@ -4,14 +4,16 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isBed, isChest, isCrop, isDoor, isFurnace, isLadder, isRail, isSapling, isTrapdoor } from '../extraBlocks';
+import { isBed, isChest, isCrop, isDoor, isFurnace, isLadder, isRail, isSapling, isSign, isTrapdoor } from '../extraBlocks';
+import { useSignStore } from '../signs';
 import { startSleep } from './sleepSystem';
 import { openChest, openFurnace } from '../containers';
 import { cropDefinition } from '../crops';
 import { consumeActions, isMouseDown, stopMining } from '../input';
 import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
-import { isSword, miningSpeed } from '../items';
+import { getItemMeta, isSword, miningSpeed } from '../items';
+import { changeInventory, hasInventory } from '../inventory';
 import { BlockTarget, Chunk, ChunkData, Player, PlayerPosition, TargetMesh } from '../traits';
 import { BLOCK_HARDNESS, BlockKind, raycastVoxel, voxelKey } from '../voxel';
 
@@ -74,8 +76,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   const kind = hit?.block.kind;
-  const canMine = typeof store.selected === 'number' || isSword(store.selected)
-    || (typeof store.selected === 'string' && (store.selected.startsWith('pickaxe_') || store.selected.startsWith('shovel_')));
+  const canMine = store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
+    || (typeof store.selected === 'string' && (['pickaxe', 'shovel'].includes(getItemMeta(store.selected).category) || getItemMeta(store.selected).shape === 'shears'));
   const mining = canMine && isMouseDown(0) && hit !== null && useGameStore.getState().mode === 'play';
   if (mining && hit && kind !== undefined) {
     const key = voxelKey(hit.x, hit.y, hit.z);
@@ -91,6 +93,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     if (progress >= 1) {
       stopMining();
       removeVoxel(world, hit);
+      if (store.gameplayMode === 'survival') changeInventory(hit.block.kind, 1);
       target.visible = false;
       target.miningKey = '';
       target.miningProgress = 0;
@@ -107,6 +110,12 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
 
   const actions = pendingActions ?? consumeActions();
   if (useGameStore.getState().mode !== 'play' || !hit) return;
+
+  if ((actions.place > 0 || actions.harvest > 0) && isSign(hit.block.kind)) {
+    useSignStore.getState().openSign(hit, hit.block.text ?? '');
+    if (document.pointerLockElement) document.exitPointerLock();
+    return;
+  }
 
   if ((actions.place > 0 || actions.harvest > 0) && isBed(hit.block.kind)) {
     startSleep(world, hit.x, hit.y, hit.z);
@@ -162,21 +171,29 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     if (inBounds && !blocks.has(voxelKey(x, y, z)) && !intersectsPlayer(x, y, z, player)) {
       const kind = useGameStore.getState().selected;
       if (typeof kind !== 'number') return;
+      if (!hasInventory(kind, store)) {
+        store.setNotice('Récolte ou fabrique ce bloc avant de le poser.');
+        return;
+      }
       if (isCrop(kind)) {
         const soil = hit.block.kind === BlockKind.Grass || hit.block.kind === BlockKind.Dirt || hit.block.kind === BlockKind.ForestGrass || hit.block.kind === BlockKind.AutumnGrass;
         if (hit.normal.y !== 1 || !soil) {
           store.setNotice('Les graines se plantent sur le dessus d’un bloc d’herbe ou de terre.');
           return;
         }
-        addVoxel(world, x, y, z, kind, 0);
-        attachGrowth(world, kind, x, y, z);
+        const planted = addVoxel(world, x, y, z, kind, 0);
+        if (planted) {
+          attachGrowth(world, kind, x, y, z);
+          if (store.gameplayMode === 'survival') changeInventory(kind, -1);
+        }
         store.setNotice(`${cropDefinition(kind).name} planté. La récolte sera prête dans 24 secondes.`);
         return;
       }
       const facing = isLadder(kind)
         ? hit.normal.x === 1 ? 'east' : hit.normal.x === -1 ? 'west' : hit.normal.z === 1 ? 'south' : 'north'
         : Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
-      addVoxel(world, x, y, z, kind, undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) ? facing : undefined);
+      const placed = addVoxel(world, x, y, z, kind, undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) ? facing : undefined);
+      if (placed && store.gameplayMode === 'survival') changeInventory(kind, -1);
       if (kind === BlockKind.Tnt) {
         const bomb = spawnBomb(world, x, y, z);
         const cx = chunkCoordinate(x);

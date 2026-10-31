@@ -8,6 +8,10 @@
       {
         "name": "GAME_ROOM",
         "class_name": "GameRoom"
+      },
+      {
+        "name": "PLAYER_DIRECTORY",
+        "class_name": "PlayerDirectory"
       }
     ]
   },
@@ -15,6 +19,10 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["GameRoom"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["PlayerDirectory"]
     }
   ]
 }

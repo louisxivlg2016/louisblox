@@ -5,7 +5,7 @@ import raceCarUrl from '../../assets/models/raceCar.glb';
 import blueCarUrl from '../../assets/models/blueCar.glb';
 import airplaneUrl from '../../assets/models/airplane.glb';
 import trainUrl from '../../assets/models/train.glb';
-import { CarModel } from './ItemModel';
+import { BoatModel, CarModel } from './ItemModel';
 import { PLANE_SCALE } from '../game/vehicles';
 
 const models = {
@@ -21,7 +21,7 @@ const dimensions = {
   train: [2.8, 3.2, 10.5],
 } as const;
 
-function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train'; color: string; interior: boolean }) {
+function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'boat'; color: string; interior: boolean }) {
   const modelKind = kind === 'car' && color.toLowerCase() === '#347cd0' ? 'blueCar' : kind === 'car' ? 'raceCar' : kind === 'plane' ? 'airplane' : 'train';
   const { scene } = useGLTF(models[modelKind]);
   const model = useMemo(() => {
@@ -55,7 +55,9 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train'; col
   return <primitive object={model} />;
 }
 
-export function VehicleGlb({ kind, color, interior = false }: { kind: 'car' | 'plane' | 'train'; color: string; interior?: boolean }) {
+export function VehicleGlb({ kind, color, interior = false }: { kind: 'car' | 'plane' | 'train' | 'boat'; color: string; interior?: boolean }) {
+  if (kind === 'boat') return <group scale={[1.2, 1.2, 1.45]}><BoatModel color={color} /></group>;
+  if (interior && kind === 'plane') return null;
   return (
     <Suspense fallback={kind === 'car' ? <CarModel color={color} /> : null}>
       <Model kind={kind} color={color} interior={interior} />

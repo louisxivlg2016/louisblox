@@ -1,12 +1,12 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
-import { CHUNK_SIZE, MAX_BUILD_Y, VIEW_DISTANCE, biomeAt, generateChunk, heightAt } from './levels';
+import { CHUNK_SIZE, MAX_BUILD_Y, MIN_WORLD_Y, VIEW_DISTANCE, biomeAt, generateChunk, heightAt } from './levels';
 import type { LevelData } from './levels';
 import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnChunkFish } from './fish';
 import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
-import { isChest, isCrop, isDoor, isFireBlock, isLadder, isRail, isSapling, isTrapdoor } from './extraBlocks';
+import { isChest, isCrop, isDoor, isFireBlock, isLadder, isRail, isSapling, isSign, isTrapdoor } from './extraBlocks';
 import { clearFires, extinguishFireAt, extinguishFiresInChunk, spawnFire } from './fireLifecycle';
 import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
 import type { ArmorKind, SelectedKind } from './items';
@@ -14,19 +14,20 @@ import {
   Animal, AnimalPosition, Fish, MeatDrop, Bomb, Explosion, Sapling, BlockTarget, Chunk, ChunkData,
   Environment, Sleep, HorseRider, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMesh, PlayerMount,
   PlayerPosition, PlayerState, PlayerVelocity, Projectile, RainMaterial, SnowMaterial, TargetMesh,
-  Vehicle, VehicleMesh, VehicleMotion, VehiclePosition,
+  Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition,
 } from './traits';
 import { createMeatInventory } from './meats';
 import { useGameStore } from './store';
 import { BlockKind, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
 
-export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing'] } | null;
-export type SavedCar = { x: number; y: number; z: number; yaw: number; color: string; kind?: 'car' | 'plane' | 'train' };
+export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string } | null;
+export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: 'car' | 'plane' | 'train' | 'boat' };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
-  version: 1 | 2 | 3;
+  version: 1 | 2 | 3 | 4;
   generation: number;
+  gameplayMode?: 'survival' | 'creative';
   seed: number;
   player: { x: number; y: number; z: number; yaw: number; pitch: number; flying: boolean };
   selected: SelectedKind;
@@ -47,6 +48,8 @@ type WorldChunks = {
   seed: number;
   chunks: Map<string, Entity>;
   blocks: Map<string, Voxel>;
+  water: Map<string, Voxel>;
+  tops: Map<string, number>;
   edits: Map<string, Map<string, ChunkEdit>>;
   saddledHorses: SavedHorse[];
   streamCenter: string | null;
@@ -69,6 +72,41 @@ export function onVoxelEdit(world: World, listener: (position: string, edit: Chu
   return () => listeners.delete(listener);
 }
 export const chunkCoordinate = (value: number) => Math.floor((value + 0.5) / CHUNK_SIZE);
+
+const columnKey = (x: number, z: number) => `${x},${z}`;
+
+function supportsGround(block: Voxel) {
+  return block.kind !== BlockKind.Water && !isCrop(block.kind) && !isRail(block.kind)
+    && !(block.open && block.kind >= 48 && block.kind <= 79);
+}
+
+function refreshTop(state: WorldChunks, x: number, z: number, fromY = MAX_BUILD_Y) {
+  const column = columnKey(x, z);
+  for (let y = fromY; y >= MIN_WORLD_Y; y -= 1) {
+    const block = state.blocks.get(voxelKey(x, y, z));
+    if (!block || !supportsGround(block)) continue;
+    state.tops.set(column, y);
+    return;
+  }
+  state.tops.delete(column);
+}
+
+function indexBlock(state: WorldChunks, block: Voxel) {
+  const position = voxelKey(block.x, block.y, block.z);
+  if (block.kind === BlockKind.Water) state.water.set(position, block);
+  else state.water.delete(position);
+  if (supportsGround(block)) {
+    const column = columnKey(block.x, block.z);
+    if ((state.tops.get(column) ?? MIN_WORLD_Y - 1) < block.y) state.tops.set(column, block.y);
+  } else if (state.tops.get(columnKey(block.x, block.z)) === block.y) {
+    refreshTop(state, block.x, block.z, block.y - 1);
+  }
+}
+
+function unindexBlock(state: WorldChunks, block: Voxel, refresh = true) {
+  state.water.delete(voxelKey(block.x, block.y, block.z));
+  if (refresh && state.tops.get(columnKey(block.x, block.z)) === block.y) refreshTop(state, block.x, block.z, block.y - 1);
+}
 
 function stateFor(world: World) {
   const state = worlds.get(world);
@@ -96,7 +134,10 @@ export function snapshotVehicles(world: World): SavedCar[] {
   return world.query(Vehicle, VehiclePosition, VehicleMotion).map((entity) => {
     const position = entity.get(VehiclePosition)!;
     const motion = entity.get(VehicleMotion)!;
-    return { x: position.x, y: position.y, z: position.z, yaw: motion.yaw, color: entity.get(Vehicle)!.color, kind: entity.get(Vehicle)!.kind };
+    const vehicle = entity.get(Vehicle)!;
+    const id = vehicle.id || crypto.randomUUID();
+    if (!vehicle.id) entity.set(Vehicle, { id });
+    return { id, x: position.x, y: position.y, z: position.z, yaw: motion.yaw, color: vehicle.color, kind: vehicle.kind };
   });
 }
 
@@ -143,7 +184,20 @@ function blockEdit(block: Voxel): ChunkEdit {
   if (block.growth !== undefined) edit.growth = block.growth;
   if (block.items !== undefined) edit.items = block.items;
   if (block.facing !== undefined) edit.facing = block.facing;
+  if (block.text !== undefined) edit.text = block.text;
   return Object.keys(edit).length === 1 ? block.kind : edit;
+}
+
+export function setVoxelText(world: World, position: { x: number; y: number; z: number }, text: string) {
+  const state = stateFor(world);
+  const block = state.blocks.get(voxelKey(position.x, position.y, position.z));
+  if (!block) return false;
+  block.text = text.replace(/\r/g, '').slice(0, 120);
+  const cx = chunkCoordinate(position.x);
+  const cz = chunkCoordinate(position.z);
+  editsFor(state, cx, cz).set(voxelKey(position.x, position.y, position.z), blockEdit(block));
+  recordVoxelEdit(state, cx, cz, position.x, position.y, position.z);
+  return true;
 }
 
 function recordVoxelEdit(state: WorldChunks, cx: number, cz: number, x: number, y: number, z: number, removed = false) {
@@ -192,7 +246,7 @@ function loadChunk(world: World, cx: number, cz: number) {
       else {
         const [x, y, z] = position.split(',').map(Number);
         const data = typeof kind === 'number' ? { kind, open: false } : kind;
-        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing });
+        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing, text: typeof data.text === 'string' ? data.text.replace(/\r/g, '').slice(0, 120) : undefined });
       }
     }
   }
@@ -205,6 +259,7 @@ function loadChunk(world: World, cx: number, cz: number) {
 
   for (const block of data.blocks) {
     state.blocks.set(voxelKey(block.x, block.y, block.z), block);
+    indexBlock(state, block);
   }
   data.animals = spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
   data.fish = spawnChunkFish(world, cx, cz, generated.water, state.seed);
@@ -239,6 +294,8 @@ function unloadChunk(world: World, entity: Entity) {
 
   for (const block of data.blocks) {
     state.blocks.delete(voxelKey(block.x, block.y, block.z));
+    unindexBlock(state, block, false);
+    state.tops.delete(columnKey(block.x, block.z));
   }
   const playerEntity = world.queryFirst(Player);
   const mounted = playerEntity?.get(PlayerMount)?.vehicle;
@@ -297,6 +354,19 @@ export function getBlockIndex(world: World) {
   return stateFor(world).blocks;
 }
 
+export function getWaterIndex(world: World) {
+  return stateFor(world).water;
+}
+
+export function getColumnTop(world: World, x: number, z: number) {
+  return stateFor(world).tops.get(columnKey(x, z));
+}
+
+export function isChunkLoaded(world: World, x: number, z: number) {
+  const state = stateFor(world);
+  return state.chunks.has(chunkKey(chunkCoordinate(x), chunkCoordinate(z)));
+}
+
 export function getWorldSeed(world: World) {
   return stateFor(world).seed;
 }
@@ -312,6 +382,7 @@ export function removeVoxel(world: World, hit: VoxelHit) {
   const position = voxelKey(hit.x, hit.y, hit.z);
   data.blocks = data.blocks.filter((block) => voxelKey(block.x, block.y, block.z) !== position);
   state.blocks.delete(position);
+  unindexBlock(state, hit.block);
   if (isFireBlock(hit.block.kind)) extinguishFireAt(world, hit.x, hit.y, hit.z);
   editsFor(state, cx, cz).set(position, null);
   recordVoxelEdit(state, cx, cz, hit.x, hit.y, hit.z, true);
@@ -332,6 +403,7 @@ export function explodeVoxels(world: World, x: number, y: number, z: number, rad
         if (distance <= radius && block.kind !== BlockKind.Bedrock) {
           const position = voxelKey(block.x, block.y, block.z);
           state.blocks.delete(position);
+          unindexBlock(state, block);
           if (isFireBlock(block.kind)) extinguishFireAt(world, block.x, block.y, block.z);
           editsFor(state, chunk.x, chunk.z).set(position, null);
           recordVoxelEdit(state, chunk.x, chunk.z, block.x, block.y, block.z, true);
@@ -405,7 +477,8 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
   if (isChest(kind)) block.items = items ?? block.items ?? [];
   else delete block.items;
   if (facing !== undefined) block.facing = facing;
-  if (!isLadder(kind) && !isDoor(kind) && !isTrapdoor(kind) && !isRail(kind)) delete block.facing;
+  if (!isLadder(kind) && !isDoor(kind) && !isTrapdoor(kind) && !isRail(kind) && !isSign(kind)) delete block.facing;
+  indexBlock(state, block);
   const cx = chunkCoordinate(hit.x);
   const cz = chunkCoordinate(hit.z);
   const chunkEntity = state.chunks.get(chunkKey(cx, cz));
@@ -440,12 +513,15 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
   const block: Voxel = { x, y, z, kind };
   if (isCrop(kind)) block.growth = growth ?? 3;
   if (isChest(kind)) block.items = [];
-  if (isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind)) block.facing = facing ?? 'north';
+  if (isSign(kind)) block.text = '';
+  if (isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind)) block.facing = facing ?? 'north';
   data.blocks.push(block);
   state.blocks.set(position, block);
+  indexBlock(state, block);
   const edit = isCrop(kind) ? { kind, growth: block.growth ?? 0 }
     : isChest(kind) ? { kind, items: [] }
-      : isLadder(kind) || isRail(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
+      : isSign(kind) ? { kind, text: '', facing: block.facing ?? 'north' }
+        : isLadder(kind) || isRail(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
   editsFor(state, cx, cz).set(position, edit);
   recordVoxelEdit(state, cx, cz, x, y, z);
   if (isFireBlock(kind)) spawnFire(world, block, fireGeneration);
@@ -468,7 +544,10 @@ export function applyVoxelEdit(world: World, position: string, edit: ChunkEdit) 
   }
   const data = typeof edit === 'number' ? { kind: edit } : edit;
   const block = state.blocks.get(position) ?? addVoxel(world, x, y, z, data.kind, data.growth, data.facing);
-  if (block) replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, data.kind, data.open, data.growth, data.items, data.facing);
+  if (block) {
+    replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, data.kind, data.open, data.growth, data.items, data.facing);
+    if (typeof data.text === 'string') setVoxelText(world, { x, y, z }, data.text);
+  }
 }
 
 export function applyVoxelEdits(world: World, edits: Array<[string, ChunkEdit]>) {
@@ -493,7 +572,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   for (const entity of [...world.query(Vehicle)]) entity.destroy();
   for (const entity of [...world.query(Sleep)]) entity.destroy();
 
-  const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3) && saved.generation === generation ? saved : null;
+  const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3 || saved.version === 4) && saved.generation === generation ? saved : null;
   const seed = restore?.seed ?? 73421 + generation * 977;
   const edits: WorldChunks['edits'] = restore ? new Map(restore.edits.map(([chunk, values]) => [chunk, new Map(values)])) : new Map();
   worlds.set(world, {
@@ -501,6 +580,8 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     seed,
     chunks: new Map(),
     blocks: new Map(),
+    water: new Map(),
+    tops: new Map(),
     edits,
     saddledHorses: restore?.saddledHorses ?? [],
     streamCenter: null,
@@ -508,7 +589,8 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     batchDepth: 0,
     pendingRevisions: new Set(),
   });
-  const restorePosition = restore?.version === 2 || restore?.version === 3;
+  const restorePosition = restore !== null && restore.version >= 2;
+  const gameplayMode = restore?.gameplayMode ?? (restore ? 'creative' : useGameStore.getState().gameplayMode);
   const spawn = restore && restorePosition
     ? { x: restore.player.x, y: restore.player.y, z: restore.player.z }
     : { x: 0, y: heightAt(0, 0, seed) + 1.01, z: 0 };
@@ -534,10 +616,11 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     ? restore.hotbar
     : useGameStore.getState().hotbarSlots;
   useGameStore.setState({
+    gameplayMode,
     meat: { ...createMeatInventory(), ...restore?.meat },
-    selected: restore && isSelectedKind(restore.selected) ? restore.selected : BlockKind.Grass,
+    selected: restore && isSelectedKind(restore.selected) ? restore.selected : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass,
     hotbarSlots: hotbar,
-    itemCounts: { ...DEFAULT_ITEM_COUNTS, ...restore?.itemCounts },
+    itemCounts: gameplayMode === 'survival' ? { hand: 1, ...restore?.itemCounts } : { ...DEFAULT_ITEM_COUNTS, ...restore?.itemCounts },
     equippedArmor: restore?.equippedArmor ?? null,
     riding: null,
     ridingRole: null,
@@ -550,10 +633,11 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   });
   for (const car of restore?.vehicles ?? []) {
     world.spawn(
-      Vehicle({ color: car.color, kind: car.kind ?? 'car' }),
+      Vehicle({ id: car.id ?? crypto.randomUUID(), color: car.color, kind: car.kind ?? 'car' }),
       VehiclePosition(new Vector3(car.x, car.y, car.z)),
       VehicleMotion({ yaw: car.yaw, homeX: car.x, homeY: car.y, homeZ: car.z, homeYaw: car.yaw }),
       VehicleMesh(),
+      VehicleHealth(),
     );
   }
   streamChunks(world, spawn.x, spawn.z);

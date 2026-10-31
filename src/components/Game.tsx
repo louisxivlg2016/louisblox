@@ -21,6 +21,7 @@ import { Weather } from './Weather';
 import { Fires } from './Fires';
 import { Fish } from './Fish';
 import { RemoteAvatars } from './Multiplayer';
+import { RenderQuality } from './RenderQuality';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -99,6 +100,7 @@ export function Game() {
 
   return (
     <>
+      <RenderQuality />
       <Atmosphere />
       <Weather key={`weather-${generation}`} />
       <Animals key={`animals-${generation}`} />

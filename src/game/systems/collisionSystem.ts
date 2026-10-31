@@ -75,7 +75,7 @@ export function moveVoxelCharacter(
     let climbed = false;
 
     if (canStep && y <= 0 && horizontalHit) {
-      const candidate = { ...start, y: Math.floor(start.y + 0.5) + 0.5 + EPSILON };
+      const candidate = { ...start, y: Math.round(start.y - 0.5) + 1.5 + EPSILON };
       if (candidate.y - start.y <= 1.05 && !collides(blocks, candidate)) {
         slide(blocks, candidate, 'x', x);
         slide(blocks, candidate, 'z', z);

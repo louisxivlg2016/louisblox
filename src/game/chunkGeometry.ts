@@ -1,7 +1,7 @@
 import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { brickTexture, texture } from './textures';
-import { EXTRA_BLOCK_META, isCrop, isDoor, isSapling, isTrapdoor, isUtilityBlock } from './extraBlocks';
+import { EXTRA_BLOCK_META, isCrop, isDoor, isSapling, isSign, isTrapdoor, isUtilityBlock } from './extraBlocks';
 import type { ExtraBlockKind } from './extraBlocks';
 import { BlockKind, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
@@ -93,13 +93,13 @@ function groupFor(kind: BlockKind) {
 }
 
 function usesSeparateModel(kind: BlockKind) {
-  return kind === BlockKind.Tnt || kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind);
+  return kind === BlockKind.Tnt || kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind) || isSign(kind);
 }
 
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {
   if (!neighbor || neighbor.open) return true;
   if (usesSeparateModel(neighbor.kind)) return block.kind !== BlockKind.Water && block.kind !== BlockKind.Glass;
-  if (block.kind === BlockKind.Water || block.kind === BlockKind.Glass) return neighbor.kind === BlockKind.Water || neighbor.kind === BlockKind.Glass;
+  if (block.kind === BlockKind.Water || block.kind === BlockKind.Glass) return neighbor.kind !== block.kind;
   return neighbor.kind === BlockKind.Water || neighbor.kind === BlockKind.Glass;
 }
 
@@ -167,23 +167,29 @@ function brickMaterial(kind: BlockKind) {
   return material;
 }
 
+const concreteColors = new Map<BlockKind, Color>();
+
 export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxel>) {
   createAtlas();
   const groups = new Map<string, GeometryGroup>();
   for (const block of blocks) {
     if (usesSeparateModel(block.kind)) continue;
     const groupName = groupFor(block.kind);
-    let group = groups.get(groupName);
-    if (!group) {
-      group = { positions: [], normals: [], uvs: [], colors: [], indices: [] };
-      groups.set(groupName, group);
-    }
     const concrete = block.kind >= BlockKind.ConcreteWhite && block.kind <= BlockKind.ConcreteBlack;
-    const color = concrete ? new Color(EXTRA_BLOCK_META[block.kind as ExtraBlockKind].color) : null;
+    let color: Color | null = null;
+    if (concrete) {
+      color = concreteColors.get(block.kind) ?? new Color(EXTRA_BLOCK_META[block.kind as ExtraBlockKind].color);
+      concreteColors.set(block.kind, color);
+    }
     for (const face of faces) {
       const [dx, dy, dz] = face.direction;
       const neighbor = blockIndex.get(voxelKey(block.x + dx, block.y + dy, block.z + dz));
       if (!visibleFace(block, neighbor)) continue;
+      let group = groups.get(groupName);
+      if (!group) {
+        group = { positions: [], normals: [], uvs: [], colors: [], indices: [] };
+        groups.set(groupName, group);
+      }
       addFace(group, block, face, tileUV(faceTexture(block, face.direction)), color);
     }
   }

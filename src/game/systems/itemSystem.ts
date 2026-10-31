@@ -5,12 +5,15 @@ import { findAnimalTarget } from '../combat';
 import { getBlockIndex } from '../chunks';
 import { consumeActions, isMouseDown } from '../input';
 import { getItemMeta } from '../items';
+import { isGalleryItem } from '../galleryCatalog';
+import { useGalleryItem } from '../galleryActions';
+import { hasInventory } from '../inventory';
 import type { GalleryItemId, ItemKind } from '../items';
 import { SEA_LEVEL } from '../levels';
 import { useGameStore } from '../store';
 import { HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
 import { groundAt, spawnVehicle } from '../vehicles';
-import { raycastVoxel } from '../voxel';
+import { BlockKind, raycastVoxel, voxelKey } from '../voxel';
 import { fireProjectile } from './projectileSystem';
 
 const cooldowns = new WeakMap<World, number>();
@@ -61,7 +64,12 @@ export function eatMeat(world: World, kind: import('../animals').AnimalKind) {
 export function itemSystem(world: World, camera: Camera, dt: number, pendingActions?: { place: number; harvest: number }) {
   const cooldown = Math.max(0, (cooldowns.get(world) ?? 0) - dt);
   cooldowns.set(world, cooldown);
-  const selected = useGameStore.getState().selected;
+  const store = useGameStore.getState();
+  const selected = store.selected;
+  if (!hasInventory(selected, store)) {
+    store.setNotice('Récolte et fabrique cet objet avant de l’utiliser.');
+    return true;
+  }
   if (typeof selected === 'number') return false;
   const meta = getItemMeta(selected);
   const actions = pendingActions ?? consumeActions();
@@ -107,7 +115,22 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     return true;
   }
   if (meta.category === 'vehicle' && interact > 0) {
-    const hit = raycastVoxel(getBlockIndex(world), origin, direction, 6);
+    const blocks = getBlockIndex(world);
+    const kind = selected === 'plane' ? 'plane' : selected === 'train' ? 'train' : selected === 'boat' || meta.shape === 'boat' || meta.shape === 'hovercraft' ? 'boat' : 'car';
+    if (kind === 'boat') {
+      for (let distance = 1; distance <= 6; distance += 0.5) {
+        const x = Math.round(origin.x + direction.x * distance);
+        const z = Math.round(origin.z + direction.z * distance);
+        if (blocks.get(voxelKey(x, SEA_LEVEL, z))?.kind !== BlockKind.Water) continue;
+        if (groundAt(world, x, z, SEA_LEVEL) >= SEA_LEVEL) continue;
+        spawnVehicle(world, 'boat', x, SEA_LEVEL + 0.55, z, meta.color);
+        useGameStore.getState().setNotice('Bateau prêt ! E : choisis le siège avant pour conduire ou l’arrière pour être passager.');
+        return true;
+      }
+      useGameStore.getState().setNotice('Vise une rivière ou un lac pour poser le bateau sur l’eau.');
+      return true;
+    }
+    const hit = raycastVoxel(blocks, origin, direction, 6);
     const x = hit ? hit.x + hit.normal.x * 1.5 : player.x + direction.x * 3;
     const z = hit ? hit.z + hit.normal.z * 1.5 : player.z + direction.z * 3;
     const ground = groundAt(world, x, z, player.y + 4);
@@ -115,10 +138,10 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
       useGameStore.getState().setNotice('La voiture doit être posée sur la terre ferme.');
       return true;
     }
-    const kind = selected === 'plane' ? 'plane' : selected === 'train' ? 'train' : 'car';
     spawnVehicle(world, kind, x, ground, z, meta.color);
     useGameStore.getState().setNotice(`${kind === 'plane' ? 'Avion' : kind === 'train' ? 'Train' : 'Voiture'} prêt ! Approche-toi et appuie sur E pour choisir ta place.`);
     return true;
   }
+  if (isGalleryItem(selected) && meta.category === 'resource' && interact > 0) return useGalleryItem(world, selected, origin, direction);
   return false;
 }

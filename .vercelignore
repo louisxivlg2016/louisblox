@@ -1,0 +1,7 @@
+.tmp/
+node_modules/
+dist/
+.wrangler/
+.git/
+.env
+.env.*

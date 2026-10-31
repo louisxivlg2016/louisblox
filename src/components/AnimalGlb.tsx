@@ -14,6 +14,7 @@ import deerUrl from '../../assets/models/deer.glb';
 import wolfUrl from '../../assets/models/wolf.glb';
 import snowWolfUrl from '../../assets/models/snowWolf.glb';
 import snowBearUrl from '../../assets/models/snowBear.glb';
+import zombieUrl from '../../assets/models/zombie.glb';
 
 const models: Record<AnimalKind, string> = {
   camel: camelUrl,
@@ -28,6 +29,7 @@ const models: Record<AnimalKind, string> = {
   wolf: wolfUrl,
   snowWolf: snowWolfUrl,
   snowBear: snowBearUrl,
+  zombie: zombieUrl,
 };
 
 const heights: Record<AnimalKind, number> = {
@@ -43,6 +45,7 @@ const heights: Record<AnimalKind, number> = {
   wolf: 1.05,
   snowWolf: 1.1,
   snowBear: 2,
+  zombie: 1.9,
 };
 
 export function AnimalGlb({ kind }: { kind: AnimalKind }) {
@@ -61,7 +64,7 @@ export function AnimalGlb({ kind }: { kind: AnimalKind }) {
         }
       }
     });
-    clone.rotation.y = -Math.PI / 2;
+    clone.rotation.y = kind === 'zombie' ? 0 : -Math.PI / 2;
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());

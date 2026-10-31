@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useWorld } from 'koota/react';
+import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Group } from 'three';
-import { applyVoxelEdits, getWorldSeed, groupVoxelEdits, loadLevel, onVoxelEdit, snapshotWorldEdits } from '../game/chunks';
+import { applyVoxelEdits, getWorldSeed, groupVoxelEdits, loadLevel, onVoxelEdit, snapshotVehicles, snapshotWorldEdits, streamChunks } from '../game/chunks';
 import type { ChunkEdit } from '../game/chunks';
 import { isPlayerSnapshot, resolveMultiplayerUrl } from '../game/multiplayer';
 import type { PlayerSnapshot } from '../game/multiplayer';
@@ -11,8 +12,19 @@ import { useMultiplayerStore, useRemotePlayerStore } from '../game/multiplayerSt
 import { createWorldSave } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
-import { Chunk, Player, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from '../game/traits';
+import { Chunk, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from '../game/traits';
 import { PixelPart } from './ItemModel';
+import { clearTeleportRequests, receiveTeleportRequest, receiveTeleportResponse, setTeleportSocket } from '../game/teleportRequests';
+import { dismount } from '../game/vehicles';
+import { applyVehicleRemoval, applyVehicleSnapshot, isVehicleSnapshot, onVehicleSync } from '../game/vehicleSync';
+import type { VehicleSnapshot } from '../game/vehicleSync';
+import { isOutfitKind, isWigSelection, OUTFITS, selectedWig } from '../game/outfits';
+import type { OutfitKind, WigSelection } from '../game/outfits';
+import { CharacterOutfit } from './CharacterOutfit';
+import { hasWardrobeModel } from './WardrobeGlb';
+import { sanitizeAppearance } from '../game/appearance';
+import type { CharacterAppearance } from '../game/appearance';
+import { receiveFriendAcceptance, receiveFriendRequest } from '../game/friends';
 
 type ServerMessage = {
   type?: unknown;
@@ -23,10 +35,29 @@ type ServerMessage = {
   players?: unknown;
   seed?: unknown;
   edits?: unknown;
+  requestId?: unknown;
+  from?: unknown;
+  position?: unknown;
+  vehicle?: unknown;
+  vehicles?: unknown;
+  vehicleId?: unknown;
+  outfit?: unknown;
+  wig?: unknown;
+  appearance?: unknown;
+  gameplayMode?: unknown;
 };
-type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]> };
+type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: 'survival' | 'creative' };
 
-function RemoteAvatar({ playerId, state, character }: { playerId: string; state: PlayerSnapshot; character: 'boy' | 'girl' }) {
+function sendWorldInitialization(socket: WebSocket, world: World, force: boolean) {
+  const edits = snapshotWorldEdits(world).flatMap(([, entries]) => entries);
+  socket.send(JSON.stringify({ type: 'world-init', seed: getWorldSeed(world), edits: edits.slice(0, 256), gameplayMode: useGameStore.getState().gameplayMode, force }));
+  for (let index = 256; index < edits.length; index += 256) {
+    socket.send(JSON.stringify({ type: 'world-init-edits', edits: edits.slice(index, index + 256) }));
+  }
+  socket.send(JSON.stringify({ type: 'world-init-complete', force }));
+}
+
+function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: { playerId: string; state: PlayerSnapshot; character: 'boy' | 'girl'; outfit: OutfitKind; wig: WigSelection; appearance?: CharacterAppearance }) {
   const group = useRef<Group>(null);
   const leftArm = useRef<Group>(null);
   const rightArm = useRef<Group>(null);
@@ -36,9 +67,10 @@ function RemoteAvatar({ playerId, state, character }: { playerId: string; state:
   const target = useMemo(() => new Vector3(), []);
   const hue = [...playerId].reduce((value, character) => (value * 31 + character.charCodeAt(0)) % 360, 0);
   const girl = character === 'girl';
-  const body = girl ? '#9a5f9f' : `hsl(${hue}, 45%, 48%)`;
-  const hair = girl ? '#56372e' : '#49382f';
-  const legs = girl ? '#4b405e' : '#354d6d';
+  const current = sanitizeAppearance(appearance, character);
+  const body = current.clothingColor ?? (outfit === 'default' ? (girl ? '#9a5f9f' : `hsl(${hue}, 45%, 48%)`) : OUTFITS[outfit].body);
+  const legs = current.clothingColor ?? (outfit === 'default' ? (girl ? '#4b405e' : '#354d6d') : OUTFITS[outfit].legs);
+  const hasWig = selectedWig(outfit, wig) !== null;
 
   useFrame((_, delta) => {
     if (!group.current) return;
@@ -48,7 +80,7 @@ function RemoteAvatar({ playerId, state, character }: { playerId: string; state:
     const angle = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
     group.current.rotation.y += angle * amount;
     if (state.moving) phase.current += delta * 8;
-    const swing = state.moving ? Math.sin(phase.current) * 0.7 : 0;
+    const swing = state.moving ? Math.sin(phase.current) * 0.85 : 0;
     if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
     if (rightArm.current) rightArm.current.rotation.x += (-swing - rightArm.current.rotation.x) * amount;
     if (leftLeg.current) leftLeg.current.rotation.x += (-swing - leftLeg.current.rotation.x) * amount;
@@ -57,20 +89,21 @@ function RemoteAvatar({ playerId, state, character }: { playerId: string; state:
 
   return (
     <group ref={group} position={[state.x, state.y, state.z]}>
-      <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />
+      {!hasWardrobeModel(outfit) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color="#e7a0aa" />
-      <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={hair} />
-      {girl && (
+      {!hasWig && <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={current.hairColor} />}
+      {current.hairStyle === 'long' && !hasWig && (
         <>
-          <PixelPart position={[0, 1.58, 0.24]} size={[0.5, 0.65, 0.12]} color={hair} />
-          <PixelPart position={[-0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={hair} />
-          <PixelPart position={[0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={hair} />
+          <PixelPart position={[0, 1.58, 0.24]} size={[0.5, 0.65, 0.12]} color={current.hairColor} />
+          <PixelPart position={[-0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={current.hairColor} />
+          <PixelPart position={[0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={current.hairColor} />
         </>
       )}
       <PixelPart position={[-0.11, 1.74, -0.25]} size={[0.09, 0.07, 0.025]} color="#f4f4ed" />
       <PixelPart position={[0.11, 1.74, -0.25]} size={[0.09, 0.07, 0.025]} color="#f4f4ed" />
-      <PixelPart position={[-0.11, 1.74, -0.27]} size={[0.035, 0.05, 0.02]} color="#273b4b" />
-      <PixelPart position={[0.11, 1.74, -0.27]} size={[0.035, 0.05, 0.02]} color="#273b4b" />
+      <PixelPart position={[-0.11, 1.74, -0.27]} size={[0.035, 0.05, 0.02]} color={current.eyeColor} />
+      <PixelPart position={[0.11, 1.74, -0.27]} size={[0.035, 0.05, 0.02]} color={current.eyeColor} />
+      <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} />
       <group ref={leftArm} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
       <group ref={rightArm} position={[0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
       <group ref={leftLeg} position={[-0.15, 0.78, 0]}>
@@ -88,7 +121,10 @@ function RemoteAvatar({ playerId, state, character }: { playerId: string; state:
 export function RemoteAvatars() {
   const players = useRemotePlayerStore((state) => state.players);
   const characters = useRemotePlayerStore((state) => state.characters);
-  return Object.entries(players).map(([playerId, state]) => <RemoteAvatar key={playerId} playerId={playerId} state={state} character={characters[playerId] ?? 'boy'} />);
+  const outfits = useRemotePlayerStore((state) => state.outfits);
+  const wigs = useRemotePlayerStore((state) => state.wigs);
+  const appearances = useRemotePlayerStore((state) => state.appearances);
+  return Object.entries(players).map(([playerId, state]) => <RemoteAvatar key={playerId} playerId={playerId} state={state} character={characters[playerId] ?? 'boy'} outfit={outfits[playerId] ?? 'default'} wig={wigs[playerId] ?? 'auto'} appearance={appearances[playerId]} />);
 }
 
 export function MultiplayerConnection() {
@@ -97,6 +133,8 @@ export function MultiplayerConnection() {
   const localPlayerId = useRef<string | null>(null);
   const roster = useRef(new Map<string, string>());
   const pendingWorld = useRef<WorldSnapshot | null>(null);
+  const pendingSpawn = useRef<PlayerSnapshot | null>(null);
+  const pendingVehicles = useRef(new Map<string, VehicleSnapshot>());
   const pendingEdits = useRef(new Map<string, ChunkEdit>());
   const applyingRemote = useRef(false);
   const worldInitSent = useRef(false);
@@ -106,6 +144,9 @@ export function MultiplayerConnection() {
   const server = useMultiplayerStore((state) => state.server);
   const playerName = useMultiplayerStore((state) => state.playerName);
   const character = useCharacterStore((state) => state.character);
+  const outfit = useCharacterStore((state) => state.outfit);
+  const wig = useCharacterStore((state) => state.wig);
+  const appearance = useCharacterStore((state) => state.appearance);
   const generation = useGameStore((state) => state.generation);
   const lastGeneration = useRef(generation);
 
@@ -115,11 +156,17 @@ export function MultiplayerConnection() {
     localPlayerId.current = null;
     roster.current.clear();
     pendingWorld.current = null;
+    pendingSpawn.current = null;
+    pendingVehicles.current.clear();
     pendingEdits.current.clear();
     worldInitSent.current = false;
+    clearTeleportRequests();
     store.setPlayers([]);
     remote.setPlayers({});
     remote.setCharacters({});
+    remote.setOutfits({});
+    remote.setWigs({});
+    remote.setAppearances({});
     if (!enabled) {
       store.setStatus('offline');
       return;
@@ -131,6 +178,9 @@ export function MultiplayerConnection() {
       url.searchParams.set('room', room);
       url.searchParams.set('name', playerName);
       url.searchParams.set('character', character);
+      url.searchParams.set('outfit', outfit);
+      url.searchParams.set('wig', wig);
+      url.searchParams.set('appearance', JSON.stringify(appearance));
       endpoint = url.toString();
     } catch {
       store.setStatus('error', 'Adresse du serveur invalide. Utilise une adresse ws:// ou wss://.');
@@ -145,20 +195,27 @@ export function MultiplayerConnection() {
         ...[...roster.current].map(([playerId, name]) => ({ playerId, name })),
       ]);
     };
+    const applyPendingVehicles = () => {
+      if (pendingWorld.current || world.query(Chunk).length < 9) return;
+      for (const vehicle of pendingVehicles.current.values()) applyVehicleSnapshot(world, vehicle);
+      pendingVehicles.current.clear();
+    };
     const applyPendingWorld = () => {
       const pending = pendingWorld.current;
       if (!pending || world.query(Chunk).length < 9) return;
       if (pending.seed === null) {
         const current = socket.current;
         if (current?.readyState === WebSocket.OPEN && !worldInitSent.current) {
-          current.send(JSON.stringify({ type: 'world-init', seed: getWorldSeed(world), edits: snapshotWorldEdits(world) }));
+          sendWorldInitialization(current, world, false);
           worldInitSent.current = true;
         }
         return;
       }
+      const roomCreator = pendingSpawn.current === null;
       const saved = createWorldSave(world);
       if (!saved) return;
-      const unchanged = saved.seed === pending.seed && JSON.stringify(saved.edits) === JSON.stringify(groupVoxelEdits(pending.edits));
+      saved.gameplayMode = pending.gameplayMode ?? saved.gameplayMode ?? 'creative';
+      const unchanged = saved.seed === pending.seed && saved.gameplayMode === useGameStore.getState().gameplayMode && JSON.stringify(saved.edits) === JSON.stringify(groupVoxelEdits(pending.edits));
       if (!unchanged) {
         saved.seed = pending.seed;
         saved.edits = groupVoxelEdits(pending.edits);
@@ -169,7 +226,30 @@ export function MultiplayerConnection() {
           applyingRemote.current = false;
         }
       }
+      const spawn = pendingSpawn.current;
+      if (spawn) {
+        const player = world.queryFirst(Player);
+        if (player) {
+          if (player.get(PlayerMount)?.vehicle) dismount(world);
+          streamChunks(world, spawn.x, spawn.z);
+          player.get(PlayerPosition)?.set(spawn.x, spawn.y, spawn.z);
+          player.get(PlayerBody)?.value?.setTranslation(spawn, true);
+          player.get(PlayerVelocity)?.set(0, 0, 0);
+          player.set(PlayerState, { flying: spawn.flying, grounded: false });
+          useGameStore.getState().setFlying(spawn.flying);
+        }
+        pendingSpawn.current = null;
+      }
       pendingWorld.current = null;
+      applyPendingVehicles();
+      if (roomCreator) {
+        const current = socket.current;
+        if (current?.readyState === WebSocket.OPEN) {
+          for (const car of snapshotVehicles(world)) {
+            current.send(JSON.stringify({ type: 'vehicle-spawn', vehicle: { ...car, kind: car.kind ?? 'car' } }));
+          }
+        }
+      }
       pendingEdits.current.clear();
     };
     const flushEdits = () => {
@@ -183,11 +263,16 @@ export function MultiplayerConnection() {
       if (applyingRemote.current || socket.current?.readyState !== WebSocket.OPEN) return;
       pendingEdits.current.set(position, edit);
     });
+    const unsubscribeVehicles = onVehicleSync(world, (message) => {
+      const current = socket.current;
+      if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify(message));
+    });
     store.setStatus('connecting');
 
     const connect = () => {
       const next = new WebSocket(endpoint);
       socket.current = next;
+      setTeleportSocket(next);
       next.onopen = () => store.setStatus('online');
       next.onmessage = (event) => {
         if (typeof event.data !== 'string') return;
@@ -197,15 +282,52 @@ export function MultiplayerConnection() {
         } catch {
           return;
         }
+        if (data.type === 'friend-request') {
+          receiveFriendRequest(data);
+          return;
+        }
+        if (data.type === 'friend-accept') {
+          receiveFriendAcceptance(data);
+          return;
+        }
+        if (data.type === 'vehicles' && Array.isArray(data.vehicles)) {
+          pendingVehicles.current = new Map(data.vehicles.filter(isVehicleSnapshot).map((vehicle) => [vehicle.id, vehicle]));
+          applyPendingVehicles();
+          return;
+        }
+        if ((data.type === 'vehicle-spawn' || data.type === 'vehicle-state') && isVehicleSnapshot(data.vehicle)) {
+          pendingVehicles.current.set(data.vehicle.id, data.vehicle);
+          applyPendingVehicles();
+          return;
+        }
+        if (data.type === 'vehicle-remove' && typeof data.vehicleId === 'string') {
+          pendingVehicles.current.delete(data.vehicleId);
+          applyVehicleRemoval(world, data.vehicleId);
+          return;
+        }
+        if (data.type === 'teleport-request') {
+          receiveTeleportRequest(data);
+          return;
+        }
+        if (data.type === 'teleport-accept' || data.type === 'teleport-decline' || data.type === 'teleport-unavailable') {
+          receiveTeleportResponse(data);
+          return;
+        }
         if (data.type === 'world' && (data.seed === null || typeof data.seed === 'number') && Array.isArray(data.edits)) {
-          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]> };
+          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: data.gameplayMode === 'survival' ? 'survival' : 'creative' };
           applyPendingWorld();
           return;
         }
         if (data.type === 'edits' && Array.isArray(data.edits)) {
+          const edits = data.edits as Array<[string, ChunkEdit]>;
+          if (pendingWorld.current) {
+            const latest = new Map(pendingWorld.current.edits);
+            for (const [position, edit] of edits) latest.set(position, edit);
+            pendingWorld.current.edits = [...latest];
+          }
           applyingRemote.current = true;
           try {
-            applyVoxelEdits(world, data.edits as Array<[string, ChunkEdit]>);
+            applyVoxelEdits(world, edits);
           } finally {
             applyingRemote.current = false;
           }
@@ -219,20 +341,42 @@ export function MultiplayerConnection() {
             roster.current.clear();
             const updated: Record<string, PlayerSnapshot> = {};
             const characters: Record<string, 'boy' | 'girl'> = {};
-            for (const player of data.players as Array<{ playerId?: unknown; name?: unknown; character?: unknown; state?: unknown }>) {
+            const outfits: Record<string, OutfitKind> = {};
+            const wigs: Record<string, WigSelection> = {};
+            const appearances: Record<string, CharacterAppearance> = {};
+            for (const player of data.players as Array<{ playerId?: unknown; name?: unknown; character?: unknown; state?: unknown; outfit?: unknown; wig?: unknown; appearance?: unknown }>) {
               if (!player || typeof player.playerId !== 'string') continue;
               roster.current.set(player.playerId, typeof player.name === 'string' ? player.name : 'Joueur');
               characters[player.playerId] = player.character === 'girl' ? 'girl' : 'boy';
+              outfits[player.playerId] = isOutfitKind(player.outfit) ? player.outfit : 'default';
+              wigs[player.playerId] = isWigSelection(player.wig) ? player.wig : 'auto';
+              appearances[player.playerId] = sanitizeAppearance(player.appearance, characters[player.playerId]);
+              if (!pendingSpawn.current && isPlayerSnapshot(player.state)) pendingSpawn.current = { ...player.state };
               if (isPlayerSnapshot(player.state)) updated[player.playerId] = player.state;
             }
             useRemotePlayerStore.getState().setPlayers(updated);
             useRemotePlayerStore.getState().setCharacters(characters);
+            useRemotePlayerStore.getState().setOutfits(outfits);
+            useRemotePlayerStore.getState().setWigs(wigs);
+            useRemotePlayerStore.getState().setAppearances(appearances);
           } else {
             roster.current.set(data.playerId, name);
             const character = data.character === 'girl' ? 'girl' : 'boy';
-            useRemotePlayerStore.setState((current) => ({ characters: { ...current.characters, [data.playerId as string]: character } }));
+            useRemotePlayerStore.setState((current) => ({
+              characters: { ...current.characters, [data.playerId as string]: character },
+              outfits: { ...current.outfits, [data.playerId as string]: isOutfitKind(data.outfit) ? data.outfit : 'default' },
+              wigs: { ...current.wigs, [data.playerId as string]: isWigSelection(data.wig) ? data.wig : 'auto' },
+              appearances: { ...current.appearances, [data.playerId as string]: sanitizeAppearance(data.appearance, character) },
+            }));
           }
           syncRoster();
+        } else if (data.type === 'outfit' && isOutfitKind(data.outfit)) {
+          useRemotePlayerStore.setState((current) => ({ outfits: { ...current.outfits, [data.playerId as string]: data.outfit as OutfitKind } }));
+        } else if (data.type === 'wig' && isWigSelection(data.wig)) {
+          useRemotePlayerStore.setState((current) => ({ wigs: { ...current.wigs, [data.playerId as string]: data.wig as WigSelection } }));
+        } else if (data.type === 'appearance') {
+          const character = useRemotePlayerStore.getState().characters[data.playerId] ?? 'boy';
+          useRemotePlayerStore.setState((current) => ({ appearances: { ...current.appearances, [data.playerId as string]: sanitizeAppearance(data.appearance, character) } }));
         } else if (data.type === 'state' && isPlayerSnapshot(data.state)) {
           if (!roster.current.has(data.playerId)) {
             roster.current.set(data.playerId, 'Joueur');
@@ -246,9 +390,15 @@ export function MultiplayerConnection() {
           useRemotePlayerStore.setState((current) => {
             const players = { ...current.players };
             const characters = { ...current.characters };
+            const outfits = { ...current.outfits };
+            const wigs = { ...current.wigs };
+            const appearances = { ...current.appearances };
             delete players[data.playerId as string];
             delete characters[data.playerId as string];
-            return { players, characters };
+            delete outfits[data.playerId as string];
+            delete wigs[data.playerId as string];
+            delete appearances[data.playerId as string];
+            return { players, characters, outfits, wigs, appearances };
           });
         }
       };
@@ -257,16 +407,24 @@ export function MultiplayerConnection() {
         next.close();
       };
       next.onclose = () => {
-        if (socket.current === next) socket.current = null;
+        if (socket.current === next) {
+          socket.current = null;
+          clearTeleportRequests();
+        }
         if (disposed) return;
         localPlayerId.current = null;
         roster.current.clear();
         pendingWorld.current = null;
+        pendingSpawn.current = null;
+        pendingVehicles.current.clear();
         pendingEdits.current.clear();
         worldInitSent.current = false;
         store.setPlayers([]);
         useRemotePlayerStore.getState().setPlayers({});
         useRemotePlayerStore.getState().setCharacters({});
+        useRemotePlayerStore.getState().setOutfits({});
+        useRemotePlayerStore.getState().setAppearances({});
+        useRemotePlayerStore.getState().setWigs({});
         store.setStatus('error', 'Connexion interrompue. Nouvelle tentative…');
         reconnectTimer = window.setTimeout(connect, 1500);
       };
@@ -294,8 +452,10 @@ export function MultiplayerConnection() {
       window.clearInterval(sendTimer);
       if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
       unsubscribe();
+      unsubscribeVehicles();
       const current = socket.current;
       socket.current = null;
+      clearTeleportRequests();
       if (current) {
         current.onclose = null;
         current.close();
@@ -303,12 +463,31 @@ export function MultiplayerConnection() {
       localPlayerId.current = null;
       roster.current.clear();
       pendingWorld.current = null;
+      pendingSpawn.current = null;
+      pendingVehicles.current.clear();
       pendingEdits.current.clear();
       store.setPlayers([]);
       useRemotePlayerStore.getState().setPlayers({});
       useRemotePlayerStore.getState().setCharacters({});
+      useRemotePlayerStore.getState().setOutfits({});
+        useRemotePlayerStore.getState().setAppearances({});
+      useRemotePlayerStore.getState().setWigs({});
     };
   }, [world, enabled, connectionId, room, server, playerName, character]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const current = socket.current;
+    if (current?.readyState !== WebSocket.OPEN) return;
+    current.send(JSON.stringify({ type: 'outfit', outfit }));
+    current.send(JSON.stringify({ type: 'wig', wig }));
+  }, [enabled, connectionId, outfit, wig]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const current = socket.current;
+    if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify({ type: 'appearance', appearance }));
+  }, [enabled, connectionId, appearance]);
 
   useEffect(() => {
     if (lastGeneration.current === generation) return;
@@ -316,7 +495,7 @@ export function MultiplayerConnection() {
     if (!enabled) return;
     const current = socket.current;
     if (current?.readyState === WebSocket.OPEN) {
-      current.send(JSON.stringify({ type: 'world-init', seed: getWorldSeed(world), edits: [], force: true }));
+      sendWorldInitialization(current, world, true);
     }
   }, [world, generation, enabled]);
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useCharacterStore } from '../game/characterStore';
 
@@ -24,9 +24,11 @@ export function MultiplayerLobby() {
   const [playerName, setPlayerName] = useState(savedName);
   const [room, setRoom] = useState(savedRoom);
   const [server, setServer] = useState(savedServer);
+  const [showServer, setShowServer] = useState(() => new URLSearchParams(window.location.search).has('server'));
+  useEffect(() => setPlayerName(savedName), [savedName]);
 
   const join = (nextRoom = room) => {
-    const settings = configure({ playerName, room: nextRoom, server });
+    const settings = configure({ playerName, room: nextRoom, server: showServer ? server : '' });
     setPlayerName(settings.playerName);
     setRoom(settings.room);
     setServer(settings.server);
@@ -61,14 +63,22 @@ export function MultiplayerLobby() {
             <label htmlFor="multiplayer-name">Pseudo
               <input id="multiplayer-name" value={playerName} onChange={(event) => setPlayerName(event.target.value)} maxLength={24} autoComplete="nickname" required />
             </label>
-            <label htmlFor="multiplayer-room">Code du salon
+            <label htmlFor="multiplayer-room">Nom du salon
               <input id="multiplayer-room" value={room} onChange={(event) => setRoom(event.target.value)} maxLength={48} autoCapitalize="none" autoCorrect="off" required />
             </label>
           </div>
-          <label htmlFor="multiplayer-server">Serveur personnalisé <span>(optionnel)</span>
-            <input id="multiplayer-server" value={server} onChange={(event) => setServer(event.target.value)} placeholder="wss://…workers.dev/ws" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
-          </label>
-          <p className="multiplayer-hint">Laisse le serveur vide pour utiliser la connexion automatique. En local, il utilise le port 8787 de cet appareil.</p>
+          <p className="multiplayer-hint">Le même nom de salon suffit pour jouer ensemble, même avec le même pseudo.</p>
+          <button type="button" className="multiplayer-server-toggle" onClick={() => setShowServer((visible) => !visible)}>
+            {showServer ? 'Masquer le serveur personnalisé' : 'Serveur personnalisé (optionnel)'}
+          </button>
+          {showServer && (
+            <>
+              <label htmlFor="multiplayer-server">Serveur personnalisé <span>(optionnel)</span>
+                <input id="multiplayer-server" value={server} onChange={(event) => setServer(event.target.value)} placeholder="wss://…workers.dev/ws" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+              </label>
+              <p className="multiplayer-hint">Laisse le serveur vide pour utiliser la connexion automatique. En local, il utilise le port 8787 de cet appareil.</p>
+            </>
+          )}
           <div className="multiplayer-actions">
             <button type="submit" className="multiplayer-join">Rejoindre</button>
             <button type="button" className="multiplayer-new-room" onClick={() => join(`salon-${crypto.randomUUID().slice(0, 8)}`)}>Nouveau salon</button>

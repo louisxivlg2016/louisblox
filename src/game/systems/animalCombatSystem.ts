@@ -4,6 +4,7 @@ import type { Camera } from 'three';
 import { damageAnimal, findAnimalTarget } from '../combat';
 import { isMouseDown, stopMining } from '../input';
 import { getItemMeta, isSword } from '../items';
+import { hasInventory } from '../inventory';
 import { useGameStore } from '../store';
 import { Player, PlayerPosition } from '../traits';
 
@@ -15,8 +16,10 @@ export function animalCombatSystem(world: World, camera: Camera, dt: number, tou
   const cooldown = Math.max(0, (cooldowns.get(world) ?? 0) - dt);
   cooldowns.set(world, cooldown);
   const player = world.queryFirst(Player)?.get(PlayerPosition);
-  const selected = useGameStore.getState().selected;
-  if (!player || (touchTaps === 0 && typeof selected === 'string' && !isSword(selected))) return false;
+  const store = useGameStore.getState();
+  const selected = store.selected;
+  if (!hasInventory(selected, store)) return false;
+  if (!player || (touchTaps === 0 && typeof selected === 'string' && selected !== 'hand' && !isSword(selected))) return false;
   origin.copy(player);
   origin.y += 1.62;
   camera.getWorldDirection(direction);

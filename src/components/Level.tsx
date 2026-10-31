@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useQuery, useTrait, useWorld } from 'koota/react';
 import type { Entity } from 'koota';
 import { InstancedMesh, Matrix4 } from 'three';
@@ -10,7 +10,8 @@ import { SpecialBlocks } from './SpecialBlocks';
 import { DoorInstances } from './DoorInstances';
 import { CropInstances } from './CropInstances';
 import { UtilityBlocks } from './UtilityBlocks';
-import { isCrop, isDoor, isSapling, isTrapdoor, isUtilityBlock } from '../game/extraBlocks';
+import { SignBlocks } from './SignBlocks';
+import { isCrop, isDoor, isSapling, isSign, isTrapdoor, isUtilityBlock } from '../game/extraBlocks';
 import { BlockKind, voxelKey } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 
@@ -71,7 +72,7 @@ function SaplingInstances({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }
   );
 }
 
-function ChunkView({ entity }: { entity: Entity }) {
+const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
   const world = useWorld();
   const chunk = useTrait(entity, Chunk);
   const data = entity.get(ChunkData);
@@ -81,6 +82,7 @@ function ChunkView({ entity }: { entity: Entity }) {
   const doorBlocks: Voxel[] = [];
   const cropBlocks: Voxel[] = [];
   const utilityBlocks: Voxel[] = [];
+  const signBlocks: Voxel[] = [];
   const saplingGroups = new Map<BlockKind, Voxel[]>();
   const geometries = useMemo(() => data ? buildChunkGeometry(data.blocks, blockIndex) : [], [data, blockIndex, chunk?.revision]);
   useEffect(() => () => {
@@ -105,6 +107,10 @@ function ChunkView({ entity }: { entity: Entity }) {
       if (block.kind === BlockKind.Campfire || block.kind === BlockKind.Wildfire) continue;
       if (isCrop(block.kind)) {
         cropBlocks.push(block);
+        continue;
+      }
+      if (isSign(block.kind)) {
+        signBlocks.push(block);
         continue;
       }
       if (isUtilityBlock(block.kind)) {
@@ -134,12 +140,13 @@ function ChunkView({ entity }: { entity: Entity }) {
       ))}
       <CropInstances blocks={cropBlocks} />
       <UtilityBlocks blocks={utilityBlocks} />
+      <SignBlocks blocks={signBlocks} />
       <SpecialBlocks kind={BlockKind.Tnt} blocks={tntBlocks} />
       <SpecialBlocks kind={BlockKind.Candle} blocks={candleBlocks} />
       <DoorInstances blocks={doorBlocks} />
     </group>
   );
-}
+});
 
 export function Level() {
   const chunks = useQuery(Chunk);

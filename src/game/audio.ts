@@ -1,4 +1,4 @@
-import musicUrl from '../../assets/Morning_At_The_Edge_Of_The_Map.mp3';
+import musicUrl from '../../assets/LouisBlox_Theme.mp3';
 
 let music: HTMLAudioElement | null = null;
 
