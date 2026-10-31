@@ -65,7 +65,7 @@ export const VehicleMotion = trait({ speed: 0, yaw: 0, mounted: false, routeTime
 export const VehicleMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 export const VehicleHealth = trait({ value: 3, max: 3 });
 export const HorseRider = trait({ saddled: false, mounted: false, speed: 0 });
-export const Projectile = trait({ kind: 'arrow' as 'arrow' | 'bullet' | 'bomb', life: 8, damage: 1 });
+export const Projectile = trait({ id: '', kind: 'arrow' as 'arrow' | 'bullet' | 'bomb', life: 8, damage: 1, remote: false });
 export const ProjectilePosition = trait(() => new Vector3());
 export const ProjectileVelocity = trait(() => new Vector3());
 export const ProjectileMesh = trait(() => ({ value: null as import('three').Object3D | null }));

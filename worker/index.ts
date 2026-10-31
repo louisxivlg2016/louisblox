@@ -132,6 +132,37 @@ function parseVehicle(value: unknown): SharedVehicle | null {
   };
 }
 
+function parseProjectile(value: unknown) {
+  if (!value || typeof value !== 'object') return null;
+  const data = value as Record<string, unknown>;
+  if (typeof data.id !== 'string' || data.id.length < 1 || data.id.length > 80) return null;
+  if (data.kind !== 'arrow' && data.kind !== 'bullet' && data.kind !== 'bomb') return null;
+  if (!['x', 'y', 'z'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]) && Math.abs(data[key] as number) <= 10000000)) return null;
+  if (!['vx', 'vy', 'vz'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]) && Math.abs(data[key] as number) <= 10000)) return null;
+  if (typeof data.life !== 'number' || !Number.isFinite(data.life) || data.life < 0 || data.life > 30) return null;
+  if (typeof data.damage !== 'number' || !Number.isFinite(data.damage) || data.damage < 0 || data.damage > 100) return null;
+  return {
+    id: data.id,
+    kind: data.kind,
+    x: data.x as number,
+    y: data.y as number,
+    z: data.z as number,
+    vx: data.vx as number,
+    vy: data.vy as number,
+    vz: data.vz as number,
+    life: data.life,
+    damage: data.damage,
+  };
+}
+
+function parseExplosion(value: unknown) {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== 'object') return null;
+  const position = value as Record<string, unknown>;
+  if (!['x', 'y', 'z'].every((key) => typeof position[key] === 'number' && Number.isFinite(position[key]) && Math.abs(position[key] as number) <= 10000000)) return null;
+  return { x: position.x as number, y: position.y as number, z: position.z as number };
+}
+
 export class GameRoom extends DurableObject<Env> {
   private worldSeed: number | null = null;
   private worldEdits = new Map<string, VoxelEdit>();
@@ -301,6 +332,19 @@ export class GameRoom extends DurableObject<Env> {
         return;
       }
       this.sendToPlayer(targetId, { type, requestId, from: attachment.playerId, name: attachment.name });
+      return;
+    }
+    if (type === 'projectile-spawn' || type === 'projectile-state') {
+      const projectile = parseProjectile((data as { projectile?: unknown }).projectile);
+      if (projectile) this.broadcast({ type, projectile }, ws);
+      return;
+    }
+    if (type === 'projectile-remove') {
+      const projectileId = (data as { projectileId?: unknown }).projectileId;
+      if (typeof projectileId !== 'string' || projectileId.length < 1 || projectileId.length > 80) return;
+      const explosion = parseExplosion((data as { explosion?: unknown }).explosion);
+      if (explosion === null) return;
+      this.broadcast({ type, projectileId, explosion }, ws);
       return;
     }
     if (type === 'vehicle-spawn') {

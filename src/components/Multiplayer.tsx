@@ -25,6 +25,7 @@ import { hasWardrobeModel } from './WardrobeGlb';
 import { sanitizeAppearance } from '../game/appearance';
 import type { CharacterAppearance } from '../game/appearance';
 import { receiveFriendAcceptance, receiveFriendRequest } from '../game/friends';
+import { applyProjectileRemoval, applyProjectileSnapshot, isExplosionSnapshot, isProjectileSnapshot, onProjectileSync } from '../game/projectileSync';
 
 type ServerMessage = {
   type?: unknown;
@@ -41,6 +42,9 @@ type ServerMessage = {
   vehicle?: unknown;
   vehicles?: unknown;
   vehicleId?: unknown;
+  projectile?: unknown;
+  projectileId?: unknown;
+  explosion?: unknown;
   outfit?: unknown;
   wig?: unknown;
   appearance?: unknown;
@@ -267,6 +271,10 @@ export function MultiplayerConnection() {
       const current = socket.current;
       if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify(message));
     });
+    const unsubscribeProjectiles = onProjectileSync(world, (message) => {
+      const current = socket.current;
+      if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify(message));
+    });
     store.setStatus('connecting');
 
     const connect = () => {
@@ -288,6 +296,14 @@ export function MultiplayerConnection() {
         }
         if (data.type === 'friend-accept') {
           receiveFriendAcceptance(data);
+          return;
+        }
+        if ((data.type === 'projectile-spawn' || data.type === 'projectile-state') && isProjectileSnapshot(data.projectile)) {
+          applyProjectileSnapshot(world, data.projectile);
+          return;
+        }
+        if (data.type === 'projectile-remove' && typeof data.projectileId === 'string' && isExplosionSnapshot(data.explosion)) {
+          applyProjectileRemoval(world, data.projectileId, data.explosion);
           return;
         }
         if (data.type === 'vehicles' && Array.isArray(data.vehicles)) {
@@ -454,6 +470,7 @@ export function MultiplayerConnection() {
       if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
       unsubscribe();
       unsubscribeVehicles();
+      unsubscribeProjectiles();
       const current = socket.current;
       socket.current = null;
       clearTeleportRequests();
