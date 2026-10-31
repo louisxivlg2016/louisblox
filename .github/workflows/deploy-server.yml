@@ -1,0 +1,37 @@
+name: deploy multiplayer server
+on:
+  push:
+    branches: [main]
+    paths: [worker/**, config.capnp, wrangler.jsonc, package.json, bun.lock, .github/workflows/deploy-server.yml]
+  workflow_dispatch: {}
+concurrency: deploy-server
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx wrangler deploy --dry-run --outdir worker-dist
+      - name: Assemble the minimal release
+        run: |
+          mkdir -p release
+          cp -r worker-dist config.capnp release/
+          cp node_modules/@cloudflare/workerd-linux-64/bin/workerd release/
+          du -sh release
+      - name: Ship to the droplet and restart
+        env:
+          SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DROPLET_KNOWN_HOSTS }}
+          HOST: ${{ secrets.DROPLET_HOST }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id && chmod 600 ~/.ssh/id
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          R=/opt/game/releases/$GITHUB_SHA
+          rsync -az -e "ssh -i ~/.ssh/id" release/ deploy@$HOST:$R/
+          ssh -i ~/.ssh/id deploy@$HOST "ln -sfn $R /opt/game/current && sudo systemctl restart game && ls -1dt /opt/game/releases/* | tail -n +4 | xargs -r rm -rf"
+      - name: Health check
+        env:
+          HOST: ${{ secrets.DROPLET_HOST }}
+        run: ssh -i ~/.ssh/id deploy@$HOST 'for i in 1 2 3 4 5 6; do curl -fsS 127.0.0.1:8787/health && exit 0; sleep 5; done; exit 1'

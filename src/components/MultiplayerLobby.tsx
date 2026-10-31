@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useCharacterStore } from '../game/characterStore';
+import { deleteRoom } from '../game/multiplayer';
 
 const STATUS_NAMES = {
   offline: 'Non connecté',
@@ -37,6 +38,15 @@ export function MultiplayerLobby() {
     if (settings.server) url.searchParams.set('server', settings.server);
     else url.searchParams.delete('server');
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
+  const removeRoom = async () => {
+    if (!window.confirm(`Supprimer le salon « ${savedRoom} » ? Le monde et toutes ses constructions seront effacés pour tout le monde.`)) return;
+    try {
+      await deleteRoom(savedRoom);
+    } catch {
+      useMultiplayerStore.getState().setStatus('error', 'Impossible de supprimer le salon.');
+    }
   };
 
   const invitation = new URL(window.location.href);
@@ -82,6 +92,7 @@ export function MultiplayerLobby() {
           <div className="multiplayer-actions">
             <button type="submit" className="multiplayer-join">Rejoindre</button>
             <button type="button" className="multiplayer-new-room" onClick={() => join(`salon-${crypto.randomUUID().slice(0, 8)}`)}>Nouveau salon</button>
+            <button type="button" className="multiplayer-delete-room" onClick={removeRoom}>Supprimer le salon</button>
           </div>
           <div className={`multiplayer-status ${status}`} role="status" aria-live="polite">
             <span className="multiplayer-status-dot" />

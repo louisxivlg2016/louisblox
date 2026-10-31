@@ -231,6 +231,13 @@ export function MultiplayerConnection() {
 
     let disposed = false;
     let reconnectTimer: number | undefined;
+    const leaveDeletedRoom = (closing: WebSocket) => {
+      if (socket.current === closing) socket.current = null;
+      closing.onclose = null;
+      closing.close();
+      store.setEnabled(false);
+      store.setStatus('offline', 'Le salon a été supprimé.');
+    };
     const syncRoster = () => {
       store.setPlayers([
         ...(localPlayerId.current ? [{ playerId: localPlayerId.current, name: playerName, self: true }] : []),
@@ -328,6 +335,10 @@ export function MultiplayerConnection() {
         try {
           data = JSON.parse(event.data) as ServerMessage;
         } catch {
+          return;
+        }
+        if (data.type === 'room-deleted') {
+          leaveDeletedRoom(next);
           return;
         }
         if (data.type === 'battle-state') {
@@ -479,7 +490,11 @@ export function MultiplayerConnection() {
         store.setStatus('error', 'Serveur inaccessible. Nouvelle tentative…');
         next.close();
       };
-      next.onclose = () => {
+      next.onclose = (event) => {
+        if (event.code === 4004) {
+          leaveDeletedRoom(next);
+          return;
+        }
         if (socket.current === next) {
           socket.current = null;
           clearTeleportRequests();

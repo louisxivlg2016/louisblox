@@ -63,3 +63,13 @@ export function isPlayerSnapshot(value: unknown): value is PlayerSnapshot {
     && (state.vehicleKind === undefined || state.vehicleKind === 'car' || state.vehicleKind === 'horse' || state.vehicleKind === 'plane' || state.vehicleKind === 'train' || state.vehicleKind === 'boat')
     && (state.selected === undefined || isSelectedKind(state.selected));
 }
+
+export async function deleteRoom(room: string) {
+  const url = new URL(resolveMultiplayerUrl());
+  url.protocol = url.protocol === 'wss:' ? 'https:' : 'http:';
+  url.pathname = '/room';
+  url.search = '';
+  url.searchParams.set('room', room);
+  const response = await fetch(url, { method: 'DELETE' });
+  if (!response.ok) throw new Error(`Room deletion failed (${response.status})`);
+}
