@@ -3,6 +3,7 @@ import { Euler, Vector3 } from 'three';
 import type { Camera } from 'three';
 import { useGameStore } from '../store';
 import { useEmoteStore } from '../emotes';
+import { turnToward } from '../rotation';
 import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
@@ -23,7 +24,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const speed = velocity ? Math.hypot(velocity.x, velocity.z) : 0;
   if (avatar) {
     avatar.rotation.order = 'YXZ';
-    if (state.flying || mounted || speed > 0.1) avatar.rotation.y = state.yaw;
+    if (state.flying || mounted || speed > 0.1) avatar.rotation.y = turnToward(avatar.rotation.y, state.yaw, dt * 6);
   }
   const sleep = world.queryFirst(Sleep)?.get(Sleep);
   const previous = sleepBlends.get(world) ?? 0;

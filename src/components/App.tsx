@@ -25,8 +25,8 @@ export function App() {
             if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') Object.assign(window, {
               louisbloxRenderer: gl,
               louisbloxDebug: async () => {
-                const [traits, chunks, vehicles] = await Promise.all([import('../game/traits'), import('../game/chunks'), import('../game/vehicles')]);
-                return { world, gl, camera, store: useGameStore, remote: useRemotePlayerStore, battle: useBattleStore, mining: () => isMouseDown(0), ...traits, ...chunks, ...vehicles };
+                const [traits, chunks, vehicles, ruins] = await Promise.all([import('../game/traits'), import('../game/chunks'), import('../game/vehicles'), import('../game/ruins')]);
+                return { world, gl, camera, store: useGameStore, remote: useRemotePlayerStore, battle: useBattleStore, mining: () => isMouseDown(0), ...traits, ...chunks, ...vehicles, ...ruins };
               },
             });
           }}

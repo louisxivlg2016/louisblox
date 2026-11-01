@@ -1,4 +1,5 @@
 import { BlockKind } from './voxel';
+import { churchBlocks } from './churches';
 import { heightAt, SEA_LEVEL } from './levels';
 
 export type RuinType = 'church' | 'palace' | 'fort';
@@ -7,7 +8,7 @@ type Put = (x: number, y: number, z: number, kind: BlockKind, overwrite?: boolea
 type Remove = (x: number, y: number, z: number) => void;
 
 const layouts = {
-  church: { width: 15, depth: 25, height: 16, ox: 256, oz: 256 },
+  church: { width: 15, depth: 39, height: 16, ox: 256, oz: 256 },
   palace: { width: 25, depth: 23, height: 10, ox: 640, oz: 384 },
   fort: { width: 29, depth: 29, height: 11, ox: 384, oz: 768 },
 } as const;
@@ -132,38 +133,7 @@ function rubble(site: RuinSite, put: Put) {
 
 function buildChurch(site: RuinSite, put: Put, remove: Remove) {
   foundation(site, put, remove, BlockKind.GrayBrick);
-  for (let dx = -7; dx <= 7; dx += 1) {
-    for (let dz = -12; dz <= 12; dz += 1) {
-      if (Math.abs(dx) !== 7 && Math.abs(dz) !== 12) continue;
-      for (let y = 1; y <= 6; y += 1) {
-        if (dz === -12 && ((Math.abs(dx) <= 1 && y <= 3) || (dx === 0 && y === 4))) continue;
-        if (Math.abs(dx) === 7 && ((dz + 12) % 6 === 3 && y >= 3 && y <= 4 || (dz + 12) % 6 === 4 && y === 5)) {
-          if (hash(dx, y, dz, site.seed + 57) > 0.12) {
-            const glass = y === 4 ? BlockKind.GlassYellow : (dz + 12) % 3 === 0 ? BlockKind.GlassRed : BlockKind.GlassBlue;
-            put(site.x + dx, site.baseY + y, site.z + dz, glass);
-          }
-          continue;
-        }
-        wallBlock(site.x + dx, site.baseY + y, site.z + dz, 6, BlockKind.GrayBrick, site, put);
-      }
-    }
-  }
-  tower(site.x - 5, site.z - 10, 5, 14, BlockKind.GrayBrick, site, put);
-  for (const z of [-5, -1, 3, 7]) {
-    for (const x of [-3, 3]) {
-      if (hash(x, site.baseY, z, site.seed) > 0.18) put(site.x + x, site.baseY + 1, site.z + z, BlockKind.OakPlanks);
-    }
-  }
-  for (let y = 2; y <= 6; y += 1) put(site.x, site.baseY + y, site.z + 9, BlockKind.WhiteBrick);
-  for (let x = -1; x <= 1; x += 1) put(site.x + x, site.baseY + 5, site.z + 9, BlockKind.WhiteBrick);
-  for (let dx = -7; dx <= 7; dx += 1) {
-    const roofY = site.baseY + 7 + Math.floor((7 - Math.abs(dx)) / 2);
-    for (let dz = 5; dz <= 12; dz += 1) {
-      if (hash(dx, roofY, dz, site.seed) > 0.12) put(site.x + dx, roofY, site.z + dz, BlockKind.PinePlanks);
-    }
-  }
-  vines(site, put);
-  rubble(site, put);
+  for (const block of churchBlocks(site.x, site.z, site.baseY + 1, true)) put(block.x, block.y, block.z, block.kind);
 }
 
 function buildPalace(site: RuinSite, put: Put, remove: Remove) {

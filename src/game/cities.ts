@@ -1,4 +1,5 @@
-import { BlockKind } from './voxel';
+import { BlockKind, voxelKey } from './voxel';
+import { churchBlocks } from './churches';
 import type { Voxel } from './voxel';
 import type { GeneratedChunk } from './levels';
 import { CITY_LIMIT } from './worldMode';
@@ -13,12 +14,12 @@ function hash(x: number, z: number, seed: number) {
 }
 
 export function generateCityChunk(cx: number, cz: number, seed: number, modern: boolean): GeneratedChunk {
-  const blocks: Voxel[] = [];
+  const blocks = new Map<string, Voxel>();
   const minX = cx * 16;
   const minZ = cz * 16;
   const put = (x: number, y: number, z: number, kind: BlockKind) => {
     if (Math.abs(x) > CITY_LIMIT || Math.abs(z) > CITY_LIMIT) return;
-    blocks.push({ x, y, z, kind });
+    blocks.set(voxelKey(x, y, z), { x, y, z, kind });
   };
 
   for (let x = minX; x < minX + 16; x++) {
@@ -36,13 +37,18 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
     for (let bz = firstZ; bz <= firstZ + 2; bz++) {
       const centerX = bx * BLOCK_SIZE + 28;
       const centerZ = bz * BLOCK_SIZE + 28;
+      const church = !modern && (bx === 0 && bz === -1 || (Math.abs(bx) % 9 === 0 && Math.abs(bz) % 9 === 0 && (bx !== 0 || bz !== 0)));
+      if (church) {
+        for (const block of churchBlocks(centerX, centerZ, GROUND + 1)) put(block.x, block.y, block.z, block.kind);
+        continue;
+      }
       const variation = hash(bx, bz, seed);
       if (variation < 0.07) continue;
       const half = modern && variation < 0.35 ? 9 : 11;
       const floors = modern ? variation < 0.35 ? 2 : 4 + Math.floor(variation * 5) : 3 + Math.floor(variation * 3);
       const height = GROUND + floors * 4;
       const wall = modern ? BlockKind.ConcreteWhite : variation < 0.5 ? BlockKind.BeigeBrick : BlockKind.WhiteBrick;
-      const accent = modern ? [BlockKind.GlassCyan, BlockKind.GlassBlue, BlockKind.GlassMagenta][Math.floor(variation * 3)] : BlockKind.GlassLightBlue;
+      const accent = modern ? [BlockKind.GlassCyan, BlockKind.GlassBlue, BlockKind.GlassMagenta][Math.floor(variation * 3)] : BlockKind.Glass;
       for (let x = centerX - half; x <= centerX + half; x++) {
         for (let z = centerZ - half; z <= centerZ + half; z++) {
           const edgeX = Math.abs(x - centerX) === half;
@@ -87,5 +93,5 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
       }
     }
   }
-  return { blocks, water: [] };
+  return { blocks: [...blocks.values()], water: [] };
 }
