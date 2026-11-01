@@ -12,11 +12,11 @@ import { raycastVoxel } from '../voxel';
 const step = new Vector3();
 const next = new Vector3();
 
-export function fireProjectile(world: World, origin: Vector3, direction: Vector3, kind: 'arrow' | 'bullet' | 'bomb') {
+export function fireProjectile(world: World, origin: Vector3, direction: Vector3, kind: 'arrow' | 'bullet' | 'bomb', damage = 1) {
   const velocity = direction.clone().normalize().multiplyScalar(kind === 'bullet' ? 48 : kind === 'bomb' ? 18 : 30);
   const position = origin.clone().addScaledVector(direction, 0.8);
   const entity = world.spawn(
-    Projectile({ id: crypto.randomUUID(), kind, life: kind === 'bullet' ? 1.5 : 8, damage: 1 }),
+    Projectile({ id: crypto.randomUUID(), kind, life: kind === 'bullet' ? 1.5 : 8, damage }),
     ProjectilePosition(position),
     ProjectileVelocity(velocity),
     ProjectileMesh(),
@@ -59,7 +59,7 @@ export function projectileSystem(world: World, dt: number) {
           position.copy(playerTarget.position);
           detonateProjectile(world, position);
         } else {
-          requestBattleHit(playerTarget.playerId, projectile.kind);
+          requestBattleHit(playerTarget.playerId, projectile.kind === 'bullet' && projectile.damage > 1 ? 'rifle' : projectile.kind);
         }
         syncProjectileRemoval(world, entity, projectile.kind === 'bomb');
         entity.destroy();

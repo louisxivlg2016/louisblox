@@ -175,7 +175,7 @@ export const useGameStore = create<GameStore>((set) => ({
       gameplayMode,
       selected: gameplayMode === 'battle' ? 'pistol_iron' : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass,
       hotbarSlots: gameplayMode === 'battle'
-        ? ['pistol_iron', 'pistol_bomb', 'bow', 'sword_iron', ...HOTBAR_BLOCKS.slice(0, 6)]
+        ? ['pistol_iron', 'rifle_auto', 'pistol_bomb', 'bow', 'sword_iron', ...HOTBAR_BLOCKS.slice(0, 5)]
         : gameplayMode === 'survival' ? ['hand', ...Array(9).fill(null)] : [...HOTBAR_BLOCKS.slice(0, 10)],
       backpackItem: null,
       itemCounts: gameplayMode === 'survival' ? { hand: 1 } : { ...DEFAULT_ITEM_COUNTS },

@@ -72,6 +72,7 @@ export function recipeFor(kind: SelectedKind): Recipe | null {
   if (meta.category === 'shovel') return recipe(kind, 1, [[material, 1], ['stick', 2]]);
   if (meta.category === 'armor') return recipe(kind, 1, [[material, 4]]);
   if (meta.category === 'bow') return recipe(kind, 1, [['stick', 3], [BlockKind.Leaves, 2]]);
+  if (kind === 'rifle_auto') return recipe(kind, 1, [[BlockKind.IronOre, 6], [BlockKind.GoldOre, 2], [BlockKind.Wood, 1]]);
   if (meta.category === 'gun') return recipe(kind, 1, [[BlockKind.IronOre, 3], [BlockKind.Wood, 1]]);
   if (meta.category === 'saddle') return recipe(kind, 1, [[BlockKind.Leaves, 3], [BlockKind.IronOre, 1]]);
   if (meta.category === 'vehicle') {

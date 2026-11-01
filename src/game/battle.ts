@@ -7,7 +7,7 @@ import { Player, PlayerBody, PlayerHealth, PlayerMount, PlayerPosition, PlayerSt
 import { world } from './world';
 import { dismount } from './vehicles';
 
-export type BattleHitKind = 'bullet' | 'arrow' | 'bomb' | 'melee';
+export type BattleHitKind = 'bullet' | 'rifle' | 'arrow' | 'bomb' | 'melee';
 export type BattleEvent = { id: string; killerName: string; victimName: string };
 type Scores = { red: number; blue: number };
 

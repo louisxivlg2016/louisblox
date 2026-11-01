@@ -101,7 +101,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     return true;
   }
   if ((meta.category === 'bow' || meta.category === 'gun') && (interact > 0 || isMouseDown(0)) && cooldown <= 0) {
-    fireProjectile(world, origin, direction, meta.category === 'bow' ? 'arrow' : meta.shape === 'rpg' || selected === 'pistol_bomb' ? 'bomb' : 'bullet');
+    fireProjectile(world, origin, direction, meta.category === 'bow' ? 'arrow' : meta.shape === 'rpg' || selected === 'pistol_bomb' ? 'bomb' : 'bullet', meta.damage);
     cooldowns.set(world, meta.cooldown ?? 0.5);
     return true;
   }

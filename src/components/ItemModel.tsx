@@ -72,7 +72,18 @@ export function BowModel({ crossbow = false }: { crossbow?: boolean }) {
   );
 }
 
-export function GunModel({ color, bomb }: { color: string; bomb?: boolean }) {
+export function GunModel({ color, bomb, rifle }: { color: string; bomb?: boolean; rifle?: boolean }) {
+  if (rifle) return (
+    <group>
+      <PixelPart position={[0, -0.2, 0.12]} size={[0.16, 0.38, 0.2]} color="#3b2a20" />
+      <PixelPart position={[0, 0.04, 0.05]} size={[0.24, 0.22, 0.75]} color={color} />
+      <PixelPart position={[0, -0.18, -0.12]} size={[0.14, 0.34, 0.16]} color="#1c221b" />
+      <PixelPart position={[0, 0.06, 0.6]} size={[0.2, 0.2, 0.36]} color="#3b2a20" />
+      <PixelPart position={[0, 0.08, -0.58]} size={[0.1, 0.1, 0.55]} color="#454d56" />
+      <PixelPart position={[0, 0.08, -0.87]} size={[0.13, 0.13, 0.05]} color="#181e26" />
+      <PixelPart position={[0, 0.2, -0.05]} size={[0.07, 0.08, 0.3]} color="#181e26" />
+    </group>
+  );
   return (
     <group>
       <PixelPart position={[0, -0.22, 0.07]} size={[0.18, 0.43, 0.22]} color="#4f3527" />
@@ -461,7 +472,7 @@ export function ItemModel({ kind, held = false }: ModelProps) {
   if (isGalleryItem(kind)) model = <GalleryModel kind={kind} />;
   else if (meta.category === 'sword') model = <SwordModel color={meta.color} />;
   else if (meta.category === 'bow') model = <BowModel crossbow={kind === 'crossbow'} />;
-  else if (meta.category === 'gun') model = <GunModel color={meta.color} bomb={kind === 'pistol_bomb'} />;
+  else if (meta.category === 'gun') model = <GunModel color={meta.color} bomb={kind === 'pistol_bomb'} rifle={kind === 'rifle_auto'} />;
   else if (meta.category === 'pickaxe' || meta.category === 'shovel') model = <ToolModel kind={kind} />;
   else if (meta.category === 'food') model = <FoodModel kind={kind} />;
   else if (meta.category === 'armor') model = <ArmorModel color={meta.color} />;

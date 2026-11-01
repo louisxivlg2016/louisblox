@@ -13,7 +13,7 @@ export type ItemKind =
   | 'armor_gold' | 'armor_diamond' | 'armor_silver'
   | 'apple' | 'bread' | 'cooked_meat' | 'berries'
   | 'corn' | 'wheat' | 'tomato' | 'carrot' | 'watermelon'
-  | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb'
+  | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb' | 'rifle_auto'
   | 'car_red' | 'car_blue' | 'plane' | 'train' | 'boat' | 'saddle';
 export type SelectedKind = BlockKind | ItemKind | GalleryItemId;
 export type ItemMeta = {
@@ -24,6 +24,7 @@ export type ItemMeta = {
   healing?: number;
   protection?: number;
   cooldown?: number;
+  damage?: number;
   efficiency?: number;
   shape?: string;
 };
@@ -70,6 +71,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   pistol_iron: item('Pistolet en fer', '#9caab3', 'gun', { cooldown: 0.42 }),
   pistol_gold: item('Pistolet en or', '#e5b934', 'gun', { cooldown: 0.32 }),
   pistol_bomb: item('Pistolet lance-bombes', '#686d79', 'gun', { cooldown: 1.1 }),
+  rifle_auto: item('Fusil automatique', '#2f3b2c', 'gun', { cooldown: 0.09, damage: 2 }),
   car_red: item('Voiture de course rouge', '#d63935', 'vehicle'),
   car_blue: item('Voiture bleue avec cabine', '#347cd0', 'vehicle'),
   plane: item('Avion de passagers', '#d9e4eb', 'vehicle', { shape: 'plane' }),
