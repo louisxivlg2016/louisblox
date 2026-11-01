@@ -68,7 +68,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
       }
     };
     void refresh();
-    const timer = window.setInterval(refresh, 5000);
+    const timer = window.setInterval(refresh, 15000);
     return () => {
       active = false;
       window.clearInterval(timer);

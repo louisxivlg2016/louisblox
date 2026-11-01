@@ -140,7 +140,7 @@ export class PlayerDirectory extends DurableObject<Env> {
     await this.ensureReady();
     const now = Date.now();
     for (const [playerId, player] of this.onlinePlayers) {
-      if ((player.lastSeen ?? 0) + 30000 < now) this.onlinePlayers.delete(playerId);
+      if ((player.lastSeen ?? 0) + 120000 < now) this.onlinePlayers.delete(playerId);
     }
     if (url.pathname === '/username' && request.method === 'GET') {
       const name = (url.searchParams.get('name') ?? '').trim();
@@ -178,13 +178,18 @@ export class PlayerDirectory extends DurableObject<Env> {
         if (!player) return json({ ok: false, error: 'Profil invalide.' }, 400);
         if (!this.nameAvailable(player.name, player.playerId)) return json({ ok: false, error: 'Ce pseudo est déjà utilisé. Choisis-en un autre.' }, 409);
         const previous = this.knownPlayers.get(player.playerId);
-        if (previous && previous.name !== player.name) this.nameOwners.delete(previous.name.trim().toLocaleLowerCase());
+        const renamed = previous !== undefined && previous.name !== player.name;
+        if (previous && renamed) this.nameOwners.delete(previous.name.trim().toLocaleLowerCase());
         player.name = player.name.trim();
-        player.lastSeen = now;
+        const known = { ...player, lastSeen: undefined };
+        const profileChanged = !previous || JSON.stringify({ ...previous, lastSeen: undefined }) !== JSON.stringify(known);
         this.nameOwners.set(player.name.toLocaleLowerCase(), player.playerId);
-        this.knownPlayers.set(player.playerId, player);
-        this.onlinePlayers.set(player.playerId, player);
-        await Promise.all([this.saveKnown(), this.ctx.storage.put('names-v1', [...this.nameOwners])]);
+        this.knownPlayers.set(player.playerId, known);
+        this.onlinePlayers.set(player.playerId, { ...player, lastSeen: now });
+        const writes: Promise<unknown>[] = [];
+        if (profileChanged) writes.push(this.saveKnown());
+        if (!previous || renamed) writes.push(this.ctx.storage.put('names-v1', [...this.nameOwners]));
+        await Promise.all(writes);
         return json({ ok: true });
       }
     }

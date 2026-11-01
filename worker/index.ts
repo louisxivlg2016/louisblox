@@ -315,7 +315,9 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private publishPresence(attachment: PlayerAttachment) {
-    attachment.presenceAt = Date.now();
+    const now = Date.now();
+    if (now - attachment.presenceAt < 60000) return;
+    attachment.presenceAt = now;
     const directory = this.env.PLAYER_DIRECTORY.get(this.env.PLAYER_DIRECTORY.idFromName('global'));
     this.ctx.waitUntil(directory.fetch('https://directory/presence', {
       method: 'POST',
@@ -621,7 +623,7 @@ export class GameRoom extends DurableObject<Env> {
     attachment.state = state;
     ws.serializeAttachment(attachment);
     this.broadcast({ type: 'state', playerId: attachment.playerId, state }, ws);
-    if (Date.now() - attachment.presenceAt > 10000) this.publishPresence(attachment);
+    if (Date.now() - attachment.presenceAt > 60000) this.publishPresence(attachment);
   }
 
   private vehicleDrivers = new Map<string, string>();

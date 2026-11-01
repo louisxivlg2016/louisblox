@@ -567,7 +567,7 @@ export function MultiplayerConnection() {
       applyPendingWorld();
       flushEdits();
       const current = socket.current;
-      if (current?.readyState === WebSocket.OPEN && Date.now() - lastPresence > 15000) {
+      if (current?.readyState === WebSocket.OPEN && Date.now() - lastPresence > 60000) {
         lastPresence = Date.now();
         current.send(JSON.stringify({ type: 'presence' }));
       }

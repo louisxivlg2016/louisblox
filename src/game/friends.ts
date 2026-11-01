@@ -101,14 +101,20 @@ function endpoint(path: string) {
   return url;
 }
 
+let lastRegistration: { key: string; at: number } | null = null;
+
 export async function registerSelfProfile() {
+  const profile = selfProfile();
+  const key = endpoint('/presence').toString() + JSON.stringify(profile);
+  if (lastRegistration?.key === key && Date.now() - lastRegistration.at < 60000) return;
   const response = await fetch(endpoint('/presence'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(selfProfile()),
+    body: JSON.stringify(profile),
   });
   const result = await response.json() as { ok?: boolean; error?: string };
   if (!response.ok || !result.ok) throw new Error(result.error || 'Impossible d’enregistrer ce pseudo.');
+  lastRegistration = { key, at: Date.now() };
 }
 
 export async function validatePlayerName(name: string) {
