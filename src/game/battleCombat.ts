@@ -2,6 +2,7 @@ import { Vector3 } from 'three';
 import type { World } from 'koota';
 import { requestBattleHit } from './battle';
 import { useBattleStore } from './battle';
+import { isBattleEnemy } from './battleArena';
 import { useRemotePlayerStore } from './multiplayerStore';
 import { useGameStore } from './store';
 
@@ -14,7 +15,7 @@ export function findBattleTarget(world: World, origin: Vector3, direction: Vecto
   let target: { playerId: string; distance: number; position: Vector3 } | null = null;
   let closest = maxDistance;
   for (const [playerId, state] of Object.entries(useRemotePlayerStore.getState().players)) {
-    if (!useBattleStore.getState().teams[playerId] || useBattleStore.getState().teams[playerId] === team) continue;
+    if (!isBattleEnemy(team, useBattleStore.getState().teams[playerId])) continue;
     const position = new Vector3(state.x, state.y + 0.9, state.z);
     offset.copy(position).sub(origin);
     const distance = offset.dot(direction);
@@ -31,7 +32,7 @@ export function damageBattlePlayersInRadius(world: World, position: Vector3, rad
   const team = useBattleStore.getState().team;
   if (!team) return;
   for (const [playerId, state] of Object.entries(useRemotePlayerStore.getState().players)) {
-    if (useBattleStore.getState().teams[playerId] === team) continue;
+    if (!isBattleEnemy(team, useBattleStore.getState().teams[playerId])) continue;
     const distance = Math.hypot(state.x - position.x, state.y + 0.9 - position.y, state.z - position.z);
     if (distance <= radius) requestBattleHit(playerId, 'bomb');
   }

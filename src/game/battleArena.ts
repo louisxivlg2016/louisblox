@@ -4,10 +4,23 @@ import type { GeneratedChunk } from './levels';
 import { BlockKind } from './voxel';
 import type { Voxel } from './voxel';
 
-export type BattleTeam = 'red' | 'blue';
+export type BattleTeam = 'red' | 'blue' | 'solo';
 export const BATTLE_LIMIT = 22.5;
 
+export function isBattleTeam(value: unknown): value is BattleTeam {
+  return value === 'red' || value === 'blue' || value === 'solo';
+}
+
+export function isBattleEnemy(mine: BattleTeam, theirs: BattleTeam | undefined) {
+  return !!theirs && (theirs !== mine || mine === 'solo');
+}
+
 export function battleSpawn(team: BattleTeam | null) {
+  if (team === 'solo') {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 11 + Math.random() * 8;
+    return { x: Math.cos(angle) * radius, y: 8.51, z: Math.sin(angle) * radius };
+  }
   return { x: team === 'red' ? -16 : team === 'blue' ? 16 : 0, y: 8.51, z: 0 };
 }
 

@@ -28,7 +28,13 @@ type VoxelEdit = number | {
 } | null;
 type EditEntry = [string, VoxelEdit];
 type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern';
-type BattleTeam = 'red' | 'blue';
+type BattleTeam = 'red' | 'blue' | 'solo';
+
+function soloSpawn() {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 11 + Math.random() * 8;
+  return { x: Math.round(Math.cos(angle) * radius * 10) / 10, y: 8.51, z: Math.round(Math.sin(angle) * radius * 10) / 10 };
+}
 type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string };
 type SharedVehicle = {
   id: string;
@@ -184,7 +190,8 @@ export class GameRoom extends DurableObject<Env> {
   private vehicles = new Map<string, SharedVehicle>();
   private gameplayMode: GameplayMode = 'creative';
   private battleHealth = new Map<string, number>();
-  private battleScores: Record<BattleTeam, number> = { red: 0, blue: 0 };
+  private battleScores = { red: 0, blue: 0 };
+  private soloScores = new Map<string, number>();
   private battleHits = new Map<string, number>();
   private worldReady?: Promise<void>;
 
@@ -216,7 +223,11 @@ export class GameRoom extends DurableObject<Env> {
       teams[attachment.playerId] = attachment.team;
       health[attachment.playerId] = this.battleHealth.get(attachment.playerId) ?? 10;
     }
-    return { type: 'battle-state', teams, health, scores: this.battleScores };
+    const soloScores: Record<string, number> = {};
+    for (const [playerId, team] of Object.entries(teams)) {
+      if (team === 'solo') soloScores[playerId] = this.soloScores.get(playerId) ?? 0;
+    }
+    return { type: 'battle-state', teams, health, scores: this.battleScores, soloScores };
   }
 
   private broadcastBattleState(excludeId?: string) {
@@ -226,6 +237,7 @@ export class GameRoom extends DurableObject<Env> {
   private removeBattlePlayer(playerId: string) {
     this.battleHealth.delete(playerId);
     this.battleHits.delete(playerId);
+    this.soloScores.delete(playerId);
     this.broadcastBattleState(playerId);
   }
 
@@ -263,6 +275,7 @@ export class GameRoom extends DurableObject<Env> {
     this.battleHealth.clear();
     this.battleHits.clear();
     this.battleScores = { red: 0, blue: 0 };
+    this.soloScores.clear();
     this.worldReady = undefined;
     return json({ deleted: true });
   }
@@ -402,7 +415,7 @@ export class GameRoom extends DurableObject<Env> {
     if (type === 'battle-team') {
       const attachment = this.attachment(ws);
       const team = (data as { team?: unknown }).team;
-      if (this.gameplayMode !== 'battle' || !attachment || (team !== 'red' && team !== 'blue')) return;
+      if (this.gameplayMode !== 'battle' || !attachment || (team !== 'red' && team !== 'blue' && team !== 'solo')) return;
       const changed = attachment.team !== team;
       attachment.team = team;
       ws.serializeAttachment(attachment);
@@ -420,7 +433,8 @@ export class GameRoom extends DurableObject<Env> {
       if (now - (this.battleHits.get(attacker.playerId) ?? 0) < 150) return;
       const targetSocket = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
       const target = targetSocket ? this.attachment(targetSocket) : null;
-      if (!targetSocket || !target?.team || target.team === attacker.team || !target.state || !attacker.state) return;
+      if (!targetSocket || !target?.team || target.playerId === attacker.playerId || !target.state || !attacker.state) return;
+      if (target.team === attacker.team && attacker.team !== 'solo') return;
       const distance = Math.hypot(target.state.x - attacker.state.x, target.state.y - attacker.state.y, target.state.z - attacker.state.z);
       if (distance > (kind === 'melee' ? 6 : 90)) return;
       this.battleHits.set(attacker.playerId, now);
@@ -431,7 +445,8 @@ export class GameRoom extends DurableObject<Env> {
         this.broadcastBattleState();
         return;
       }
-      this.battleScores[attacker.team] += 1;
+      if (attacker.team === 'solo') this.soloScores.set(attacker.playerId, (this.soloScores.get(attacker.playerId) ?? 0) + 1);
+      else this.battleScores[attacker.team] += 1;
       this.battleHealth.set(targetId, 10);
       this.broadcast({
         type: 'battle-elimination',
@@ -441,7 +456,8 @@ export class GameRoom extends DurableObject<Env> {
         killerName: attacker.name,
         victimName: target.name,
       });
-      targetSocket.send(JSON.stringify({ type: 'battle-respawn', team: target.team, position: { x: target.team === 'red' ? -16 : 16, y: 8.51, z: 0 } }));
+      const position = target.team === 'solo' ? soloSpawn() : { x: target.team === 'red' ? -16 : 16, y: 8.51, z: 0 };
+      targetSocket.send(JSON.stringify({ type: 'battle-respawn', team: target.team, position }));
       this.broadcastBattleState();
       return;
     }
@@ -545,6 +561,7 @@ export class GameRoom extends DurableObject<Env> {
         this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' ? mode : 'creative';
         if (this.gameplayMode === 'battle') {
           this.battleScores = { red: 0, blue: 0 };
+          this.soloScores.clear();
           for (const playerId of this.battleHealth.keys()) this.battleHealth.set(playerId, 10);
         } else {
           this.battleHealth.clear();

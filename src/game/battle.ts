@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { World } from 'koota';
-import { battleSpawn } from './battleArena';
+import { battleSpawn, isBattleTeam } from './battleArena';
 import type { BattleTeam } from './battleArena';
 import { useGameStore } from './store';
 import { Player, PlayerBody, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
@@ -9,13 +9,14 @@ import { dismount } from './vehicles';
 
 export type BattleHitKind = 'bullet' | 'arrow' | 'bomb' | 'melee';
 export type BattleEvent = { id: string; killerName: string; victimName: string };
-type Scores = Record<BattleTeam, number>;
+type Scores = { red: number; blue: number };
 
 type BattleStore = {
   team: BattleTeam | null;
   teams: Record<string, BattleTeam>;
   health: Record<string, number>;
   scores: Scores;
+  soloScores: Record<string, number>;
   localPlayerId: string | null;
   events: BattleEvent[];
   deadUntil: number;
@@ -29,6 +30,7 @@ const initialState = {
   teams: {},
   health: {},
   scores: { red: 0, blue: 0 },
+  soloScores: {},
   localPlayerId: null,
   events: [],
   deadUntil: 0,
@@ -38,7 +40,7 @@ const initialState = {
 export const useBattleStore = create<BattleStore>((set) => ({
   ...initialState,
   setLocalPlayerId: (localPlayerId) => set({ localPlayerId }),
-  clear: () => set({ ...initialState, teams: {}, health: {}, scores: { red: 0, blue: 0 }, events: [] }),
+  clear: () => set({ ...initialState, teams: {}, health: {}, scores: { red: 0, blue: 0 }, soloScores: {}, events: [] }),
 }));
 
 let socket: WebSocket | null = null;
@@ -95,7 +97,12 @@ export function receiveBattleState(value: unknown) {
   const teams: Record<string, BattleTeam> = {};
   const health: Record<string, number> = {};
   for (const [playerId, team] of Object.entries(sourceTeams)) {
-    if (team === 'red' || team === 'blue') teams[playerId] = team;
+    if (isBattleTeam(team)) teams[playerId] = team;
+  }
+  const sourceSolo = data.soloScores && typeof data.soloScores === 'object' ? data.soloScores as Record<string, unknown> : {};
+  const soloScores: Record<string, number> = {};
+  for (const [playerId, kills] of Object.entries(sourceSolo)) {
+    if (typeof kills === 'number' && Number.isFinite(kills) && kills >= 0) soloScores[playerId] = Math.floor(kills);
   }
   for (const [playerId, lives] of Object.entries(sourceHealth)) {
     if (typeof lives === 'number' && Number.isFinite(lives) && lives >= 0 && lives <= 10) health[playerId] = lives;
@@ -105,7 +112,7 @@ export function receiveBattleState(value: unknown) {
     blue: typeof sourceScores.blue === 'number' && sourceScores.blue >= 0 ? Math.floor(sourceScores.blue) : 0,
   };
   const localPlayerId = useBattleStore.getState().localPlayerId;
-  useBattleStore.setState({ teams, health, scores, team: localPlayerId ? teams[localPlayerId] ?? null : null });
+  useBattleStore.setState({ teams, health, scores, soloScores, team: localPlayerId ? teams[localPlayerId] ?? null : null });
   const lives = localPlayerId ? health[localPlayerId] : undefined;
   if (lives !== undefined) {
     world.queryFirst(Player)?.set(PlayerHealth, { value: lives });
@@ -128,7 +135,7 @@ export function receiveBattleElimination(value: unknown) {
 export function receiveBattleRespawn(value: unknown) {
   if (!value || typeof value !== 'object') return;
   const data = value as Record<string, unknown>;
-  const team = data.team === 'red' || data.team === 'blue' ? data.team : null;
+  const team = isBattleTeam(data.team) ? data.team : null;
   const position = data.position && typeof data.position === 'object' ? data.position as Record<string, unknown> : null;
   if (!team || !position || !['x', 'y', 'z'].every((key) => typeof position[key] === 'number' && Number.isFinite(position[key]))) return;
   respawnAtBase(world, team, { x: position.x as number, y: position.y as number, z: position.z as number });
