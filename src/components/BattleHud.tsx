@@ -13,8 +13,9 @@ export function BattleHud() {
   const ready = useBattleStore((state) => state.ready);
   const teams = useBattleStore((state) => state.teams);
   const scores = useBattleStore((state) => state.scores);
-  const soloScores = useBattleStore((state) => state.soloScores);
-  const lobbyPlayers = useMultiplayerStore((state) => state.players);
+  const playerScores = useBattleStore((state) => state.playerScores);
+  const playerNames = useBattleStore((state) => state.names);
+  const localPlayerId = useBattleStore((state) => state.localPlayerId);
   const events = useBattleStore((state) => state.events);
   const deadUntil = useBattleStore((state) => state.deadUntil);
   useEffect(() => {
@@ -30,19 +31,31 @@ export function BattleHud() {
   const redCount = Object.values(teams).filter((value) => value === 'red').length;
   const blueCount = Object.values(teams).filter((value) => value === 'blue').length;
   const soloCount = Object.values(teams).filter((value) => value === 'solo').length;
-  const names = new Map(lobbyPlayers.map((player) => [player.playerId, player.self ? 'Toi' : player.name]));
-  const soloLeaders = Object.entries(soloScores)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 3);
+  const freeForAll = soloCount > 0 || team === 'solo';
+  const showTeams = !freeForAll || redCount > 0 || blueCount > 0;
+  const ranking = Object.entries(teams)
+    .map(([playerId, playerTeam]) => ({
+      playerId,
+      team: playerTeam,
+      kills: playerScores[playerId] ?? 0,
+      name: playerId === localPlayerId ? 'Toi' : playerNames[playerId] ?? 'Joueur',
+    }))
+    .sort((a, b) => b.kills - a.kills || a.name.localeCompare(b.name));
   return (
     <>
-      <div className="battle-scoreboard" aria-label="Score de la bataille">
-        {(redCount > 0 || blueCount > 0 || soloCount === 0) && <span className="battle-red">Rouge · {scores.red}</span>}
+      <div className={`battle-scoreboard${freeForAll ? ' free-for-all' : ''}`} aria-label="Score de la bataille">
+        {showTeams && <span className="battle-red">Rouge · {scores.red}</span>}
         <strong>BATAILLE</strong>
-        {(redCount > 0 || blueCount > 0 || soloCount === 0) && <span className="battle-blue">Bleu · {scores.blue}</span>}
-        {soloLeaders.map(([playerId, kills]) => (
-          <span key={playerId} className="battle-solo">{names.get(playerId) ?? 'Joueur'} · {kills}</span>
-        ))}
+        {showTeams && <span className="battle-blue">Bleu · {scores.blue}</span>}
+        {freeForAll && (
+          <ol className="battle-ranking" aria-label="Score de chaque joueur">
+            {ranking.map((player) => (
+              <li key={player.playerId} className={`battle-${player.team}${player.playerId === localPlayerId ? ' self' : ''}`}>
+                {player.name} · {player.kills}
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
       {!team && (
         <div className="battle-team-picker">

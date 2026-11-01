@@ -16,7 +16,8 @@ type BattleStore = {
   teams: Record<string, BattleTeam>;
   health: Record<string, number>;
   scores: Scores;
-  soloScores: Record<string, number>;
+  playerScores: Record<string, number>;
+  names: Record<string, string>;
   localPlayerId: string | null;
   events: BattleEvent[];
   deadUntil: number;
@@ -30,7 +31,8 @@ const initialState = {
   teams: {},
   health: {},
   scores: { red: 0, blue: 0 },
-  soloScores: {},
+  playerScores: {},
+  names: {},
   localPlayerId: null,
   events: [],
   deadUntil: 0,
@@ -40,7 +42,7 @@ const initialState = {
 export const useBattleStore = create<BattleStore>((set) => ({
   ...initialState,
   setLocalPlayerId: (localPlayerId) => set({ localPlayerId }),
-  clear: () => set({ ...initialState, teams: {}, health: {}, scores: { red: 0, blue: 0 }, soloScores: {}, events: [] }),
+  clear: () => set({ ...initialState, teams: {}, health: {}, scores: { red: 0, blue: 0 }, playerScores: {}, names: {}, events: [] }),
 }));
 
 let socket: WebSocket | null = null;
@@ -99,10 +101,15 @@ export function receiveBattleState(value: unknown) {
   for (const [playerId, team] of Object.entries(sourceTeams)) {
     if (isBattleTeam(team)) teams[playerId] = team;
   }
-  const sourceSolo = data.soloScores && typeof data.soloScores === 'object' ? data.soloScores as Record<string, unknown> : {};
-  const soloScores: Record<string, number> = {};
-  for (const [playerId, kills] of Object.entries(sourceSolo)) {
-    if (typeof kills === 'number' && Number.isFinite(kills) && kills >= 0) soloScores[playerId] = Math.floor(kills);
+  const sourcePlayerScores = data.playerScores && typeof data.playerScores === 'object' ? data.playerScores as Record<string, unknown> : {};
+  const playerScores: Record<string, number> = {};
+  for (const [playerId, kills] of Object.entries(sourcePlayerScores)) {
+    if (typeof kills === 'number' && Number.isFinite(kills) && kills >= 0) playerScores[playerId] = Math.floor(kills);
+  }
+  const sourceNames = data.names && typeof data.names === 'object' ? data.names as Record<string, unknown> : {};
+  const names: Record<string, string> = {};
+  for (const [playerId, name] of Object.entries(sourceNames)) {
+    if (typeof name === 'string') names[playerId] = name.slice(0, 24);
   }
   for (const [playerId, lives] of Object.entries(sourceHealth)) {
     if (typeof lives === 'number' && Number.isFinite(lives) && lives >= 0 && lives <= 10) health[playerId] = lives;
@@ -112,7 +119,7 @@ export function receiveBattleState(value: unknown) {
     blue: typeof sourceScores.blue === 'number' && sourceScores.blue >= 0 ? Math.floor(sourceScores.blue) : 0,
   };
   const localPlayerId = useBattleStore.getState().localPlayerId;
-  useBattleStore.setState({ teams, health, scores, soloScores, team: localPlayerId ? teams[localPlayerId] ?? null : null });
+  useBattleStore.setState({ teams, health, scores, playerScores, names, team: localPlayerId ? teams[localPlayerId] ?? null : null });
   const lives = localPlayerId ? health[localPlayerId] : undefined;
   if (lives !== undefined) {
     world.queryFirst(Player)?.set(PlayerHealth, { value: lives });

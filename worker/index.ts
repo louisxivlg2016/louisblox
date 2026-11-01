@@ -191,7 +191,7 @@ export class GameRoom extends DurableObject<Env> {
   private gameplayMode: GameplayMode = 'creative';
   private battleHealth = new Map<string, number>();
   private battleScores = { red: 0, blue: 0 };
-  private soloScores = new Map<string, number>();
+  private playerScores = new Map<string, number>();
   private battleHits = new Map<string, number>();
   private worldReady?: Promise<void>;
 
@@ -217,17 +217,17 @@ export class GameRoom extends DurableObject<Env> {
   private battleSnapshot(excludeId?: string) {
     const teams: Record<string, BattleTeam> = {};
     const health: Record<string, number> = {};
+    const playerScores: Record<string, number> = {};
+    const names: Record<string, string> = {};
     for (const ws of this.ctx.getWebSockets()) {
       const attachment = this.attachment(ws);
       if (!attachment?.team || attachment.playerId === excludeId) continue;
       teams[attachment.playerId] = attachment.team;
       health[attachment.playerId] = this.battleHealth.get(attachment.playerId) ?? 10;
+      playerScores[attachment.playerId] = this.playerScores.get(attachment.playerId) ?? 0;
+      names[attachment.playerId] = attachment.name;
     }
-    const soloScores: Record<string, number> = {};
-    for (const [playerId, team] of Object.entries(teams)) {
-      if (team === 'solo') soloScores[playerId] = this.soloScores.get(playerId) ?? 0;
-    }
-    return { type: 'battle-state', teams, health, scores: this.battleScores, soloScores };
+    return { type: 'battle-state', teams, health, scores: this.battleScores, playerScores, names };
   }
 
   private broadcastBattleState(excludeId?: string) {
@@ -237,7 +237,7 @@ export class GameRoom extends DurableObject<Env> {
   private removeBattlePlayer(playerId: string) {
     this.battleHealth.delete(playerId);
     this.battleHits.delete(playerId);
-    this.soloScores.delete(playerId);
+    this.playerScores.delete(playerId);
     this.broadcastBattleState(playerId);
   }
 
@@ -275,7 +275,7 @@ export class GameRoom extends DurableObject<Env> {
     this.battleHealth.clear();
     this.battleHits.clear();
     this.battleScores = { red: 0, blue: 0 };
-    this.soloScores.clear();
+    this.playerScores.clear();
     this.worldReady = undefined;
     return json({ deleted: true });
   }
@@ -445,8 +445,8 @@ export class GameRoom extends DurableObject<Env> {
         this.broadcastBattleState();
         return;
       }
-      if (attacker.team === 'solo') this.soloScores.set(attacker.playerId, (this.soloScores.get(attacker.playerId) ?? 0) + 1);
-      else this.battleScores[attacker.team] += 1;
+      this.playerScores.set(attacker.playerId, (this.playerScores.get(attacker.playerId) ?? 0) + 1);
+      if (attacker.team !== 'solo') this.battleScores[attacker.team] += 1;
       this.battleHealth.set(targetId, 10);
       this.broadcast({
         type: 'battle-elimination',
@@ -561,7 +561,7 @@ export class GameRoom extends DurableObject<Env> {
         this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' ? mode : 'creative';
         if (this.gameplayMode === 'battle') {
           this.battleScores = { red: 0, blue: 0 };
-          this.soloScores.clear();
+          this.playerScores.clear();
           for (const playerId of this.battleHealth.keys()) this.battleHealth.set(playerId, 10);
         } else {
           this.battleHealth.clear();

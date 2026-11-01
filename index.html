@@ -340,6 +340,9 @@
       @media (pointer: coarse) { .emote-toggle { left: 112px; bottom: 312px; padding: 8px 10px; font-size: 10px; } }
       .battle-scoreboard { position: absolute; top: 76px; left: 50%; z-index: 16; display: flex; align-items: center; gap: 16px; padding: 9px 14px; transform: translateX(-50%); color: #fff; background: rgba(15, 20, 18, 0.85); border: 2px solid #697661; font-size: 13px; white-space: nowrap; }
       .battle-scoreboard strong { color: #e7e4cf; font-size: 11px; }
+      .battle-scoreboard.free-for-all { flex-wrap: wrap; justify-content: center; max-width: min(520px, calc(100vw - 28px)); }
+      .battle-ranking { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; width: 100%; margin: 0; padding: 0; list-style: none; }
+      .battle-ranking li.self { font-weight: 700; text-decoration: underline; }
       .battle-red { color: #ff9d91; }
       .battle-blue { color: #8dbbff; }
       .battle-solo { color: #f2cf6b; }
