@@ -3,7 +3,7 @@ import { Vector3 } from 'three';
 import type { Camera } from 'three';
 import { findAnimalTarget } from '../combat';
 import { getBlockIndex } from '../chunks';
-import { consumeActions, isMouseDown } from '../input';
+import { consumeActions, isDown, isMouseDown } from '../input';
 import { getItemMeta } from '../items';
 import { isGalleryItem } from '../galleryCatalog';
 import { useGalleryItem } from '../galleryActions';
@@ -100,7 +100,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     eatItem(world, selected);
     return true;
   }
-  if ((meta.category === 'bow' || meta.category === 'gun') && (interact > 0 || isMouseDown(0)) && cooldown <= 0) {
+  if ((meta.category === 'bow' || meta.category === 'gun') && (interact > 0 || isMouseDown(0) || (meta.category === 'gun' && isDown('KeyE'))) && cooldown <= 0) {
     fireProjectile(world, origin, direction, meta.category === 'bow' ? 'arrow' : meta.shape === 'rpg' || selected === 'pistol_bomb' ? 'bomb' : 'bullet', meta.damage);
     cooldowns.set(world, meta.cooldown ?? 0.5);
     return true;
