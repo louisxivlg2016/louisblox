@@ -6,6 +6,7 @@ import { useGameStore } from '../game/store';
 import { PixelAvatar } from './PixelAvatar';
 import { SettingsPanel } from './SettingsPanel';
 import shopUrl from '../../assets/menu/shop.webp';
+import settingsButtonUrl from '../../assets/ui/settings-button.webp';
 
 const HAIR_COLORS = ['#49382f', '#25232a', '#8a5838', '#d6b46a', '#d7d0c3', '#a74a82', '#4e79a7', '#50844a'];
 const EYE_COLORS = ['#273b4b', '#3d6e45', '#6f4d35', '#4e79a7', '#784da0', '#a13c3c'];
@@ -34,7 +35,7 @@ export function BoutiquePanel() {
         <div className="boutique-layout">
           <nav className="boutique-tabs" role="tablist" aria-label="Boutique et réglages">
             <button className={`boutique-tab ${tab === 'shop' ? 'active' : ''}`} role="tab" aria-selected={tab === 'shop'} onClick={() => setTab('shop')}>Boutique</button>
-            <button className={`boutique-tab ${tab === 'settings' ? 'active' : ''}`} role="tab" aria-selected={tab === 'settings'} onClick={() => setTab('settings')}>Réglages</button>
+            <button className={`boutique-tab image-tab ${tab === 'settings' ? 'active' : ''}`} role="tab" aria-label="Réglages" aria-selected={tab === 'settings'} onClick={() => setTab('settings')}><img src={settingsButtonUrl} alt="" /></button>
           </nav>
           <div className="boutique-content" role="tabpanel">
             {tab === 'settings' ? <SettingsPanel /> : <>

@@ -2,6 +2,8 @@ import { requestPlay } from '../game/input';
 import { useGameStore } from '../game/store';
 import { selectionInfo } from '../game/items';
 import { ItemIcon } from './ItemIcon';
+import backpackButtonUrl from '../../assets/ui/backpack-button.webp';
+import shopButtonUrl from '../../assets/ui/shop-button.webp';
 import { Backpack } from './Backpack';
 import { BoutiquePanel } from './BoutiquePanel';
 import { ContainerPanel } from './ContainerPanel';
@@ -60,8 +62,8 @@ export function Hud() {
         <>
           <div className="crosshair" aria-hidden="true"><i /><b /></div>
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
-          <button className="backpack-toggle" onClick={openBackpack}>Sac à dos</button>
-          <button className="shop-toggle" onClick={openShop}>Boutique</button>
+          <button className="backpack-toggle" onClick={openBackpack} aria-label="Sac à dos"><img src={backpackButtonUrl} alt="" /></button>
+          <button className="shop-toggle" onClick={openShop} aria-label="Boutique"><img src={shopButtonUrl} alt="" /></button>
           <button className="teleport-toggle" onClick={openTeleport}>Téléportation · T</button>
           <div className="action-hint">Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</div>
           {notice && <div className="game-notice">{notice}</div>}
