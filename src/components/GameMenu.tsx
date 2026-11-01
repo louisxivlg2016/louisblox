@@ -11,6 +11,7 @@ import survivalUrl from '../../assets/menu/survival.webp';
 import creativeUrl from '../../assets/menu/creative.webp';
 import shopUrl from '../../assets/menu/shop.webp';
 import battleUrl from '../../assets/menu/battle.webp';
+import citiesUrl from '../../assets/menu/cities.webp';
 
 export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: () => void | Promise<void>; onShop: () => void }) {
   const regenerate = useGameStore((state) => state.regenerate);
@@ -28,8 +29,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   }, [pendingWorld, room, status, onPlay]);
   const create = (gameplayMode: GameplayMode) => {
     const shared = enabled && gameplayMode !== 'battle';
-    const worldId = shared ? gameplayMode === 'survival' ? 'survie-public-v1' : 'creatif-public-v1' : `monde-${crypto.randomUUID().slice(0, 8)}`;
-    const worldName = gameplayMode === 'survival' ? 'Survie avec tous les joueurs' : gameplayMode === 'creative' ? 'Créatif avec tous les joueurs' : worldId;
+    const publicId = gameplayMode === 'survival' ? 'survie-public-v1' : gameplayMode === 'creative' ? 'creatif-public-v1' : `${gameplayMode}-public-v1`;
+    const worldId = shared ? publicId : `monde-${crypto.randomUUID().slice(0, 8)}`;
+    const names: Record<GameplayMode, string> = { survival: 'Survie avec tous les joueurs', creative: 'Créatif avec tous les joueurs', battle: worldId, 'city-ancient': 'Ville ancienne · 10 km', 'city-modern': 'Ville moderne · 10 km' };
+    const worldName = names[gameplayMode];
     if (shared && readWorldSave(worldId)) useGameStore.getState().openWorld(worldId, worldName);
     else regenerate(gameplayMode, worldId);
     if (shared) useGameStore.setState({ worldName });
@@ -69,6 +72,16 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               <img src={battleUrl} alt="Monde Combat du mode Bataille" />
               <span className="world-card-label"><strong>Bataille</strong><small>Arène limitée · Équipes rouge et bleue</small></span>
               <span className="world-mode-tag">2 contre 1 possible</span>
+            </button>
+            <button className="world-card city-card" data-world-mode="city-ancient" onClick={() => create('city-ancient')} disabled={pendingWorld !== null}>
+              <img src={citiesUrl} alt="Ville ancienne et ses bâtiments parisiens" />
+              <span className="world-card-label"><strong>Ville ancienne</strong><small>Bâtiments parisiens · 10 km × 10 km</small></span>
+              <span className="world-mode-tag">{enabled ? 'Multijoueur' : 'Solo'}</span>
+            </button>
+            <button className="world-card city-card" data-world-mode="city-modern" onClick={() => create('city-modern')} disabled={pendingWorld !== null}>
+              <img src={citiesUrl} alt="Ville moderne, villas et immeubles de verre" />
+              <span className="world-card-label"><strong>Ville moderne</strong><small>Villas et petits gratte-ciel · 10 km × 10 km</small></span>
+              <span className="world-mode-tag">{enabled ? 'Multijoueur' : 'Solo'}</span>
             </button>
           </div>
           <section className="lobby-section">

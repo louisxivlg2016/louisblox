@@ -60,7 +60,7 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
 export function spawnChunkAnimals(world: World, cx: number, cz: number, water: WaterTile[], seed: number) {
   const entities: Entity[] = [];
 
-  if (water.length > 0 && hash(cx, cz, seed + 800) > 0.8) {
+  if (water.length > 0 && hash(cx, cz, seed + 800) > 0.95) {
     const tile = water[Math.floor(hash(cx, cz, seed + 801) * water.length)];
     entities.push(spawnAnimal(world, 'duck', tile.x, SEA_LEVEL + 0.35, tile.z, seed));
   }
@@ -82,7 +82,7 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
     }
   }
 
-  if (hash(cx, cz, seed + 802) < 0.9) return entities;
+  if (hash(cx, cz, seed + 802) < 0.55) return entities;
   const centerX = cx * 16 + 8;
   const centerZ = cz * 16 + 8;
   const biome = biomeAt(centerX, centerZ, seed);

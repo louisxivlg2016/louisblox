@@ -14,7 +14,7 @@ import { isUtilityBlock } from '../game/extraBlocks';
 import { BlockKind } from '../game/voxel';
 import { OUTFITS, selectedWig } from '../game/outfits';
 import { CharacterOutfit } from './CharacterOutfit';
-import { hasWardrobeModel } from './WardrobeGlb';
+import { hasFullCharacter } from './FullCharacterGlb';
 import { useEmoteStore } from '../game/emotes';
 import { useEatingStore } from '../game/eating';
 
@@ -115,13 +115,13 @@ export function PlayerAvatar() {
       }}
       visible={cameraMode !== 'first' || sleeping}
     >
-      {(!hasWardrobeModel(outfit) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
+      {(!hasFullCharacter(outfit) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit outfit={outfit} wig={wig} color={appearance.clothingColor} head={headContent} headRef={headRef} />
-      <group ref={leftArm} position={[-0.39, 1.4, 0]}>
+      <group ref={leftArm} visible={!hasFullCharacter(outfit)} position={[-0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
       </group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
-        <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
+        {!hasFullCharacter(outfit) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
         <group position={[0.13, -0.48, -0.24]} scale={typeof selected === 'string' && getItemMeta(selected).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof selected === 'number'
             ? selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : selected === BlockKind.Campfire || selected === BlockKind.Wildfire ? <CampfireModel destructive={selected === BlockKind.Wildfire} /> : isUtilityBlock(selected) ? <UtilityBlockModel kind={selected} /> : <mesh args={[blockGeometry, blockMaterials[selected]]} />
@@ -130,14 +130,14 @@ export function PlayerAvatar() {
       </group>
       {riding || emote === 'sit' ? (
         <>
-          <group name="left-leg" position={[-0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <group name="left-leg" visible={!hasFullCharacter(outfit)} position={[-0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
             <group name="left-knee" position={[0, -0.72, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
               <PixelPart position={[0, -0.5, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
             </group>
           </group>
-          <group name="right-leg" position={[0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <group name="right-leg" visible={!hasFullCharacter(outfit)} position={[0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
             <group name="right-knee" position={[0, -0.72, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
@@ -147,11 +147,11 @@ export function PlayerAvatar() {
         </>
       ) : (
         <>
-          <group ref={leftLeg} position={[-0.15, 0.78, 0]}>
+          <group ref={leftLeg} visible={!hasFullCharacter(outfit)} position={[-0.15, 0.78, 0]}>
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
             <PixelPart position={[0, -0.71, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
           </group>
-          <group ref={rightLeg} position={[0.15, 0.78, 0]}>
+          <group ref={rightLeg} visible={!hasFullCharacter(outfit)} position={[0.15, 0.78, 0]}>
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
             <PixelPart position={[0, -0.71, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
           </group>

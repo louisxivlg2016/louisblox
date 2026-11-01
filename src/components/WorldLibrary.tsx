@@ -4,7 +4,7 @@ import type { WorldMeta } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 
-const MODE_NAMES = { survival: 'Survie', creative: 'Créatif', battle: 'Bataille' } as const;
+const MODE_NAMES = { survival: 'Survie', creative: 'Créatif', battle: 'Bataille', 'city-ancient': 'Ville ancienne', 'city-modern': 'Ville moderne' } as const;
 
 export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> }) {
   const [worlds, setWorlds] = useState<WorldMeta[]>([]);

@@ -143,8 +143,8 @@ export const useGameStore = create<GameStore>((set) => ({
     if (state.gameplayMode !== 'survival' || count > 0 || kind === 'hand') return { itemCounts };
     return {
       itemCounts,
-      hotbarSlots: state.hotbarSlots.map((slot) => slot === kind ? null : slot),
-      selected: state.selected === kind ? 'hand' as const : state.selected,
+      hotbarSlots: state.hotbarSlots.map((slot) => slot === kind || typeof slot === 'number' && `block_${slot}` === kind ? null : slot),
+      selected: state.selected === kind || typeof state.selected === 'number' && `block_${state.selected}` === kind ? 'hand' as const : state.selected,
     };
   }),
   equipArmor: (equippedArmor) => set({ equippedArmor }),

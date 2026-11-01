@@ -23,6 +23,14 @@ export function changeInventory(kind: SelectedKind, amount: number) {
   useGameStore.setState((state) => {
     const count = Math.max(0, (state.itemCounts[key] ?? 0) + amount);
     const itemCounts = { ...state.itemCounts, [key]: count };
+    if (state.gameplayMode === 'survival' && amount > 0 && kind !== 'hand' && !state.hotbarSlots.includes(kind)) {
+      const empty = state.hotbarSlots.findIndex((slot) => slot === null);
+      if (empty >= 0) {
+        const hotbarSlots = [...state.hotbarSlots];
+        hotbarSlots[empty] = kind;
+        return { itemCounts, hotbarSlots, selected: state.selected === 'hand' ? kind : state.selected };
+      }
+    }
     if (state.gameplayMode !== 'survival' || count > 0 || kind === 'hand') return { itemCounts };
     return {
       itemCounts,

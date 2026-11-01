@@ -75,22 +75,36 @@ export class PlayerDirectory extends DurableObject<Env> {
   private knownPlayers = new Map<string, SocialPlayer>();
   private onlinePlayers = new Map<string, SocialPlayer>();
   private invitations = new Map<string, PendingInvitation[]>();
+  private nameOwners = new Map<string, string>();
   private ready?: Promise<void>;
 
   private async ensureReady() {
     this.ready ??= this.ctx.blockConcurrencyWhile(async () => {
-      const [known, invitations] = await Promise.all([
+      const [known, invitations, owners] = await Promise.all([
         this.ctx.storage.get<Array<[string, SocialPlayer]>>('known-v1'),
         this.ctx.storage.get<Array<[string, PendingInvitation[]]>>('invitations-v1'),
+        this.ctx.storage.get<Array<[string, string]>>('names-v1'),
       ]);
       this.knownPlayers = new Map(known ?? []);
       this.invitations = new Map(invitations ?? []);
+      this.nameOwners = new Map(owners ?? []);
+      for (const player of this.knownPlayers.values()) {
+        const key = player.name.trim().toLocaleLowerCase();
+        if (!this.nameOwners.has(key)) this.nameOwners.set(key, player.playerId);
+      }
     });
     await this.ready;
   }
 
   private saveKnown() {
     return this.ctx.storage.put('known-v1', [...this.knownPlayers]);
+  }
+
+  private nameAvailable(name: string, playerId: string) {
+    const normalized = name.trim().toLocaleLowerCase();
+    if (!normalized || name.trim().length > 24) return false;
+    const owner = this.nameOwners.get(normalized);
+    return owner === undefined || owner === playerId;
   }
 
   private saveInvitations() {
@@ -128,6 +142,13 @@ export class PlayerDirectory extends DurableObject<Env> {
     for (const [playerId, player] of this.onlinePlayers) {
       if ((player.lastSeen ?? 0) + 30000 < now) this.onlinePlayers.delete(playerId);
     }
+    if (url.pathname === '/username' && request.method === 'GET') {
+      const name = (url.searchParams.get('name') ?? '').trim();
+      const playerId = url.searchParams.get('playerId') ?? '';
+      if (!name || name.length > 24 || !playerId) return json({ available: false, error: 'Choisis un pseudo de 1 à 24 caractères.' });
+      const available = this.nameAvailable(name, playerId);
+      return json({ available, error: available ? undefined : 'Ce pseudo est déjà utilisé. Choisis-en un autre.' }, available ? 200 : 409);
+    }
     if (url.pathname === '/players' && request.method === 'GET') {
       const query = (url.searchParams.get('q') ?? '').trim().toLocaleLowerCase();
       const players = query
@@ -154,11 +175,16 @@ export class PlayerDirectory extends DurableObject<Env> {
       }
       if (request.method === 'POST') {
         const player = parseSocialPlayer(await request.json());
-        if (!player) return json({ ok: false }, 400);
+        if (!player) return json({ ok: false, error: 'Profil invalide.' }, 400);
+        if (!this.nameAvailable(player.name, player.playerId)) return json({ ok: false, error: 'Ce pseudo est déjà utilisé. Choisis-en un autre.' }, 409);
+        const previous = this.knownPlayers.get(player.playerId);
+        if (previous && previous.name !== player.name) this.nameOwners.delete(previous.name.trim().toLocaleLowerCase());
+        player.name = player.name.trim();
         player.lastSeen = now;
+        this.nameOwners.set(player.name.toLocaleLowerCase(), player.playerId);
         this.knownPlayers.set(player.playerId, player);
         this.onlinePlayers.set(player.playerId, player);
-        await this.saveKnown();
+        await Promise.all([this.saveKnown(), this.ctx.storage.put('names-v1', [...this.nameOwners])]);
         return json({ ok: true });
       }
     }

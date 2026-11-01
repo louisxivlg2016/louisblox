@@ -11,6 +11,7 @@ import { cameraSystem } from '../game/systems/cameraSystem';
 import { environmentSystem } from '../game/systems/environmentSystem';
 import { itemSystem } from '../game/systems/itemSystem';
 import { meatDropSystem } from '../game/systems/meatDropSystem';
+import { droppedItemSystem } from '../game/droppedItems';
 import { playerSystem } from '../game/systems/playerSystem';
 import { projectileSystem } from '../game/systems/projectileSystem';
 import { saveSystem } from '../game/systems/saveSystem';
@@ -41,6 +42,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       animalSystem(world, dt);
       fishSystem(world, dt);
       meatDropSystem(world, dt);
+      droppedItemSystem(world, dt);
       bombSystem(world, dt);
       projectileSystem(world, dt);
       explosionSystem(world, dt);

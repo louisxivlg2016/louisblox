@@ -12,6 +12,7 @@ import { moveVoxelCharacter } from './collisionSystem';
 import { BATTLE_LIMIT } from '../battleArena';
 import { useBattleStore } from '../battle';
 import { resetEmote, useEmoteStore } from '../emotes';
+import { CITY_LIMIT, isCityMode } from '../worldMode';
 
 const GRAVITY = 24;
 const JUMP_SPEED = 8.4;
@@ -111,9 +112,13 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     if (movement.hitCeiling) velocity.y = 0;
   }
 
-  if (useGameStore.getState().gameplayMode === 'battle') {
+  const gameplayMode = useGameStore.getState().gameplayMode;
+  if (gameplayMode === 'battle') {
     next.x = Math.max(-BATTLE_LIMIT, Math.min(BATTLE_LIMIT, next.x));
     next.z = Math.max(-BATTLE_LIMIT, Math.min(BATTLE_LIMIT, next.z));
+  } else if (isCityMode(gameplayMode)) {
+    next.x = Math.max(-CITY_LIMIT + 0.5, Math.min(CITY_LIMIT - 0.5, next.x));
+    next.z = Math.max(-CITY_LIMIT + 0.5, Math.min(CITY_LIMIT - 0.5, next.z));
   }
   const invalidPosition = next.y < MIN_WORLD_Y - 12 || !Number.isFinite(next.x + next.y + next.z);
   if (invalidPosition) {

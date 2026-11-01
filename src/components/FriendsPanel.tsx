@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useCharacterStore } from '../game/characterStore';
 import { useMultiplayerStore } from '../game/multiplayerStore';
-import { acceptFriendRequest, fetchFriendRequests, giveApple, listOnlinePlayers, searchPlayers, sendFriendRequest, useFriendStore } from '../game/friends';
+import { acceptFriendRequest, fetchFriendRequests, giveApple, listOnlinePlayers, registerSelfProfile, searchPlayers, sendFriendRequest, useFriendStore, validatePlayerName } from '../game/friends';
+import { playerIdentity } from '../game/playerIdentity';
 import type { FriendPlayer, FriendRequest } from '../game/friends';
 import { PixelAvatar } from './PixelAvatar';
 import { ProfileAvatar, ProfilePhotoPicker } from './ProfileAvatar';
@@ -23,7 +24,6 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
   const status = useMultiplayerStore((state) => state.status);
   const room = useMultiplayerStore((state) => state.room);
   const server = useMultiplayerStore((state) => state.server);
-  const players = useMultiplayerStore((state) => state.players);
   const configure = useMultiplayerStore((state) => state.configure);
   const setPlayerName = useMultiplayerStore((state) => state.setPlayerName);
   const character = useCharacterStore((state) => state.character);
@@ -46,7 +46,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
   const [pendingJoin, setPendingJoin] = useState<string | null>(null);
   const [giving, setGiving] = useState<string[]>([]);
   const apples = useGameStore((state) => state.apples);
-  const selfId = players.find((player) => player.self)?.playerId;
+  const selfId = playerIdentity();
 
   useEffect(() => setName(playerName), [playerName]);
   useEffect(() => {
@@ -58,14 +58,13 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
     let active = true;
     const refresh = async () => {
       try {
+        await registerSelfProfile();
         const directory = await listOnlinePlayers();
-        if (active) setOnlinePlayers(directory);
-        try {
-          await fetchFriendRequests();
-        } catch {
-        }
-      } catch {
-        if (active) setMessage('Annuaire indisponible pour le moment.');
+        if (!active) return;
+        setOnlinePlayers(directory);
+        await fetchFriendRequests();
+      } catch (error) {
+        if (active) setMessage(error instanceof Error ? error.message : 'Annuaire indisponible pour le moment.');
       }
     };
     void refresh();
@@ -74,7 +73,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
       active = false;
       window.clearInterval(timer);
     };
-  }, [setOnlinePlayers]);
+  }, [setOnlinePlayers, playerName, room, character, outfit, wig, appearance]);
 
   useEffect(() => {
     const query = search.trim();
@@ -148,7 +147,14 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
           <ProfileAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={58} />
         </button>
         {editing ? (
-          <form className="profile-name-form" onSubmit={(event) => { event.preventDefault(); setPlayerName(name); setEditing(false); }}>
+          <form className="profile-name-form" onSubmit={(event) => {
+            event.preventDefault();
+            void validatePlayerName(name).then(() => {
+              setPlayerName(name);
+              setEditing(false);
+              setMessage(`Ton pseudo est maintenant ${name.trim()}.`);
+            }).catch((error) => setMessage(error instanceof Error ? error.message : 'Ce pseudo est indisponible.'));
+          }}>
             <input aria-label="Mon pseudo" value={name} maxLength={24} onChange={(event) => setName(event.target.value)} autoFocus />
             <button type="submit">OK</button>
           </form>

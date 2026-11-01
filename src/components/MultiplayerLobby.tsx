@@ -81,7 +81,7 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
               <input id="multiplayer-room" value={room} onChange={(event) => setRoom(event.target.value)} maxLength={48} autoCapitalize="none" autoCorrect="off" required />
             </label>
           </div>
-          <p className="multiplayer-hint">Le même nom de salon suffit pour jouer ensemble, même avec le même pseudo.</p>
+          <p className="multiplayer-hint">Le même nom de salon suffit pour jouer ensemble. Chaque joueur doit avoir un pseudo unique.</p>
           <button type="button" className="multiplayer-server-toggle" onClick={() => setShowServer((visible) => !visible)}>
             {showServer ? 'Masquer le serveur personnalisé' : 'Serveur personnalisé (optionnel)'}
           </button>

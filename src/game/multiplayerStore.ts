@@ -58,7 +58,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
       localStorage.setItem('louisblox-player-name', playerName);
     } catch {
     }
-    set({ playerName, error: '' });
+    set((state) => ({ playerName, error: '', connectionId: state.enabled ? state.connectionId + 1 : state.connectionId, status: state.enabled ? 'connecting' : state.status }));
   },
 }));
 

@@ -82,7 +82,6 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   if (mining && hit && kind !== undefined) {
     const key = voxelKey(hit.x, hit.y, hit.z);
     if (target.miningKey !== key) {
-      if (target.miningKey !== '') stopMining();
       target.miningKey = key;
       target.miningProgress = 0;
     }
@@ -91,7 +90,6 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     if (Math.abs(store.miningProgress - progress) >= 0.01) store.setMiningProgress(progress);
 
     if (progress >= 1) {
-      stopMining();
       removeVoxel(world, hit);
       if (store.gameplayMode === 'survival') changeInventory(hit.block.kind, 1);
       target.visible = false;

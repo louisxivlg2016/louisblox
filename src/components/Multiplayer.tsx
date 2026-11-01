@@ -22,10 +22,11 @@ import type { VehicleSnapshot } from '../game/vehicleSync';
 import { isOutfitKind, isWigSelection, OUTFITS, selectedWig } from '../game/outfits';
 import type { OutfitKind, WigSelection } from '../game/outfits';
 import { CharacterOutfit } from './CharacterOutfit';
-import { hasWardrobeModel } from './WardrobeGlb';
+import { hasFullCharacter } from './FullCharacterGlb';
 import { sanitizeAppearance } from '../game/appearance';
 import type { CharacterAppearance } from '../game/appearance';
-import { receiveFriendAcceptance, receiveFriendRequest } from '../game/friends';
+import { receiveFriendAcceptance, receiveFriendRequest, registerSelfProfile } from '../game/friends';
+import { playerIdentity } from '../game/playerIdentity';
 import { applyProjectileRemoval, applyProjectileSnapshot, isExplosionSnapshot, isProjectileSnapshot, onProjectileSync } from '../game/projectileSync';
 import { clearChat, receiveChatMessage, setChatSocket } from '../game/chat';
 import { clearBattle, receiveBattleElimination, receiveBattleRespawn, receiveBattleState, setBattleLocalPlayer, setBattleSocket, useBattleStore } from '../game/battle';
@@ -56,7 +57,7 @@ type ServerMessage = {
   gameplayMode?: unknown;
   worldId?: unknown;
 };
-type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: 'survival' | 'creative' | 'battle'; worldId?: string };
+type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string };
 
 function sendWorldInitialization(socket: WebSocket, world: World, force: boolean) {
   const edits = snapshotWorldEdits(world).flatMap(([, entries]) => entries);
@@ -144,12 +145,12 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
 
   return (
     <group ref={group} position={[state.x, state.y, state.z]}>
-      {!hasWardrobeModel(outfit) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
-      <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} head={headContent} headRef={headRef} />
+      {!hasFullCharacter(outfit) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
+      <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote head={headContent} headRef={headRef} />
       {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={team === 'red' ? '#d64b43' : '#4285d4'} /></group>}
-      <group ref={leftArm} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
+      <group ref={leftArm} visible={!hasFullCharacter(outfit)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
-        <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" />
+        {!hasFullCharacter(outfit) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" />}
         {typeof state.selected === 'string' && (
           <group
             name="remote-held-item"
@@ -161,14 +162,14 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
           </group>
         )}
       </group>
-      <group ref={leftLeg} position={[-0.15, 0.78, 0]}>
+      <group ref={leftLeg} visible={!hasFullCharacter(outfit)} position={[-0.15, 0.78, 0]}>
         <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
         <group name="left-knee" position={[0, -0.72, 0]} rotation={[state.mounted || state.emote === 'sit' ? Math.PI / 2 : 0, 0, 0]}>
           <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
           <PixelPart position={[0, -0.5, -0.04]} size={[0.25, 0.14, 0.34]} color="#302b2b" />
         </group>
       </group>
-      <group ref={rightLeg} position={[0.15, 0.78, 0]}>
+      <group ref={rightLeg} visible={!hasFullCharacter(outfit)} position={[0.15, 0.78, 0]}>
         <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
         <group name="right-knee" position={[0, -0.72, 0]} rotation={[state.mounted || state.emote === 'sit' ? Math.PI / 2 : 0, 0, 0]}>
           <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
@@ -240,6 +241,7 @@ export function MultiplayerConnection() {
       const url = new URL(resolveMultiplayerUrl());
       url.searchParams.set('room', room);
       url.searchParams.set('name', playerName);
+      url.searchParams.set('playerId', playerIdentity());
       url.searchParams.set('character', character);
       url.searchParams.set('outfit', outfit);
       url.searchParams.set('wig', wig);
@@ -349,7 +351,16 @@ export function MultiplayerConnection() {
     });
     store.setStatus('connecting');
 
-    const connect = () => {
+    const connect = async () => {
+      try {
+        await registerSelfProfile();
+      } catch (error) {
+        if (!disposed) {
+          store.setStatus('error', error instanceof Error ? error.message : 'Impossible de réserver ce pseudo.');
+        }
+        return;
+      }
+      if (disposed) return;
       const next = new WebSocket(endpoint);
       socket.current = next;
       setTeleportSocket(next);
@@ -428,7 +439,7 @@ export function MultiplayerConnection() {
           return;
         }
         if (data.type === 'world' && (data.seed === null || typeof data.seed === 'number') && Array.isArray(data.edits)) {
-          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: data.gameplayMode === 'survival' ? 'survival' : data.gameplayMode === 'battle' ? 'battle' : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined };
+          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: data.gameplayMode === 'survival' || data.gameplayMode === 'battle' || data.gameplayMode === 'city-ancient' || data.gameplayMode === 'city-modern' ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined };
           applyPendingWorld();
           return;
         }

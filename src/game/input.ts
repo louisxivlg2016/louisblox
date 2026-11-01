@@ -197,6 +197,10 @@ export function initInput() {
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code) && useGameStore.getState().mode === 'play') {
       event.preventDefault();
     }
+    if (event.code === 'KeyQ' && !event.repeat && useGameStore.getState().mode === 'play') {
+      event.preventDefault();
+      void import('./droppedItems').then(({ dropSelectedItem }) => dropSelectedItem());
+    }
     if (event.code === 'KeyE' && !event.repeat && useGameStore.getState().mode === 'play') {
       actions.harvest += 1;
     }

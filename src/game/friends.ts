@@ -6,6 +6,7 @@ import { useGameStore } from './store';
 import { sanitizeAppearance } from './appearance';
 import { isOutfitKind, isWigSelection } from './outfits';
 import type { OutfitKind, WigSelection } from './outfits';
+import { normalizePlayerName, playerIdentity } from './playerIdentity';
 
 export type FriendPlayer = {
   playerId: string;
@@ -80,11 +81,9 @@ export const useFriendStore = create<FriendStore>((set) => ({
 
 function selfProfile(): FriendPlayer {
   const multiplayer = useMultiplayerStore.getState();
-  const self = multiplayer.players.find((player) => player.self);
-  if (!self) throw new Error('Connecte-toi à un salon pour proposer un ami.');
   const character = useCharacterStore.getState();
   return {
-    playerId: self.playerId,
+    playerId: playerIdentity(),
     name: multiplayer.playerName,
     room: multiplayer.room,
     character: character.character,
@@ -101,6 +100,27 @@ function endpoint(path: string) {
   url.search = '';
   return url;
 }
+
+export async function registerSelfProfile() {
+  const response = await fetch(endpoint('/presence'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(selfProfile()),
+  });
+  const result = await response.json() as { ok?: boolean; error?: string };
+  if (!response.ok || !result.ok) throw new Error(result.error || 'Impossible d’enregistrer ce pseudo.');
+}
+
+export async function validatePlayerName(name: string) {
+  const url = endpoint('/username');
+  url.searchParams.set('playerId', playerIdentity());
+  url.searchParams.set('name', name.trim().slice(0, 24));
+  const response = await fetch(url, { cache: 'no-store' });
+  const result = await response.json() as { available?: boolean; error?: string };
+  if (!response.ok || !result.available) throw new Error(result.error || 'Ce pseudo est déjà utilisé.');
+}
+
+export { normalizePlayerName };
 
 export async function listOnlinePlayers() {
   const response = await fetch(endpoint('/players'), { cache: 'no-store' });
@@ -135,6 +155,7 @@ export async function fetchFriendRequests() {
 }
 
 async function postFriend(path: string, targetId: string, requestId?: string) {
+  await registerSelfProfile();
   const from = selfProfile();
   const response = await fetch(endpoint(path), {
     method: 'POST',

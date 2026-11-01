@@ -85,9 +85,9 @@ export function heightAt(x: number, z: number, seed: number) {
   const mountain = (broadBase + sharpPeak + crags) * winterWeight;
   let height = Math.floor(2 + (broad + detail) * 8 + mountain);
 
-  const riverDistance = Math.abs(noise(x / 82, z / 82, seed + 501) - 0.5);
-  if (riverDistance < 0.03) {
-    const carve = 1 - riverDistance / 0.03;
+  const riverDistance = Math.abs(noise(x / 110, z / 110, seed + 501) - 0.5);
+  if (riverDistance < 0.016) {
+    const carve = 1 - riverDistance / 0.016;
     height = Math.max(1, Math.floor(height - carve * 4));
   }
 

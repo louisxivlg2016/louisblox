@@ -44,7 +44,7 @@ export function resolveMultiplayerUrl(
   const endpoint = override || (local
     ? `ws://${location.hostname}:8787/ws`
     : location.protocol === 'https:'
-      ? configured || `wss://${location.host}/ws`
+      ? configured || 'wss://louisblox.louisblox.workers.dev/ws'
       : configured || `ws://${location.host}/ws`);
   const url = new URL(endpoint);
   if (url.protocol !== 'ws:' && url.protocol !== 'wss:') throw new Error('The multiplayer server must use ws:// or wss://');

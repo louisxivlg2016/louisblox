@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { useWorld } from 'koota/react';
@@ -12,6 +12,7 @@ import { Explosions } from './Explosions';
 import { Hands } from './Hands';
 import { Level } from './Level';
 import { MeatDrops } from './MeatDrops';
+import { DroppedItems } from './DroppedItems';
 import { PlayerView } from './Player';
 import { Projectiles } from './Projectiles';
 import { Systems } from './Systems';
@@ -22,6 +23,8 @@ import { Fires } from './Fires';
 import { Fish } from './Fish';
 import { RemoteAvatars } from './Multiplayer';
 import { RenderQuality } from './RenderQuality';
+import { setMusicMode } from '../game/audio';
+import { useCharacterStore } from '../game/characterStore';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -97,7 +100,14 @@ export function Game() {
   const generation = useGameStore((state) => state.generation);
   const worldId = useGameStore((state) => state.worldId);
   const mode = useGameStore((state) => state.mode);
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
+  const outfit = useCharacterStore((state) => state.outfit);
+  const setOutfit = useCharacterStore((state) => state.setOutfit);
   const level = useMemo(() => loadLevel(world, generation, readWorldSave(worldId)), [world, generation, worldId]);
+  useEffect(() => setMusicMode(gameplayMode), [gameplayMode]);
+  useEffect(() => {
+    if (gameplayMode === 'battle' && outfit !== 'military') setOutfit('military');
+  }, [gameplayMode, outfit, setOutfit]);
 
   return (
     <>
@@ -110,6 +120,7 @@ export function Game() {
       <Fires key={`fires-${generation}`} />
       <Projectiles key={`projectiles-${generation}`} />
       <MeatDrops key={`meat-${generation}`} />
+      <DroppedItems key={`drops-${generation}`} />
       <Explosions key={`explosions-${generation}`} />
       <Physics gravity={[0, 0, 0]} paused={mode !== 'play'}>
         <Level key={`level-${generation}`} />

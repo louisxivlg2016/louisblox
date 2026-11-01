@@ -23,6 +23,7 @@ export function BoutiquePanel() {
   const setOutfit = useCharacterStore((state) => state.setOutfit);
   const setWig = useCharacterStore((state) => state.setWig);
   const setAppearance = useCharacterStore((state) => state.setAppearance);
+  const battle = useGameStore((state) => state.gameplayMode === 'battle');
   const [tab, setTab] = useState<'shop' | 'settings'>('shop');
   if (!open) return null;
   const close = () => {
@@ -70,7 +71,7 @@ export function BoutiquePanel() {
           {OUTFIT_ORDER.map((kind) => {
             const item = OUTFITS[kind];
             return (
-              <button key={kind} className={`outfit-card ${outfit === kind ? 'active' : ''}`} onClick={() => setOutfit(kind)} aria-pressed={outfit === kind}>
+              <button key={kind} className={`outfit-card ${outfit === kind ? 'active' : ''}`} onClick={() => setOutfit(kind)} disabled={battle && kind !== 'military'} aria-pressed={outfit === kind}>
                 <span className="outfit-swatch" style={{ backgroundColor: appearance.clothingColor ?? item.color }} />
                 <strong>{item.name}</strong>
                 <small>{item.description}</small>
@@ -79,20 +80,25 @@ export function BoutiquePanel() {
             );
           })}
         </div>
-        <p className="backpack-label">Perruques · ta perruque reste quand tu changes de costume</p>
-        <div className="outfit-grid wig-grid">
-          {WIG_ORDER.map((kind) => {
-            const item = WIGS[kind];
-            return (
-              <button key={kind} className={`outfit-card ${wig === kind ? 'active' : ''}`} onClick={() => setWig(kind)} aria-pressed={wig === kind}>
-                <span className="outfit-swatch" style={{ backgroundColor: item.color }} />
-                <strong>{item.name}</strong>
-                <small>{item.description}</small>
-                {wig === kind && <span className="outfit-selected">Choisie</span>}
-              </button>
-            );
-          })}
-        </div>
+        {outfit === 'default' ? (
+          <>
+            <p className="backpack-label">Perruques · ta perruque reste quand tu changes de costume</p>
+            <div className="outfit-grid wig-grid">
+              {WIG_ORDER.map((kind) => {
+                const item = WIGS[kind];
+                return (
+                  <button key={kind} className={`outfit-card ${wig === kind ? 'active' : ''}`} onClick={() => setWig(kind)} aria-pressed={wig === kind}>
+                    <span className="outfit-swatch" style={{ backgroundColor: item.color }} />
+                    <strong>{item.name}</strong>
+                    <small>{item.description}</small>
+                    {wig === kind && <span className="outfit-selected">Choisie</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : <p className="backpack-label">Coiffure et perruque intégrées au personnage complet.</p>}
+        {battle && <p className="backpack-label">Le costume militaire est obligatoire en Bataille.</p>}
         <p className="boutique-hint">B ouvre la boutique · P change de caméra.</p>
         <button className="primary-button" onClick={close}>Porter et reprendre</button>
             </>}

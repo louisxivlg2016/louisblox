@@ -1,9 +1,12 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
+import { DroppedItem } from './traits';
 import { CHUNK_SIZE, MAX_BUILD_Y, MIN_WORLD_Y, VIEW_DISTANCE, biomeAt, generateChunk, heightAt } from './levels';
 import type { LevelData } from './levels';
 import { battleSpawn, generateBattleChunk } from './battleArena';
 import type { GameplayMode } from './worldMode';
+import { isCityMode } from './worldMode';
+import { generateCityChunk } from './cities';
 import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnChunkFish } from './fish';
 import { spawnBomb } from './bombLifecycle';
@@ -240,8 +243,9 @@ function loadChunk(world: World, cx: number, cz: number) {
   const key = chunkKey(cx, cz);
   if (state.chunks.has(key)) return;
 
-  const battle = useGameStore.getState().gameplayMode === 'battle';
-  const generated = battle ? generateBattleChunk(cx, cz) : generateChunk(cx, cz, state.seed);
+  const mode = useGameStore.getState().gameplayMode;
+  const battle = mode === 'battle';
+  const generated = battle ? generateBattleChunk(cx, cz) : isCityMode(mode) ? generateCityChunk(cx, cz, state.seed, mode === 'city-modern') : generateChunk(cx, cz, state.seed);
   const blockMap = new Map(generated.blocks.map((block) => [voxelKey(block.x, block.y, block.z), block]));
   const edits = state.edits.get(key);
   if (edits) {
@@ -265,8 +269,8 @@ function loadChunk(world: World, cx: number, cz: number) {
     state.blocks.set(voxelKey(block.x, block.y, block.z), block);
     indexBlock(state, block);
   }
-  data.animals = battle ? [] : spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
-  data.fish = battle ? [] : spawnChunkFish(world, cx, cz, generated.water, state.seed);
+  data.animals = battle || isCityMode(mode) ? [] : spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
+  data.fish = battle || isCityMode(mode) ? [] : spawnChunkFish(world, cx, cz, generated.water, state.seed);
   for (const savedHorse of state.saddledHorses) {
     if (chunkCoordinate(savedHorse.x) !== cx || chunkCoordinate(savedHorse.z) !== cz) continue;
     const existing = data.animals.find((animal) => {
@@ -566,6 +570,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   for (const entity of [...world.query(Animal)]) entity.destroy();
   for (const entity of [...world.query(Fish)]) entity.destroy();
   for (const entity of [...world.query(MeatDrop)]) entity.destroy();
+  for (const entity of [...world.query(DroppedItem)]) entity.destroy();
   for (const entity of [...world.query(Bomb)]) entity.destroy();
   for (const entity of [...world.query(Explosion)]) entity.destroy();
   for (const entity of [...world.query(Sapling)]) entity.destroy();
@@ -597,7 +602,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   const gameplayMode = restore?.gameplayMode ?? (restore ? 'creative' : useGameStore.getState().gameplayMode);
   const spawn = restore && restorePosition
     ? { x: restore.player.x, y: restore.player.y, z: restore.player.z }
-    : gameplayMode === 'battle' ? battleSpawn(null) : { x: 0, y: heightAt(0, 0, seed) + 1.01, z: 0 };
+    : gameplayMode === 'battle' ? battleSpawn(null) : isCityMode(gameplayMode) ? { x: 0, y: 5.51, z: 0 } : { x: 0, y: heightAt(0, 0, seed) + 1.01, z: 0 };
   world.spawn(
     Player,
     PlayerBody(),

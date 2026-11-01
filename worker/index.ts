@@ -27,7 +27,7 @@ type VoxelEdit = number | {
   text?: string;
 } | null;
 type EditEntry = [string, VoxelEdit];
-type GameplayMode = 'survival' | 'creative' | 'battle';
+type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern';
 type BattleTeam = 'red' | 'blue';
 type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string };
 type SharedVehicle = {
@@ -286,8 +286,9 @@ export class GameRoom extends DurableObject<Env> {
     }
     await this.ensureWorld();
     const [client, server] = Object.values(new WebSocketPair());
-    const playerId = crypto.randomUUID();
     const params = url.searchParams;
+    const requestedPlayerId = params.get('playerId');
+    const playerId = requestedPlayerId && /^[0-9a-f-]{36}$/.test(requestedPlayerId) ? requestedPlayerId : crypto.randomUUID();
     const room = params.get('room')?.slice(0, 48) || 'main-room';
     const name = params.get('name')?.trim().slice(0, 24) || 'Joueur';
     const character = params.get('character') === 'girl' ? 'girl' : 'boy';
@@ -539,7 +540,7 @@ export class GameRoom extends DurableObject<Env> {
         this.worldSeed = seed;
         this.worldEdits = new Map(edits);
         const mode = (data as { gameplayMode?: unknown }).gameplayMode;
-        this.gameplayMode = mode === 'survival' || mode === 'battle' ? mode : 'creative';
+        this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' ? mode : 'creative';
         if (this.gameplayMode === 'battle') {
           this.battleScores = { red: 0, blue: 0 };
           for (const playerId of this.battleHealth.keys()) this.battleHealth.set(playerId, 10);
@@ -667,7 +668,7 @@ export default {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    if (url.pathname === '/players' || url.pathname === '/presence' || url.pathname === '/friend-request' || url.pathname === '/friend-accept' || url.pathname === '/friend-requests' || url.pathname === '/apple-gift') {
+    if (url.pathname === '/players' || url.pathname === '/username' || url.pathname === '/presence' || url.pathname === '/friend-request' || url.pathname === '/friend-accept' || url.pathname === '/friend-requests' || url.pathname === '/apple-gift') {
       const id = env.PLAYER_DIRECTORY.idFromName('global');
       return env.PLAYER_DIRECTORY.get(id).fetch(request);
     }
@@ -679,6 +680,24 @@ export default {
     }
     if (url.pathname === '/ws') {
       const roomId = url.searchParams.get('room') || 'main-room';
+      const playerId = url.searchParams.get('playerId') ?? '';
+      const name = url.searchParams.get('name')?.trim() || 'Joueur';
+      if (!/^[0-9a-f-]{36}$/.test(playerId)) return json({ error: 'Identifiant joueur requis.' }, 400);
+      const directory = env.PLAYER_DIRECTORY.get(env.PLAYER_DIRECTORY.idFromName('global'));
+      const claim = await directory.fetch('https://directory/presence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId,
+          name,
+          room: roomId,
+          character: url.searchParams.get('character'),
+          outfit: url.searchParams.get('outfit'),
+          wig: url.searchParams.get('wig'),
+          appearance: parseAppearance(null),
+        }),
+      });
+      if (!claim.ok) return new Response(claim.body, { status: claim.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       const id = env.GAME_ROOM.idFromName(roomId);
       return env.GAME_ROOM.get(id).fetch(request);
     }
