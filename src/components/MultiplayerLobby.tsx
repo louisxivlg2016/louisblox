@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMultiplayerStore } from '../game/multiplayerStore';
-import { useCharacterStore } from '../game/characterStore';
 import { deleteRoom } from '../game/multiplayer';
 
 const STATUS_NAMES = {
@@ -10,7 +9,7 @@ const STATUS_NAMES = {
   error: 'Connexion impossible',
 } as const;
 
-export function MultiplayerLobby() {
+export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void> }) {
   const enabled = useMultiplayerStore((state) => state.enabled);
   const savedName = useMultiplayerStore((state) => state.playerName);
   const savedRoom = useMultiplayerStore((state) => state.room);
@@ -18,8 +17,7 @@ export function MultiplayerLobby() {
   const status = useMultiplayerStore((state) => state.status);
   const error = useMultiplayerStore((state) => state.error);
   const players = useMultiplayerStore((state) => state.players);
-  const character = useCharacterStore((state) => state.character);
-  const setCharacter = useCharacterStore((state) => state.setCharacter);
+  const pendingJoin = useRef(false);
   const setEnabled = useMultiplayerStore((state) => state.setEnabled);
   const configure = useMultiplayerStore((state) => state.configure);
   const [playerName, setPlayerName] = useState(savedName);
@@ -27,8 +25,14 @@ export function MultiplayerLobby() {
   const [server, setServer] = useState(savedServer);
   const [showServer, setShowServer] = useState(() => new URLSearchParams(window.location.search).has('server'));
   useEffect(() => setPlayerName(savedName), [savedName]);
+  useEffect(() => {
+    if (status !== 'online' || !pendingJoin.current) return;
+    pendingJoin.current = false;
+    void onPlay();
+  }, [status, onPlay]);
 
   const join = (nextRoom = room) => {
+    pendingJoin.current = true;
     const settings = configure({ playerName, room: nextRoom, server: showServer ? server : '' });
     setPlayerName(settings.playerName);
     setRoom(settings.room);
@@ -59,13 +63,6 @@ export function MultiplayerLobby() {
       <div className="multiplayer-tabs" role="group" aria-label="Mode de jeu">
         <button type="button" className={`multiplayer-tab ${!enabled ? 'active' : ''}`} aria-pressed={!enabled} onClick={() => setEnabled(false)}>Solo</button>
         <button type="button" className={`multiplayer-tab ${enabled ? 'active' : ''}`} aria-pressed={enabled} onClick={() => setEnabled(true)}>Multijoueur</button>
-      </div>
-      <div className="character-selector">
-        <span>Personnage</span>
-        <div className="character-choice" role="group" aria-label="Choisir le personnage">
-          <button type="button" className={character === 'boy' ? 'active' : ''} aria-pressed={character === 'boy'} onClick={() => setCharacter('boy')}>Garçon</button>
-          <button type="button" className={character === 'girl' ? 'active' : ''} aria-pressed={character === 'girl'} onClick={() => setCharacter('girl')}>Fille</button>
-        </div>
       </div>
       {enabled && (
         <form className="multiplayer-lobby" onSubmit={(event) => { event.preventDefault(); join(); }}>

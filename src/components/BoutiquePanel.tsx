@@ -13,6 +13,7 @@ export function BoutiquePanel() {
   const open = useGameStore((state) => state.shopOpen);
   const setOpen = useGameStore((state) => state.setShopOpen);
   const character = useCharacterStore((state) => state.character);
+  const setCharacter = useCharacterStore((state) => state.setCharacter);
   const outfit = useCharacterStore((state) => state.outfit);
   const wig = useCharacterStore((state) => state.wig);
   const appearance = useCharacterStore((state) => state.appearance);
@@ -30,6 +31,13 @@ export function BoutiquePanel() {
         <div className="boutique-avatar-preview">
           <PixelAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={72} />
           <div><p className="eyebrow">PERSONNALISATION</p><h2 id="boutique-title">Boutique</h2><p>Choisis ta tenue. Les autres joueurs la verront aussi.</p></div>
+        </div>
+        <div className="character-selector">
+          <span>Personnage</span>
+          <div className="character-choice" role="group" aria-label="Choisir le personnage">
+            <button type="button" className={character === 'boy' ? 'active' : ''} aria-pressed={character === 'boy'} onClick={() => setCharacter('boy')}>Garçon</button>
+            <button type="button" className={character === 'girl' ? 'active' : ''} aria-pressed={character === 'girl'} onClick={() => setCharacter('girl')}>Fille</button>
+          </div>
         </div>
         <div className="appearance-section">
           <h3>Coiffure</h3>

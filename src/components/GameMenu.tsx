@@ -49,7 +49,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           </div>
           <section className="lobby-section">
             <div className="lobby-heading"><h2>Jouer ensemble</h2><p>Crée un salon ou rejoins tes amis avec le même nom de salon.</p></div>
-            <MultiplayerLobby />
+            <MultiplayerLobby onPlay={onPlay} />
           </section>
         </main>
       </div>
