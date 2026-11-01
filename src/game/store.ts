@@ -32,6 +32,8 @@ type GameStore = {
   openContainer: (type: 'chest' | 'furnace', position: { x: number; y: number; z: number }, items?: SelectedKind[]) => void;
   closeContainer: () => void;
   generation: number;
+  worldId: string;
+  worldName: string;
   blockCount: number;
   apples: number;
   meat: Record<AnimalKind, number>;
@@ -69,11 +71,29 @@ type GameStore = {
   collectMeat: (kind: AnimalKind) => void;
   discardApple: () => void;
   discardMeat: (kind: AnimalKind) => void;
-  regenerate: (gameplayMode?: GameplayMode) => void;
+  regenerate: (gameplayMode?: GameplayMode, worldId?: string) => void;
+  openWorld: (worldId: string, worldName: string) => void;
 };
+
+function currentWorldId() {
+  try {
+    return localStorage.getItem('louisblox-current-world') || 'main-room';
+  } catch {
+    return 'main-room';
+  }
+}
+
+export function rememberWorld(worldId: string) {
+  try {
+    localStorage.setItem('louisblox-current-world', worldId);
+  } catch {
+  }
+}
 
 export const useGameStore = create<GameStore>((set) => ({
   mode: 'menu',
+  worldId: currentWorldId(),
+  worldName: currentWorldId() === 'main-room' ? 'Monde principal' : currentWorldId(),
   gameplayMode: 'creative',
   selected: BlockKind.Grass,
   hotbarSlots: [...HOTBAR_BLOCKS.slice(0, 10)],
@@ -138,31 +158,45 @@ export const useGameStore = create<GameStore>((set) => ({
   collectMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: state.meat[kind] + 1 } })),
   discardApple: () => set((state) => ({ apples: Math.max(0, state.apples - 1) })),
   discardMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: Math.max(0, state.meat[kind] - 1) } })),
-  regenerate: (gameplayMode = 'creative') => set((state) => ({
-    generation: state.generation + 1,
-    gameplayMode,
-    selected: gameplayMode === 'battle' ? 'pistol_iron' : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass,
-    hotbarSlots: gameplayMode === 'battle'
-      ? ['pistol_iron', 'pistol_bomb', 'bow', 'sword_iron', ...HOTBAR_BLOCKS.slice(0, 6)]
-      : gameplayMode === 'survival' ? Array(10).fill('hand') : [...HOTBAR_BLOCKS.slice(0, 10)],
-    backpackItem: null,
-    itemCounts: gameplayMode === 'survival' ? { hand: 1 } : { ...DEFAULT_ITEM_COUNTS },
-    equippedArmor: null,
-    riding: null,
-    ridingRole: null,
-    seatChoice: null,
-    bookOpen: false,
-    teleportOpen: false,
-    container: null,
-    chestItems: [],
-    apples: 0,
-    meat: createMeatInventory(),
-    miningProgress: 0,
-    flying: false,
-    sleepProgress: null,
-    lives: 10,
-    backpackOpen: false,
-    shopOpen: false,
-    mode: 'menu',
-  })),
+  regenerate: (gameplayMode = 'creative', worldId = `monde-${crypto.randomUUID().slice(0, 8)}`) => {
+    rememberWorld(worldId);
+    set((state) => ({
+      worldId,
+      worldName: worldId,
+      generation: state.generation + 1,
+      gameplayMode,
+      selected: gameplayMode === 'battle' ? 'pistol_iron' : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass,
+      hotbarSlots: gameplayMode === 'battle'
+        ? ['pistol_iron', 'pistol_bomb', 'bow', 'sword_iron', ...HOTBAR_BLOCKS.slice(0, 6)]
+        : gameplayMode === 'survival' ? Array(10).fill('hand') : [...HOTBAR_BLOCKS.slice(0, 10)],
+      backpackItem: null,
+      itemCounts: gameplayMode === 'survival' ? { hand: 1 } : { ...DEFAULT_ITEM_COUNTS },
+      equippedArmor: null,
+      riding: null,
+      ridingRole: null,
+      seatChoice: null,
+      bookOpen: false,
+      teleportOpen: false,
+      container: null,
+      chestItems: [],
+      apples: 0,
+      meat: createMeatInventory(),
+      miningProgress: 0,
+      flying: false,
+      sleepProgress: null,
+      lives: 10,
+      backpackOpen: false,
+      shopOpen: false,
+      mode: 'menu',
+    }));
+  },
+  openWorld: (worldId, worldName) => {
+    rememberWorld(worldId);
+    set((state) => ({
+      worldId,
+      worldName,
+      generation: state.generation + 1,
+      mode: 'menu',
+    }));
+  },
 }));

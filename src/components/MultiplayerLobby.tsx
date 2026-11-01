@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { deleteRoom } from '../game/multiplayer';
+import { useGameStore } from '../game/store';
 
 const STATUS_NAMES = {
   offline: 'Non connecté',
@@ -42,6 +43,12 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
     if (settings.server) url.searchParams.set('server', settings.server);
     else url.searchParams.delete('server');
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
+  const createRoom = () => {
+    const worldId = `salon-${crypto.randomUUID().slice(0, 8)}`;
+    useGameStore.getState().regenerate(useGameStore.getState().gameplayMode, worldId);
+    join(worldId);
   };
 
   const removeRoom = async () => {
@@ -88,7 +95,7 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
           )}
           <div className="multiplayer-actions">
             <button type="submit" className="multiplayer-join">Rejoindre</button>
-            <button type="button" className="multiplayer-new-room" onClick={() => join(`salon-${crypto.randomUUID().slice(0, 8)}`)}>Nouveau salon</button>
+            <button type="button" className="multiplayer-new-room" onClick={createRoom}>Nouveau salon</button>
             <button type="button" className="multiplayer-delete-room" onClick={removeRoom}>Supprimer le salon</button>
           </div>
           <div className={`multiplayer-status ${status}`} role="status" aria-live="polite">

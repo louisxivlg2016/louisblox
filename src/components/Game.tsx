@@ -95,8 +95,9 @@ function Atmosphere() {
 export function Game() {
   const world = useWorld();
   const generation = useGameStore((state) => state.generation);
+  const worldId = useGameStore((state) => state.worldId);
   const mode = useGameStore((state) => state.mode);
-  const level = useMemo(() => loadLevel(world, generation, readWorldSave()), [world, generation]);
+  const level = useMemo(() => loadLevel(world, generation, readWorldSave(worldId)), [world, generation, worldId]);
 
   return (
     <>

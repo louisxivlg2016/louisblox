@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { rememberWorld } from './store';
 
 export type MultiplayerStatus = 'offline' | 'connecting' | 'online' | 'error';
 export type LobbyPlayer = { playerId: string; name: string; self?: boolean };
@@ -45,6 +46,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
       localStorage.setItem('louisblox-player-name', playerName);
     } catch {
     }
+    rememberWorld(room);
     set((state) => ({ playerName, room, server, enabled: true, connectionId: state.connectionId + 1, status: 'connecting', error: '', players: [] }));
     return { playerName, room, server };
   },

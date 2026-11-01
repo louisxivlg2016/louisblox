@@ -28,6 +28,7 @@ export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: numb
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
   version: 1 | 2 | 3 | 4;
+  worldId?: string;
   generation: number;
   gameplayMode?: GameplayMode;
   seed: number;
@@ -575,7 +576,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   for (const entity of [...world.query(Vehicle)]) entity.destroy();
   for (const entity of [...world.query(Sleep)]) entity.destroy();
 
-  const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3 || saved.version === 4) && saved.generation === generation ? saved : null;
+  const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3 || saved.version === 4) ? saved : null;
   const seed = restore?.seed ?? 73421 + generation * 977;
   const edits: WorldChunks['edits'] = restore ? new Map(restore.edits.map(([chunk, values]) => [chunk, new Map(values)])) : new Map();
   worlds.set(world, {

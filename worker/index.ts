@@ -29,7 +29,7 @@ type VoxelEdit = number | {
 type EditEntry = [string, VoxelEdit];
 type GameplayMode = 'survival' | 'creative' | 'battle';
 type BattleTeam = 'red' | 'blue';
-type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode };
+type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string };
 type SharedVehicle = {
   id: string;
   kind: 'car' | 'plane' | 'train' | 'boat';
@@ -179,6 +179,7 @@ function parseExplosion(value: unknown) {
 
 export class GameRoom extends DurableObject<Env> {
   private worldSeed: number | null = null;
+  private worldId?: string;
   private worldEdits = new Map<string, VoxelEdit>();
   private vehicles = new Map<string, SharedVehicle>();
   private gameplayMode: GameplayMode = 'creative';
@@ -191,6 +192,7 @@ export class GameRoom extends DurableObject<Env> {
     this.worldReady ??= this.ctx.blockConcurrencyWhile(async () => {
       const stored = await this.ctx.storage.get<StoredWorld>('world-v1');
       this.worldSeed = stored?.seed ?? null;
+      this.worldId = stored?.worldId;
       this.worldEdits = new Map(stored?.edits ?? []);
       this.gameplayMode = stored?.gameplayMode ?? 'creative';
     });
@@ -198,11 +200,11 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private worldSnapshot() {
-    return { type: 'world', seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode };
+    return { type: 'world', seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId };
   }
 
   private async saveWorld() {
-    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode } satisfies StoredWorld);
+    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId } satisfies StoredWorld);
   }
 
   private battleSnapshot(excludeId?: string) {
@@ -517,6 +519,8 @@ export class GameRoom extends DurableObject<Env> {
       attachment.worldInitAccepted = replace;
       ws.serializeAttachment(attachment);
       if (replace) {
+        const worldId = (data as { worldId?: unknown }).worldId;
+        this.worldId = typeof worldId === 'string' && worldId.length <= 80 ? worldId : undefined;
         this.worldSeed = seed;
         this.worldEdits = new Map(edits);
         const mode = (data as { gameplayMode?: unknown }).gameplayMode;

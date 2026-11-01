@@ -10,7 +10,7 @@ import { isPlayerSnapshot, resolveMultiplayerUrl } from '../game/multiplayer';
 import type { PlayerSnapshot } from '../game/multiplayer';
 import { useMultiplayerStore, useRemotePlayerStore } from '../game/multiplayerStore';
 import { createWorldSave } from '../game/save';
-import { useGameStore } from '../game/store';
+import { rememberWorld, useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
 import { Chunk, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from '../game/traits';
 import { getItemMeta } from '../game/items';
@@ -53,12 +53,13 @@ type ServerMessage = {
   wig?: unknown;
   appearance?: unknown;
   gameplayMode?: unknown;
+  worldId?: unknown;
 };
-type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: 'survival' | 'creative' | 'battle' };
+type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: 'survival' | 'creative' | 'battle'; worldId?: string };
 
 function sendWorldInitialization(socket: WebSocket, world: World, force: boolean) {
   const edits = snapshotWorldEdits(world).flatMap(([, entries]) => entries);
-  socket.send(JSON.stringify({ type: 'world-init', seed: getWorldSeed(world), edits: edits.slice(0, 256), gameplayMode: useGameStore.getState().gameplayMode, force }));
+  socket.send(JSON.stringify({ type: 'world-init', seed: getWorldSeed(world), edits: edits.slice(0, 256), gameplayMode: useGameStore.getState().gameplayMode, worldId: useGameStore.getState().worldId, force }));
   for (let index = 256; index < edits.length; index += 256) {
     socket.send(JSON.stringify({ type: 'world-init-edits', edits: edits.slice(index, index + 256) }));
   }
@@ -265,6 +266,11 @@ export function MultiplayerConnection() {
     const applyPendingWorld = () => {
       const pending = pendingWorld.current;
       if (!pending || world.query(Chunk).length < 9) return;
+      const currentWorldId = pending.worldId ?? room;
+      if (currentWorldId !== useGameStore.getState().worldId) {
+        useGameStore.setState({ worldId: currentWorldId, worldName: currentWorldId });
+        rememberWorld(currentWorldId);
+      }
       if (pending.seed === null) {
         const current = socket.current;
         if (current?.readyState === WebSocket.OPEN && !worldInitSent.current) {
@@ -410,7 +416,7 @@ export function MultiplayerConnection() {
           return;
         }
         if (data.type === 'world' && (data.seed === null || typeof data.seed === 'number') && Array.isArray(data.edits)) {
-          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: data.gameplayMode === 'survival' ? 'survival' : data.gameplayMode === 'battle' ? 'battle' : 'creative' };
+          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: data.gameplayMode === 'survival' ? 'survival' : data.gameplayMode === 'battle' ? 'battle' : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined };
           applyPendingWorld();
           return;
         }
