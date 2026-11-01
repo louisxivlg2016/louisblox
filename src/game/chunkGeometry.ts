@@ -1,7 +1,7 @@
 import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { brickTexture, texture } from './textures';
-import { EXTRA_BLOCK_META, isCrop, isDoor, isSapling, isSign, isTrapdoor, isUtilityBlock } from './extraBlocks';
+import { EXTRA_BLOCK_META, isCrop, isDoor, isGlass, isSapling, isSign, isTrapdoor, isUtilityBlock } from './extraBlocks';
 import type { ExtraBlockKind } from './extraBlocks';
 import { BlockKind, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
@@ -86,7 +86,7 @@ function isBrick(kind: BlockKind) {
 
 function groupFor(kind: BlockKind) {
   if (kind === BlockKind.Water) return 'water';
-  if (kind === BlockKind.Glass) return 'glass';
+  if (isGlass(kind)) return 'glass';
   if (kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves) return 'foliage';
   if (isBrick(kind)) return `brick:${kind}`;
   return 'opaque';
@@ -98,9 +98,9 @@ function usesSeparateModel(kind: BlockKind) {
 
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {
   if (!neighbor || neighbor.open) return true;
-  if (usesSeparateModel(neighbor.kind)) return block.kind !== BlockKind.Water && block.kind !== BlockKind.Glass;
-  if (block.kind === BlockKind.Water || block.kind === BlockKind.Glass) return neighbor.kind !== block.kind;
-  return neighbor.kind === BlockKind.Water || neighbor.kind === BlockKind.Glass;
+  if (usesSeparateModel(neighbor.kind)) return block.kind !== BlockKind.Water && !isGlass(block.kind);
+  if (block.kind === BlockKind.Water || isGlass(block.kind)) return neighbor.kind !== block.kind;
+  return neighbor.kind === BlockKind.Water || isGlass(neighbor.kind);
 }
 
 function faceTexture(block: Voxel, direction: readonly number[]) {

@@ -1,7 +1,8 @@
 import { BlockKind } from './voxel';
 import { getItemMeta, selectionInfo } from './items';
 import type { SelectedKind } from './items';
-import { isGalleryItem } from './galleryCatalog';
+import { GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
+import { isGlass } from './extraBlocks';
 import { changeInventory, inventoryCount } from './inventory';
 import { useGameStore } from './store';
 
@@ -33,7 +34,11 @@ function blockRecipe(kind: BlockKind): Recipe | null {
   if (kind >= BlockKind.Bed && kind <= BlockKind.BedBlack) return recipe(kind, 1, [[BlockKind.OakPlanks, 3], [BlockKind.Leaves, 2]]);
   if (kind >= BlockKind.BeigeBrick && kind <= BlockKind.GrayBrick) return recipe(kind, 1, [[BlockKind.Stone, 3]]);
   if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) return recipe(kind, 1, [[BlockKind.Stone, 2], [BlockKind.Sand, 1]]);
-  if (kind === BlockKind.Glass) return recipe(kind, 1, [[BlockKind.Sand, 2], [BlockKind.CoalOre, 1]]);
+  if (isGlass(kind)) {
+    if (kind === BlockKind.Glass) return recipe(kind, 1, [[BlockKind.Sand, 2], [BlockKind.CoalOre, 1]]);
+    const concrete = (BlockKind.ConcreteWhite + kind - BlockKind.GlassWhite) as BlockKind;
+    return recipe(kind, 2, [[BlockKind.Glass, 1], [concrete, 1]]);
+  }
   if (kind === BlockKind.Chest) return recipe(kind, 1, [[BlockKind.OakPlanks, 4]]);
   if (kind === BlockKind.Furnace) return recipe(kind, 1, [[BlockKind.Stone, 8]]);
   if (kind === BlockKind.Sign) return recipe(kind, 1, [[BlockKind.OakPlanks, 2], ['stick', 1]]);
@@ -55,6 +60,13 @@ export function recipeFor(kind: SelectedKind): Recipe | null {
   const meta = getItemMeta(kind);
   const shape = meta.shape ?? meta.category;
   const material = materialFor(meta.name);
+  if (isGalleryItem(kind)) {
+    const category = GALLERY_ITEM_MAP[kind].category;
+    if (category === 'Mob Spawn Orbs') return recipe(kind, 1, [[BlockKind.DiamondOre, 3], [BlockKind.Leaves, 4]]);
+    if (category === 'Mob Spawners') return recipe(kind, 1, [[BlockKind.Stone, 8], [BlockKind.IronOre, 4], [BlockKind.DiamondOre, 3]]);
+    if (category === 'RPGs and Explosives') return recipe(kind, 1, [[BlockKind.IronOre, 8], [BlockKind.DiamondOre, 2], [BlockKind.Wood, 4]]);
+    if (category === 'Bedwars Lucky Items' || category === 'Paintball Items') return recipe(kind, 1, [[BlockKind.IronOre, 6], [BlockKind.GoldOre, 2], [BlockKind.OakPlanks, 4]]);
+  }
   if (meta.category === 'sword') return recipe(kind, 1, [[material, 2], ['stick', 1]]);
   if (meta.category === 'pickaxe') return recipe(kind, 1, [[material, 3], ['stick', 2]]);
   if (meta.category === 'shovel') return recipe(kind, 1, [[material, 1], ['stick', 2]]);
@@ -64,9 +76,10 @@ export function recipeFor(kind: SelectedKind): Recipe | null {
   if (meta.category === 'saddle') return recipe(kind, 1, [[BlockKind.Leaves, 3], [BlockKind.IronOre, 1]]);
   if (meta.category === 'vehicle') {
     if (kind === 'boat' || shape === 'boat') return recipe(kind, 1, [[BlockKind.OakPlanks, 5]]);
-    if (kind === 'plane') return recipe(kind, 1, [[BlockKind.IronOre, 8], [BlockKind.OakPlanks, 4]]);
-    if (kind === 'train') return recipe(kind, 1, [[BlockKind.IronOre, 10], [BlockKind.OakPlanks, 6]]);
-    return recipe(kind, 1, [[BlockKind.IronOre, 4], [BlockKind.OakPlanks, 2]]);
+    if (kind === 'plane') return recipe(kind, 1, [[BlockKind.IronOre, 16], [BlockKind.OakPlanks, 8]]);
+    if (kind === 'train') return recipe(kind, 1, [[BlockKind.IronOre, 20], [BlockKind.OakPlanks, 12], [BlockKind.Rail, 12]]);
+    if (shape === 'hovercraft') return recipe(kind, 1, [[BlockKind.IronOre, 12], [BlockKind.DiamondOre, 2], [BlockKind.OakPlanks, 6]]);
+    return recipe(kind, 1, [[BlockKind.IronOre, 6], [BlockKind.OakPlanks, 4]]);
   }
   if (!isGalleryItem(kind)) return null;
   if (shape === 'hoe') return recipe(kind, 1, [[material, 2], ['stick', 2]]);

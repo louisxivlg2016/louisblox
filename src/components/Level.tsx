@@ -11,7 +11,7 @@ import { DoorInstances } from './DoorInstances';
 import { CropInstances } from './CropInstances';
 import { UtilityBlocks } from './UtilityBlocks';
 import { SignBlocks } from './SignBlocks';
-import { isCrop, isDoor, isSapling, isSign, isTrapdoor, isUtilityBlock } from '../game/extraBlocks';
+import { isCrop, isDoor, isGlass, isSapling, isSign, isTrapdoor, isUtilityBlock } from '../game/extraBlocks';
 import { BlockKind, voxelKey } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 
@@ -93,7 +93,7 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
     for (const block of data.blocks) {
       const exposed = neighborOffsets.some(([x, y, z]) => {
         const neighbor = blockIndex.get(voxelKey(block.x + x, block.y + y, block.z + z));
-        return !neighbor || neighbor.kind === BlockKind.Water || neighbor.kind === BlockKind.Glass;
+        return !neighbor || neighbor.kind === BlockKind.Water || isGlass(neighbor.kind);
       });
       if (!exposed) continue;
       if (block.kind === BlockKind.Tnt) {

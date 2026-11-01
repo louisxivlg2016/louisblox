@@ -35,7 +35,7 @@ export type WorldSave = {
   player: { x: number; y: number; z: number; yaw: number; pitch: number; flying: boolean };
   selected: SelectedKind;
   lives?: number;
-  hotbar?: SelectedKind[];
+  hotbar?: Array<SelectedKind | null>;
   itemCounts?: Partial<Record<string, number>>;
   equippedArmor?: ArmorKind | null;
   vehicles?: SavedCar[];
@@ -616,15 +616,20 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   world.spawn(BlockTarget(), TargetMesh());
   const environmentEntity = world.spawn(Environment(), RainMaterial(), SnowMaterial());
   if (restore) environmentEntity.get(Environment)!.elapsed = restore.elapsed;
-  const hotbar = restore?.hotbar?.length === 10 && restore.hotbar.every(isSelectedKind)
+  const hotbar = restore?.hotbar?.length === 10 && restore.hotbar.every((kind) => kind === null || isSelectedKind(kind))
     ? restore.hotbar
     : useGameStore.getState().hotbarSlots;
+  const itemCounts: Record<string, number> = gameplayMode === 'survival' ? { hand: 1, ...restore?.itemCounts } : { ...DEFAULT_ITEM_COUNTS, ...restore?.itemCounts };
+  const restoredSelection = restore && isSelectedKind(restore.selected) ? restore.selected : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass;
+  const selected = gameplayMode === 'survival' && restoredSelection !== 'hand'
+    && (itemCounts[typeof restoredSelection === 'number' ? `block_${restoredSelection}` : restoredSelection] ?? 0) <= 0 ? 'hand' : restoredSelection;
   useGameStore.setState({
     gameplayMode,
     meat: { ...createMeatInventory(), ...restore?.meat },
-    selected: restore && isSelectedKind(restore.selected) ? restore.selected : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass,
-    hotbarSlots: hotbar,
-    itemCounts: gameplayMode === 'survival' ? { hand: 1, ...restore?.itemCounts } : { ...DEFAULT_ITEM_COUNTS, ...restore?.itemCounts },
+    selected,
+    hotbarSlots: hotbar.map((kind, index) => gameplayMode !== 'survival' ? kind ?? BlockKind.Grass : index === 0 ? 'hand'
+      : kind !== null && kind !== 'hand' && (itemCounts[typeof kind === 'number' ? `block_${kind}` : kind] ?? 0) > 0 ? kind : null),
+    itemCounts,
     equippedArmor: restore?.equippedArmor ?? null,
     riding: null,
     ridingRole: null,

@@ -137,7 +137,13 @@ function buildChurch(site: RuinSite, put: Put, remove: Remove) {
       if (Math.abs(dx) !== 7 && Math.abs(dz) !== 12) continue;
       for (let y = 1; y <= 6; y += 1) {
         if (dz === -12 && ((Math.abs(dx) <= 1 && y <= 3) || (dx === 0 && y === 4))) continue;
-        if (Math.abs(dx) === 7 && ((dz + 12) % 6 === 3 && y >= 3 && y <= 4 || (dz + 12) % 6 === 4 && y === 5)) continue;
+        if (Math.abs(dx) === 7 && ((dz + 12) % 6 === 3 && y >= 3 && y <= 4 || (dz + 12) % 6 === 4 && y === 5)) {
+          if (hash(dx, y, dz, site.seed + 57) > 0.12) {
+            const glass = y === 4 ? BlockKind.GlassYellow : (dz + 12) % 3 === 0 ? BlockKind.GlassRed : BlockKind.GlassBlue;
+            put(site.x + dx, site.baseY + y, site.z + dz, glass);
+          }
+          continue;
+        }
         wallBlock(site.x + dx, site.baseY + y, site.z + dz, 6, BlockKind.GrayBrick, site, put);
       }
     }
@@ -153,7 +159,7 @@ function buildChurch(site: RuinSite, put: Put, remove: Remove) {
   for (let dx = -7; dx <= 7; dx += 1) {
     const roofY = site.baseY + 7 + Math.floor((7 - Math.abs(dx)) / 2);
     for (let dz = 5; dz <= 12; dz += 1) {
-      if (hash(dx, roofY, dz, site.seed) > 0.12) put(site.x + dx, roofY, site.z + dz, BlockKind.GrayBrick);
+      if (hash(dx, roofY, dz, site.seed) > 0.12) put(site.x + dx, roofY, site.z + dz, BlockKind.PinePlanks);
     }
   }
   vines(site, put);

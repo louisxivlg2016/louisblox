@@ -1,7 +1,7 @@
 import { BoxGeometry, CanvasTexture, LinearFilter, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { BlockKind } from './voxel';
-import { EXTRA_BLOCK_META, isSapling } from './extraBlocks';
+import { EXTRA_BLOCK_META, isGlass, isSapling } from './extraBlocks';
 import type { ExtraBlockKind } from './extraBlocks';
 
 function random(x: number, y: number, seed: number) {
@@ -84,6 +84,25 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
     context.fillRect(0, 0, 1, 16);
     context.fillRect(15, 0, 1, 16);
     for (let index = 3; index < 10; index += 1) context.fillRect(index, index - 1, 1, 1);
+  }
+
+  if (isGlass(kind) && kind !== BlockKind.Glass) {
+    context.fillStyle = palette[0];
+    context.fillRect(0, 0, 16, 16);
+    context.fillStyle = palette[4];
+    context.fillRect(0, 0, 16, 1);
+    context.fillRect(0, 15, 16, 1);
+    context.fillRect(0, 0, 1, 16);
+    context.fillRect(15, 0, 1, 16);
+    context.fillRect(7, 0, 1, 16);
+    context.fillRect(0, 7, 16, 1);
+    context.fillStyle = palette[2];
+    for (let offset = -5; offset <= 5; offset += 1) {
+      context.fillRect(7 + offset, 7 + offset, 1, 1);
+      context.fillRect(7 + offset, 7 - offset, 1, 1);
+    }
+    context.fillStyle = '#f6d77a';
+    context.fillRect(7, 7, 1, 1);
   }
 
   if (kind === BlockKind.Apple) {
@@ -223,7 +242,7 @@ function material(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
     return new MeshLambertMaterial({ color: EXTRA_BLOCK_META[kind as ExtraBlockKind].color });
   }
   const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves;
-  const glass = kind === BlockKind.Glass;
+  const glass = isGlass(kind);
   return new MeshLambertMaterial({
     map: texture(kind, face),
     alphaTest: foliage || isSapling(kind) ? 0.35 : glass ? 0.05 : 0,

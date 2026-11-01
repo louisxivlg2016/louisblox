@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useCharacterStore } from '../game/characterStore';
 import { useMultiplayerStore } from '../game/multiplayerStore';
-import { acceptFriendRequest, fetchFriendRequests, listOnlinePlayers, searchPlayers, sendFriendRequest, useFriendStore } from '../game/friends';
+import { acceptFriendRequest, fetchFriendRequests, giveApple, listOnlinePlayers, searchPlayers, sendFriendRequest, useFriendStore } from '../game/friends';
 import type { FriendPlayer, FriendRequest } from '../game/friends';
 import { PixelAvatar } from './PixelAvatar';
 import { ProfileAvatar, ProfilePhotoPicker } from './ProfileAvatar';
+import { useGameStore } from '../game/store';
+import { readWorldSave } from '../game/save';
 
 function PlayerRow({ player, action, online = true }: { player: FriendPlayer; action?: React.ReactNode; online?: boolean }) {
   return (
@@ -16,9 +18,10 @@ function PlayerRow({ player, action, online = true }: { player: FriendPlayer; ac
   );
 }
 
-export function FriendsPanel() {
+export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> }) {
   const playerName = useMultiplayerStore((state) => state.playerName);
   const status = useMultiplayerStore((state) => state.status);
+  const room = useMultiplayerStore((state) => state.room);
   const server = useMultiplayerStore((state) => state.server);
   const players = useMultiplayerStore((state) => state.players);
   const configure = useMultiplayerStore((state) => state.configure);
@@ -40,9 +43,17 @@ export function FriendsPanel() {
   const [searchResults, setSearchResults] = useState<FriendPlayer[]>([]);
   const [message, setMessage] = useState('');
   const [pending, setPending] = useState<string[]>([]);
+  const [pendingJoin, setPendingJoin] = useState<string | null>(null);
+  const [giving, setGiving] = useState<string[]>([]);
+  const apples = useGameStore((state) => state.apples);
   const selfId = players.find((player) => player.self)?.playerId;
 
   useEffect(() => setName(playerName), [playerName]);
+  useEffect(() => {
+    if (pendingJoin !== room || status !== 'online') return;
+    setPendingJoin(null);
+    void onPlay();
+  }, [pendingJoin, room, status, onPlay]);
   useEffect(() => {
     let active = true;
     const refresh = async () => {
@@ -99,13 +110,30 @@ export function FriendsPanel() {
       await acceptFriendRequest(request);
       addFriend(request.from);
       removeRequest(request.requestId);
-      configure({ playerName, room: request.from.room, server });
-      const url = new URL(window.location.href);
-      url.searchParams.set('room', request.from.room);
-      window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
       setMessage(`${request.from.name} est maintenant ton ami.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Invitation impossible.');
+    }
+  };
+  const joinFriend = (player: FriendPlayer) => {
+    const game = useGameStore.getState();
+    if (readWorldSave(player.room)) game.openWorld(player.room, player.room);
+    else game.regenerate(game.gameplayMode, player.room);
+    setPendingJoin(player.room);
+    configure({ playerName, room: player.room, server });
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', player.room);
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+  const offerApple = async (player: FriendPlayer) => {
+    setGiving((current) => [...current, player.playerId]);
+    try {
+      await giveApple(player);
+      setMessage(`Une pomme a été offerte à ${player.name}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Don impossible pour le moment.');
+    } finally {
+      setGiving((current) => current.filter((id) => id !== player.playerId));
     }
   };
   const online = new Map(onlinePlayers.map((player) => [player.playerId, player]));
@@ -136,7 +164,7 @@ export function FriendsPanel() {
           {requests.map((request) => (
             <div className="friend-request" key={request.requestId}>
               <PlayerRow player={request.from} />
-              <div><button onClick={() => accept(request)}>Rejoindre</button><button onClick={() => removeRequest(request.requestId)}>Ignorer</button></div>
+              <div><button aria-label={`Accepter ${request.from.name}`} onClick={() => accept(request)}>Accepter</button><button aria-label={`Refuser ${request.from.name}`} onClick={() => { removeRequest(request.requestId); setMessage(`Invitation de ${request.from.name} refusée.`); }}>Refuser</button></div>
             </div>
           ))}
         </div>
@@ -144,7 +172,7 @@ export function FriendsPanel() {
 
       <div className="friends-heading"><h3>Amis <span>{friends.length}</span></h3><span className="online-dot" /></div>
       <div className="friends-list">
-        {savedFriends.map(({ player, online: isOnline }) => <PlayerRow key={player.playerId} player={player} online={isOnline} />)}
+        {savedFriends.map(({ player, online: isOnline }) => <PlayerRow key={player.playerId} player={player} online={isOnline} action={<span className="friend-actions"><button className="friend-add" disabled={!isOnline} aria-label={`Rejoindre ${player.name}`} onClick={() => joinFriend(player)}>{isOnline ? 'Rejoindre' : 'Hors ligne'}</button><button className="friend-add friend-gift" disabled={!isOnline || apples < 1 || giving.includes(player.playerId)} aria-label={`Offrir une pomme à ${player.name}`} onClick={() => offerApple(player)}>{giving.includes(player.playerId) ? 'Envoi…' : `Pomme ×${apples}`}</button></span>} />)}
         {savedFriends.length === 0 && <p className="friends-empty">Propose des amis parmi les joueurs en ligne.</p>}
       </div>
       <div className="friends-heading"><h3>Tous les joueurs <span>{filteredPlayers.length}</span></h3></div>

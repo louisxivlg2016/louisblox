@@ -95,13 +95,14 @@ export function Hud() {
           <div className="hotbar">
             {hotbarSlots.map((kind, index) => (
               <button
-                key={`${kind}-${index}`}
+                key={`${kind ?? 'vide'}-${index}`}
                 className={`hotbar-slot ${selected === kind ? 'selected' : ''}`}
-                onClick={() => selectBlock(kind)}
-                aria-label={`${index + 1} : ${selectionInfo(kind).name}`}
+                onClick={() => { if (kind !== null) selectBlock(kind); }}
+                disabled={kind === null}
+                aria-label={`${index + 1} : ${kind === null ? 'vide' : selectionInfo(kind).name}`}
               >
                 <span className="slot-number">{index === 9 ? '0' : index + 1}</span>
-                <ItemIcon kind={kind} />
+                {kind !== null && <ItemIcon kind={kind} />}
               </button>
             ))}
           </div>

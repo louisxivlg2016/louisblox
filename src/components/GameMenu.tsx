@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '../game/store';
+import { readWorldSave } from '../game/save';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import type { GameplayMode } from '../game/worldMode';
 import { MultiplayerLobby } from './MultiplayerLobby';
@@ -25,8 +26,12 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     void onPlay();
   }, [pendingWorld, room, status, onPlay]);
   const create = (gameplayMode: GameplayMode) => {
-    const worldId = `monde-${crypto.randomUUID().slice(0, 8)}`;
-    regenerate(gameplayMode, worldId);
+    const shared = enabled && gameplayMode !== 'battle';
+    const worldId = shared ? gameplayMode === 'survival' ? 'survie-public-v1' : 'creatif-public-v1' : `monde-${crypto.randomUUID().slice(0, 8)}`;
+    const worldName = gameplayMode === 'survival' ? 'Survie avec tous les joueurs' : gameplayMode === 'creative' ? 'Créatif avec tous les joueurs' : worldId;
+    if (shared && readWorldSave(worldId)) useGameStore.getState().openWorld(worldId, worldName);
+    else regenerate(gameplayMode, worldId);
+    if (shared) useGameStore.setState({ worldName });
     if (enabled) {
       setPendingWorld(worldId);
       configure({ playerName, room: worldId, server });
@@ -39,7 +44,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
       <div className="menu-layout">
         <aside className="menu-sidebar">
           <div className="menu-brand"><span className="menu-brand-cube">L</span><div><strong>LOUISBLOX</strong><small>Joue, construis, partage.</small></div></div>
-          <FriendsPanel />
+          <FriendsPanel onPlay={onPlay} />
           <button className="sidebar-shop" onClick={onShop}><img src={shopUrl} alt="" /><span>Ouvrir la boutique</span></button>
         </aside>
         <main className="world-browser">
@@ -51,13 +56,13 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             </button>
             <button className="world-card" onClick={() => create('survival')} disabled={pendingWorld !== null}>
               <img src={survivalUrl} alt="Zombie du mode Survie" />
-              <span className="world-card-label"><strong>Survie</strong><small>Récolte, fabrique et résiste aux zombies</small></span>
-              <span className="world-mode-tag">À mains nues</span>
+              <span className="world-card-label"><strong>Survie</strong><small>{enabled ? 'Monde public avec tous les joueurs' : 'Nouveau monde solo à mains nues'}</small></span>
+              <span className="world-mode-tag">{enabled ? 'Multijoueur' : 'Solo'}</span>
             </button>
             <button className="world-card" onClick={() => create('creative')} disabled={pendingWorld !== null}>
               <img src={creativeUrl} alt="Monde du mode Créatif" />
-              <span className="world-card-label"><strong>Créatif</strong><small>Tous les blocs et objets, sans limite</small></span>
-              <span className="world-mode-tag creative">Tout est permis</span>
+              <span className="world-card-label"><strong>Créatif</strong><small>{enabled ? 'Monde public avec tous les joueurs' : 'Nouveau monde solo avec tous les objets'}</small></span>
+              <span className="world-mode-tag creative">{enabled ? 'Multijoueur' : 'Solo'}</span>
             </button>
             <button className="world-card battle-card" onClick={() => create('battle')} disabled={!enabled || pendingWorld !== null}>
               <img src={survivalUrl} alt="Arène du mode Bataille" />

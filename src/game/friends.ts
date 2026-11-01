@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { resolveMultiplayerUrl } from './multiplayer';
 import { useMultiplayerStore } from './multiplayerStore';
 import { useCharacterStore } from './characterStore';
+import { useGameStore } from './store';
 import { sanitizeAppearance } from './appearance';
 import { isOutfitKind, isWigSelection } from './outfits';
 import type { OutfitKind, WigSelection } from './outfits';
@@ -148,6 +149,15 @@ async function postFriend(path: string, targetId: string, requestId?: string) {
 
 export const sendFriendRequest = (target: FriendPlayer) => postFriend('/friend-request', target.playerId);
 export const acceptFriendRequest = (request: FriendRequest) => postFriend('/friend-accept', request.from.playerId, request.requestId);
+
+export async function giveApple(target: FriendPlayer) {
+  const game = useGameStore.getState();
+  if (game.gameplayMode === 'battle') throw new Error('Les pommes ne sont pas utilisables dans l’arène de bataille.');
+  if (game.apples < 1) throw new Error('Cueille d’abord une pomme sur un arbre de prairie.');
+  const delivered = await postFriend('/apple-gift', target.playerId);
+  if (!delivered) throw new Error(`${target.name} doit être connecté à sa partie pour recevoir la pomme.`);
+  game.discardApple();
+}
 
 export function receiveFriendRequest(value: unknown) {
   if (!value || typeof value !== 'object') return;

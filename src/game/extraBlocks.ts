@@ -86,12 +86,29 @@ export const EXTRA_BLOCKS = {
   Wildfire: 106,
   Rail: 107,
   Sign: 108,
+  GlassWhite: 109,
+  GlassOrange: 110,
+  GlassMagenta: 111,
+  GlassLightBlue: 112,
+  GlassYellow: 113,
+  GlassLime: 114,
+  GlassPink: 115,
+  GlassGray: 116,
+  GlassLightGray: 117,
+  GlassCyan: 118,
+  GlassPurple: 119,
+  GlassBlue: 120,
+  GlassBrown: 121,
+  GlassGreen: 122,
+  GlassRed: 123,
+  GlassBlack: 124,
 } as const;
 
 export type ExtraBlockKind = (typeof EXTRA_BLOCKS)[keyof typeof EXTRA_BLOCKS];
 export const EXTRA_BLOCK_ORDER = Object.values(EXTRA_BLOCKS) as ExtraBlockKind[];
 export const SAPLING_KINDS = [EXTRA_BLOCKS.OakSapling, EXTRA_BLOCKS.PineSapling, EXTRA_BLOCKS.AutumnSapling] as const;
 export const isSapling = (kind: number) => (SAPLING_KINDS as readonly number[]).includes(kind);
+export const isGlass = (kind: number) => kind === EXTRA_BLOCKS.Glass || kind >= EXTRA_BLOCKS.GlassWhite && kind <= EXTRA_BLOCKS.GlassBlack;
 export const isDoor = (kind: number) => kind >= EXTRA_BLOCKS.DoorWhite && kind <= EXTRA_BLOCKS.DoorBlack;
 export const isTrapdoor = (kind: number) => kind >= EXTRA_BLOCKS.TrapdoorWhite && kind <= EXTRA_BLOCKS.TrapdoorBlack;
 export const CROP_KINDS = [EXTRA_BLOCKS.Corn, EXTRA_BLOCKS.Wheat, EXTRA_BLOCKS.Tomato, EXTRA_BLOCKS.Carrot, EXTRA_BLOCKS.Watermelon] as const;
@@ -208,4 +225,20 @@ export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.Wildfire]: block('Feu destructeur', '#e84b27', 0.25),
   [EXTRA_BLOCKS.Rail]: block('Rail de train', '#8d9ba5', 1.4),
   [EXTRA_BLOCKS.Sign]: block('Panneau à écrire', '#b98a53', 0.8),
+  [EXTRA_BLOCKS.GlassWhite]: block('Verre blanc à motif', '#d8dedc', 0.35),
+  [EXTRA_BLOCKS.GlassOrange]: block('Verre orange à motif', '#e88422', 0.35),
+  [EXTRA_BLOCKS.GlassMagenta]: block('Verre magenta à motif', '#b54bb4', 0.35),
+  [EXTRA_BLOCKS.GlassLightBlue]: block('Verre bleu clair à motif', '#56a7dd', 0.35),
+  [EXTRA_BLOCKS.GlassYellow]: block('Verre jaune à motif', '#e5c92c', 0.35),
+  [EXTRA_BLOCKS.GlassLime]: block('Verre lime à motif', '#67b83c', 0.35),
+  [EXTRA_BLOCKS.GlassPink]: block('Verre rose à motif', '#e68ea3', 0.35),
+  [EXTRA_BLOCKS.GlassGray]: block('Verre gris à motif', '#555b60', 0.35),
+  [EXTRA_BLOCKS.GlassLightGray]: block('Verre gris clair à motif', '#9aa3a5', 0.35),
+  [EXTRA_BLOCKS.GlassCyan]: block('Verre cyan à motif', '#2c9aa0', 0.35),
+  [EXTRA_BLOCKS.GlassPurple]: block('Verre violet à motif', '#743ba5', 0.35),
+  [EXTRA_BLOCKS.GlassBlue]: block('Verre bleu à motif', '#374ca5', 0.35),
+  [EXTRA_BLOCKS.GlassBrown]: block('Verre marron à motif', '#79523a', 0.35),
+  [EXTRA_BLOCKS.GlassGreen]: block('Verre vert à motif', '#3f7c3a', 0.35),
+  [EXTRA_BLOCKS.GlassRed]: block('Verre rouge à motif', '#b83935', 0.35),
+  [EXTRA_BLOCKS.GlassBlack]: block('Verre noir à motif', '#25282b', 0.35),
 };

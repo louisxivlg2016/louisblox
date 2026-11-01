@@ -15,6 +15,7 @@ import { HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
 import { groundAt, spawnVehicle } from '../vehicles';
 import { BlockKind, raycastVoxel, voxelKey } from '../voxel';
 import { fireProjectile } from './projectileSystem';
+import { useEatingStore } from '../eating';
 
 const cooldowns = new WeakMap<World, number>();
 const origin = new Vector3();
@@ -42,6 +43,7 @@ export function eatItem(world: World, kind: ItemKind | GalleryItemId) {
   if (kind === 'apple') store.discardApple();
   else store.setItemCount(kind, count - 1);
   store.setNotice(`${meta.name} : +${value - health.value} vie${value - health.value > 1 ? 's' : ''}`);
+  useEatingStore.getState().startEating(kind);
   return true;
 }
 
@@ -58,6 +60,7 @@ export function eatMeat(world: World, kind: import('../animals').AnimalKind) {
   store.discardMeat(kind);
   store.setLives(value);
   store.setNotice(`Viande mangée : +${value - health.value} vies`);
+  useEatingStore.getState().startEating('cooked_meat');
   return true;
 }
 

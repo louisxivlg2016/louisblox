@@ -30,6 +30,7 @@ import { applyProjectileRemoval, applyProjectileSnapshot, isExplosionSnapshot, i
 import { clearChat, receiveChatMessage, setChatSocket } from '../game/chat';
 import { clearBattle, receiveBattleElimination, receiveBattleRespawn, receiveBattleState, setBattleLocalPlayer, setBattleSocket, useBattleStore } from '../game/battle';
 import { useEmoteStore } from '../game/emotes';
+import { receiveAppleGift } from '../game/gifts';
 
 type ServerMessage = {
   type?: unknown;
@@ -120,7 +121,13 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
   const headContent = (
     <>
       <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color="#e7a0aa" />
-      {!hasWig && <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={current.hairColor} />}
+      {!hasWig && (
+        <group name="natural-hair">
+          <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={current.hairColor} />
+          <PixelPart position={[0, 1.75, 0.245]} size={[0.5, 0.35, 0.055]} color={current.hairColor} />
+          <PixelPart position={[0, 1.88, -0.245]} size={[0.5, 0.12, 0.055]} color={current.hairColor} />
+        </group>
+      )}
       {current.hairStyle === 'long' && !hasWig && (
         <>
           <PixelPart position={[0, 1.58, 0.24]} size={[0.5, 0.65, 0.12]} color={current.hairColor} />
@@ -245,6 +252,7 @@ export function MultiplayerConnection() {
 
     let disposed = false;
     let reconnectTimer: number | undefined;
+    let lastPresence = 0;
     const leaveDeletedRoom = (closing: WebSocket) => {
       if (socket.current === closing) socket.current = null;
       closing.onclose = null;
@@ -382,6 +390,10 @@ export function MultiplayerConnection() {
         }
         if (data.type === 'friend-accept') {
           receiveFriendAcceptance(data);
+          return;
+        }
+        if (data.type === 'apple-gift') {
+          receiveAppleGift(world, data);
           return;
         }
         if ((data.type === 'projectile-spawn' || data.type === 'projectile-state') && isProjectileSnapshot(data.projectile)) {
@@ -543,6 +555,10 @@ export function MultiplayerConnection() {
       applyPendingWorld();
       flushEdits();
       const current = socket.current;
+      if (current?.readyState === WebSocket.OPEN && Date.now() - lastPresence > 15000) {
+        lastPresence = Date.now();
+        current.send(JSON.stringify({ type: 'presence' }));
+      }
       if (!current || current.readyState !== WebSocket.OPEN || useGameStore.getState().mode !== 'play') return;
       const entity = world.queryFirst(Player);
       const position = entity?.get(PlayerPosition);
@@ -608,7 +624,7 @@ export function MultiplayerConnection() {
     if (!enabled) return;
     const current = socket.current;
     if (current?.readyState === WebSocket.OPEN) {
-      sendWorldInitialization(current, world, true);
+      sendWorldInitialization(current, world, false);
     }
   }, [world, generation, enabled]);
 

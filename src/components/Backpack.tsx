@@ -122,16 +122,16 @@ export function Backpack() {
           <p className="backpack-label">Cases actives · choisis un objet puis une case, ou fais-le glisser</p>
           <div className="backpack-active-slots">{hotbarSlots.map((kind, index) => (
             <button
-              key={`${kind}-${index}`}
+              key={`${kind ?? 'vide'}-${index}`}
               className="backpack-block active-slot"
               onClick={() => assign(index)}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => { event.preventDefault(); assign(index); }}
-              aria-label={`Case ${index === 9 ? '0' : index + 1} : ${selectionInfo(kind).name}`}
-              title={selectionInfo(kind).name}
+              aria-label={`Case ${index === 9 ? '0' : index + 1} : ${kind === null ? 'vide' : selectionInfo(kind).name}`}
+              title={kind === null ? 'Vide' : selectionInfo(kind).name}
             >
               <span className="active-slot-number">{index === 9 ? '0' : index + 1}</span>
-              <ItemIcon kind={kind} />
+              {kind !== null && <ItemIcon kind={kind} />}
             </button>
           ))}</div>
         </div>

@@ -162,6 +162,14 @@ export class PlayerDirectory extends DurableObject<Env> {
         return json({ ok: true });
       }
     }
+    if (url.pathname === '/apple-gift' && request.method === 'POST') {
+      const data = await request.json() as { targetId?: unknown; from?: unknown };
+      const from = parseSocialPlayer(data.from);
+      const target = typeof data.targetId === 'string' ? this.onlinePlayers.get(data.targetId) : undefined;
+      if (!from || !target || target.playerId === from.playerId) return json({ sent: false, delivered: false });
+      const delivered = await this.deliver('/apple-gift', target.room, { targetId: target.playerId, from: from.playerId, name: from.name, count: 1 });
+      return json({ sent: true, delivered });
+    }
     if ((url.pathname === '/friend-request' || url.pathname === '/friend-accept') && request.method === 'POST') {
       const data = await request.json() as { targetId?: unknown; requestId?: unknown; from?: unknown };
       const from = parseSocialPlayer(data.from);

@@ -17,7 +17,7 @@ type GameStore = {
   mode: GameMode;
   gameplayMode: GameplayMode;
   selected: SelectedKind;
-  hotbarSlots: SelectedKind[];
+  hotbarSlots: Array<SelectedKind | null>;
   backpackItem: SelectedKind | null;
   itemCounts: Record<string, number>;
   equippedArmor: ArmorKind | null;
@@ -138,7 +138,15 @@ export const useGameStore = create<GameStore>((set) => ({
     return { hotbarSlots, selected: kind, backpackItem: null };
   }),
   setBackpackItem: (backpackItem) => set({ backpackItem }),
-  setItemCount: (kind, count) => set((state) => ({ itemCounts: { ...state.itemCounts, [kind]: Math.max(0, count) } })),
+  setItemCount: (kind, count) => set((state) => {
+    const itemCounts = { ...state.itemCounts, [kind]: Math.max(0, count) };
+    if (state.gameplayMode !== 'survival' || count > 0 || kind === 'hand') return { itemCounts };
+    return {
+      itemCounts,
+      hotbarSlots: state.hotbarSlots.map((slot) => slot === kind ? null : slot),
+      selected: state.selected === kind ? 'hand' as const : state.selected,
+    };
+  }),
   equipArmor: (equippedArmor) => set({ equippedArmor }),
   setRiding: (riding, role = 'driver') => set({ riding, ridingRole: riding ? role : null }),
   setSeatChoice: (seatChoice) => set({ seatChoice }),
@@ -168,7 +176,7 @@ export const useGameStore = create<GameStore>((set) => ({
       selected: gameplayMode === 'battle' ? 'pistol_iron' : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass,
       hotbarSlots: gameplayMode === 'battle'
         ? ['pistol_iron', 'pistol_bomb', 'bow', 'sword_iron', ...HOTBAR_BLOCKS.slice(0, 6)]
-        : gameplayMode === 'survival' ? Array(10).fill('hand') : [...HOTBAR_BLOCKS.slice(0, 10)],
+        : gameplayMode === 'survival' ? ['hand', ...Array(9).fill(null)] : [...HOTBAR_BLOCKS.slice(0, 10)],
       backpackItem: null,
       itemCounts: gameplayMode === 'survival' ? { hand: 1 } : { ...DEFAULT_ITEM_COUNTS },
       equippedArmor: null,

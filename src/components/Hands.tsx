@@ -1,5 +1,8 @@
-import { useEffect, useMemo } from 'react';
-import { createPortal, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import { createPortal, useFrame, useThree } from '@react-three/fiber';
+import type { Group } from 'three';
+import type { SelectedKind } from '../game/items';
+import { useEatingStore } from '../game/eating';
 import { CanvasTexture, NearestFilter, SRGBColorSpace } from 'three';
 import type { MeshLambertMaterial } from 'three';
 import { getItemMeta } from '../game/items';
@@ -31,10 +34,23 @@ function createSkinTexture() {
   return texture;
 }
 
+function EatingHand({ kind, startedAt }: { kind: Exclude<SelectedKind, number>; startedAt: number }) {
+  const group = useRef<Group>(null);
+  useFrame(() => {
+    if (!group.current) return;
+    const progress = Math.min(1, (performance.now() - startedAt) / 850);
+    const bite = Math.sin(progress * Math.PI);
+    group.current.position.set(0.36, -0.3 + bite * 0.3, -0.78 - bite * 0.22);
+    group.current.rotation.set(-bite * 0.75, 0.15, bite * 0.2);
+  });
+  return <group ref={group} name="eating-animation"><ItemModel kind={kind} held /></group>;
+}
+
 export function Hands() {
   const camera = useThree((state) => state.camera);
   const scene = useThree((state) => state.scene);
   const selected = useGameStore((state) => state.selected);
+  const eating = useEatingStore((state) => state.eating);
   const cameraMode = useGameStore((state) => state.cameraMode);
   const riding = useGameStore((state) => state.riding);
   const sleeping = useGameStore((state) => state.sleepProgress !== null);
@@ -57,7 +73,8 @@ export function Hands() {
 
   if (cameraMode !== 'first' || sleeping || riding === 'car') return null;
   return createPortal(
-    <group>
+    <>
+      <group visible={!eating}>
       {[-0.43, 0.42].map((x) => (
         <mesh key={x} position={[x, -0.45, -0.72]} rotation={[-0.35, x * 0.2, x * 0.5]} renderOrder={10} frustumCulled={false}>
           <boxGeometry args={[0.2, 0.52, 0.2]} />
@@ -79,7 +96,9 @@ export function Hands() {
           <ItemModel kind={selected} held />
         </group>
       )}
-    </group>,
+      </group>
+      {eating && <EatingHand kind={eating.kind} startedAt={eating.startedAt} />}
+    </>,
     camera,
   );
 }

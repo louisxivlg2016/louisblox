@@ -16,6 +16,7 @@ import { OUTFITS, selectedWig } from '../game/outfits';
 import { CharacterOutfit } from './CharacterOutfit';
 import { hasWardrobeModel } from './WardrobeGlb';
 import { useEmoteStore } from '../game/emotes';
+import { useEatingStore } from '../game/eating';
 
 export function PlayerAvatar() {
   const entity = useQueryFirst(Player);
@@ -29,6 +30,7 @@ export function PlayerAvatar() {
   const wig = useCharacterStore((state) => state.wig);
   const appearance = useCharacterStore((state) => state.appearance);
   const emote = useEmoteStore((state) => state.current);
+  const eating = useEatingStore((state) => state.eating);
   const leftArm = useRef<Group>(null);
   const rightArm = useRef<Group>(null);
   const leftLeg = useRef<Group>(null);
@@ -50,7 +52,8 @@ export function PlayerAvatar() {
     const amount = Math.min(1, delta * 12);
     if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
     if (rightArm.current) {
-      rightArm.current.rotation.x += ((waving ? Math.PI : -swing) - rightArm.current.rotation.x) * amount;
+      const bite = eating ? Math.sin(Math.min(1, (performance.now() - eating.startedAt) / 850) * Math.PI) : 0;
+      rightArm.current.rotation.x += ((eating ? -1.25 - bite * 0.65 : waving ? Math.PI : -swing) - rightArm.current.rotation.x) * amount;
       rightArm.current.rotation.z += ((waving ? Math.sin(phase.current) * 0.45 : 0) - rightArm.current.rotation.z) * amount;
     }
     if (leftLeg.current) leftLeg.current.rotation.x += (-swing - leftLeg.current.rotation.x) * amount;
@@ -74,7 +77,13 @@ export function PlayerAvatar() {
   const headContent = (
     <>
       <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color="#e7a0aa" />
-      {!hasWig && <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={appearance.hairColor} />}
+      {!hasWig && (
+        <group name="natural-hair">
+          <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={appearance.hairColor} />
+          <PixelPart position={[0, 1.75, 0.245]} size={[0.5, 0.35, 0.055]} color={appearance.hairColor} />
+          <PixelPart position={[0, 1.88, -0.245]} size={[0.5, 0.12, 0.055]} color={appearance.hairColor} />
+        </group>
+      )}
       {appearance.hairStyle === 'long' && !hasWig && (
         <>
           <PixelPart position={[0, 1.58, 0.24]} size={[0.5, 0.65, 0.12]} color={appearance.hairColor} />

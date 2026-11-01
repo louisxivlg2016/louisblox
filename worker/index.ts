@@ -269,6 +269,16 @@ export class GameRoom extends DurableObject<Env> {
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === '/apple-gift') {
+      try {
+        const data = await request.json() as { targetId?: unknown; from?: unknown; name?: unknown };
+        if (typeof data.from !== 'string' || data.from.length < 1 || data.from.length > 80 || typeof data.targetId !== 'string') return json({ sent: false }, 400);
+        const name = typeof data.name === 'string' ? data.name.trim().slice(0, 24) || 'Joueur' : 'Joueur';
+        return json({ sent: this.sendToPlayer(data.targetId, { type: 'apple-gift', from: data.from, name, count: 1 }) });
+      } catch {
+        return json({ sent: false }, 400);
+      }
+    }
     if (url.pathname === '/friend-request' || url.pathname === '/friend-accept') return this.friendRequest(request);
     if (url.pathname === '/room' && request.method === 'DELETE') return this.deleteRoom();
     if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') {
@@ -381,6 +391,11 @@ export class GameRoom extends DurableObject<Env> {
     if (!data || typeof data !== 'object') return;
     const type = (data as { type?: unknown }).type;
     await this.ensureWorld();
+    if (type === 'presence') {
+      const attachment = this.attachment(ws);
+      if (attachment) this.publishPresence(attachment);
+      return;
+    }
     if (type === 'battle-team') {
       const attachment = this.attachment(ws);
       const team = (data as { team?: unknown }).team;
@@ -652,7 +667,7 @@ export default {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    if (url.pathname === '/players' || url.pathname === '/presence' || url.pathname === '/friend-request' || url.pathname === '/friend-accept' || url.pathname === '/friend-requests') {
+    if (url.pathname === '/players' || url.pathname === '/presence' || url.pathname === '/friend-request' || url.pathname === '/friend-accept' || url.pathname === '/friend-requests' || url.pathname === '/apple-gift') {
       const id = env.PLAYER_DIRECTORY.idFromName('global');
       return env.PLAYER_DIRECTORY.get(id).fetch(request);
     }

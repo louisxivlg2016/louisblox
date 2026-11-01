@@ -20,10 +20,14 @@ export function hasInventory(kind: SelectedKind, state: InventoryState) {
 
 export function changeInventory(kind: SelectedKind, amount: number) {
   const key = inventoryKey(kind);
-  useGameStore.setState((state) => ({
-    itemCounts: {
-      ...state.itemCounts,
-      [key]: Math.max(0, (state.itemCounts[key] ?? 0) + amount),
-    },
-  }));
+  useGameStore.setState((state) => {
+    const count = Math.max(0, (state.itemCounts[key] ?? 0) + amount);
+    const itemCounts = { ...state.itemCounts, [key]: count };
+    if (state.gameplayMode !== 'survival' || count > 0 || kind === 'hand') return { itemCounts };
+    return {
+      itemCounts,
+      hotbarSlots: state.hotbarSlots.map((slot) => slot === kind ? null : slot),
+      selected: state.selected === kind ? 'hand' as const : state.selected,
+    };
+  });
 }

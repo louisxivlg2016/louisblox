@@ -53,6 +53,10 @@ function climbRise(world: World, x: number, z: number) {
   return biomeAt(Math.floor(x), Math.floor(z), getWorldSeed(world)) === 'winter' ? 4 : 1.05;
 }
 
+function walkableGround(world: World, x: number, z: number, ground: number) {
+  return ground > MIN_WORLD_Y + 0.5 && blockAt(world, x, ground + 1, z)?.kind !== BlockKind.Water;
+}
+
 function canAdvance(world: World, kind: AnimalKind, position: Vector3, yaw: number) {
   const x = position.x + Math.sin(yaw) * 0.8;
   const z = position.z + Math.cos(yaw) * 0.8;
@@ -63,7 +67,7 @@ function canAdvance(world: World, kind: AnimalKind, position: Vector3, yaw: numb
   }
   const rise = climbRise(world, x, z);
   const ground = groundAt(world, x, z, position.y + rise + 0.05);
-  return ground >= SEA_LEVEL + 0.5 && ground <= position.y + rise && bodyClear(world, x, z, ground);
+  return walkableGround(world, x, z, ground) && ground <= position.y + rise && bodyClear(world, x, z, ground);
 }
 
 function avoidWall(world: World, kind: AnimalKind, position: Vector3, motion: Motion, entity: Entity) {
@@ -80,7 +84,8 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
   motion.avoid = Math.max(0, (motion.avoid ?? 0) - dt);
   const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : motion.speed;
   const normalSpeed = motion.idle > 0 || motion.avoid > 0 ? 0 : baseSpeed;
-  const speed = motion.avoid > 0 ? 0 : panic > 0 ? Math.min(kind === 'duck' ? 0.65 : 1.4, baseSpeed * 1.8) : normalSpeed;
+  const chaseSpeed = kind === 'zombie' ? 2.8 : kind === 'bear' || kind === 'snowBear' || kind === 'wolf' || kind === 'snowWolf' ? 2.2 : kind === 'duck' ? 0.65 : 1.4;
+  const speed = motion.avoid > 0 ? 0 : panic > 0 ? chaseSpeed : normalSpeed;
   const x = position.x + Math.sin(motion.yaw) * speed * dt;
   const z = position.z + Math.cos(motion.yaw) * speed * dt;
   let blocked = false;
@@ -98,7 +103,7 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
     if (isLoaded(world, x, z)) {
       const rise = climbRise(world, x, z);
       const ground = groundAt(world, x, z, position.y + rise + 0.05);
-      if (ground >= SEA_LEVEL + 0.5 && ground <= position.y + rise && bodyClear(world, x, z, ground)) {
+      if (walkableGround(world, x, z, ground) && ground <= position.y + rise && bodyClear(world, x, z, ground)) {
         position.x = x;
         position.z = z;
         if (motion.grounded && ground > position.y) {
