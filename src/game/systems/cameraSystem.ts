@@ -2,6 +2,7 @@ import type { World } from 'koota';
 import { Euler, Vector3 } from 'three';
 import type { Camera } from 'three';
 import { useGameStore } from '../store';
+import { useEmoteStore } from '../emotes';
 import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
@@ -34,11 +35,13 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   flightBlends.set(world, flightBlend);
   const flightAmount = flightBlend * flightBlend * (3 - 2 * flightBlend);
   const mountKind = entity.get(PlayerMount)?.kind;
-  const seatedHeight = mounted && mountKind !== 'horse' ? mountKind === 'car' ? -0.9 : -0.7 : 0;
+  const emote = useEmoteStore.getState().current;
+  const seatedHeight = (mounted && mountKind !== 'horse') || emote === 'sit' ? mountKind === 'car' ? -0.9 : -0.7 : 0;
+  const lyingHeight = !mounted && emote === 'lie' ? 0.18 : 0;
   if (avatar) {
-    avatar.rotation.x = -flightAmount * Math.PI / 2;
+    avatar.rotation.x = !mounted && emote === 'lie' ? -Math.PI / 2 : -flightAmount * Math.PI / 2;
     avatar.rotation.z = amount * Math.PI / 2;
-    avatar.position.set(-0.9 * amount, 0.35 * amount + flightAmount + seatedHeight, 0);
+    avatar.position.set(-0.9 * amount, 0.35 * amount + flightAmount + seatedHeight + lyingHeight, 0);
   }
   if (sleep) {
     sleepCameraPosition.set(sleep.x + Math.sin(state.yaw) * 4.5, sleep.y + 2.2, sleep.z + Math.cos(state.yaw) * 4.5);
