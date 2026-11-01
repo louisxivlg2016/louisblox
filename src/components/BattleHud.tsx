@@ -4,8 +4,6 @@ import { clearInput, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 
-const TEAM_NAMES = { red: 'Rouge', blue: 'Bleu' } as const;
-
 export function BattleHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   const mode = useGameStore((state) => state.mode);
@@ -35,14 +33,15 @@ export function BattleHud() {
         <strong>BATAILLE</strong>
         <span className="battle-blue">Bleu · {scores.blue}</span>
       </div>
-      <div className={`battle-team-picker ${team ? 'compact' : ''}`}>
-        {!team && <><strong>Choisis ton équipe</strong><span>2 contre 1 autorisé</span></>}
-        <div>
-          <button className="battle-red" aria-pressed={team === 'red'} onClick={() => selectTeam('red')}>Rouge · {redCount}</button>
-          <button className="battle-blue" aria-pressed={team === 'blue'} onClick={() => selectTeam('blue')}>Bleu · {blueCount}</button>
+      {!team && (
+        <div className="battle-team-picker">
+          <strong>Choisis ton équipe</strong><span>2 contre 1 autorisé</span>
+          <div>
+            <button className="battle-red" aria-pressed="false" onClick={() => selectTeam('red')}>Rouge · {redCount}</button>
+            <button className="battle-blue" aria-pressed="false" onClick={() => selectTeam('blue')}>Bleu · {blueCount}</button>
+          </div>
         </div>
-        {team && <span>Équipe {TEAM_NAMES[team]} · clique pour changer</span>}
-      </div>
+      )}
       <div className="battle-events" aria-live="polite">
         {events.map((event) => <p key={event.id}><strong>{event.killerName}</strong> a éliminé <strong>{event.victimName}</strong></p>)}
       </div>
