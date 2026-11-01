@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useCharacterStore } from '../game/characterStore';
 import { requestPlay } from '../game/input';
 import { OUTFIT_ORDER, OUTFITS, WIG_ORDER, WIGS } from '../game/outfits';
 import { useGameStore } from '../game/store';
 import { PixelAvatar } from './PixelAvatar';
+import { SettingsPanel } from './SettingsPanel';
 import shopUrl from '../../assets/menu/shop.webp';
 
 const HAIR_COLORS = ['#49382f', '#25232a', '#8a5838', '#d6b46a', '#d7d0c3', '#a74a82', '#4e79a7', '#50844a'];
@@ -20,6 +22,7 @@ export function BoutiquePanel() {
   const setOutfit = useCharacterStore((state) => state.setOutfit);
   const setWig = useCharacterStore((state) => state.setWig);
   const setAppearance = useCharacterStore((state) => state.setAppearance);
+  const [tab, setTab] = useState<'shop' | 'settings'>('shop');
   if (!open) return null;
   const close = () => {
     setOpen(false);
@@ -27,7 +30,14 @@ export function BoutiquePanel() {
   };
   return (
     <div className="menu-backdrop boutique-backdrop">
-      <section className="menu-panel boutique-panel" role="dialog" aria-modal="true" aria-labelledby="boutique-title" style={{ backgroundImage: `linear-gradient(rgba(20,34,24,.93), rgba(20,34,24,.97)), url(${shopUrl})`, backgroundSize: 'cover' }}>
+      <section className="menu-panel boutique-panel" role="dialog" aria-modal="true" aria-label="Boutique et réglages" style={{ backgroundImage: `linear-gradient(rgba(20,34,24,.93), rgba(20,34,24,.97)), url(${shopUrl})`, backgroundSize: 'cover' }}>
+        <div className="boutique-layout">
+          <nav className="boutique-tabs" role="tablist" aria-label="Boutique et réglages">
+            <button className={`boutique-tab ${tab === 'shop' ? 'active' : ''}`} role="tab" aria-selected={tab === 'shop'} onClick={() => setTab('shop')}>Boutique</button>
+            <button className={`boutique-tab ${tab === 'settings' ? 'active' : ''}`} role="tab" aria-selected={tab === 'settings'} onClick={() => setTab('settings')}>Réglages</button>
+          </nav>
+          <div className="boutique-content" role="tabpanel">
+            {tab === 'settings' ? <SettingsPanel /> : <>
         <div className="boutique-avatar-preview">
           <PixelAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={72} />
           <div><p className="eyebrow">PERSONNALISATION</p><h2 id="boutique-title">Boutique</h2><p>Choisis ta tenue. Les autres joueurs la verront aussi.</p></div>
@@ -84,6 +94,9 @@ export function BoutiquePanel() {
         </div>
         <p className="boutique-hint">B ouvre la boutique · P change de caméra.</p>
         <button className="primary-button" onClick={close}>Porter et reprendre</button>
+            </>}
+          </div>
+        </div>
       </section>
     </div>
   );

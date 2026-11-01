@@ -10,6 +10,7 @@ import myWorldsUrl from '../../assets/menu/my-worlds.webp';
 import survivalUrl from '../../assets/menu/survival.webp';
 import creativeUrl from '../../assets/menu/creative.webp';
 import shopUrl from '../../assets/menu/shop.webp';
+import battleUrl from '../../assets/menu/battle.webp';
 
 export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: () => void | Promise<void>; onShop: () => void }) {
   const regenerate = useGameStore((state) => state.regenerate);
@@ -65,7 +66,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               <span className="world-mode-tag creative">{enabled ? 'Multijoueur' : 'Solo'}</span>
             </button>
             <button className="world-card battle-card" onClick={() => create('battle')} disabled={!enabled || pendingWorld !== null}>
-              <img src={survivalUrl} alt="Arène du mode Bataille" />
+              <img src={battleUrl} alt="Monde Combat du mode Bataille" />
               <span className="world-card-label"><strong>Bataille</strong><small>Arène limitée · Équipes rouge et bleue</small></span>
               <span className="world-mode-tag">2 contre 1 possible</span>
             </button>

@@ -11,7 +11,6 @@ import { SignPanel } from './SignPanel';
 import { useSignStore } from '../game/signs';
 import { SeatChoicePanel } from './SeatChoicePanel';
 import { GameMenu } from './GameMenu';
-import { WorldStats } from './WorldStats';
 import { TeleportPanel, TeleportRequestDialog } from './TeleportRequests';
 import { useTeleportRequestStore } from '../game/teleportRequests';
 import { useChatStore } from '../game/chat';
@@ -61,19 +60,9 @@ export function Hud() {
         <>
           <div className="crosshair" aria-hidden="true"><i /><b /></div>
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
-          <WorldStats />
           <button className="backpack-toggle" onClick={openBackpack}>Sac à dos</button>
           <button className="shop-toggle" onClick={openShop}>Boutique</button>
           <button className="teleport-toggle" onClick={openTeleport}>Téléportation · T</button>
-          <div className="controls-hint">
-            <span><strong>WASD / FLÈCHES</strong> se déplacer / conduire</span>
-            <span><strong>ESPACE</strong> sauter / remonter / voler</span>
-            <span><strong>2× ESPACE</strong> activer / quitter le vol</span>
-            <span><strong>MAJ</strong> accélérer</span>
-            <span><strong>C</strong> plonger / descendre</span>
-            <span><strong>B</strong> boutique</span>
-            <span><strong>P / F5</strong> changer de caméra</span>
-          </div>
           <div className="action-hint">Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</div>
           {notice && <div className="game-notice">{notice}</div>}
           <TouchControls />

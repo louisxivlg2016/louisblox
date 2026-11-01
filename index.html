@@ -255,7 +255,26 @@
       }
       .shop-toggle { position: absolute; top: 20px; left: calc(50% + 105px); z-index: 12; padding: 10px 14px; pointer-events: auto; color: #fff; font-weight: 700; background: rgba(91, 66, 111, .92); border: 2px solid rgba(255,255,255,.4); }
       .boutique-backdrop { z-index: 50; }
-      .boutique-panel { width: min(650px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; }
+      .boutique-panel { width: min(780px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; }
+      .boutique-layout { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 18px; }
+      .boutique-tabs { display: flex; flex-direction: column; align-self: start; gap: 10px; padding: 10px; background: repeating-linear-gradient(0deg, #1b2e20 0 4px, #1e3223 4px 8px); border: 3px solid #61794f; box-shadow: inset -4px -4px 0 #0d1b12, inset 4px 4px 0 #324a34; image-rendering: pixelated; }
+      .boutique-tab { min-height: 42px; padding: 8px 6px; color: #d6e5c7; font-size: 11px; font-weight: 700; text-transform: uppercase; background: #2b402e; border: 2px solid #647b54; box-shadow: 0 3px 0 #142314; cursor: pointer; }
+      .boutique-tab.active { color: #fff3b1; background: #53653a; border-color: #e0bb53; box-shadow: 0 3px 0 #3d3217, inset 0 0 0 2px #7f8b4e; }
+      .boutique-content { min-width: 0; }
+      .settings-panel { display: grid; gap: 18px; }
+      .settings-heading h2 { margin: 0 0 6px; }
+      .settings-heading p:not(.eyebrow) { margin: 0; color: #b8c9bc; font-size: 12px; }
+      .settings-panel .world-stats { position: static; min-width: 0; padding: 14px; background: rgba(10, 20, 13, .76); border: 2px solid #61794f; font-size: 12px; }
+      .settings-panel .controls-hint { position: static; gap: 10px; padding: 14px; background: rgba(10, 20, 13, .76); border: 2px solid #61794f; font-size: 12px; }
+      .settings-panel .controls-hint span { line-height: 1.65; }
+      .settings-panel .controls-hint strong { min-width: 108px; color: #fff3b1; }
+      .settings-panel .coordinates, .settings-panel .biome-info, .settings-panel .weather-info { font-size: 11px; }
+      @media (max-width: 650px) {
+        .boutique-layout { grid-template-columns: 1fr; gap: 14px; }
+        .boutique-tabs { flex-direction: row; border-width: 2px; }
+        .boutique-tab { flex: 1; min-height: 38px; }
+        .settings-panel .controls-hint strong { display: block; min-width: 0; }
+      }
       .outfit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 10px; margin: 20px 0; }
       .outfit-card { display: grid; grid-template-columns: 38px 1fr; gap: 5px 10px; padding: 12px; color: #edf1e9; text-align: left; background: #24362a; border: 2px solid #526b58; cursor: pointer; }
       .outfit-card.active { border-color: #d8b34b; background: #3d4930; }

@@ -23,10 +23,16 @@ function RoyalCape({ kind, color, moving, airborne }: { kind: 'king' | 'louis14'
     const jumping = airborne ?? (!state?.grounded || state?.flying || Math.abs(velocity?.y ?? 0) > 2);
     phase.current += delta * (jumping ? 15 : walking ? 9 : 1.4);
     if (!cape.current) return;
+    if (state?.flying) {
+      cape.current.rotation.x = 0.38 + Math.sin(phase.current) * 0.18;
+      cape.current.rotation.z = Math.sin(phase.current * 0.65) * 0.12;
+      cape.current.position.z = 0.42;
+      return;
+    }
     const strength = jumping ? 5.2 : walking ? 1 : 0.15;
-    cape.current.rotation.x = 0.08 + Math.sin(phase.current) * 0.28 * strength;
+    cape.current.rotation.x = Math.max(0.12, 0.08 + Math.sin(phase.current) * 0.28 * strength);
     cape.current.rotation.z = Math.sin(phase.current * 0.65) * 0.1 * strength;
-    cape.current.position.z = 0.2 + (jumping ? 0.24 : 0);
+    cape.current.position.z = jumping ? 0.38 : 0.2;
   });
   return (
     <group name="king-cape" ref={cape} position={[0, 1.48, 0.2]}>
