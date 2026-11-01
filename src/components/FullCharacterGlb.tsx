@@ -9,6 +9,8 @@ import type { OutfitKind } from '../game/outfits';
 import { world } from '../game/world';
 import { Player, PlayerMount, PlayerState, PlayerVelocity } from '../game/traits';
 import { fullCharacterHeights } from '../game/fullCharacters';
+import { applyCharacterGesture } from '../game/characterGestures';
+import type { EmoteKind } from '../game/emotes';
 import kingUrl from '../../assets/models/full-king.glb';
 import militaryUrl from '../../assets/models/full-military.glb';
 import knightUrl from '../../assets/models/full-knight.glb';
@@ -23,7 +25,7 @@ export function hasFullCharacter(outfit: OutfitKind) {
   return outfit !== 'default';
 }
 
-function FullCharacter({ outfit, moving, airborne, remote = false, headRef }: { outfit: Exclude<OutfitKind, 'default'>; moving?: boolean; airborne?: boolean; remote?: boolean; headRef?: Ref<Object3D> }) {
+function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef }: { outfit: Exclude<OutfitKind, 'default'>; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D> }) {
   const group = useRef<Object3D>(null);
   const current = useRef('');
   const { scene, animations } = useGLTF(models[outfit]);
@@ -45,11 +47,14 @@ function FullCharacter({ outfit, moving, airborne, remote = false, headRef }: { 
     };
   }, [character, headRef]);
 
-  useEffect(() => () => {
-    for (const action of Object.values(actions)) action?.stop();
+  useEffect(() => {
+    current.current = '';
+    return () => {
+      for (const action of Object.values(actions)) action?.stop();
+    };
   }, [actions]);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!group.current) return;
     const player = world.queryFirst(Player);
     const state = player?.get(PlayerState);
@@ -59,11 +64,15 @@ function FullCharacter({ outfit, moving, airborne, remote = false, headRef }: { 
     const jumping = airborne ?? Boolean(!state?.grounded || state?.flying || Math.abs(velocity?.y ?? 0) > 2);
     const name = jumping ? 'jump' : walking ? 'run' : 'idle';
     const action = actions[name];
-    if (name === current.current || !action) return;
-    actions[current.current]?.fadeOut(0.18);
-    action.reset().setLoop(LoopRepeat, Infinity).fadeIn(0.18).play();
+    if (name !== current.current && action) {
+      actions[current.current]?.fadeOut(0.18);
+      action.reset().setLoop(LoopRepeat, Infinity).fadeIn(0.18).play();
+      current.current = name;
+    }
     group.current.userData.clip = name;
-    current.current = name;
+    const sitting = seated || emote === 'sit' || Boolean(mounted);
+    group.current.userData.gesture = sitting ? 'sit' : emote;
+    applyCharacterGesture(character, emote, sitting, !walking && !jumping, performance.now() / 1000, delta);
   });
 
   return (

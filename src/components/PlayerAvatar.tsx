@@ -116,7 +116,7 @@ export function PlayerAvatar() {
       visible={cameraMode !== 'first' || sleeping}
     >
       {(!hasFullCharacter(outfit) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
-      <CharacterOutfit outfit={outfit} wig={wig} color={appearance.clothingColor} head={headContent} headRef={headRef} />
+      <CharacterOutfit outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding)} head={headContent} headRef={headRef} />
       <group ref={leftArm} visible={!hasFullCharacter(outfit)} position={[-0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
       </group>

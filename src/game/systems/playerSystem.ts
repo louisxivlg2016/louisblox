@@ -86,7 +86,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const onLadder = !flying && (ladderAt(position.y) || ladderAt(position.y + 0.75) || ladderAt(position.y + 1.5));
   const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1);
   const emote = useEmoteStore.getState().current;
-  if ((forward !== 0 || strafe !== 0 || flying) && (emote === 'sit' || emote === 'lie')) resetEmote();
+  if ((forward !== 0 || strafe !== 0 || flying) && emote !== null) resetEmote();
   const normalizedForward = forward / length;
   const normalizedStrafe = strafe / length;
   velocity.x = (-Math.sin(yaw) * normalizedForward + Math.cos(yaw) * normalizedStrafe) * speed;

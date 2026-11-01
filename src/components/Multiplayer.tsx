@@ -88,7 +88,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
   useFrame((_, delta) => {
     if (!group.current) return;
     const amount = 1 - Math.exp(-delta * 14);
-    const seatedHeight = (state.mounted && state.vehicleKind !== 'horse') || state.emote === 'sit' ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
+    const seatedHeight = state.mounted && state.vehicleKind !== 'horse' ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
     const lyingHeight = !state.mounted && state.emote === 'lie' ? 0.18 : 0;
     target.set(state.x, state.y + (state.flying ? 1 : 0) + lyingHeight - seatedHeight, state.z);
     group.current.position.lerp(target, amount);
@@ -146,7 +146,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
   return (
     <group ref={group} position={[state.x, state.y, state.z]}>
       {!hasFullCharacter(outfit) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
-      <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote head={headContent} headRef={headRef} />
+      <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} />
       {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={team === 'red' ? '#d64b43' : '#4285d4'} /></group>}
       <group ref={leftArm} visible={!hasFullCharacter(outfit)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
