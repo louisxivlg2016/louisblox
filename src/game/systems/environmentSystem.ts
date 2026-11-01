@@ -31,7 +31,7 @@ export function environmentSystem(world: World, delta: number, camera: Camera) {
   const next = environmentAt(environment.elapsed, biome);
   const changed = environment.biome !== biome || environment.weather !== next.weather;
   environment.biome = biome;
-  environment.dayProgress = next.dayProgress;
+  environment.dayProgress = useGameStore.getState().gameplayMode === 'battle' ? 0.38 : next.dayProgress;
   environment.weather = next.weather;
 
   const rain = entity.get(RainMaterial)?.value;
