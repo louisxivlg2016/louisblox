@@ -11,6 +11,7 @@ import { AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, Playe
 import { moveVoxelCharacter } from './collisionSystem';
 import { BATTLE_LIMIT } from '../battleArena';
 import { useBattleStore } from '../battle';
+import { resetEmote, useEmoteStore } from '../emotes';
 
 const GRAVITY = 24;
 const JUMP_SPEED = 8.4;
@@ -83,6 +84,8 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const ladderAt = (y: number) => blocks.get(voxelKey(Math.round(position.x), Math.round(y), Math.round(position.z)))?.kind === BlockKind.Ladder;
   const onLadder = !flying && (ladderAt(position.y) || ladderAt(position.y + 0.75) || ladderAt(position.y + 1.5));
   const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1);
+  const emote = useEmoteStore.getState().current;
+  if ((forward !== 0 || strafe !== 0 || flying) && (emote === 'sit' || emote === 'lie')) resetEmote();
   const normalizedForward = forward / length;
   const normalizedStrafe = strafe / length;
   velocity.x = (-Math.sin(yaw) * normalizedForward + Math.cos(yaw) * normalizedStrafe) * speed;

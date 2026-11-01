@@ -29,6 +29,7 @@ import { receiveFriendAcceptance, receiveFriendRequest } from '../game/friends';
 import { applyProjectileRemoval, applyProjectileSnapshot, isExplosionSnapshot, isProjectileSnapshot, onProjectileSync } from '../game/projectileSync';
 import { clearChat, receiveChatMessage, setChatSocket } from '../game/chat';
 import { clearBattle, receiveBattleElimination, receiveBattleRespawn, receiveBattleState, setBattleLocalPlayer, setBattleSocket, useBattleStore } from '../game/battle';
+import { useEmoteStore } from '../game/emotes';
 
 type ServerMessage = {
   type?: unknown;
@@ -84,21 +85,27 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
   useFrame((_, delta) => {
     if (!group.current) return;
     const amount = 1 - Math.exp(-delta * 14);
-    const seatedHeight = state.mounted && state.vehicleKind !== 'horse' ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
-    target.set(state.x, state.y + (state.flying ? 1 : 0) - seatedHeight, state.z);
+    const seatedHeight = (state.mounted && state.vehicleKind !== 'horse') || state.emote === 'sit' ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
+    const lyingHeight = !state.mounted && state.emote === 'lie' ? 0.18 : 0;
+    target.set(state.x, state.y + (state.flying ? 1 : 0) + lyingHeight - seatedHeight, state.z);
     group.current.position.lerp(target, amount);
     group.current.rotation.order = 'YXZ';
     if (state.moving || state.flying || state.mounted) {
       const angle = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
       group.current.rotation.y += angle * amount;
     }
-    const flightRotation = state.flying ? -Math.PI / 2 : 0;
+    const flightRotation = !state.mounted && state.emote === 'lie' ? -Math.PI / 2 : state.flying ? -Math.PI / 2 : 0;
     group.current.rotation.x += (flightRotation - group.current.rotation.x) * amount;
-    if (state.moving) phase.current += delta * 8;
+    const waving = state.emote === 'wave';
+    if (waving) phase.current += delta * 10;
+    else if (state.moving) phase.current += delta * 8;
     const swing = state.moving ? Math.sin(phase.current) * 0.85 : 0;
     if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
-    if (rightArm.current) rightArm.current.rotation.x += (-swing - rightArm.current.rotation.x) * amount;
-    const legRotation = state.mounted ? -Math.PI / 2 : null;
+    if (rightArm.current) {
+      rightArm.current.rotation.x += ((waving ? Math.PI : -swing) - rightArm.current.rotation.x) * amount;
+      rightArm.current.rotation.z += ((waving ? Math.sin(phase.current) * 0.45 : 0) - rightArm.current.rotation.z) * amount;
+    }
+    const legRotation = state.mounted || state.emote === 'sit' ? -Math.PI / 2 : null;
     if (leftLeg.current) leftLeg.current.rotation.x += ((legRotation ?? -swing) - leftLeg.current.rotation.x) * amount;
     if (rightLeg.current) rightLeg.current.rotation.x += ((legRotation ?? swing) - rightLeg.current.rotation.x) * amount;
     if (headRef.current) {
@@ -133,7 +140,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
       <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} head={headContent} headRef={headRef} />
       {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={team === 'red' ? '#d64b43' : '#4285d4'} /></group>}
       <group ref={leftArm} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
-      <group ref={rightArm} position={[0.39, 1.4, 0]}>
+      <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" />
         {typeof state.selected === 'string' && (
           <group
@@ -148,11 +155,17 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
       </group>
       <group ref={leftLeg} position={[-0.15, 0.78, 0]}>
         <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
-        <PixelPart position={[0, -0.71, -0.04]} size={[0.25, 0.14, 0.34]} color="#302b2b" />
+        <group name="left-knee" position={[0, -0.72, 0]} rotation={[state.mounted || state.emote === 'sit' ? Math.PI / 2 : 0, 0, 0]}>
+          <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
+          <PixelPart position={[0, -0.5, -0.04]} size={[0.25, 0.14, 0.34]} color="#302b2b" />
+        </group>
       </group>
       <group ref={rightLeg} position={[0.15, 0.78, 0]}>
         <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
-        <PixelPart position={[0, -0.71, -0.04]} size={[0.25, 0.14, 0.34]} color="#302b2b" />
+        <group name="right-knee" position={[0, -0.72, 0]} rotation={[state.mounted || state.emote === 'sit' ? Math.PI / 2 : 0, 0, 0]}>
+          <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
+          <PixelPart position={[0, -0.5, -0.04]} size={[0.25, 0.14, 0.34]} color="#302b2b" />
+        </group>
       </group>
     </group>
   );
@@ -518,7 +531,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, selected: useGameStore.getState().selected };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, emote: useEmoteStore.getState().current, selected: useGameStore.getState().selected };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

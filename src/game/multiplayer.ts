@@ -1,5 +1,6 @@
 import { isSelectedKind } from './items';
 import type { SelectedKind } from './items';
+import type { EmoteKind } from './emotes';
 
 export type PlayerSnapshot = {
   x: number;
@@ -12,6 +13,7 @@ export type PlayerSnapshot = {
   airborne?: boolean;
   mounted?: boolean;
   vehicleKind?: 'car' | 'horse' | 'plane' | 'train' | 'boat';
+  emote?: EmoteKind | null;
   selected?: SelectedKind;
 };
 
@@ -61,5 +63,6 @@ export function isPlayerSnapshot(value: unknown): value is PlayerSnapshot {
     && (state.airborne === undefined || typeof state.airborne === 'boolean')
     && (state.mounted === undefined || typeof state.mounted === 'boolean')
     && (state.vehicleKind === undefined || state.vehicleKind === 'car' || state.vehicleKind === 'horse' || state.vehicleKind === 'plane' || state.vehicleKind === 'train' || state.vehicleKind === 'boat')
+    && (state.emote === undefined || state.emote === null || state.emote === 'sit' || state.emote === 'lie' || state.emote === 'wave')
     && (state.selected === undefined || isSelectedKind(state.selected));
 }

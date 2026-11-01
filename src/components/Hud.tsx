@@ -17,6 +17,8 @@ import { useTeleportRequestStore } from '../game/teleportRequests';
 import { useChatStore } from '../game/chat';
 import { ChatPanel } from './ChatPanel';
 import { BattleHud } from './BattleHud';
+import { EmotePanel } from './EmotePanel';
+import { useEmoteStore } from '../game/emotes';
 
 export function Hud() {
   const mode = useGameStore((state) => state.mode);
@@ -32,6 +34,7 @@ export function Hud() {
   const signOpen = useSignStore((state) => state.editing !== null);
   const seatChoice = useGameStore((state) => state.seatChoice);
   const chatOpen = useChatStore((state) => state.open);
+  const emoteOpen = useEmoteStore((state) => state.open);
   const sleepProgress = useGameStore((state) => state.sleepProgress);
   const teleportRequestOpen = useTeleportRequestStore((state) => state.incoming !== null);
   const selectBlock = useGameStore((state) => state.selectBlock);
@@ -80,8 +83,9 @@ export function Hud() {
       <TeleportPanel />
       <ChatPanel />
       <BattleHud />
+      <EmotePanel />
 
-      {mode !== 'play' && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && (
+      {mode !== 'play' && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && (
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />
       )}
 

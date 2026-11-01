@@ -14,6 +14,7 @@ type PlayerState = {
   airborne?: boolean;
   mounted?: boolean;
   vehicleKind?: 'car' | 'horse' | 'plane' | 'train' | 'boat';
+  emote?: 'sit' | 'lie' | 'wave' | null;
   selected?: string | number;
 };
 
@@ -85,6 +86,7 @@ function parseState(value: unknown): PlayerState | null {
     airborne: state.airborne === true,
     mounted: state.mounted === true,
     vehicleKind: state.vehicleKind === 'car' || state.vehicleKind === 'horse' || state.vehicleKind === 'plane' || state.vehicleKind === 'train' || state.vehicleKind === 'boat' ? state.vehicleKind : undefined,
+    emote: state.emote === 'sit' || state.emote === 'lie' || state.emote === 'wave' ? state.emote : null,
     selected: typeof state.selected === 'string' && state.selected.length > 0 && state.selected.length <= 96
       ? state.selected
       : typeof state.selected === 'number' && Number.isInteger(state.selected) && state.selected >= 0 && state.selected <= 200 ? state.selected : undefined,

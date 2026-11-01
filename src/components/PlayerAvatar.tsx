@@ -15,6 +15,7 @@ import { BlockKind } from '../game/voxel';
 import { OUTFITS, selectedWig } from '../game/outfits';
 import { CharacterOutfit } from './CharacterOutfit';
 import { hasWardrobeModel } from './WardrobeGlb';
+import { useEmoteStore } from '../game/emotes';
 
 export function PlayerAvatar() {
   const entity = useQueryFirst(Player);
@@ -27,6 +28,7 @@ export function PlayerAvatar() {
   const outfit = useCharacterStore((state) => state.outfit);
   const wig = useCharacterStore((state) => state.wig);
   const appearance = useCharacterStore((state) => state.appearance);
+  const emote = useEmoteStore((state) => state.current);
   const leftArm = useRef<Group>(null);
   const rightArm = useRef<Group>(null);
   const leftLeg = useRef<Group>(null);
@@ -41,11 +43,16 @@ export function PlayerAvatar() {
     const mounted = entity.get(PlayerMount)?.vehicle;
     const speed = velocity ? Math.hypot(velocity.x, velocity.z) : 0;
     const moving = !sleeping && !riding && !mounted && state?.grounded && !state.flying && speed > 0.1;
-    if (moving) phase.current += delta * (5 + Math.min(speed, 4));
+    const waving = emote === 'wave';
+    if (waving) phase.current += delta * 10;
+    else if (moving) phase.current += delta * (5 + Math.min(speed, 4));
     const swing = moving ? Math.sin(phase.current) * 0.85 : 0;
     const amount = Math.min(1, delta * 12);
     if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
-    if (rightArm.current) rightArm.current.rotation.x += (-swing - rightArm.current.rotation.x) * amount;
+    if (rightArm.current) {
+      rightArm.current.rotation.x += ((waving ? Math.PI : -swing) - rightArm.current.rotation.x) * amount;
+      rightArm.current.rotation.z += ((waving ? Math.sin(phase.current) * 0.45 : 0) - rightArm.current.rotation.z) * amount;
+    }
     if (leftLeg.current) leftLeg.current.rotation.x += (-swing - leftLeg.current.rotation.x) * amount;
     if (rightLeg.current) rightLeg.current.rotation.x += (swing - rightLeg.current.rotation.x) * amount;
     if (headRef.current && state) {
@@ -104,7 +111,7 @@ export function PlayerAvatar() {
       <group ref={leftArm} position={[-0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
       </group>
-      <group ref={rightArm} position={[0.39, 1.4, 0]}>
+      <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
         <group position={[0.13, -0.48, -0.24]} scale={typeof selected === 'string' && getItemMeta(selected).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof selected === 'number'
@@ -112,12 +119,22 @@ export function PlayerAvatar() {
             : <ItemModel kind={selected} />}
         </group>
       </group>
-      {riding ? (
+      {riding || emote === 'sit' ? (
         <>
-          <PixelPart position={[-0.3, 0.58, -0.22]} size={[0.23, 0.25, 0.62]} color={legs} />
-          <PixelPart position={[0.3, 0.58, -0.22]} size={[0.23, 0.25, 0.62]} color={legs} />
-          <PixelPart position={[-0.3, 0.27, -0.47]} size={[0.23, 0.5, 0.25]} color={legs} />
-          <PixelPart position={[0.3, 0.27, -0.47]} size={[0.23, 0.5, 0.25]} color={legs} />
+          <group name="left-leg" position={[-0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
+            <group name="left-knee" position={[0, -0.72, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
+              <PixelPart position={[0, -0.5, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
+            </group>
+          </group>
+          <group name="right-leg" position={[0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
+            <group name="right-knee" position={[0, -0.72, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
+              <PixelPart position={[0, -0.5, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
+            </group>
+          </group>
         </>
       ) : (
         <>
@@ -129,12 +146,6 @@ export function PlayerAvatar() {
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
             <PixelPart position={[0, -0.71, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
           </group>
-        </>
-      )}
-      {riding && (
-        <>
-          <PixelPart position={[-0.15, 0.07, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
-          <PixelPart position={[0.15, 0.07, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
         </>
       )}
       {armor && (

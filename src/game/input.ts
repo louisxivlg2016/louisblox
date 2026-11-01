@@ -2,6 +2,7 @@ import { startMusic } from './audio';
 import { useGameStore } from './store';
 import { useSignStore } from './signs';
 import { useChatStore } from './chat';
+import { useEmoteStore } from './emotes';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -107,6 +108,20 @@ export function initInput() {
       }
       return;
     }
+    if (event.code === 'KeyZ' && !event.repeat) {
+      event.preventDefault();
+      const emotes = useEmoteStore.getState();
+      if (emotes.open) {
+        emotes.setOpen(false);
+        void requestPlay();
+      } else if (useGameStore.getState().mode === 'play') {
+        clearInput();
+        emotes.setOpen(true);
+        useGameStore.getState().setMode('pause');
+        if (document.pointerLockElement) document.exitPointerLock();
+      }
+      return;
+    }
     if (event.code === 'KeyB' && !event.repeat) {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return;
       event.preventDefault();
@@ -140,6 +155,12 @@ export function initInput() {
       return;
     }
     if (event.code === 'Escape') {
+      if (useEmoteStore.getState().open) {
+        event.preventDefault();
+        useEmoteStore.getState().setOpen(false);
+        window.setTimeout(() => { void requestPlay(); }, 50);
+        return;
+      }
       if (useChatStore.getState().open) {
         event.preventDefault();
         useChatStore.getState().setOpen(false);
