@@ -22,6 +22,18 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const server = useMultiplayerStore((state) => state.server);
   const configure = useMultiplayerStore((state) => state.configure);
   const [pendingWorld, setPendingWorld] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  useEffect(() => {
+    if (!libraryOpen) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setLibraryOpen(false);
+    };
+    window.addEventListener('keydown', close, true);
+    return () => window.removeEventListener('keydown', close, true);
+  }, [libraryOpen]);
   useEffect(() => {
     if (pendingWorld !== room || status !== 'online') return;
     setPendingWorld(null);
@@ -54,7 +66,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
         <main className="world-browser">
           <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}</h1></div>{paused && <button className="primary-button resume-button" onClick={onPlay}>Reprendre</button>}</div>
           <div className="world-cards">
-            <button className="world-card featured" aria-controls="mes-mondes" onClick={() => document.getElementById('mes-mondes')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+            <button className="world-card featured" aria-controls="mes-mondes" aria-expanded={libraryOpen} aria-haspopup="dialog" onClick={() => setLibraryOpen(true)}>
               <img src={myWorldsUrl} alt="Mes mondes" />
               <span className="world-card-label"><strong>Mes mondes</strong><small>Retrouve toutes tes sauvegardes</small></span>
             </button>
@@ -88,7 +100,14 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             <div className="lobby-heading"><h2>Jouer ensemble</h2><p>Crée un salon ou rejoins tes amis avec le même nom de salon.</p></div>
             <MultiplayerLobby onPlay={onPlay} />
           </section>
-          <WorldLibrary onPlay={onPlay} />
+          {libraryOpen && (
+            <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setLibraryOpen(false); }}>
+              <section className="world-library-modal" role="dialog" aria-modal="true" aria-label="Mes mondes">
+                <button className="world-library-close" aria-label="Fermer mes mondes" onClick={() => setLibraryOpen(false)} autoFocus>×</button>
+                <WorldLibrary onPlay={() => { setLibraryOpen(false); return onPlay(); }} />
+              </section>
+            </div>
+          )}
         </main>
       </div>
     </div>
