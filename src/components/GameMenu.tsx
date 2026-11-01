@@ -6,6 +6,7 @@ import type { GameplayMode } from '../game/worldMode';
 import { MultiplayerLobby } from './MultiplayerLobby';
 import { WorldLibrary } from './WorldLibrary';
 import { FriendsPanel } from './FriendsPanel';
+import { requestRoomMode } from './Multiplayer';
 import myWorldsUrl from '../../assets/menu/my-worlds.webp';
 import survivalUrl from '../../assets/menu/survival.webp';
 import creativeUrl from '../../assets/menu/creative.webp';
@@ -40,6 +41,22 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     void onPlay();
   }, [pendingWorld, room, status, onPlay]);
   const create = (gameplayMode: GameplayMode) => {
+    if (enabled && gameplayMode === 'battle') {
+      requestRoomMode('battle');
+      if (status === 'online' && useGameStore.getState().gameplayMode === 'battle') {
+        requestRoomMode(null);
+        void onPlay();
+        return;
+      }
+      if (status === 'online') {
+        regenerate('battle', room);
+        void onPlay();
+        return;
+      }
+      setPendingWorld(room);
+      configure({ playerName, room, server });
+      return;
+    }
     const shared = enabled && gameplayMode !== 'battle';
     const publicId = gameplayMode === 'survival' ? 'survie-public-v1' : gameplayMode === 'creative' ? 'creatif-public-v1' : `${gameplayMode}-public-v1`;
     const worldId = shared ? publicId : `monde-${crypto.randomUUID().slice(0, 8)}`;

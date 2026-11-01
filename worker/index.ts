@@ -294,6 +294,10 @@ export class GameRoom extends DurableObject<Env> {
     }
     if (url.pathname === '/friend-request' || url.pathname === '/friend-accept') return this.friendRequest(request);
     if (url.pathname === '/room' && request.method === 'DELETE') return this.deleteRoom();
+    if (url.pathname === '/room' && request.method === 'GET') {
+      await this.ensureWorld();
+      return json({ gameplayMode: this.worldSeed === null ? null : this.gameplayMode, players: this.ctx.getWebSockets().length });
+    }
     if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') {
       return new Response('Expected a WebSocket upgrade', { status: 426, headers: corsHeaders });
     }
@@ -691,7 +695,7 @@ export default {
       const id = env.PLAYER_DIRECTORY.idFromName('global');
       return env.PLAYER_DIRECTORY.get(id).fetch(request);
     }
-    if (url.pathname === '/room' && request.method === 'DELETE') {
+    if (url.pathname === '/room' && (request.method === 'DELETE' || request.method === 'GET')) {
       const roomId = url.searchParams.get('room')?.slice(0, 48);
       if (!roomId) return new Response('Missing room', { status: 400, headers: corsHeaders });
       const response = await env.GAME_ROOM.get(env.GAME_ROOM.idFromName(roomId)).fetch(request);

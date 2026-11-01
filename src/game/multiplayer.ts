@@ -76,3 +76,21 @@ export async function deleteRoom(room: string) {
   const response = await fetch(url, { method: 'DELETE' });
   if (!response.ok) throw new Error(`Room deletion failed (${response.status})`);
 }
+
+export type RoomInfo = { gameplayMode: import('./worldMode').GameplayMode | null; players: number };
+
+export async function fetchRoomInfo(room: string, server: string, signal?: AbortSignal): Promise<RoomInfo | null> {
+  const url = new URL(server.trim() || resolveMultiplayerUrl());
+  url.protocol = url.protocol === 'wss:' ? 'https:' : 'http:';
+  url.pathname = '/room';
+  url.search = '';
+  url.searchParams.set('room', room);
+  const response = await fetch(url, { signal, cache: 'no-store' });
+  if (!response.ok) return null;
+  const data = await response.json() as { gameplayMode?: unknown; players?: unknown };
+  const mode = data.gameplayMode;
+  return {
+    gameplayMode: mode === 'creative' || mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' ? mode : null,
+    players: typeof data.players === 'number' ? data.players : 0,
+  };
+}

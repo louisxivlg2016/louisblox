@@ -1,7 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMultiplayerStore } from '../game/multiplayerStore';
-import { deleteRoom } from '../game/multiplayer';
+import { deleteRoom, fetchRoomInfo } from '../game/multiplayer';
+import type { RoomInfo } from '../game/multiplayer';
 import { useGameStore } from '../game/store';
+import { GAMEPLAY_MODE_LABELS, isGameplayMode } from '../game/worldMode';
+import type { GameplayMode } from '../game/worldMode';
+import { requestRoomMode } from './Multiplayer';
+
+const MODE_ORDER: GameplayMode[] = ['battle', 'creative', 'survival', 'city-ancient', 'city-modern'];
+
+function modeFromUrl(): GameplayMode | 'room' {
+  const mode = new URLSearchParams(window.location.search).get('mode');
+  return isGameplayMode(mode) ? mode : 'room';
+}
 
 const STATUS_NAMES = {
   offline: 'Non connecté',
@@ -25,7 +36,23 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
   const [room, setRoom] = useState(savedRoom);
   const [server, setServer] = useState(savedServer);
   const [showServer, setShowServer] = useState(() => new URLSearchParams(window.location.search).has('server'));
+  const [joinMode, setJoinMode] = useState<GameplayMode | 'room'>(modeFromUrl);
+  const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(null);
+  const currentMode = useGameStore((state) => state.gameplayMode);
   useEffect(() => setPlayerName(savedName), [savedName]);
+  useEffect(() => {
+    if (!enabled || !room.trim()) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      fetchRoomInfo(room.trim(), showServer ? server : '', controller.signal)
+        .then(setRoomInfo)
+        .catch(() => setRoomInfo(null));
+    }, 300);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [enabled, room, server, showServer, status]);
   useEffect(() => {
     if (status !== 'online' || !pendingJoin.current) return;
     pendingJoin.current = false;
@@ -34,6 +61,7 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
 
   const join = (nextRoom = room) => {
     pendingJoin.current = true;
+    requestRoomMode(joinMode === 'room' ? null : joinMode);
     const settings = configure({ playerName, room: nextRoom, server: showServer ? server : '' });
     setPlayerName(settings.playerName);
     setRoom(settings.room);
@@ -42,6 +70,8 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
     url.searchParams.set('room', settings.room);
     if (settings.server) url.searchParams.set('server', settings.server);
     else url.searchParams.delete('server');
+    if (joinMode !== 'room') url.searchParams.set('mode', joinMode);
+    else url.searchParams.delete('mode');
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   };
 
@@ -64,6 +94,14 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
   invitation.searchParams.set('room', savedRoom);
   if (savedServer) invitation.searchParams.set('server', savedServer);
   else invitation.searchParams.delete('server');
+  invitation.searchParams.set('mode', status === 'online' ? currentMode : joinMode === 'room' ? roomInfo?.gameplayMode ?? currentMode : joinMode);
+  const roomModeText = roomInfo
+    ? roomInfo.gameplayMode
+      ? `Salon actuel : ${GAMEPLAY_MODE_LABELS[roomInfo.gameplayMode]} · ${roomInfo.players} joueur${roomInfo.players > 1 ? 's' : ''}`
+      : 'Nouveau salon (vide)'
+    : 'Mode du salon inconnu';
+  const joinTarget = joinMode === 'room' ? roomInfo?.gameplayMode ?? null : joinMode;
+  const switchesRoom = joinMode !== 'room' && roomInfo?.gameplayMode && roomInfo.gameplayMode !== joinMode;
 
   return (
     <>
@@ -93,8 +131,20 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
               <p className="multiplayer-hint">Laisse le serveur vide pour utiliser la connexion automatique. En local, il utilise le port 8787 de cet appareil.</p>
             </>
           )}
+          <div className="multiplayer-mode">
+            <label htmlFor="multiplayer-mode">Mode
+              <select id="multiplayer-mode" value={joinMode} onChange={(event) => setJoinMode(event.target.value as GameplayMode | 'room')}>
+                <option value="room">Garder le mode du salon</option>
+                {MODE_ORDER.map((mode) => <option key={mode} value={mode}>{GAMEPLAY_MODE_LABELS[mode]}</option>)}
+              </select>
+            </label>
+            <p className="multiplayer-hint">
+              {roomModeText}
+              {switchesRoom && ` → passera en ${GAMEPLAY_MODE_LABELS[joinMode as GameplayMode]} pour tout le monde`}
+            </p>
+          </div>
           <div className="multiplayer-actions">
-            <button type="submit" className="multiplayer-join">Rejoindre</button>
+            <button type="submit" className="multiplayer-join">Rejoindre{joinTarget ? ` en ${GAMEPLAY_MODE_LABELS[joinTarget]}` : ''}</button>
             <button type="button" className="multiplayer-new-room" onClick={createRoom}>Nouveau salon</button>
             <button type="button" className="multiplayer-delete-room" onClick={removeRoom}>Supprimer le salon</button>
           </div>

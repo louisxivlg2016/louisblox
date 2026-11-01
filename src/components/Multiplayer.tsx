@@ -1,3 +1,4 @@
+import type { GameplayMode } from '../game/worldMode';
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useWorld } from 'koota/react';
@@ -58,6 +59,12 @@ type ServerMessage = {
   worldId?: unknown;
 };
 type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string };
+
+let requestedRoomMode: GameplayMode | null = null;
+
+export function requestRoomMode(mode: GameplayMode | null) {
+  requestedRoomMode = mode;
+}
 
 function sendWorldInitialization(socket: WebSocket, world: World, force: boolean) {
   const edits = snapshotWorldEdits(world).flatMap(([, entries]) => entries);
@@ -277,6 +284,23 @@ export function MultiplayerConnection() {
       const pending = pendingWorld.current;
       if (!pending || world.query(Chunk).length < 9) return;
       const currentWorldId = pending.worldId ?? room;
+      const wanted = requestedRoomMode;
+      if (wanted) {
+        if (pending.seed !== null && pending.gameplayMode === wanted) {
+          requestedRoomMode = null;
+        } else {
+          pendingWorld.current = null;
+          worldInitSent.current = true;
+          const current = socket.current;
+          if (useGameStore.getState().gameplayMode === wanted && current?.readyState === WebSocket.OPEN) {
+            requestedRoomMode = null;
+            sendWorldInitialization(current, world, true);
+          } else {
+            useGameStore.getState().regenerate(wanted, room);
+          }
+          return;
+        }
+      }
       if (currentWorldId !== useGameStore.getState().worldId) {
         useGameStore.setState({ worldId: currentWorldId, worldName: currentWorldId });
         rememberWorld(currentWorldId);
@@ -636,7 +660,9 @@ export function MultiplayerConnection() {
     if (!enabled) return;
     const current = socket.current;
     if (current?.readyState === WebSocket.OPEN) {
-      sendWorldInitialization(current, world, false);
+      const force = requestedRoomMode !== null && requestedRoomMode === useGameStore.getState().gameplayMode;
+      if (force) requestedRoomMode = null;
+      sendWorldInitialization(current, world, force);
     }
   }, [world, generation, enabled]);
 
