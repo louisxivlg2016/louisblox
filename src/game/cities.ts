@@ -53,7 +53,8 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
             const doorway = z === centerZ - half && Math.abs(x - centerX) <= 1 && y <= GROUND + 3;
             if (doorway) continue;
             const window = localY % 4 >= 1 && localY % 4 <= 2 && ((edgeX ? z : x) - centerX + half) % (modern ? 2 : 3) === 1;
-            put(x, y, z, window ? accent : wall);
+            const foundation = localY === 0;
+            put(x, y, z, foundation ? modern ? BlockKind.ConcreteGray : BlockKind.GrayBrick : window ? accent : wall);
           }
         }
       }
