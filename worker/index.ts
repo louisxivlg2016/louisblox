@@ -241,9 +241,34 @@ export class GameRoom extends DurableObject<Env> {
     }
   }
 
+  private async deleteRoom() {
+    for (const ws of this.ctx.getWebSockets()) {
+      const attachment = this.attachment(ws);
+      if (attachment) this.removePresence(attachment);
+      try {
+        ws.send(JSON.stringify({ type: 'room-deleted' }));
+        ws.close(4004, 'room deleted');
+      } catch {
+        continue;
+      }
+    }
+    await this.ctx.storage.deleteAlarm();
+    await this.ctx.storage.deleteAll();
+    this.worldSeed = null;
+    this.worldEdits.clear();
+    this.vehicles.clear();
+    this.gameplayMode = 'creative';
+    this.battleHealth.clear();
+    this.battleHits.clear();
+    this.battleScores = { red: 0, blue: 0 };
+    this.worldReady = undefined;
+    return json({ deleted: true });
+  }
+
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === '/friend-request' || url.pathname === '/friend-accept') return this.friendRequest(request);
+    if (url.pathname === '/room' && request.method === 'DELETE') return this.deleteRoom();
     if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') {
       return new Response('Expected a WebSocket upgrade', { status: 426, headers: corsHeaders });
     }
@@ -626,6 +651,12 @@ export default {
     if (url.pathname === '/players' || url.pathname === '/presence' || url.pathname === '/friend-request' || url.pathname === '/friend-accept' || url.pathname === '/friend-requests') {
       const id = env.PLAYER_DIRECTORY.idFromName('global');
       return env.PLAYER_DIRECTORY.get(id).fetch(request);
+    }
+    if (url.pathname === '/room' && request.method === 'DELETE') {
+      const roomId = url.searchParams.get('room')?.slice(0, 48);
+      if (!roomId) return new Response('Missing room', { status: 400, headers: corsHeaders });
+      const response = await env.GAME_ROOM.get(env.GAME_ROOM.idFromName(roomId)).fetch(request);
+      return new Response(response.body, { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     if (url.pathname === '/ws') {
       const roomId = url.searchParams.get('room') || 'main-room';
