@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { chooseBattleTeam, useBattleStore } from '../game/battle';
+import { clearInput, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 
@@ -6,12 +8,23 @@ const TEAM_NAMES = { red: 'Rouge', blue: 'Bleu' } as const;
 
 export function BattleHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
+  const mode = useGameStore((state) => state.mode);
   const enabled = useMultiplayerStore((state) => state.enabled);
+  const status = useMultiplayerStore((state) => state.status);
   const team = useBattleStore((state) => state.team);
   const teams = useBattleStore((state) => state.teams);
   const scores = useBattleStore((state) => state.scores);
   const events = useBattleStore((state) => state.events);
   const deadUntil = useBattleStore((state) => state.deadUntil);
+  useEffect(() => {
+    if (mode !== 'play' || gameplayMode !== 'battle' || !enabled || status !== 'online' || team) return;
+    clearInput();
+    if (document.pointerLockElement) document.exitPointerLock();
+    useGameStore.getState().setMode('pause');
+  }, [gameplayMode, enabled, status, team, mode]);
+  const selectTeam = (nextTeam: 'red' | 'blue') => {
+    if (chooseBattleTeam(nextTeam)) void requestPlay();
+  };
   if (gameplayMode !== 'battle' || !enabled) return null;
   const redCount = Object.values(teams).filter((value) => value === 'red').length;
   const blueCount = Object.values(teams).filter((value) => value === 'blue').length;
@@ -25,8 +38,8 @@ export function BattleHud() {
       <div className={`battle-team-picker ${team ? 'compact' : ''}`}>
         {!team && <><strong>Choisis ton équipe</strong><span>2 contre 1 autorisé</span></>}
         <div>
-          <button className="battle-red" aria-pressed={team === 'red'} onClick={() => chooseBattleTeam('red')}>Rouge · {redCount}</button>
-          <button className="battle-blue" aria-pressed={team === 'blue'} onClick={() => chooseBattleTeam('blue')}>Bleu · {blueCount}</button>
+          <button className="battle-red" aria-pressed={team === 'red'} onClick={() => selectTeam('red')}>Rouge · {redCount}</button>
+          <button className="battle-blue" aria-pressed={team === 'blue'} onClick={() => selectTeam('blue')}>Bleu · {blueCount}</button>
         </div>
         {team && <span>Équipe {TEAM_NAMES[team]} · clique pour changer</span>}
       </div>
