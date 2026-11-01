@@ -10,16 +10,17 @@ export function BattleHud() {
   const enabled = useMultiplayerStore((state) => state.enabled);
   const status = useMultiplayerStore((state) => state.status);
   const team = useBattleStore((state) => state.team);
+  const ready = useBattleStore((state) => state.ready);
   const teams = useBattleStore((state) => state.teams);
   const scores = useBattleStore((state) => state.scores);
   const events = useBattleStore((state) => state.events);
   const deadUntil = useBattleStore((state) => state.deadUntil);
   useEffect(() => {
-    if (mode !== 'play' || gameplayMode !== 'battle' || !enabled || status !== 'online' || team) return;
+    if (mode !== 'play' || gameplayMode !== 'battle' || !enabled || status !== 'online' || team || !ready) return;
     clearInput();
     if (document.pointerLockElement) document.exitPointerLock();
     useGameStore.getState().setMode('pause');
-  }, [gameplayMode, enabled, status, team, mode]);
+  }, [gameplayMode, enabled, status, team, mode, ready]);
   const selectTeam = (nextTeam: 'red' | 'blue') => {
     if (chooseBattleTeam(nextTeam)) void requestPlay();
   };
@@ -35,11 +36,15 @@ export function BattleHud() {
       </div>
       {!team && (
         <div className="battle-team-picker">
-          <strong>Choisis ton équipe</strong><span>2 contre 1 autorisé</span>
-          <div>
-            <button className="battle-red" aria-pressed="false" onClick={() => selectTeam('red')}>Rouge · {redCount}</button>
-            <button className="battle-blue" aria-pressed="false" onClick={() => selectTeam('blue')}>Bleu · {blueCount}</button>
-          </div>
+          {ready ? (
+            <>
+              <strong>Choisis ton équipe</strong><span>2 contre 1 autorisé</span>
+              <div>
+                <button className="battle-red" aria-pressed="false" onClick={() => selectTeam('red')}>Rouge · {redCount}</button>
+                <button className="battle-blue" aria-pressed="false" onClick={() => selectTeam('blue')}>Bleu · {blueCount}</button>
+              </div>
+            </>
+          ) : <strong role="status">Préparation de l’arène…</strong>}
         </div>
       )}
       <div className="battle-events" aria-live="polite">

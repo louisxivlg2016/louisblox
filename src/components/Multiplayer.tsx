@@ -319,6 +319,7 @@ export function MultiplayerConnection() {
         pendingSpawn.current = null;
       }
       pendingWorld.current = null;
+      useBattleStore.setState({ ready: pending.gameplayMode === 'battle' });
       applyPendingVehicles();
       if (roomCreator) {
         const current = socket.current;

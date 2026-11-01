@@ -7,6 +7,7 @@ import { Hud } from './Hud';
 import { MultiplayerConnection } from './Multiplayer';
 import { useRemotePlayerStore } from '../game/multiplayerStore';
 import { isMouseDown } from '../game/input';
+import { useBattleStore } from '../game/battle';
 
 export function App() {
   const mode = useGameStore((state) => state.mode);
@@ -25,7 +26,7 @@ export function App() {
               louisbloxRenderer: gl,
               louisbloxDebug: async () => {
                 const [traits, chunks, vehicles] = await Promise.all([import('../game/traits'), import('../game/chunks'), import('../game/vehicles')]);
-                return { world, gl, camera, store: useGameStore, remote: useRemotePlayerStore, mining: () => isMouseDown(0), ...traits, ...chunks, ...vehicles };
+                return { world, gl, camera, store: useGameStore, remote: useRemotePlayerStore, battle: useBattleStore, mining: () => isMouseDown(0), ...traits, ...chunks, ...vehicles };
               },
             });
           }}

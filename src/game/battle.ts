@@ -19,6 +19,7 @@ type BattleStore = {
   localPlayerId: string | null;
   events: BattleEvent[];
   deadUntil: number;
+  ready: boolean;
   setLocalPlayerId: (playerId: string | null) => void;
   clear: () => void;
 };
@@ -31,6 +32,7 @@ const initialState = {
   localPlayerId: null,
   events: [],
   deadUntil: 0,
+  ready: false,
 };
 
 export const useBattleStore = create<BattleStore>((set) => ({
@@ -71,7 +73,7 @@ export function respawnAtBase(world: World, team: BattleTeam | null, position = 
 }
 
 export function chooseBattleTeam(team: BattleTeam) {
-  if (socket?.readyState !== WebSocket.OPEN) return false;
+  if (socket?.readyState !== WebSocket.OPEN || !useBattleStore.getState().ready) return false;
   if (useBattleStore.getState().team === team) return true;
   socket.send(JSON.stringify({ type: 'battle-team', team }));
   useBattleStore.setState({ team });
