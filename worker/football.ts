@@ -22,6 +22,7 @@ export class FootballEngine {
   private lastKick: { playerId: string; team: Team; offside: boolean } | null = null;
   private penaltyTeam: Team | null = null;
   private penaltyShooterId: string | null = null;
+  private restartPlayerId: string | null = null;
   private notice = 'Choisis ton équipe';
   private whistle?: 'short' | 'long' | 'goal';
   private whistleToken = 0;
@@ -43,6 +44,7 @@ export class FootballEngine {
     this.lastKick = null;
     this.penaltyTeam = null;
     this.penaltyShooterId = null;
+    this.restartPlayerId = null;
     this.notice = 'Choisis ton équipe';
     this.whistle = undefined;
     this.lastTick = Date.now();
@@ -64,13 +66,14 @@ export class FootballEngine {
     this.lastKick = state.lastKick ?? null;
     this.penaltyTeam = state.penaltyTeam ?? null;
     this.penaltyShooterId = state.penaltyShooterId ?? null;
+    this.restartPlayerId = state.restartPlayerId ?? null;
     this.notice = state.notice ?? 'Choisis ton équipe';
     this.whistleToken = state.whistleToken ?? 0;
     this.lastTick = Date.now();
   }
 
   snapshot() {
-    return { phase: this.phase, phaseUntil: this.phaseUntil, score: this.score, ball: this.ball, endsAt: this.endsAt, overtime: this.overtime, winner: this.winner, cards: this.cards, lastTouchTeam: this.lastTouchTeam, lastKick: this.lastKick, penaltyTeam: this.penaltyTeam, penaltyShooterId: this.penaltyShooterId, notice: this.notice, whistle: this.whistle, whistleToken: this.whistleToken };
+    return { phase: this.phase, phaseUntil: this.phaseUntil, score: this.score, ball: this.ball, endsAt: this.endsAt, overtime: this.overtime, winner: this.winner, cards: this.cards, lastTouchTeam: this.lastTouchTeam, lastKick: this.lastKick, penaltyTeam: this.penaltyTeam, penaltyShooterId: this.penaltyShooterId, restartPlayerId: this.restartPlayerId, notice: this.notice, whistle: this.whistle, whistleToken: this.whistleToken };
   }
 
   message() {
@@ -109,6 +112,42 @@ export class FootballEngine {
     this.room.broadcast({ type: 'football-spawn', positions });
   }
 
+  private chooseRestartPlayer(team: Team) {
+    let selected: PlayerAttachment | undefined;
+    let best = Infinity;
+    for (const { attachment } of this.room.players()) {
+      if (attachment.team !== team || !attachment.state || !this.canPlay(attachment)) continue;
+      const distance = Math.hypot(attachment.state.x - this.ball.x, attachment.state.z - this.ball.z);
+      if (distance < best) {
+        best = distance;
+        selected = attachment;
+      }
+    }
+    this.restartPlayerId = selected?.playerId ?? null;
+    return selected;
+  }
+
+  private assignRestart(team: Team) {
+    const player = this.chooseRestartPlayer(team);
+    if (player) this.notice += ` · ${player.name}`;
+  }
+
+  private goalkeeperRestart(team: Team, goalKick: boolean) {
+    const goalkeeper = this.chooseRestartPlayer(team);
+    const direction = team === 'red' ? -1 : 1;
+    this.phase = 'restart';
+    this.phaseUntil = Date.now() + 1500;
+    this.lastTouchTeam = team;
+    this.lastKick = null;
+    this.notice = goalKick ? `Six-mètres · ${goalkeeper?.name ?? 'au gardien'}` : `Ballon au gardien · ${goalkeeper?.name ?? 'au gardien'}`;
+    if (goalkeeper) {
+      this.ball = { x: direction * 25.5, y: 9, z: 0, vx: 0, vy: 0, vz: 0 };
+      this.room.broadcast({ type: 'football-spawn', positions: { [goalkeeper.playerId]: { x: direction * 26.2, y: 8.51, z: 0, yaw: team === 'red' ? -Math.PI / 2 : Math.PI / 2 } } });
+    }
+    this.whistleSound('short');
+    this.update(true);
+  }
+
   private kickoff() {
     this.phase = 'countdown';
     this.phaseUntil = Date.now() + 3000;
@@ -117,6 +156,7 @@ export class FootballEngine {
     this.lastKick = null;
     this.penaltyTeam = null;
     this.penaltyShooterId = null;
+    this.restartPlayerId = null;
     this.notice = 'Coup d’envoi dans 3 secondes';
     this.spawnPositions();
     this.whistleSound('short');
@@ -146,6 +186,7 @@ export class FootballEngine {
       this.lastKick = null;
       this.phase = 'restart';
       this.phaseUntil = Date.now() + 2000;
+      this.assignRestart(other(player.team));
       this.whistleSound('short');
       this.update(true);
       return;
@@ -155,9 +196,11 @@ export class FootballEngine {
 
   private kick(player: PlayerAttachment, style: 'shot' | 'power' | 'pass' | 'tackle' = 'shot') {
     if (this.phase !== 'running' || !player.state || !this.canPlay(player)) return;
+    if (this.restartPlayerId && player.playerId !== this.restartPlayerId) return;
     if (this.penaltyShooterId && !this.lastKick && player.playerId !== this.penaltyShooterId) return;
     const distance = Math.hypot(player.state.x - this.ball.x, player.state.z - this.ball.z, player.state.y + 0.5 - this.ball.y);
     if (distance > 3) return;
+    this.restartPlayerId = null;
     const yaw = player.state.yaw;
     const pitch = player.state.pitch;
     const horizontal = Math.cos(pitch);
@@ -242,13 +285,15 @@ export class FootballEngine {
       this.phase = 'restart';
       this.phaseUntil = Date.now() + 1500;
       this.ball = { x: target.state.x, y: 9, z: target.state.z, vx: 0, vy: 0, vz: 0 };
-      this.notice = `Faute · ${card.redUntil > Date.now() ? 'carton rouge' : 'carton jaune'}`;
+      this.restartPlayerId = target.playerId;
+      this.notice = `Faute · ${card.redUntil > Date.now() ? 'carton rouge' : 'carton jaune'} · coup franc pour ${target.name}`;
     }
     this.whistleSound(card.redUntil > Date.now() ? 'long' : 'short');
     this.update(true);
   }
 
   private tackle(attacker: PlayerAttachment, targetId: unknown, violent: boolean) {
+    if (this.restartPlayerId && attacker.playerId !== this.restartPlayerId) return;
     if (this.phase !== 'running' || !attacker.state || !attacker.team || typeof targetId !== 'string') return;
     const target = this.room.players().find(({ attachment }) => attachment.playerId === targetId)?.attachment;
     if (!target?.state || !target.team || target.playerId === attacker.playerId || target.team === attacker.team) return;
@@ -306,8 +351,12 @@ export class FootballEngine {
       this.ball.y = 9;
       this.ball.vy = Math.abs(this.ball.vy) > 1 ? Math.abs(this.ball.vy) * 0.35 : 0;
     }
+    if (!this.restartPlayerId && Math.abs(this.ball.x) > 21 && Math.abs(this.ball.x) < 26 && Math.abs(this.ball.z) < 6 && this.ball.y < 11 && Math.hypot(this.ball.vx, this.ball.vz) < 1.2) {
+      this.goalkeeperRestart(this.ball.x < 0 ? 'red' : 'blue', false);
+      return;
+    }
     for (const { attachment } of this.room.players()) {
-      if (!attachment.state || attachment.team !== 'red' && attachment.team !== 'blue' || !this.canPlay(attachment)) continue;
+      if (!attachment.state || attachment.team !== 'red' && attachment.team !== 'blue' || !this.canPlay(attachment) || this.restartPlayerId && attachment.playerId !== this.restartPlayerId) continue;
       if (Math.hypot(attachment.state.x - this.ball.x, attachment.state.z - this.ball.z) < 1.15 && this.ball.y < attachment.state.y + 1.4) {
         this.touch(attachment);
         this.ball.vx = -Math.sin(attachment.state.yaw) * 3.2;
@@ -335,6 +384,7 @@ export class FootballEngine {
       this.phaseUntil = now + 1500;
       this.lastTouchTeam = team;
       this.lastKick = null;
+      this.assignRestart(team);
       this.whistleSound('short');
       this.update(true);
       return;
@@ -345,16 +395,15 @@ export class FootballEngine {
         this.notice = `Corner pour ${other(defending) === 'red' ? 'rouge' : 'bleu'}`;
         this.ball = { x: Math.sign(this.ball.x) * 25, y: 9, z: Math.sign(this.ball.z || 1) * 13, vx: 0, vy: 0, vz: 0 };
         this.lastTouchTeam = other(defending);
+        this.phase = 'restart';
+        this.phaseUntil = now + 1500;
+        this.lastKick = null;
+        this.assignRestart(other(defending));
+        this.whistleSound('short');
+        this.update(true);
       } else {
-        this.notice = `Six-mètres pour ${defending === 'red' ? 'rouge' : 'bleu'}`;
-        this.ball = { x: Math.sign(this.ball.x) * 22, y: 9, z: 0, vx: 0, vy: 0, vz: 0 };
-        this.lastTouchTeam = defending;
+        this.goalkeeperRestart(defending, true);
       }
-      this.phase = 'restart';
-      this.phaseUntil = now + 1500;
-      this.lastKick = null;
-      this.whistleSound('short');
-      this.update(true);
     }
     this.update();
   }

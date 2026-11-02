@@ -13,7 +13,6 @@ export function FootballHud() {
   const status = useMultiplayerStore((state) => state.status);
   const team = useBattleStore((state) => state.team);
   const ready = useBattleStore((state) => state.ready);
-  const localId = useBattleStore((state) => state.localPlayerId);
   const phase = useFootballStore((state) => state.phase);
   const phaseUntil = useFootballStore((state) => state.phaseUntil);
   const endsAt = useFootballStore((state) => state.endsAt);
@@ -21,7 +20,6 @@ export function FootballHud() {
   const notice = useFootballStore((state) => state.notice);
   const winner = useFootballStore((state) => state.winner);
   const overtime = useFootballStore((state) => state.overtime);
-  const cards = useFootballStore((state) => state.cards);
   const penaltyTeam = useFootballStore((state) => state.penaltyTeam);
   const [, refresh] = useState(0);
   useEffect(() => {
@@ -40,7 +38,6 @@ export function FootballHud() {
     if (chooseBattleTeam(next)) void requestPlay();
   };
   const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-  const card = localId ? cards[localId] : undefined;
   return (
     <>
       <div className="battle-scoreboard football-scoreboard" aria-label="Score du match de football">
@@ -62,7 +59,6 @@ export function FootballHud() {
         {isFootballFrozen() && phase !== 'finished' && <span>Attends le coup de sifflet</span>}
         <small>Clic gauche : tir · E : tir puissant · T ou clic droit : tacler · G : passer</small>
       </div>}
-      {card && card.yellow > 0 && <div className={`football-card-notice ${card.redUntil > Date.now() ? 'red' : 'yellow'}`} role="status">{card.redUntil > Date.now() ? `Carton rouge · exclusion ${Math.ceil((card.redUntil - Date.now()) / 1000)} s` : `Carton jaune · ${card.yellow}`}</div>}
       {winner && <div className="pirate-winner">Victoire de l’équipe {winner === 'red' ? 'rouge' : 'bleue'} !</div>}
       {team && canManageProtection() && <button className="football-referee" onClick={() => { refereeWhistle(); clearInput(); }}>Sifflet de l’arbitre</button>}
     </>

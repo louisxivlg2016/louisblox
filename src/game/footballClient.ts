@@ -25,11 +25,12 @@ type FootballState = {
   cards: Record<string, Card>;
   penaltyTeam: FootballTeam | null;
   penaltyShooterId: string | null;
+  restartPlayerId: string | null;
   notice: string;
   whistleToken: number;
 };
 
-const initial: FootballState = { phase: 'waiting', phaseUntil: 0, endsAt: 0, score: { red: 0, blue: 0 }, ball: { x: 0, y: 9, z: 0, vx: 0, vy: 0, vz: 0 }, overtime: false, winner: null, cards: {}, penaltyTeam: null, penaltyShooterId: null, notice: 'Choisis ton équipe', whistleToken: 0 };
+const initial: FootballState = { phase: 'waiting', phaseUntil: 0, endsAt: 0, score: { red: 0, blue: 0 }, ball: { x: 0, y: 9, z: 0, vx: 0, vy: 0, vz: 0 }, overtime: false, winner: null, cards: {}, penaltyTeam: null, penaltyShooterId: null, restartPlayerId: null, notice: 'Choisis ton équipe', whistleToken: 0 };
 export const useFootballStore = create<FootballState>(() => ({ ...initial, score: { ...initial.score }, ball: { ...initial.ball }, cards: {} }));
 let socket: WebSocket | null = null;
 let lastWhistle = 0;
@@ -103,6 +104,7 @@ export function receiveFootballState(value: unknown) {
     overtime: data.overtime === true, winner: data.winner === 'red' || data.winner === 'blue' ? data.winner : null,
     cards, penaltyTeam: data.penaltyTeam === 'red' || data.penaltyTeam === 'blue' ? data.penaltyTeam : null,
     penaltyShooterId: typeof data.penaltyShooterId === 'string' ? data.penaltyShooterId : null,
+    restartPlayerId: typeof data.restartPlayerId === 'string' ? data.restartPlayerId : null,
     notice: typeof data.notice === 'string' ? data.notice.slice(0, 140) : '', whistleToken,
   });
 }
@@ -130,6 +132,12 @@ export function isFootballFrozen() {
   return false;
 }
 
+export function canPlayFootballBall() {
+  const game = useFootballStore.getState();
+  const localId = useBattleStore.getState().localPlayerId;
+  return game.restartPlayerId === null || game.restartPlayerId === localId;
+}
+
 export function footballBounds() {
   const game = useFootballStore.getState();
   const { localPlayerId, team } = useBattleStore.getState();
@@ -151,7 +159,7 @@ export function footballControlSystem(world: World, camera: Camera, dt: number, 
   stopMining();
   const cooldown = Math.max(0, (cooldowns.get(world) ?? 0) - dt);
   cooldowns.set(world, cooldown);
-  if (cooldown > 0 || isFootballFrozen()) return true;
+  if (cooldown > 0 || isFootballFrozen() || !canPlayFootballBall()) return true;
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   const state = world.queryFirst(Player)?.get(PlayerState);
   if (!player || !state) return true;
