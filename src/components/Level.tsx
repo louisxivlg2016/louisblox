@@ -77,7 +77,6 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
   const chunk = useTrait(entity, Chunk);
   const data = entity.get(ChunkData);
   const blockIndex = getBlockIndex(world);
-  const tntBlocks: Voxel[] = [];
   const candleBlocks: Voxel[] = [];
   const doorBlocks: Voxel[] = [];
   const cropBlocks: Voxel[] = [];
@@ -96,10 +95,6 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         return !neighbor || neighbor.kind === BlockKind.Water || isGlass(neighbor.kind);
       });
       if (!exposed) continue;
-      if (block.kind === BlockKind.Tnt) {
-        tntBlocks.push(block);
-        continue;
-      }
       if (block.kind === BlockKind.Candle) {
         candleBlocks.push(block);
         continue;
@@ -141,7 +136,6 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
       <CropInstances blocks={cropBlocks} />
       <UtilityBlocks blocks={utilityBlocks} />
       <SignBlocks blocks={signBlocks} />
-      <SpecialBlocks kind={BlockKind.Tnt} blocks={tntBlocks} />
       <SpecialBlocks kind={BlockKind.Candle} blocks={candleBlocks} />
       <DoorInstances blocks={doorBlocks} />
     </group>

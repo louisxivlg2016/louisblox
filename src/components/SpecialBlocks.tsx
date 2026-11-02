@@ -2,6 +2,7 @@ import { MeshBasicMaterial } from 'three';
 import { BlockKind } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { PixelPart } from './ItemModel';
+import { blockGeometry, blockMaterials } from '../game/textures';
 
 const flameOrange = new MeshBasicMaterial({ color: '#ff9b28' });
 const flameYellow = new MeshBasicMaterial({ color: '#ffe890' });
@@ -9,26 +10,7 @@ const wildfireOrange = new MeshBasicMaterial({ color: '#ef4925' });
 const wildfireYellow = new MeshBasicMaterial({ color: '#ffb12b' });
 
 export function BombModel() {
-  return (
-    <group>
-      <PixelPart position={[0, 0.07, 0]} size={[0.38, 0.14, 0.38]} color="#252b32" />
-      <PixelPart position={[0, 0.19, 0]} size={[0.6, 0.16, 0.6]} color="#303943" />
-      <PixelPart position={[0, 0.39, 0]} size={[0.78, 0.3, 0.78]} color="#35404c" />
-      <PixelPart position={[0, 0.6, 0]} size={[0.64, 0.16, 0.64]} color="#303a46" />
-      <PixelPart position={[0, 0.74, 0]} size={[0.4, 0.12, 0.4]} color="#28323d" />
-      <PixelPart position={[0, 0.84, 0]} size={[0.2, 0.12, 0.2]} color="#737c82" />
-      <PixelPart position={[0, 0.94, 0]} size={[0.07, 0.13, 0.07]} color="#9b7546" />
-      <PixelPart position={[0.06, 1.02, 0]} size={[0.13, 0.07, 0.07]} color="#b68c4f" />
-      <PixelPart position={[0.12, 1.09, 0]} size={[0.07, 0.1, 0.07]} color="#b68c4f" />
-      <PixelPart position={[-0.2, 0.52, -0.4]} size={[0.14, 0.13, 0.025]} color="#758694" />
-      <mesh position={[0.12, 1.18, 0]} material={flameOrange}>
-        <boxGeometry args={[0.12, 0.12, 0.12]} />
-      </mesh>
-      <mesh position={[0.12, 1.18, -0.065]} material={flameYellow}>
-        <boxGeometry args={[0.055, 0.055, 0.025]} />
-      </mesh>
-    </group>
-  );
+  return <mesh position={[0, 0.5, 0]} args={[blockGeometry, blockMaterials[BlockKind.Tnt]]} />;
 }
 
 export function CandleModel() {
@@ -75,7 +57,7 @@ export function SpecialBlocks({ kind, blocks }: { kind: BlockKind; blocks: Voxel
     <>
       {blocks.map((block) => (
         <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]}>
-          {kind === BlockKind.Tnt ? <BombModel /> : kind === BlockKind.Candle ? <CandleModel /> : <CampfireModel />}
+          {kind === BlockKind.Candle ? <CandleModel /> : <CampfireModel destructive={kind === BlockKind.Wildfire} />}
         </group>
       ))}
     </>

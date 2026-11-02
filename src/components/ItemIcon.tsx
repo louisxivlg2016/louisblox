@@ -1,8 +1,11 @@
 import { getItemMeta, selectionInfo } from '../game/items';
 import type { SelectedKind } from '../game/items';
+import { BlockKind } from '../game/voxel';
+import tntUrl from '../../assets/references/tnt.png';
 
 export function ItemIcon({ kind }: { kind: SelectedKind }) {
   const info = selectionInfo(kind);
+  if (kind === BlockKind.Tnt) return <img className="tnt-icon" src={tntUrl} alt="" />;
   if (typeof kind === 'number') return <span className="block-swatch" style={{ backgroundColor: info.color }} />;
   const meta = getItemMeta(kind);
   const rawShape = meta.shape ?? meta.category;

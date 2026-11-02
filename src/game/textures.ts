@@ -66,6 +66,8 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
     }
   }
 
+  if (kind === BlockKind.Tnt) paintTnt(context, face);
+
   if (kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick) {
     paintBricks(context, kind);
   }
@@ -181,6 +183,59 @@ function paintPlanks(context: CanvasRenderingContext2D, kind: BlockKind) {
   for (const y of [0, 4, 8, 12, 15]) context.fillRect(0, y, 16, 1);
 }
 
+function paintTnt(context: CanvasRenderingContext2D, face: 'side' | 'top' | 'bottom') {
+  const reds = ['#bd3527', '#d6452c', '#a72820', '#c83b28'];
+  for (let x = 0; x < 16; x += 1) {
+    for (let y = 0; y < 16; y += 1) {
+      context.fillStyle = x % 4 === 0 ? '#89221d' : reds[Math.floor(random(x, y, 83) * reds.length)];
+      context.fillRect(x, y, 1, 1);
+    }
+  }
+  if (face === 'top') {
+    const pattern = [
+      'gggggggggggg',
+      'gkgggkgggkgg',
+      'ggkkgggkkggg',
+      'gggkkkkkgggg',
+      'ggkkbbbkkggg',
+      'ggkbbbbbkggg',
+      'ggkkbbbkkggg',
+      'gggkkkkkgggg',
+      'ggkkgggkkggg',
+      'gkgggkgggkgg',
+      'gggggggggggg',
+      'kkkkkkkkkkkk',
+    ];
+    const colors = { g: '#a4ada1', k: '#38383a', b: '#181c24' };
+    pattern.forEach((row, y) => [...row].forEach((pixel, x) => {
+      context.fillStyle = colors[pixel as keyof typeof colors];
+      context.fillRect(x + 2, y + 2, 1, 1);
+    }));
+    return;
+  }
+  if (face !== 'side') return;
+  context.fillStyle = '#dce1d5';
+  context.fillRect(0, 6, 16, 5);
+  context.fillStyle = '#bfc9bf';
+  context.fillRect(0, 6, 16, 1);
+  context.fillRect(0, 10, 16, 1);
+  context.fillStyle = '#f0f0df';
+  context.fillRect(0, 7, 16, 3);
+  const letters = [
+    ['111', '010', '010', '010', '010'],
+    ['1001', '1101', '1011', '1011', '1001'],
+    ['111', '010', '010', '010', '010'],
+  ];
+  let offset = 2;
+  context.fillStyle = '#282532';
+  for (const letter of letters) {
+    letter.forEach((row, y) => [...row].forEach((pixel, x) => {
+      if (pixel === '1') context.fillRect(offset + x, 6 + y, 1, 1);
+    }));
+    offset += letter[0].length + 1;
+  }
+}
+
 function paintBricks(context: CanvasRenderingContext2D, kind: BlockKind) {
   const styles: Record<number, { base: string; alternate: string; mortar: string }> = {
     [BlockKind.WhiteBrick]: { base: '#dedecd', alternate: '#d6d7c4', mortar: '#919487' },
@@ -286,7 +341,7 @@ const baseBlockMaterials = {
   [BlockKind.DiamondOre]: repeated(material(BlockKind.DiamondOre, 'side')),
   [BlockKind.Bedrock]: repeated(material(BlockKind.Bedrock, 'side')),
   [BlockKind.Ice]: repeated(material(BlockKind.Ice, 'side')),
-  [BlockKind.Tnt]: repeated(material(BlockKind.Tnt, 'side')),
+  [BlockKind.Tnt]: [material(BlockKind.Tnt, 'side'), material(BlockKind.Tnt, 'side'), material(BlockKind.Tnt, 'top'), material(BlockKind.Tnt, 'bottom'), material(BlockKind.Tnt, 'side'), material(BlockKind.Tnt, 'side')],
   [BlockKind.Candle]: repeated(material(BlockKind.Candle, 'side')),
   [BlockKind.Water]: repeated(material(BlockKind.Water, 'side')),
 };

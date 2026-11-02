@@ -93,7 +93,7 @@ function groupFor(kind: BlockKind) {
 }
 
 function usesSeparateModel(kind: BlockKind) {
-  return kind === BlockKind.Tnt || kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind) || isSign(kind);
+  return kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind) || isSign(kind);
 }
 
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {
@@ -107,7 +107,7 @@ function faceTexture(block: Voxel, direction: readonly number[]) {
   if (block.kind === BlockKind.Grass || block.kind === BlockKind.AutumnGrass || block.kind === BlockKind.ForestGrass) {
     return direction[1] < 0 ? `${BlockKind.Dirt}:side` : direction[1] > 0 ? `${block.kind}:top` : `${block.kind}:side`;
   }
-  if (block.kind === BlockKind.Wood) return direction[1] === 0 ? `${BlockKind.Wood}:side` : `${BlockKind.Wood}:top`;
+  if (block.kind === BlockKind.Wood || block.kind === BlockKind.Tnt) return direction[1] === 0 ? `${block.kind}:side` : direction[1] > 0 ? `${block.kind}:top` : `${block.kind}:bottom`;
   return `${block.kind}:side`;
 }
 
