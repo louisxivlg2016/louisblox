@@ -11,7 +11,7 @@ import { hasInventory } from '../inventory';
 import type { GalleryItemId, ItemKind } from '../items';
 import { SEA_LEVEL } from '../levels';
 import { useGameStore } from '../store';
-import { HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
+import { HorseRider, Player, PlayerHealth, PlayerPosition, Vehicle, VehicleMotion, VehiclePosition } from '../traits';
 import { groundAt, spawnVehicle } from '../vehicles';
 import { BlockKind, raycastVoxel, voxelKey } from '../voxel';
 import { fireProjectile } from './projectileSystem';
@@ -115,6 +115,8 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     return true;
   }
   if (meta.category === 'vehicle' && interact > 0) {
+    const nearby = world.query(Vehicle, VehiclePosition, VehicleMotion).some((entity) => entity.get(VehiclePosition)!.distanceTo(player) < 6);
+    if (nearby) return false;
     const blocks = getBlockIndex(world);
     const kind = selected === 'plane' ? 'plane' : selected === 'train' ? 'train' : selected === 'boat' || meta.shape === 'boat' || meta.shape === 'hovercraft' ? 'boat' : 'car';
     if (kind === 'boat') {
