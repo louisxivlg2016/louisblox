@@ -222,7 +222,7 @@ export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.BedRed]: block('Lit rouge', '#b83935', 0.6),
   [EXTRA_BLOCKS.BedBlack]: block('Lit noir', '#25282b', 0.6),
   [EXTRA_BLOCKS.Campfire]: block('Feu de camp', '#e88422', 0.4),
-  [EXTRA_BLOCKS.Wildfire]: block('Feu destructeur', '#e84b27', 0.25),
+  [EXTRA_BLOCKS.Wildfire]: block('Feu rouge destructeur', '#e84b27', 0.25),
   [EXTRA_BLOCKS.Rail]: block('Rail de train', '#8d9ba5', 1.4),
   [EXTRA_BLOCKS.Sign]: block('Panneau à écrire', '#b98a53', 0.8),
   [EXTRA_BLOCKS.GlassWhite]: block('Verre blanc à motif', '#d8dedc', 0.35),

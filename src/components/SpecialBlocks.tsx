@@ -1,8 +1,12 @@
-import { MeshBasicMaterial } from 'three';
+import { Suspense, useMemo } from 'react';
+import { useGLTF } from '@react-three/drei';
+import { Box3, MeshBasicMaterial, Vector3 } from 'three';
+import { SkeletonUtils } from 'three-stdlib';
 import { BlockKind } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { PixelPart } from './ItemModel';
 import { blockGeometry, blockMaterials } from '../game/textures';
+import redFireUrl from '../../assets/models/red-fire.glb';
 
 const flameOrange = new MeshBasicMaterial({ color: '#ff9b28' });
 const flameYellow = new MeshBasicMaterial({ color: '#ffe890' });
@@ -39,10 +43,26 @@ export function CandleModel() {
   );
 }
 
+function HeldRedFire({ withLight }: { withLight: boolean }) {
+  const { scene } = useGLTF(redFireUrl);
+  const { model, center, minY, height } = useMemo(() => {
+    const model = SkeletonUtils.clone(scene);
+    const bounds = new Box3().setFromObject(model);
+    const center = bounds.getCenter(new Vector3());
+    return { model, center, minY: bounds.min.y, height: Math.max(0.01, bounds.max.y - bounds.min.y) };
+  }, [scene]);
+  return (
+    <group name="red-fire-held" scale={1.2 / height}>
+      <primitive object={model} position={[-center.x, -minY, -center.z]} dispose={null} />
+      {withLight && <pointLight position={[0, 0.65, 0]} color="#ff632e" intensity={2.6} distance={13} decay={2} />}
+    </group>
+  );
+}
+
 export function CampfireModel({ destructive = false, withLight = true }: { destructive?: boolean; withLight?: boolean }) {
   const outerFlame = destructive ? wildfireOrange : flameOrange;
   const innerFlame = destructive ? wildfireYellow : flameYellow;
-  return (
+  const flames = (
     <group>
       <mesh position={[0, 0.35, 0]} material={outerFlame}><boxGeometry args={[0.26, 0.38, 0.26]} /></mesh>
       <mesh position={[0, 0.42, -0.02]} material={innerFlame}><boxGeometry args={[0.13, 0.3, 0.13]} /></mesh>
@@ -50,6 +70,7 @@ export function CampfireModel({ destructive = false, withLight = true }: { destr
       {withLight && <pointLight position={[0, 0.65, 0]} color={destructive ? '#ff632e' : '#ff9b45'} intensity={destructive ? 2.6 : 1.8} distance={destructive ? 13 : 9} decay={2} />}
     </group>
   );
+  return destructive ? <Suspense fallback={flames}><HeldRedFire withLight={withLight} /></Suspense> : flames;
 }
 
 export function SpecialBlocks({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }) {
