@@ -301,10 +301,11 @@ export function MultiplayerConnection() {
         if (pending.seed !== null && pending.gameplayMode === wanted) {
           requestedRoomMode = null;
         } else {
+          const current = socket.current;
+          if (current?.readyState !== WebSocket.OPEN) return;
           pendingWorld.current = null;
           worldInitSent.current = true;
-          const current = socket.current;
-          if (useGameStore.getState().gameplayMode === wanted && current?.readyState === WebSocket.OPEN) {
+          if (useGameStore.getState().gameplayMode === wanted) {
             requestedRoomMode = null;
             sendWorldInitialization(current, world, true);
           } else {
