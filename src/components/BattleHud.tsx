@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { chooseBattleTeam, useBattleStore } from '../game/battle';
+import { battleTeamColor, isIndividualBattleTeam } from '../game/battleArena';
 import { clearInput, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
@@ -30,8 +31,8 @@ export function BattleHud() {
   if (gameplayMode !== 'battle' || !enabled) return null;
   const redCount = Object.values(teams).filter((value) => value === 'red').length;
   const blueCount = Object.values(teams).filter((value) => value === 'blue').length;
-  const soloCount = Object.values(teams).filter((value) => value === 'solo').length;
-  const freeForAll = soloCount > 0 || team === 'solo';
+  const soloCount = Object.values(teams).filter(isIndividualBattleTeam).length;
+  const freeForAll = soloCount > 0 || isIndividualBattleTeam(team);
   const showTeams = !freeForAll || redCount > 0 || blueCount > 0;
   const ranking = Object.entries(teams)
     .map(([playerId, playerTeam]) => ({
@@ -50,7 +51,11 @@ export function BattleHud() {
         {freeForAll && (
           <ol className="battle-ranking" aria-label="Score de chaque joueur">
             {ranking.map((player) => (
-              <li key={player.playerId} className={`battle-${player.team}${player.playerId === localPlayerId ? ' self' : ''}`}>
+              <li
+                key={player.playerId}
+                className={`${player.team === 'red' ? 'battle-red' : player.team === 'blue' ? 'battle-blue' : 'battle-solo'}${player.playerId === localPlayerId ? ' self' : ''}`}
+                style={{ color: battleTeamColor(player.team) }}
+              >
                 {player.name} · {player.kills}
               </li>
             ))}
@@ -61,12 +66,12 @@ export function BattleHud() {
         <div className="battle-team-picker">
           {ready ? (
             <>
-              <strong>Choisis ton équipe</strong><span>2 contre 1 autorisé · Chacun pour soi : 1 joueur = 1 équipe</span>
+              <strong>Choisis ton équipe</strong><span>Rouge/Bleu en groupe · 1 joueur = 1 équipe, autant d’équipes que de joueurs</span>
               <div>
                 <button className="battle-red" aria-pressed="false" onClick={() => selectTeam('red')}>Rouge · {redCount}</button>
                 <button className="battle-blue" aria-pressed="false" onClick={() => selectTeam('blue')}>Bleu · {blueCount}</button>
               </div>
-              <button className="battle-solo" aria-pressed="false" onClick={() => selectTeam('solo')}>Chacun pour soi · {soloCount}</button>
+              <button className="battle-solo" aria-pressed="false" onClick={() => selectTeam('solo')}>Ma propre équipe · {soloCount}</button>
             </>
           ) : <strong role="status">Préparation de l’arène…</strong>}
         </div>
@@ -74,7 +79,7 @@ export function BattleHud() {
       <div className="battle-events" aria-live="polite">
         {events.map((event) => <p key={event.id}><strong>{event.killerName}</strong> a éliminé <strong>{event.victimName}</strong></p>)}
       </div>
-      {deadUntil > 0 && <div className="battle-death">Éliminé !<span>{team === 'solo' ? 'Réapparition dans l’arène…' : 'Réapparition à ta base…'}</span></div>}
+      {deadUntil > 0 && <div className="battle-death">Éliminé !<span>{isIndividualBattleTeam(team) ? 'Réapparition dans l’arène…' : 'Réapparition à ta base…'}</span></div>}
     </>
   );
 }

@@ -76,12 +76,14 @@ export function respawnAtBase(world: World, team: BattleTeam | null, position = 
   useGameStore.getState().setLives(10);
 }
 
-export function chooseBattleTeam(team: BattleTeam) {
-  if (socket?.readyState !== WebSocket.OPEN || !useBattleStore.getState().ready) return false;
-  if (useBattleStore.getState().team === team) return true;
+export function chooseBattleTeam(team: 'red' | 'blue' | 'solo') {
+  const { localPlayerId, ready, team: currentTeam } = useBattleStore.getState();
+  if (socket?.readyState !== WebSocket.OPEN || !ready || (team === 'solo' && !localPlayerId)) return false;
+  const nextTeam: BattleTeam = team === 'solo' ? `solo:${localPlayerId}` : team;
+  if (currentTeam === nextTeam) return true;
   socket.send(JSON.stringify({ type: 'battle-team', team }));
-  useBattleStore.setState({ team });
-  respawnAtBase(world, team);
+  useBattleStore.setState({ team: nextTeam });
+  respawnAtBase(world, nextTeam);
   return true;
 }
 
@@ -99,7 +101,7 @@ export function receiveBattleState(value: unknown) {
   const teams: Record<string, BattleTeam> = {};
   const health: Record<string, number> = {};
   for (const [playerId, team] of Object.entries(sourceTeams)) {
-    if (isBattleTeam(team)) teams[playerId] = team;
+    if (isBattleTeam(team)) teams[playerId] = team === 'solo' ? `solo:${playerId}` : team;
   }
   const sourcePlayerScores = data.playerScores && typeof data.playerScores === 'object' ? data.playerScores as Record<string, unknown> : {};
   const playerScores: Record<string, number> = {};

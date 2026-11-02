@@ -107,8 +107,8 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             </button>
             <button className="world-card battle-card" onClick={() => create('battle')} disabled={!enabled || pendingWorld !== null}>
               <img src={battleUrl} alt="Monde Combat du mode Bataille" />
-              <span className="world-card-label"><strong>Bataille</strong><small>Arène limitée · Équipes rouge et bleue</small></span>
-              <span className="world-mode-tag">2 contre 1 possible</span>
+              <span className="world-card-label"><strong>Bataille</strong><small>Arène limitée · Rouge, Bleu ou chacun son équipe</small></span>
+              <span className="world-mode-tag">1 joueur = 1 équipe possible</span>
             </button>
             <button className="world-card city-card" data-world-mode="city-ancient" onClick={() => create('city-ancient')} disabled={pendingWorld !== null}>
               <img src={citiesUrl} alt="Ville ancienne et ses bâtiments parisiens" />

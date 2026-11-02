@@ -4,19 +4,31 @@ import type { GeneratedChunk } from './levels';
 import { BlockKind } from './voxel';
 import type { Voxel } from './voxel';
 
-export type BattleTeam = 'red' | 'blue' | 'solo';
+export type BattleTeam = 'red' | 'blue' | 'solo' | `solo:${string}`;
 export const BATTLE_LIMIT = 22.5;
 
 export function isBattleTeam(value: unknown): value is BattleTeam {
-  return value === 'red' || value === 'blue' || value === 'solo';
+  return value === 'red' || value === 'blue' || value === 'solo' || (typeof value === 'string' && /^solo:[0-9a-f-]{36}$/.test(value));
+}
+
+export function isIndividualBattleTeam(team: BattleTeam | null | undefined) {
+  return team === 'solo' || team?.startsWith('solo:') === true;
+}
+
+export function battleTeamColor(team: BattleTeam) {
+  if (team === 'red') return '#d64b43';
+  if (team === 'blue') return '#4285d4';
+  if (team === 'solo') return '#e0b43a';
+  const hash = [...team].reduce((value, character) => (value * 31 + character.charCodeAt(0)) >>> 0, 0);
+  return `hsl(${hash % 360}, 68%, ${60 + (hash >>> 10) % 12}%)`;
 }
 
 export function isBattleEnemy(mine: BattleTeam, theirs: BattleTeam | undefined) {
-  return !!theirs && (theirs !== mine || mine === 'solo');
+  return !!theirs && theirs !== mine;
 }
 
 export function battleSpawn(team: BattleTeam | null) {
-  if (team === 'solo') {
+  if (isIndividualBattleTeam(team)) {
     const angle = Math.random() * Math.PI * 2;
     const radius = 11 + Math.random() * 8;
     return { x: Math.cos(angle) * radius, y: 8.51, z: Math.sin(angle) * radius };

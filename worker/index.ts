@@ -28,7 +28,7 @@ type VoxelEdit = number | {
 } | null;
 type EditEntry = [string, VoxelEdit];
 type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern';
-type BattleTeam = 'red' | 'blue' | 'solo';
+type BattleTeam = 'red' | 'blue' | `solo:${string}`;
 
 function soloSpawn() {
   const angle = Math.random() * Math.PI * 2;
@@ -428,8 +428,9 @@ export class GameRoom extends DurableObject<Env> {
     }
     if (type === 'battle-team') {
       const attachment = this.attachment(ws);
-      const team = (data as { team?: unknown }).team;
-      if (this.gameplayMode !== 'battle' || !attachment || (team !== 'red' && team !== 'blue' && team !== 'solo')) return;
+      const requestedTeam = (data as { team?: unknown }).team;
+      if (this.gameplayMode !== 'battle' || !attachment || (requestedTeam !== 'red' && requestedTeam !== 'blue' && requestedTeam !== 'solo')) return;
+      const team: BattleTeam = requestedTeam === 'solo' ? `solo:${attachment.playerId}` : requestedTeam;
       const changed = attachment.team !== team;
       attachment.team = team;
       ws.serializeAttachment(attachment);
@@ -448,7 +449,7 @@ export class GameRoom extends DurableObject<Env> {
       const targetSocket = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
       const target = targetSocket ? this.attachment(targetSocket) : null;
       if (!targetSocket || !target?.team || target.playerId === attacker.playerId || !target.state || !attacker.state) return;
-      if (target.team === attacker.team && attacker.team !== 'solo') return;
+      if (target.team === attacker.team) return;
       const distance = Math.hypot(target.state.x - attacker.state.x, target.state.y - attacker.state.y, target.state.z - attacker.state.z);
       if (distance > (kind === 'melee' ? 6 : 90)) return;
       this.battleHits.set(attacker.playerId, now);
@@ -460,7 +461,7 @@ export class GameRoom extends DurableObject<Env> {
         return;
       }
       this.playerScores.set(attacker.playerId, (this.playerScores.get(attacker.playerId) ?? 0) + 1);
-      if (attacker.team !== 'solo') this.battleScores[attacker.team] += 1;
+      if (attacker.team === 'red' || attacker.team === 'blue') this.battleScores[attacker.team] += 1;
       this.battleHealth.set(targetId, 10);
       this.broadcast({
         type: 'battle-elimination',
@@ -470,7 +471,7 @@ export class GameRoom extends DurableObject<Env> {
         killerName: attacker.name,
         victimName: target.name,
       });
-      const position = target.team === 'solo' ? soloSpawn() : { x: target.team === 'red' ? -16 : 16, y: 8.51, z: 0 };
+      const position = target.team === 'red' ? { x: -16, y: 8.51, z: 0 } : target.team === 'blue' ? { x: 16, y: 8.51, z: 0 } : soloSpawn();
       targetSocket.send(JSON.stringify({ type: 'battle-respawn', team: target.team, position }));
       this.broadcastBattleState();
       return;

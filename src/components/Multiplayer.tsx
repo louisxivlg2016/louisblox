@@ -31,6 +31,7 @@ import { playerIdentity } from '../game/playerIdentity';
 import { applyProjectileRemoval, applyProjectileSnapshot, isExplosionSnapshot, isProjectileSnapshot, onProjectileSync } from '../game/projectileSync';
 import { clearChat, receiveChatMessage, setChatSocket } from '../game/chat';
 import { clearBattle, receiveBattleElimination, receiveBattleRespawn, receiveBattleState, setBattleLocalPlayer, setBattleSocket, useBattleStore } from '../game/battle';
+import { battleTeamColor } from '../game/battleArena';
 import { useEmoteStore } from '../game/emotes';
 import { receiveAppleGift } from '../game/gifts';
 import { applyProtection, isWorldProtection, setProtectionSocket, useProtectionStore } from '../game/protection';
@@ -156,7 +157,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
     <group ref={group} position={[state.x, state.y, state.z]}>
       {!hasFullCharacter(outfit) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} />
-      {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={team === 'red' ? '#d64b43' : team === 'blue' ? '#4285d4' : '#e0b43a'} /></group>}
+      {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={battleTeamColor(team)} /></group>}
       <group ref={leftArm} visible={!hasFullCharacter(outfit)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" /></group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         {!hasFullCharacter(outfit) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color="#e7a0aa" />}
