@@ -13,10 +13,13 @@ import { BATTLE_LIMIT } from '../battleArena';
 import { useBattleStore } from '../battle';
 import { resetEmote, useEmoteStore } from '../emotes';
 import { CITY_LIMIT, isCityMode } from '../worldMode';
+import { hasEffect, jumpMultiplier, movementMultiplier } from '../effects';
 
 const GRAVITY = 24;
 const JUMP_SPEED = 8.4;
 const FLY_SPEED = 5.5;
+const spaceWasDown = new WeakMap<World, boolean>();
+const airJumps = new WeakMap<World, number>();
 
 export function playerSystem(world: World, dt: number, spawn: { x: number; y: number; z: number }) {
   const entity = world.queryFirst(Player);
@@ -54,7 +57,9 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const edge = getEdgeLook();
   const yaw = state.yaw - mouse.x * 0.004 - edge.x * dt * 3.2;
   const pitch = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, state.pitch - mouse.y * 0.004 - edge.y * dt * 3.2));
-  const flying = consumeFlightToggle() % 2 === 1 ? !state.flying : state.flying;
+  const flightToggles = consumeFlightToggle();
+  const canDoubleJump = hasEffect('doubleJump') && !state.grounded && !state.flying && (airJumps.get(world) ?? 0) < 1;
+  const flying = !canDoubleJump && flightToggles % 2 === 1 ? !state.flying : state.flying;
   if (health && health.value <= 0 && entity.get(PlayerMount)?.vehicle) dismount(world);
 
   const mount = entity.get(PlayerMount);
@@ -84,7 +89,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const inWater = !flying && swimming.inWater;
   const ladderAt = (y: number) => blocks.get(voxelKey(Math.round(position.x), Math.round(y), Math.round(position.z)))?.kind === BlockKind.Ladder;
   const onLadder = !flying && (ladderAt(position.y) || ladderAt(position.y + 0.75) || ladderAt(position.y + 1.5));
-  const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1);
+  const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1) * movementMultiplier();
   const emote = useEmoteStore.getState().current;
   if ((forward !== 0 || strafe !== 0 || flying) && emote !== null) resetEmote();
   const normalizedForward = forward / length;
@@ -92,11 +97,18 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   velocity.x = (-Math.sin(yaw) * normalizedForward + Math.cos(yaw) * normalizedStrafe) * speed;
   velocity.z = (-Math.cos(yaw) * normalizedForward - Math.sin(yaw) * normalizedStrafe) * speed;
 
-  if (flying) velocity.y = (Number(isDown('Space')) - Number(isDown('KeyC'))) * FLY_SPEED;
-  else if (onLadder) velocity.y = isDown('Space') ? 3.8 : isDown('KeyC') ? -2.8 : Math.max(velocity.y, -0.8);
-  else if (inWater) velocity.y = swimVerticalVelocity(swimming, velocity.y, isDown('KeyC'), isDown('Space'), position.y);
-  else if (state.grounded && isDown('Space')) velocity.y = JUMP_SPEED;
-  else velocity.y -= GRAVITY * dt;
+  const spaceDown = isDown('Space');
+  const spacePressed = spaceDown && !spaceWasDown.get(world);
+  spaceWasDown.set(world, spaceDown);
+  if (state.grounded) airJumps.set(world, 0);
+  if (flying) velocity.y = (Number(spaceDown) - Number(isDown('KeyC'))) * FLY_SPEED;
+  else if (onLadder) velocity.y = spaceDown ? 3.8 : isDown('KeyC') ? -2.8 : Math.max(velocity.y, -0.8);
+  else if (inWater) velocity.y = swimVerticalVelocity(swimming, velocity.y, isDown('KeyC'), spaceDown, position.y);
+  else if (state.grounded && spaceDown) velocity.y = JUMP_SPEED * jumpMultiplier();
+  else if (spacePressed && hasEffect('doubleJump') && (airJumps.get(world) ?? 0) < 1) {
+    velocity.y = JUMP_SPEED * jumpMultiplier();
+    airJumps.set(world, 1);
+  } else velocity.y -= GRAVITY * dt;
 
   const next = { ...position };
   const movement = moveVoxelCharacter(blocks, next, {

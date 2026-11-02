@@ -10,6 +10,7 @@ import { blockSystem } from '../game/systems/blockSystem';
 import { bombSystem, explosionSystem } from '../game/systems/bombSystem';
 import { cameraSystem } from '../game/systems/cameraSystem';
 import { environmentSystem } from '../game/systems/environmentSystem';
+import { effectSystem } from '../game/effects';
 import { itemSystem } from '../game/systems/itemSystem';
 import { meatDropSystem } from '../game/systems/meatDropSystem';
 import { droppedItemSystem } from '../game/droppedItems';
@@ -28,7 +29,7 @@ import { BlockTarget, Player, PlayerPosition, Sleep, TargetMesh } from '../game/
 export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } }) {
   const world = useWorld();
 
-  useFrame(({ camera }, delta) => {
+  useFrame(({ camera, invalidate }, delta) => {
     const dt = Math.min(delta, 0.05);
     recordPlaytime(dt);
     if (useGameStore.getState().mode === 'play') {
@@ -52,6 +53,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       fireSystem(world, dt);
       waterSystem(world, dt);
       sleepSystem(world, dt);
+      if (effectSystem(world, dt)) invalidate();
       const remainingActions = sleeping || vehicleHandled || itemHandled ? { place: 0, harvest: 0 } : actions;
       blockSystem(world, camera, dt, animalTarget || vehicleTarget || sleeping, remainingActions);
     } else {

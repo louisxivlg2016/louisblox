@@ -16,6 +16,7 @@ import { groundAt, spawnVehicle } from '../vehicles';
 import { BlockKind, raycastVoxel, voxelKey } from '../voxel';
 import { fireProjectile } from './projectileSystem';
 import { useEatingStore } from '../eating';
+import { healPlayer } from '../effects';
 
 const cooldowns = new WeakMap<World, number>();
 const origin = new Vector3();
@@ -30,19 +31,18 @@ export function eatItem(world: World, kind: ItemKind | GalleryItemId) {
     store.setNotice(kind === 'apple' ? 'Cueille des pommes avec E sur un arbre de prairie.' : `Plus de ${meta.name.toLowerCase()}.`);
     return false;
   }
-  const player = world.queryFirst(Player);
-  const health = player?.get(PlayerHealth);
-  if (!player || !health) return false;
-  if (health.value >= health.max) {
+  const health = world.queryFirst(Player)?.get(PlayerHealth);
+  if (!health) return false;
+  const healing = Math.min(health.max - health.value, meta.healing ?? 1);
+  if (!healPlayer(world, healing)) {
     store.setNotice('Toutes tes vies sont déjà récupérées.');
     return false;
   }
-  const value = Math.min(health.max, health.value + (meta.healing ?? 1));
-  player.set(PlayerHealth, { value });
-  store.setLives(value);
-  if (kind === 'apple') store.discardApple();
-  else store.setItemCount(kind, count - 1);
-  store.setNotice(`${meta.name} : +${value - health.value} vie${value - health.value > 1 ? 's' : ''}`);
+  if (store.gameplayMode === 'survival') {
+    if (kind === 'apple') store.discardApple();
+    else store.setItemCount(kind, count - 1);
+  }
+  store.setNotice(`${meta.name} : +${healing} vie${healing > 1 ? 's' : ''}`);
   useEatingStore.getState().startEating(kind);
   return true;
 }
@@ -51,15 +51,12 @@ export function eatMeat(world: World, kind: import('../animals').AnimalKind) {
   const store = useGameStore.getState();
   const health = world.queryFirst(Player)?.get(PlayerHealth);
   if (!health || store.meat[kind] <= 0) return false;
-  if (health.value >= health.max) {
+  if (!healPlayer(world, 2)) {
     store.setNotice('Toutes tes vies sont déjà récupérées.');
     return false;
   }
-  const value = Math.min(health.max, health.value + 2);
-  world.queryFirst(Player)!.set(PlayerHealth, { value });
   store.discardMeat(kind);
-  store.setLives(value);
-  store.setNotice(`Viande mangée : +${value - health.value} vies`);
+  store.setNotice('Viande mangée : +2 vies');
   useEatingStore.getState().startEating('cooked_meat');
   return true;
 }

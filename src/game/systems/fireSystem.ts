@@ -4,6 +4,7 @@ import { isCrop, isSapling } from '../extraBlocks';
 import { Fire, FirePosition, Player, PlayerPosition } from '../traits';
 import { BlockKind, voxelKey } from '../voxel';
 import type { VoxelHit } from '../voxel';
+import { damagePlayer } from '../combat';
 
 const directions = [
   [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0], [0, -1, 0],
@@ -24,10 +25,19 @@ function hitAt(block: { x: number; y: number; z: number; kind: BlockKind }): Vox
   return { block, x: block.x, y: block.y, z: block.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 };
 }
 
+const fireDamageClocks = new WeakMap<World, number>();
+
 export function fireSystem(world: World, dt: number) {
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return;
   const blocks = getBlockIndex(world);
+  const flame = blocks.get(voxelKey(Math.round(player.x), Math.round(player.y + 0.2), Math.round(player.z)));
+  const touchingFire = flame?.kind === BlockKind.Campfire || flame?.kind === BlockKind.Wildfire;
+  const damageIn = (fireDamageClocks.get(world) ?? 0) + dt;
+  if (touchingFire && damageIn >= 1) {
+    damagePlayer(world, 1, 'fire');
+    fireDamageClocks.set(world, 0);
+  } else fireDamageClocks.set(world, touchingFire ? damageIn : 0);
   const fires = world.query(Fire, FirePosition);
   if (fires.length === 0) return;
 

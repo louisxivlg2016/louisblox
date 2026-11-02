@@ -1,6 +1,7 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
 import { DroppedItem } from './traits';
+import { useEffectStore } from './effects';
 import { CHUNK_SIZE, MAX_BUILD_Y, MIN_WORLD_Y, VIEW_DISTANCE, biomeAt, generateChunk, heightAt } from './levels';
 import type { LevelData } from './levels';
 import { battleSpawn, generateBattleChunk } from './battleArena';
@@ -589,6 +590,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   for (const entity of [...world.query(Sleep)]) entity.destroy();
 
   const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3 || saved.version === 4) ? saved : null;
+  useEffectStore.getState().reset();
   useProtectionStore.getState().setProtection(restore?.protection ?? (restore ? null : useProtectionStore.getState().protection ?? newProtection()));
   const seed = restore?.seed ?? 73421 + generation * 977;
   const edits: WorldChunks['edits'] = restore ? new Map(restore.edits.map(([chunk, values]) => [chunk, new Map(values)])) : new Map();

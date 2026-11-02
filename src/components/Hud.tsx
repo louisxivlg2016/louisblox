@@ -22,6 +22,7 @@ import { useBattleStore } from '../game/battle';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { EmotePanel } from './EmotePanel';
 import { useEmoteStore } from '../game/emotes';
+import { EffectsHud } from './EffectsHud';
 
 export function Hud() {
   const mode = useGameStore((state) => state.mode);
@@ -73,6 +74,7 @@ export function Hud() {
           <button className="teleport-toggle" onClick={openTeleport}>Téléportation · T</button>
           <div className="action-hint">Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</div>
           {notice && <div className="game-notice">{notice}</div>}
+          <EffectsHud />
           <TouchControls />
         </>
       )}

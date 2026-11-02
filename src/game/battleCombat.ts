@@ -50,7 +50,7 @@ export function findBattleTarget(world: World, origin: Vector3, direction: Vecto
   let target: { playerId: string; distance: number; position: Vector3 } | null = null;
   let closest = maxDistance;
   for (const [playerId, state] of Object.entries(useRemotePlayerStore.getState().players)) {
-    if (!isBattleEnemy(team, useBattleStore.getState().teams[playerId])) continue;
+    if (state.effects?.includes('invisibility') || !isBattleEnemy(team, useBattleStore.getState().teams[playerId])) continue;
     const position = battleTargetPosition(playerId, state);
     offset.copy(position).sub(origin);
     const distance = offset.dot(direction);
@@ -67,7 +67,7 @@ export function damageBattlePlayersInRadius(world: World, position: Vector3, rad
   const team = useBattleStore.getState().team;
   if (!team) return;
   for (const [playerId, state] of Object.entries(useRemotePlayerStore.getState().players)) {
-    if (!isBattleEnemy(team, useBattleStore.getState().teams[playerId])) continue;
+    if (state.effects?.includes('invisibility') || !isBattleEnemy(team, useBattleStore.getState().teams[playerId])) continue;
     const target = battleTargetPosition(playerId, state);
     if (target.distanceTo(position) <= radius) requestBattleHit(playerId, 'bomb');
   }

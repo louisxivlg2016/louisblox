@@ -6,6 +6,7 @@ import { useGameStore } from './store';
 import { Player, PlayerBody, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
 import { world } from './world';
 import { dismount } from './vehicles';
+import { useEffectStore } from './effects';
 
 export type BattleHitKind = 'bullet' | 'rifle' | 'arrow' | 'bomb' | 'melee';
 export type BattleEvent = { id: string; killerName: string; victimName: string };
@@ -66,6 +67,7 @@ export function clearBattle() {
 export function respawnAtBase(world: World, team: BattleTeam | null, position = battleSpawn(team)) {
   const player = world.queryFirst(Player);
   if (!player) return;
+  useEffectStore.getState().reset();
   if (player.get(PlayerMount)?.vehicle) dismount(world);
   player.get(PlayerPosition)?.set(position.x, position.y, position.z);
   player.get(PlayerBody)?.value?.setTranslation(position, true);
@@ -90,6 +92,11 @@ export function chooseBattleTeam(team: 'red' | 'blue' | 'solo') {
 export function requestBattleHit(targetId: string, kind: BattleHitKind) {
   if (socket?.readyState !== WebSocket.OPEN || !useBattleStore.getState().team) return;
   socket.send(JSON.stringify({ type: 'battle-hit', targetId, kind }));
+}
+
+export function requestBattleHeal(amount: number) {
+  if (socket?.readyState !== WebSocket.OPEN || !useBattleStore.getState().team) return;
+  socket.send(JSON.stringify({ type: 'battle-heal', amount }));
 }
 
 export function receiveBattleState(value: unknown) {
@@ -152,4 +159,14 @@ export function receiveBattleRespawn(value: unknown) {
   useBattleStore.setState({ deadUntil });
   if (deathTimer !== undefined) window.clearTimeout(deathTimer);
   deathTimer = window.setTimeout(() => useBattleStore.setState({ deadUntil: 0 }), 1550);
+}
+
+export function receiveBattleKnockback(value: unknown) {
+  if (!value || typeof value !== 'object') return;
+  const direction = (value as { direction?: unknown }).direction;
+  if (!direction || typeof direction !== 'object') return;
+  const { x, y, z } = direction as Record<string, unknown>;
+  if (typeof x !== 'number' || !Number.isFinite(x) || typeof y !== 'number' || !Number.isFinite(y) || typeof z !== 'number' || !Number.isFinite(z)) return;
+  const player = world.queryFirst(Player);
+  player?.get(PlayerVelocity)?.set(x * 7, y, z * 7);
 }

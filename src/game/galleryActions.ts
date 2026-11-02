@@ -12,11 +12,13 @@ import type { GalleryItemId } from './items';
 import { SEA_LEVEL } from './levels';
 import { spawnSapling } from './saplingLifecycle';
 import { useGameStore } from './store';
-import { Animal, Chunk, ChunkData, Player, PlayerBody, PlayerHealth, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
+import { Animal, Chunk, ChunkData, Player, PlayerBody, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
 import { BlockKind, raycastVoxel, voxelKey } from './voxel';
 import { groundAt } from './vehicles';
 import { moveVoxelCharacter } from './systems/collisionSystem';
 import { fireProjectile } from './systems/projectileSystem';
+import { usePotion } from './effects';
+import { useEatingStore } from './eating';
 
 const caughtAnimals = new WeakMap<World, Map<string, AnimalKind>>();
 
@@ -171,21 +173,21 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     return true;
   }
   if (shape === 'potion') {
-    if ((store.itemCounts[selected] ?? 1) <= 0) {
-      store.setNotice(`Tu n’as plus de ${meta.name}.`);
+    if (meta.name === 'Empty Bottle') {
+      if (hit?.block.kind === BlockKind.Water) {
+        const bottle = GALLERY_ITEMS.find((item) => item.name === 'Water Bottle');
+        if (bottle) store.setItemCount(bottle.id, (store.itemCounts[bottle.id] ?? 0) + 1);
+        if (store.gameplayMode === 'survival') store.setItemCount(selected, (store.itemCounts[selected] ?? 1) - 1);
+        store.setNotice('Bouteille remplie avec de l’eau.');
+      } else store.setNotice('Vise de l’eau avec la bouteille vide pour la remplir.');
       return true;
     }
-    const health = playerEntity.get(PlayerHealth);
-    if (!health) return true;
-    if (health.value >= health.max) {
-      store.setNotice('Toutes tes vies sont déjà récupérées.');
-      return true;
+    const result = usePotion(world, meta.name);
+    if (result.used) {
+      if (store.gameplayMode === 'survival') store.setItemCount(selected, (store.itemCounts[selected] ?? 1) - 1);
+      useEatingStore.getState().startEating(selected);
     }
-    const value = Math.min(health.max, health.value + (/milk/i.test(meta.name) ? 10 : /strength/i.test(meta.name) ? 4 : 2));
-    playerEntity.set(PlayerHealth, { value });
-    store.setLives(value);
-    store.setItemCount(selected, (store.itemCounts[selected] ?? 1) - 1);
-    store.setNotice(`${meta.name} bue : tes vies sont restaurées.`);
+    store.setNotice(result.message);
     return true;
   }
   if (shape === 'splash_potion' || shape === 'arrow_potion' || shape === 'firecracker' || shape === 'bomb') {

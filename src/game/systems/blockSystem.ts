@@ -16,6 +16,7 @@ import { getItemMeta, isSword, miningSpeed } from '../items';
 import { changeInventory, hasInventory } from '../inventory';
 import { BlockTarget, Chunk, ChunkData, Player, PlayerPosition, TargetMesh } from '../traits';
 import { BLOCK_HARDNESS, BlockKind, raycastVoxel, voxelKey } from '../voxel';
+import { miningMultiplier } from '../effects';
 
 const direction = new Vector3();
 const origin = new Vector3();
@@ -86,7 +87,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       target.miningProgress = 0;
     }
     target.miningProgress += dt;
-    const progress = Math.min(1, target.miningProgress / (BLOCK_HARDNESS[kind] / miningSpeed(store.selected, kind)));
+    const progress = Math.min(1, target.miningProgress / (BLOCK_HARDNESS[kind] / (miningSpeed(store.selected, kind) * miningMultiplier())));
     if (Math.abs(store.miningProgress - progress) >= 0.01) store.setMiningProgress(progress);
 
     if (progress >= 1) {

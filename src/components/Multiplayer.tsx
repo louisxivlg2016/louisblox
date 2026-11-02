@@ -30,7 +30,8 @@ import { receiveFriendAcceptance, receiveFriendRequest, registerSelfProfile } fr
 import { playerIdentity } from '../game/playerIdentity';
 import { applyProjectileRemoval, applyProjectileSnapshot, isExplosionSnapshot, isProjectileSnapshot, onProjectileSync } from '../game/projectileSync';
 import { clearChat, receiveChatMessage, setChatSocket } from '../game/chat';
-import { clearBattle, receiveBattleElimination, receiveBattleRespawn, receiveBattleState, setBattleLocalPlayer, setBattleSocket, useBattleStore } from '../game/battle';
+import { clearBattle, receiveBattleElimination, receiveBattleKnockback, receiveBattleRespawn, receiveBattleState, setBattleLocalPlayer, setBattleSocket, useBattleStore } from '../game/battle';
+import { activeEffectKeys } from '../game/effects';
 import { battleTeamColor } from '../game/battleArena';
 import { removeBattleTargetPose, updateBattleTargetPose } from '../game/battleCombat';
 import { useEmoteStore } from '../game/emotes';
@@ -99,6 +100,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
 
   useFrame((_, delta) => {
     if (!group.current) return;
+    group.current.visible = !state.effects?.includes('invisibility');
     const amount = 1 - Math.exp(-delta * 14);
     const seatedHeight = state.mounted && state.vehicleKind !== 'horse' ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
     const lyingHeight = !state.mounted && state.emote === 'lie' ? 0.18 : 0;
@@ -425,6 +427,10 @@ export function MultiplayerConnection() {
           receiveBattleRespawn(data);
           return;
         }
+        if (data.type === 'battle-knockback') {
+          receiveBattleKnockback(data);
+          return;
+        }
         if (data.type === 'chat') {
           receiveChatMessage(data);
           return;
@@ -621,7 +627,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, emote: useEmoteStore.getState().current, selected: useGameStore.getState().selected };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, emote: useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

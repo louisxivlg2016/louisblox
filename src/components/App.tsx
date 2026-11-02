@@ -26,8 +26,8 @@ export function App() {
             if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') Object.assign(window, {
               louisbloxRenderer: gl,
               louisbloxDebug: async () => {
-                const [traits, chunks, vehicles, ruins, collision] = await Promise.all([import('../game/traits'), import('../game/chunks'), import('../game/vehicles'), import('../game/ruins'), import('../game/systems/collisionSystem')]);
-                return { world, gl, camera, store: useGameStore, remote: useRemotePlayerStore, battle: useBattleStore, protection: useProtectionStore, mining: () => isMouseDown(0), ...traits, ...chunks, ...vehicles, ...ruins, ...collision };
+                const [traits, chunks, vehicles, ruins, collision, effects] = await Promise.all([import('../game/traits'), import('../game/chunks'), import('../game/vehicles'), import('../game/ruins'), import('../game/systems/collisionSystem'), import('../game/effects')]);
+                return { world, gl, camera, store: useGameStore, remote: useRemotePlayerStore, battle: useBattleStore, protection: useProtectionStore, effects: effects.useEffectStore, effectSystem: effects.effectSystem, hasActiveEffects: effects.hasActiveEffects, mining: () => isMouseDown(0), ...traits, ...chunks, ...vehicles, ...ruins, ...collision };
               },
             });
           }}

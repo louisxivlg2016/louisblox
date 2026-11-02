@@ -10,6 +10,7 @@ import type { AnimalKind } from '../animals';
 import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
 import { damagePlayer } from '../combat';
 import { canSeePlayer } from '../hostility';
+import { hasEffect } from '../effects';
 
 type Motion = {
   yaw: number;
@@ -178,17 +179,17 @@ export function animalSystem(world: World, dt: number) {
     hit.attackIn = Math.max(0, hit.attackIn - stepDt);
     const aggressive = animal.kind === 'zombie' || animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf';
     motion.sightIn -= stepDt;
-    if (aggressive && player && motion.sightIn <= 0) {
+    if (aggressive && player && !hasEffect('invisibility') && motion.sightIn <= 0) {
       motion.hunting = canSeePlayer(world, position, player);
       motion.sightIn = 0.35;
     }
-    if (!aggressive || !player) motion.hunting = false;
+    if (!aggressive || !player || hasEffect('invisibility')) motion.hunting = false;
     if (motion.hunting && player) {
       motion.idle = 0;
       motion.yaw = Math.atan2(player.x - position.x, player.z - position.z);
       motion.turnIn = Math.max(motion.turnIn, 0.5);
     }
-    if (aggressive && playerEntity && player && health && hit.attackIn <= 0 && distanceSquared < 2.2 * 2.2) {
+    if (aggressive && playerEntity && player && health && !hasEffect('invisibility') && hit.attackIn <= 0 && distanceSquared < 2.2 * 2.2) {
       hit.attackIn = 1.2;
       damagePlayer(world, 1);
     }

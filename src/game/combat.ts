@@ -4,14 +4,18 @@ import type { AnimalKind } from './animals';
 import { Animal, AnimalHealth, AnimalHit, AnimalMotion, AnimalPosition, ChunkData, HorseRider, MeatDrop, MeatDropMesh, MeatDropMotion, MeatDropPosition, Player, PlayerHealth } from './traits';
 import { useGameStore } from './store';
 import { ITEM_META } from './items';
+import { absorbWithShield, attackMultiplier, defenceMultiplier, hasEffect } from './effects';
+import { getBlockIndex } from './chunks';
+import { moveVoxelCharacter } from './systems/collisionSystem';
 
-export function damagePlayer(world: World, amount: number) {
+export function damagePlayer(world: World, amount: number, kind: 'physical' | 'fire' = 'physical') {
   const player = world.queryFirst(Player);
   const health = player?.get(PlayerHealth);
-  if (!player || !health) return;
+  if (!player || !health || (kind === 'fire' && hasEffect('heatResistance'))) return;
   const armor = useGameStore.getState().equippedArmor;
   const protection = armor ? ITEM_META[`armor_${armor}`].protection ?? 0 : 0;
-  const absorbed = health.absorbed + amount * (1 - protection);
+  const incoming = absorbWithShield(amount * defenceMultiplier());
+  const absorbed = health.absorbed + incoming * (1 - protection);
   const damage = Math.floor(absorbed);
   player.set(PlayerHealth, { value: Math.max(0, health.value - damage), absorbed: absorbed - damage });
 }
@@ -43,11 +47,15 @@ export function damageAnimal(world: World, target: Entity, amount: number, attac
   const animal = target.get(Animal);
   const position = target.get(AnimalPosition);
   if (!health || !animal || !position || target.get(HorseRider)?.mounted) return false;
-  const remaining = health.value - amount;
+  const remaining = health.value - amount * (attacker ? attackMultiplier() : 1);
   if (remaining > 0) {
     target.set(AnimalHealth, { value: remaining });
     target.set(AnimalHit, { time: 0.24, panic: 2.4, flashed: false });
-    if (attacker) target.set(AnimalMotion, { yaw: Math.atan2(position.x - attacker.x, position.z - attacker.z) });
+    if (attacker) {
+      const yaw = Math.atan2(position.x - attacker.x, position.z - attacker.z);
+      target.set(AnimalMotion, { yaw });
+      if (hasEffect('knockback')) moveVoxelCharacter(getBlockIndex(world), position, { x: Math.sin(yaw) * 2, y: 0, z: Math.cos(yaw) * 2 }, false);
+    }
     return false;
   }
 

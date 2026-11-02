@@ -513,6 +513,9 @@
       .backpack-block { cursor: grab; }
       .backpack-block .item-icon { width: 27px; height: 29px; transform: scale(.82); }
       .game-notice { position: absolute; left: 50%; bottom: 104px; transform: translateX(-50%); max-width: min(620px, 90vw); padding: 8px 13px; color: #fff; text-align: center; font-size: 12px; background: rgba(18,29,23,.78); border: 1px solid rgba(255,255,255,.22); text-shadow: 1px 1px #000; }
+      .active-effects { position: absolute; top: 20px; left: 20px; z-index: 12; display: grid; gap: 5px; max-width: 220px; font-size: 11px; }
+      .active-effects span { padding: 6px 9px; color: #e5f6d6; background: rgba(19, 38, 26, .86); border: 1px solid #71965d; text-shadow: 1px 1px #000; }
+      @media (max-width: 650px) { .active-effects { top: 64px; left: 10px; max-width: 155px; font-size: 9px; } }
       .mobile-controls { position: absolute; inset: 0; z-index: 11; pointer-events: none; }
       .backpack-global-search { padding: 12px 20px 0; }
       .book-panel { max-width: 620px; }

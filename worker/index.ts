@@ -16,6 +16,7 @@ type PlayerState = {
   vehicleKind?: 'car' | 'horse' | 'plane' | 'train' | 'boat';
   emote?: 'sit' | 'lie' | 'wave' | null;
   selected?: string | number;
+  effects?: string[];
 };
 
 type VoxelEdit = number | {
@@ -62,6 +63,9 @@ type PlayerAttachment = {
   worldInitAccepted?: boolean;
   lastChatAt?: number;
   team?: BattleTeam;
+  lastHealAt?: number;
+  regenerationNextAt?: number;
+  poisonNextAt?: number;
 };
 
 interface Env {
@@ -77,6 +81,7 @@ const corsHeaders = {
 const facings = new Set(['north', 'south', 'east', 'west']);
 const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
+const potionEffects = new Set(['speed', 'slowness', 'jump', 'doubleJump', 'haste', 'strength', 'weakness', 'defence', 'regeneration', 'poison', 'invisibility', 'heatResistance', 'knockback']);
 
 function parseState(value: unknown): PlayerState | null {
   if (!value || typeof value !== 'object') return null;
@@ -97,6 +102,7 @@ function parseState(value: unknown): PlayerState | null {
     selected: typeof state.selected === 'string' && state.selected.length > 0 && state.selected.length <= 96
       ? state.selected
       : typeof state.selected === 'number' && Number.isInteger(state.selected) && state.selected >= 0 && state.selected <= 200 ? state.selected : undefined,
+    effects: Array.isArray(state.effects) ? state.effects.filter((effect): effect is string => typeof effect === 'string' && potionEffects.has(effect)).slice(0, potionEffects.size) : undefined,
   };
 }
 
@@ -433,8 +439,29 @@ export class GameRoom extends DurableObject<Env> {
       const team: BattleTeam = requestedTeam === 'solo' ? `solo:${attachment.playerId}` : requestedTeam;
       const changed = attachment.team !== team;
       attachment.team = team;
+      if (changed) {
+        this.battleHealth.set(attachment.playerId, 10);
+        attachment.lastHealAt = undefined;
+        attachment.regenerationNextAt = undefined;
+        attachment.poisonNextAt = undefined;
+        if (attachment.state) attachment.state.effects = [];
+      }
       ws.serializeAttachment(attachment);
-      if (changed) this.battleHealth.set(attachment.playerId, 10);
+      this.broadcastBattleState();
+      return;
+    }
+    if (type === 'battle-heal') {
+      const attachment = this.attachment(ws);
+      const amount = (data as { amount?: unknown }).amount;
+      if (this.gameplayMode !== 'battle' || !attachment?.team || typeof amount !== 'number' || !Number.isInteger(amount) || amount < -3 || amount > 6 || amount === 0) return;
+      const now = Date.now();
+      if (now - (attachment.lastHealAt ?? 0) < 2000) return;
+      const current = this.battleHealth.get(attachment.playerId) ?? 10;
+      const remaining = Math.max(1, Math.min(10, current + amount));
+      if (remaining === current) return;
+      attachment.lastHealAt = now;
+      ws.serializeAttachment(attachment);
+      this.battleHealth.set(attachment.playerId, remaining);
       this.broadcastBattleState();
       return;
     }
@@ -449,14 +476,23 @@ export class GameRoom extends DurableObject<Env> {
       const targetSocket = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
       const target = targetSocket ? this.attachment(targetSocket) : null;
       if (!targetSocket || !target?.team || target.playerId === attacker.playerId || !target.state || !attacker.state) return;
-      if (target.team === attacker.team) return;
+      if (target.team === attacker.team || target.state.effects?.includes('invisibility')) return;
       const distance = Math.hypot(target.state.x - attacker.state.x, target.state.y - attacker.state.y, target.state.z - attacker.state.z);
       if (distance > (kind === 'melee' ? 6 : 90)) return;
       this.battleHits.set(attacker.playerId, now);
-      const damage = kind === 'bomb' ? 3 : kind === 'melee' || kind === 'rifle' ? 2 : 1;
+      const baseDamage = kind === 'bomb' ? 3 : kind === 'melee' || kind === 'rifle' ? 2 : 1;
+      const attack = (attacker.state.effects?.includes('strength') ? 2 : 1) * (attacker.state.effects?.includes('weakness') ? 0.5 : 1);
+      const defence = target.state.effects?.includes('defence') ? 0.5 : 1;
+      const damage = Math.max(1, Math.round(baseDamage * attack * defence));
       const remaining = Math.max(0, (this.battleHealth.get(targetId) ?? 10) - damage);
       if (remaining > 0) {
         this.battleHealth.set(targetId, remaining);
+        if (kind === 'melee' && attacker.state.effects?.includes('knockback')) {
+          const x = target.state.x - attacker.state.x;
+          const z = target.state.z - attacker.state.z;
+          const length = Math.hypot(x, z) || 1;
+          targetSocket.send(JSON.stringify({ type: 'battle-knockback', direction: { x: x / length, y: 4, z: z / length } }));
+        }
         this.broadcastBattleState();
         return;
       }
@@ -472,6 +508,10 @@ export class GameRoom extends DurableObject<Env> {
         victimName: target.name,
       });
       const position = target.team === 'red' ? { x: -16, y: 8.51, z: 0 } : target.team === 'blue' ? { x: 16, y: 8.51, z: 0 } : soloSpawn();
+      target.state.effects = [];
+      target.regenerationNextAt = undefined;
+      target.poisonNextAt = undefined;
+      targetSocket.serializeAttachment(target);
       targetSocket.send(JSON.stringify({ type: 'battle-respawn', team: target.team, position }));
       this.broadcastBattleState();
       return;
@@ -683,7 +723,29 @@ export class GameRoom extends DurableObject<Env> {
     const attachment = this.attachment(ws);
     if (!state || !attachment) return;
     attachment.state = state;
-    ws.serializeAttachment(attachment);
+    if (this.gameplayMode === 'battle' && attachment.team) {
+      const now = Date.now();
+      let changed = false;
+      for (const kind of ['regeneration', 'poison'] as const) {
+        const key = kind === 'regeneration' ? 'regenerationNextAt' : 'poisonNextAt';
+        if (!state.effects?.includes(kind)) {
+          attachment[key] = undefined;
+          continue;
+        }
+        if (now < (attachment[key] ?? 0)) continue;
+        attachment[key] = now + 2000;
+        const health = this.battleHealth.get(attachment.playerId) ?? 10;
+        if (kind === 'regeneration' && health < 10) {
+          this.battleHealth.set(attachment.playerId, health + 1);
+          changed = true;
+        } else if (kind === 'poison' && health > 1) {
+          this.battleHealth.set(attachment.playerId, health - 1);
+          changed = true;
+        }
+      }
+      ws.serializeAttachment(attachment);
+      if (changed) this.broadcastBattleState();
+    }
     this.broadcast({ type: 'state', playerId: attachment.playerId, state }, ws);
     if (Date.now() - attachment.presenceAt > 60000) this.publishPresence(attachment);
   }
