@@ -472,7 +472,7 @@ export class GameRoom extends DurableObject<Env> {
       if (this.gameplayMode !== 'battle' || !attacker?.team || typeof targetId !== 'string') return;
       if (kind !== 'bullet' && kind !== 'rifle' && kind !== 'arrow' && kind !== 'bomb' && kind !== 'melee') return;
       const now = Date.now();
-      if (now - (this.battleHits.get(attacker.playerId) ?? 0) < (kind === 'rifle' ? 80 : 150)) return;
+      if (now - (this.battleHits.get(attacker.playerId) ?? 0) < (kind === 'bomb' ? 0 : kind === 'rifle' ? 80 : 150)) return;
       const targetSocket = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
       const target = targetSocket ? this.attachment(targetSocket) : null;
       if (!targetSocket || !target?.team || target.playerId === attacker.playerId || !target.state || !attacker.state) return;
