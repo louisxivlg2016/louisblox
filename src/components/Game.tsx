@@ -26,6 +26,7 @@ import { RenderQuality } from './RenderQuality';
 import { setMusicMode } from '../game/audio';
 import { useCharacterStore } from '../game/characterStore';
 import { FootballBall } from './FootballBall';
+import { FootballReferee } from './FootballReferee';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -130,7 +131,7 @@ export function Game() {
         <Systems key={`systems-${generation}`} spawn={level.spawn} />
       </Physics>
       <RemoteAvatars key={`multiplayer-${generation}`} />
-      {gameplayMode === 'football' && <FootballBall />}
+      {gameplayMode === 'football' && <><FootballBall /><FootballReferee /></>}
       <Hands />
     </>
   );

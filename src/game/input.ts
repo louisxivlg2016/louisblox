@@ -12,6 +12,7 @@ const look = { x: 0, y: 0 };
 const edgeLook = { x: 0, y: 0 };
 const touchMovement = { x: 0, y: 0 };
 const actions = { place: 0, harvest: 0, tap: 0 };
+const footballActions = { power: 0, tackle: 0, pass: 0, shot: 0 };
 const TOUCH_MINE_DELAY = 400;
 let lastSpacePress = 0;
 let flightToggles = 0;
@@ -33,6 +34,13 @@ let touchGestureMoved = false;
 let twoFingerGesture = false;
 
 const hasMouseControl = () => document.pointerLockElement !== null || pointerLockFallback;
+
+function captureFootballKey(code: string, repeat: boolean) {
+  const game = useGameStore.getState();
+  if (game.gameplayMode !== 'football' || game.mode !== 'play' || !['KeyE', 'KeyT', 'KeyG'].includes(code)) return false;
+  if (!repeat) footballActions[code === 'KeyE' ? 'power' : code === 'KeyT' ? 'tackle' : 'pass'] += 1;
+  return true;
+}
 
 function resetEdgeLook() {
   edgeLook.x = 0;
@@ -79,6 +87,10 @@ export function clearInput(preserveCaptureClick?: boolean | Event) {
   actions.place = 0;
   actions.harvest = 0;
   actions.tap = 0;
+  footballActions.power = 0;
+  footballActions.shot = 0;
+  footballActions.tackle = 0;
+  footballActions.pass = 0;
   lastSpacePress = 0;
   flightToggles = 0;
 }
@@ -92,6 +104,10 @@ export function initInput() {
     const editable = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable);
     if (editable && event.code !== 'Escape') {
       keys.delete(event.code);
+      return;
+    }
+    if (captureFootballKey(event.code, event.repeat)) {
+      event.preventDefault();
       return;
     }
     if (event.code === 'Tab') {
@@ -317,6 +333,10 @@ export function initInput() {
     if (capabilities?.firesTouchEvents) return;
     if (!hasMouseControl() || useGameStore.getState().mode !== 'play') return;
     if (document.pointerLockElement === null && event.target instanceof Element && event.target.closest('button')) return;
+    if (event.button === 0 && useGameStore.getState().gameplayMode === 'football') {
+      footballActions.shot += 1;
+      return;
+    }
     mouseButtons.add(event.button);
     if (event.button === 0) miningLatched = !miningLatched;
     if (event.button === 2) actions.place += 1;
@@ -406,6 +426,7 @@ export function setTouchMovement(x: number, y: number) {
 }
 
 export function setTouchKey(code: string, down: boolean) {
+  if (down && captureFootballKey(code, false)) return;
   if (down) touchKeys.add(code);
   else touchKeys.delete(code);
 }
@@ -420,6 +441,10 @@ export function requestFlightToggle() {
 }
 
 export function queuePlacement() {
+  if (useGameStore.getState().gameplayMode === 'football') {
+    footballActions.shot += 1;
+    return;
+  }
   actions.place += 1;
 }
 
@@ -442,4 +467,10 @@ export function consumeActions() {
   actions.harvest = 0;
   actions.tap = 0;
   return result;
+}
+
+export function consumeFootballAction() {
+  const action = (['power', 'tackle', 'pass', 'shot'] as const).find((name) => footballActions[name] > 0);
+  if (action) footballActions[action] -= 1;
+  return action ?? null;
 }

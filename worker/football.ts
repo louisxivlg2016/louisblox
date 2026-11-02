@@ -153,7 +153,7 @@ export class FootballEngine {
     this.lastTouchTeam = player.team;
   }
 
-  private kick(player: PlayerAttachment, power: boolean) {
+  private kick(player: PlayerAttachment, style: 'shot' | 'power' | 'pass' | 'tackle' = 'shot') {
     if (this.phase !== 'running' || !player.state || !this.canPlay(player)) return;
     if (this.penaltyShooterId && !this.lastKick && player.playerId !== this.penaltyShooterId) return;
     const distance = Math.hypot(player.state.x - this.ball.x, player.state.z - this.ball.z, player.state.y + 0.5 - this.ball.y);
@@ -161,13 +161,13 @@ export class FootballEngine {
     const yaw = player.state.yaw;
     const pitch = player.state.pitch;
     const horizontal = Math.cos(pitch);
-    const speed = power ? 18 : 12;
+    const speed = style === 'power' ? 18 : style === 'shot' ? 12 : style === 'tackle' ? 9 : 7;
     this.ball.vx = -Math.sin(yaw) * horizontal * speed;
     this.ball.vz = -Math.cos(yaw) * horizontal * speed;
-    this.ball.vy = Math.max(2.2, Math.sin(pitch) * speed + (power ? 3 : 0));
+    this.ball.vy = style === 'pass' ? Math.max(1.2, Math.sin(pitch) * speed) : Math.max(2.2, Math.sin(pitch) * speed + (style === 'power' ? 3 : 0));
     this.lastTouchTeam = player.team as Team;
     this.lastKick = { playerId: player.playerId, team: player.team as Team, offside: this.isOffside(player) };
-    this.notice = power ? 'Tir puissant' : 'Tir';
+    this.notice = style === 'power' ? 'Tir puissant' : style === 'pass' ? 'Passe' : style === 'tackle' ? 'Tacle réussi' : 'Tir';
     this.update(true);
   }
 
@@ -246,6 +246,20 @@ export class FootballEngine {
     }
     this.whistleSound(card.redUntil > Date.now() ? 'long' : 'short');
     this.update(true);
+  }
+
+  private tackle(attacker: PlayerAttachment, targetId: unknown, violent: boolean) {
+    if (this.phase !== 'running' || !attacker.state || !attacker.team || typeof targetId !== 'string') return;
+    const target = this.room.players().find(({ attachment }) => attachment.playerId === targetId)?.attachment;
+    if (!target?.state || !target.team || target.playerId === attacker.playerId || target.team === attacker.team) return;
+    const targetDistance = Math.hypot(target.state.x - attacker.state.x, target.state.z - attacker.state.z);
+    const ballAtTarget = Math.hypot(target.state.x - this.ball.x, target.state.z - this.ball.z) < 1.8;
+    const ballInReach = Math.hypot(attacker.state.x - this.ball.x, attacker.state.z - this.ball.z, attacker.state.y + 0.5 - this.ball.y) <= 3;
+    if (!violent && targetDistance <= 3 && ballAtTarget && ballInReach) {
+      this.kick(attacker, 'tackle');
+      return;
+    }
+    this.foul(attacker, targetId, violent);
   }
 
   tick(player: PlayerAttachment) {
@@ -348,12 +362,15 @@ export class FootballEngine {
   handle(player: PlayerAttachment, data: Record<string, unknown>) {
     if (this.room.mode() !== 'football') return false;
     if (data.type === 'football-kick') {
-      this.kick(player, data.power === true);
+      this.kick(player, data.power === true ? 'power' : 'shot');
+      return true;
+    }
+    if (data.type === 'football-pass') {
+      this.kick(player, 'pass');
       return true;
     }
     if (data.type === 'football-tackle') {
-      if (typeof data.targetId === 'string') this.foul(player, data.targetId);
-      else this.kick(player, false);
+      this.tackle(player, data.targetId, data.violent === true);
       return true;
     }
     if (data.type === 'football-foul') {

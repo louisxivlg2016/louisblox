@@ -32,6 +32,7 @@ function HoldButton({ code, label, onDoubleTap }: { code: string; label: string;
 export function TouchControls() {
   const joystick = useRef<HTMLDivElement>(null);
   const knob = useRef<HTMLDivElement>(null);
+  const football = useGameStore((state) => state.gameplayMode === 'football');
 
   const moveJoystick = (event: ReactPointerEvent<HTMLDivElement>) => {
     const rect = joystick.current!.getBoundingClientRect();
@@ -54,7 +55,7 @@ export function TouchControls() {
 
   return (
     <div className="mobile-controls">
-      <div className="touch-gesture-hint">Appui court : poser · Glisser : caméra · Maintenir : casser</div>
+      <div className="touch-gesture-hint">{football ? 'Appui court : tir · Glisser : caméra' : 'Appui court : poser · Glisser : caméra · Maintenir : casser'}</div>
       <div
         ref={joystick}
         className="touch-joystick"
@@ -74,6 +75,11 @@ export function TouchControls() {
       >
         <div ref={knob} className="touch-knob" />
       </div>
+      {football && <div className="football-touch-actions" aria-label="Actions de football">
+        <HoldButton code="KeyE" label="Tir puissant" />
+        <HoldButton code="KeyT" label="Tacler" />
+        <HoldButton code="KeyG" label="Passe" />
+      </div>}
       <div className="touch-actions">
         <HoldButton code="Space" label="Sauter" onDoubleTap={requestFlightToggle} />
         <button

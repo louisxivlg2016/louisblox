@@ -60,7 +60,7 @@ export function FootballHud() {
         {phase === 'countdown' && <span>Départ dans {Math.max(0, Math.ceil((phaseUntil - Date.now()) / 1000))}</span>}
         {phase === 'penalty' && <span>Penalty {penaltyTeam === 'red' ? 'rouge' : 'bleu'} · le tireur et le gardien se placent</span>}
         {isFootballFrozen() && phase !== 'finished' && <span>Attends le coup de sifflet</span>}
-        <small>Clic gauche : tir / tacle · sprint + saut + clic : tir puissant · clic droit ou E : tacler</small>
+        <small>Clic gauche : tir · E : tir puissant · T ou clic droit : tacler · G : passer</small>
       </div>}
       {card && card.yellow > 0 && <div className={`football-card-notice ${card.redUntil > Date.now() ? 'red' : 'yellow'}`} role="status">{card.redUntil > Date.now() ? `Carton rouge · exclusion ${Math.ceil((card.redUntil - Date.now()) / 1000)} s` : `Carton jaune · ${card.yellow}`}</div>}
       {winner && <div className="pirate-winner">Victoire de l’équipe {winner === 'red' ? 'rouge' : 'bleue'} !</div>}

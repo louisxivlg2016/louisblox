@@ -77,8 +77,8 @@ export function Hud() {
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
           <button className="backpack-toggle" onClick={openBackpack} aria-label="Sac à dos"><img src={backpackButtonUrl} alt="" /></button>
           <button className="shop-toggle" onClick={openShop} aria-label="Boutique"><img src={shopButtonUrl} alt="" /></button>
-          <button className="teleport-toggle" onClick={openTeleport}>Téléportation · T</button>
-          <div className="action-hint">Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</div>
+          {gameplayMode !== 'football' && <button className="teleport-toggle" onClick={openTeleport}>Téléportation · T</button>}
+          <div className="action-hint">{gameplayMode === 'football' ? 'Clic gauche : tir · E : tir puissant · T : tacler · G : passer' : <>Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</>}</div>
           {notice && <div className="game-notice">{notice}</div>}
           <EffectsHud />
           <TouchControls />

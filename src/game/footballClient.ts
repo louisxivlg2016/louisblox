@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Camera } from 'three';
-import { isDown, isMouseButtonDown, stopMining } from './input';
+import { consumeFootballAction, stopMining } from './input';
 import { useBattleStore, respawnAtBase } from './battle';
 import { useGameStore } from './store';
 import { useRemotePlayerStore } from './multiplayerStore';
@@ -54,9 +54,12 @@ export function kickFootball(power = false) {
   send({ type: 'football-kick', power });
 }
 
+export function passFootball() {
+  send({ type: 'football-pass' });
+}
+
 export function tackleFootball(targetId?: string, violent = false) {
-  if (targetId) send({ type: 'football-foul', targetId, violent });
-  else send({ type: 'football-tackle' });
+  send({ type: 'football-tackle', targetId, violent });
 }
 
 export function refereeWhistle() {
@@ -148,27 +151,36 @@ export function footballControlSystem(world: World, camera: Camera, dt: number, 
   stopMining();
   const cooldown = Math.max(0, (cooldowns.get(world) ?? 0) - dt);
   cooldowns.set(world, cooldown);
-  if (cooldown > 0 || (taps === 0 && actions.place + actions.harvest === 0 && !isMouseButtonDown(0)) || isFootballFrozen()) return true;
+  if (cooldown > 0 || isFootballFrozen()) return true;
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   const state = world.queryFirst(Player)?.get(PlayerState);
   if (!player || !state) return true;
+  const control = consumeFootballAction();
+  if (taps === 0 && actions.place === 0 && control === null) return true;
   origin.copy(player);
   origin.y += 1.1;
   camera.getWorldDirection(direction);
-  const localId = useBattleStore.getState().localPlayerId;
-  const localTeam = useBattleStore.getState().team;
-  let targetId: string | undefined;
-  let best = 4.5;
-  for (const [id, remote] of Object.entries(useRemotePlayerStore.getState().players)) {
-    if (id === localId || useBattleStore.getState().teams[id] === localTeam) continue;
-    toward.set(remote.x, remote.y + 1, remote.z).sub(origin);
-    const distance = toward.length();
-    if (distance > best || toward.normalize().dot(direction) < 0.65) continue;
-    best = distance;
-    targetId = id;
+  if (control === 'power') {
+    kickFootball(true);
+  } else if (control === 'tackle' || actions.place > 0) {
+    const localId = useBattleStore.getState().localPlayerId;
+    const localTeam = useBattleStore.getState().team;
+    let targetId: string | undefined;
+    let best = 4.5;
+    for (const [id, remote] of Object.entries(useRemotePlayerStore.getState().players)) {
+      if (id === localId || useBattleStore.getState().teams[id] === localTeam) continue;
+      toward.set(remote.x, remote.y + 1, remote.z).sub(origin);
+      const distance = toward.length();
+      if (distance > best || toward.normalize().dot(direction) < 0.65) continue;
+      best = distance;
+      targetId = id;
+    }
+    tackleFootball(targetId);
+  } else if (control === 'pass') {
+    passFootball();
+  } else {
+    kickFootball(false);
   }
-  const power = (isDown('ShiftLeft') || isDown('ShiftRight')) && (isDown('Space') || state.grounded === false);
-  tackleFootball(targetId, targetId !== undefined && power);
   cooldowns.set(world, 0.35);
   return true;
 }
