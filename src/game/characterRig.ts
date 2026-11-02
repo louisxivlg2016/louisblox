@@ -1,0 +1,87 @@
+import { Box3, BufferGeometry, Group, MathUtils, Mesh, Vector3 } from 'three';
+import type { Material, Object3D } from 'three';
+import { SkeletonUtils } from 'three-stdlib';
+import type { OutfitKind } from './outfits';
+
+type Part = 'body' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
+type Rig = Partial<Record<Exclude<Part, 'body'>, Group>>;
+
+function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean) {
+  const geometry = source.clone().applyMatrix4(matrix);
+  const position = geometry.getAttribute('position');
+  const index = geometry.index;
+  const indices: Record<Part, number[]> = { body: [], leftArm: [], rightArm: [], leftLeg: [], rightLeg: [] };
+  const count = index?.count ?? position.count;
+  for (let offset = 0; offset < count; offset += 3) {
+    const a = index?.getX(offset) ?? offset;
+    const b = index?.getX(offset + 1) ?? offset + 1;
+    const c = index?.getX(offset + 2) ?? offset + 2;
+    const x = (position.getX(a) + position.getX(b) + position.getX(c)) / 3;
+    const y = (position.getY(a) + position.getY(b) + position.getY(c)) / 3;
+    const side = x < 0 ? 'left' : 'right';
+    let part: Part = 'body';
+    if (Math.abs(x) > width * 0.25 && y > floor + height * 0.28 && y < floor + height * 0.82) part = `${side}Arm`;
+    else if (legs && Math.abs(x) < width * 0.28 && y < floor + height * 0.48) part = `${side}Leg`;
+    indices[part].push(a, b, c);
+  }
+  return { geometry, indices, material };
+}
+
+export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind, 'default'>, scale: number) {
+  const scene = SkeletonUtils.clone(source);
+  scene.updateMatrixWorld(true);
+  const bounds = new Box3().setFromObject(scene);
+  const width = bounds.max.x - bounds.min.x;
+  const height = bounds.max.y - bounds.min.y;
+  const floor = bounds.min.y;
+  const pieces: Array<ReturnType<typeof splitGeometry>> = [];
+  scene.traverse((object) => {
+    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, outfit !== 'princess'));
+  });
+  const root = new Group();
+  const rig: Rig = {};
+  const names: Record<Part, string> = { body: 'body', leftArm: 'left-arm', rightArm: 'right-arm', leftLeg: 'left-leg', rightLeg: 'right-leg' };
+  const parts: Part[] = ['body', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg'];
+  for (const part of parts) {
+    for (const piece of pieces) {
+      const indices = piece.indices[part];
+      if (indices.length === 0) continue;
+      const subset = piece.geometry.clone();
+      subset.setIndex(indices);
+      const mesh = new Mesh(subset, piece.material);
+      if (part === 'body') {
+        root.add(mesh);
+      } else {
+        const side = part.startsWith('left') ? -1 : 1;
+        const pivotY = floor + height * (part.endsWith('Arm') ? 0.7 : 0.48);
+        const pivotX = side * width * (part.endsWith('Arm') ? 0.27 : 0.12);
+        subset.translate(-pivotX, -pivotY, 0);
+        const pivot = new Group();
+        pivot.name = names[part];
+        pivot.position.set(pivotX, pivotY, 0);
+        pivot.add(mesh);
+        root.add(pivot);
+        rig[part] = pivot;
+      }
+    }
+  }
+  root.userData.rig = rig;
+  const center = bounds.getCenter(new Vector3());
+  root.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
+  return root;
+}
+
+function turn(object: Group | undefined, target: number, delta: number) {
+  if (object) object.rotation.x = MathUtils.damp(object.rotation.x, target, 14, delta);
+}
+
+export function animateCharacterRig(root: Object3D, time: number, walking: boolean, jumping: boolean, seated: boolean, delta: number) {
+  const rig = root.userData.rig as Rig | undefined;
+  if (!rig) return;
+  const moving = walking && !jumping && !seated;
+  const swing = moving ? Math.sin(time * 8) * 0.42 : 0;
+  turn(rig.leftArm, swing, delta);
+  turn(rig.rightArm, -swing, delta);
+  turn(rig.leftLeg, -swing * 0.85, delta);
+  turn(rig.rightLeg, swing * 0.85, delta);
+}

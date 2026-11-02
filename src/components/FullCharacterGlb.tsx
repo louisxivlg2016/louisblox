@@ -1,9 +1,9 @@
 import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { useAnimations, useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { Box3, LoopRepeat, Vector3 } from 'three';
+import { LoopRepeat } from 'three';
 import type { Object3D } from 'three';
-import { SkeletonUtils } from 'three-stdlib';
+import { animateCharacterRig, createCharacterRig } from '../game/characterRig';
 import type { Ref } from 'react';
 import type { OutfitKind } from '../game/outfits';
 import { world } from '../game/world';
@@ -30,13 +30,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
   const current = useRef('');
   const { scene, animations } = useGLTF(models[outfit]);
   const scale = 2.05 / fullCharacterHeights[outfit];
-  const character = useMemo(() => {
-    const model = SkeletonUtils.clone(scene);
-    const bounds = new Box3().setFromObject(model);
-    const center = bounds.getCenter(new Vector3());
-    model.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
-    return model;
-  }, [scene, scale]);
+  const character = useMemo(() => createCharacterRig(scene, outfit, scale), [scene, outfit, scale]);
   const { actions } = useAnimations(animations, group);
   const metadata = useMemo(() => ({ outfit, source: 'Hunyuan', whole: true }), [outfit]);
 
@@ -85,6 +79,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
       group.current.position.y = name === 'run' ? Math.abs(Math.sin(time * 8)) * 0.045 : name === 'idle' ? Math.sin(time * 2) * 0.012 : 0;
       group.current.rotation.z = name === 'run' ? Math.sin(time * 8) * 0.035 : 0;
       group.current.rotation.x = name === 'jump' ? -0.12 : 0;
+      animateCharacterRig(character, time, walking, jumping, sitting, Math.min(delta, 0.05));
     } else {
       applyCharacterGesture(character, emote, sitting, !walking && !jumping, performance.now() / 1000, delta);
     }
