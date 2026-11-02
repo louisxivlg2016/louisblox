@@ -379,7 +379,8 @@ export async function requestPlay() {
 }
 
 export const isDown = (code: string) => keys.has(code) || touchKeys.has(code);
-export const isMouseDown = (button: number) => mouseButtons.has(button) || touchMouseButtons.has(button) || (button === 0 && miningLatched);
+export const isMouseButtonDown = (button: number) => mouseButtons.has(button) || touchMouseButtons.has(button);
+export const isMouseDown = (button: number) => isMouseButtonDown(button) || (button === 0 && miningLatched);
 export const getTouchMovement = () => touchMovement;
 export const getEdgeLook = () => edgeLook;
 

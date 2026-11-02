@@ -53,7 +53,7 @@ export function projectileSystem(world: World, dt: number) {
       next.copy(position).add(step);
       const direction = step.normalize();
       const hit = raycastVoxel(blocks, position, direction, distance);
-      const playerTarget = findBattleTarget(world, position, direction, distance + 0.7);
+      const playerTarget = findBattleTarget(world, position, direction, distance + 1.2);
       if (playerTarget && (!hit || playerTarget.distance < hit.distance)) {
         if (projectile.kind === 'bomb') {
           position.copy(playerTarget.position);

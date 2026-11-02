@@ -4,7 +4,7 @@ import type { Camera } from 'three';
 import { damageAnimal, findAnimalTarget } from '../combat';
 import { findBattleTarget } from '../battleCombat';
 import { requestBattleHit } from '../battle';
-import { isMouseDown, stopMining } from '../input';
+import { isMouseButtonDown, stopMining } from '../input';
 import { getItemMeta, isSword } from '../items';
 import { hasInventory } from '../inventory';
 import { useGameStore } from '../store';
@@ -27,7 +27,7 @@ export function animalCombatSystem(world: World, camera: Camera, dt: number, tou
   camera.getWorldDirection(direction);
   const enemy = findBattleTarget(world, origin, direction, 4.5);
   if (enemy) {
-    if ((touchTaps > 0 || isMouseDown(0)) && cooldown <= 0) {
+    if ((touchTaps > 0 || isMouseButtonDown(0)) && cooldown <= 0) {
       requestBattleHit(enemy.playerId, 'melee');
       cooldowns.set(world, typeof selected === 'string' ? getItemMeta(selected).cooldown ?? 0.35 : 0.35);
     }
@@ -38,7 +38,7 @@ export function animalCombatSystem(world: World, camera: Camera, dt: number, tou
   if (touchTaps > 0) {
     if (damageAnimal(world, target.entity, target.health, player)) stopMining();
     cooldowns.set(world, 0.35);
-  } else if (isMouseDown(0) && cooldown <= 0) {
+  } else if (isMouseButtonDown(0) && cooldown <= 0) {
     if (damageAnimal(world, target.entity, 1, player)) stopMining();
     cooldowns.set(world, typeof selected === 'string' ? getItemMeta(selected).cooldown ?? 0.35 : 0.35);
   }

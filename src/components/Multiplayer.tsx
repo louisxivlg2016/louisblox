@@ -32,6 +32,7 @@ import { applyProjectileRemoval, applyProjectileSnapshot, isExplosionSnapshot, i
 import { clearChat, receiveChatMessage, setChatSocket } from '../game/chat';
 import { clearBattle, receiveBattleElimination, receiveBattleRespawn, receiveBattleState, setBattleLocalPlayer, setBattleSocket, useBattleStore } from '../game/battle';
 import { battleTeamColor } from '../game/battleArena';
+import { removeBattleTargetPose, updateBattleTargetPose } from '../game/battleCombat';
 import { useEmoteStore } from '../game/emotes';
 import { receiveAppleGift } from '../game/gifts';
 import { applyProtection, isWorldProtection, setProtectionSocket, useProtectionStore } from '../game/protection';
@@ -94,6 +95,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
   const legs = current.clothingColor ?? (outfit === 'default' ? (girl ? '#4b405e' : '#354d6d') : OUTFITS[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
   const team = useBattleStore((state) => state.teams[playerId]);
+  useEffect(() => () => removeBattleTargetPose(playerId), [playerId]);
 
   useFrame((_, delta) => {
     if (!group.current) return;
@@ -127,6 +129,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
       headRef.current.rotation.y += (headYaw - headRef.current.rotation.y) * amount;
       headRef.current.rotation.x += (state.pitch - headRef.current.rotation.x) * amount;
     }
+    updateBattleTargetPose(playerId, group.current.position, group.current.rotation.y, group.current.rotation.x < -Math.PI / 4);
   });
 
   const headContent = (

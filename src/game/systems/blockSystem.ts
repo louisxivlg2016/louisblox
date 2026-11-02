@@ -100,7 +100,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       return;
     }
   } else {
-    stopMining();
+    if (canMine) stopMining();
     target.miningKey = '';
     target.miningProgress = 0;
     if (store.miningProgress !== 0) store.setMiningProgress(0);

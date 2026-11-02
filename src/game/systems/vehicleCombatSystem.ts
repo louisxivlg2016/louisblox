@@ -1,7 +1,7 @@
 import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Camera } from 'three';
-import { isMouseDown, stopMining } from '../input';
+import { isMouseButtonDown, stopMining } from '../input';
 import { useGameStore } from '../store';
 import { Player, PlayerMount, PlayerPosition, Vehicle, VehicleHealth, VehiclePosition } from '../traits';
 import { destroyVehicle } from '../vehicleSync';
@@ -16,7 +16,7 @@ export function vehicleCombatSystem(world: World, camera: Camera, dt: number, to
   cooldowns.set(world, cooldown);
   const playerEntity = world.queryFirst(Player);
   const player = playerEntity?.get(PlayerPosition);
-  if (!player || (touchTaps === 0 && !isMouseDown(0))) return false;
+  if (!player || (touchTaps === 0 && !isMouseButtonDown(0))) return false;
   origin.copy(player);
   origin.y += 1.62;
   camera.getWorldDirection(direction);
