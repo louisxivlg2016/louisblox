@@ -27,6 +27,7 @@ import { PiratesHud } from './PiratesHud';
 import { usePirateStore } from '../game/piratesClient';
 import { FootballHud } from './FootballHud';
 import { MazeHud } from './MazeHud';
+import { FriendRequestDialog } from './FriendRequestDialog';
 
 export function Hud() {
   const mode = useGameStore((state) => state.mode);
@@ -122,6 +123,7 @@ export function Hud() {
       <SignPanel />
       <SeatChoicePanel />
       <TeleportRequestDialog />
+      <FriendRequestDialog />
       {sleepProgress !== null && (
         <div className="sleep-overlay" style={{ backgroundColor: `rgba(0, 0, 0, ${0.05 + sleepProgress * 0.35})` }}>
           <span className="sleep-zzz" aria-hidden="true">Z Z Z</span>
