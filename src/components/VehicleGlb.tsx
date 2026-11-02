@@ -1,6 +1,7 @@
 import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Box3, Mesh, NearestFilter, Vector3 } from 'three';
+import { Box3, CanvasTexture, Mesh, NearestFilter, SRGBColorSpace, Vector3 } from 'three';
+import type { Texture } from 'three';
 import raceCarUrl from '../../assets/models/raceCar.glb';
 import blueCarUrl from '../../assets/models/blueCar.glb';
 import airplaneUrl from '../../assets/models/airplane.glb';
@@ -16,16 +17,39 @@ const models = {
 };
 const dimensions = {
   raceCar: [1.8, 1.15, 3.3],
-  blueCar: [1.9, 1.6, 3.6],
+  blueCar: [2.7, 2.5, 5],
   airplane: [7.2 * PLANE_SCALE, 2.5 * PLANE_SCALE, 8.2 * PLANE_SCALE],
   train: [2.8, 3.2, 10.5],
 } as const;
+
+function blueCarTexture(source: Texture) {
+  const image = source.image as HTMLImageElement | HTMLCanvasElement | ImageBitmap;
+  const canvas = document.createElement('canvas');
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const context = canvas.getContext('2d')!;
+  context.drawImage(image, 0, 0);
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+  for (let index = 0; index < pixels.data.length; index += 4) {
+    const red = pixels.data[index];
+    if (red < pixels.data[index + 1] + 3 || red < pixels.data[index + 2] + 3) continue;
+    const brightness = Math.max(red, pixels.data[index + 1], pixels.data[index + 2]) / 255;
+    pixels.data[index] = 52 * brightness;
+    pixels.data[index + 1] = 124 * brightness;
+    pixels.data[index + 2] = 208 * brightness;
+  }
+  context.putImageData(pixels, 0, 0);
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  return texture;
+}
 
 function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'boat'; color: string; interior: boolean }) {
   const modelKind = kind === 'car' && color.toLowerCase() === '#347cd0' ? 'blueCar' : kind === 'car' ? 'raceCar' : kind === 'plane' ? 'airplane' : 'train';
   const { scene } = useGLTF(models[modelKind]);
   const model = useMemo(() => {
     const clone = scene.clone(true);
+    clone.name = modelKind;
     clone.traverse((object) => {
       if (!(object instanceof Mesh)) return;
       object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
@@ -37,6 +61,7 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'b
           material.depthWrite = false;
         }
         if (!material.map) continue;
+        if (modelKind === 'blueCar') material.map = blueCarTexture(material.map);
         material.map.magFilter = NearestFilter;
         material.map.minFilter = NearestFilter;
         material.map.generateMipmaps = false;

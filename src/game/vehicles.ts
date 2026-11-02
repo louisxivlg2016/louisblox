@@ -56,7 +56,7 @@ export function spawnCar(world: World, x: number, y: number, z: number, color = 
 export const PLANE_SCALE = 1.75;
 
 export function seatOffset(kind: 'car' | 'plane' | 'train' | 'boat', role: 'driver' | 'passenger', seat = 0): [number, number, number] {
-  if (kind === 'car') return [0, 0.55, 0];
+  if (kind === 'car') return [-0.35, 0.45, 0];
   if (kind === 'boat') return role === 'driver' ? [0, 0.56, -0.72] : [0, 0.56, 0.72];
   if (kind === 'plane') {
     const [x, y, z] = role === 'driver' ? [-0.5, 1.1, -2.4] : [0.55, 1.1, 0.3 + seat * 1.4];
@@ -280,7 +280,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
         if ((motion.speed !== 0 || vertical !== 0) && !movePlane(world, position, motion.yaw, motion.speed, dt, vertical)) motion.speed = 0;
       } else if (vehicle.kind === 'boat') {
         if (motion.speed !== 0 && !moveBoat(world, position, motion.yaw, motion.speed, dt)) motion.speed = 0;
-      } else if (motion.speed !== 0 && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' ? 2.55 : 1.55)) {
+      } else if (motion.speed !== 0 && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' || vehicle.kind === 'car' ? 2.55 : 1.55)) {
         motion.speed = 0;
       }
     }
