@@ -64,6 +64,8 @@ export function parseSocialPlayer(value: unknown): SocialPlayer | null {
   };
 }
 
+type SharedWorld = { id: string; name: string; ownerId: string; ownerName: string; gameplayMode: string; template: string; players: number; updatedAt: number };
+
 type PendingInvitation = {
   kind: 'friend-request' | 'friend-accept';
   requestId: string;
@@ -76,24 +78,31 @@ export class PlayerDirectory extends DurableObject<Env> {
   private onlinePlayers = new Map<string, SocialPlayer>();
   private invitations = new Map<string, PendingInvitation[]>();
   private nameOwners = new Map<string, string>();
+  private sharedWorlds = new Map<string, SharedWorld>();
   private ready?: Promise<void>;
 
   private async ensureReady() {
     this.ready ??= this.ctx.blockConcurrencyWhile(async () => {
-      const [known, invitations, owners] = await Promise.all([
+      const [known, invitations, owners, worlds] = await Promise.all([
         this.ctx.storage.get<Array<[string, SocialPlayer]>>('known-v1'),
         this.ctx.storage.get<Array<[string, PendingInvitation[]]>>('invitations-v1'),
         this.ctx.storage.get<Array<[string, string]>>('names-v1'),
+        this.ctx.storage.get<Array<[string, SharedWorld]>>('worlds-v1'),
       ]);
       this.knownPlayers = new Map(known ?? []);
       this.invitations = new Map(invitations ?? []);
       this.nameOwners = new Map(owners ?? []);
+      this.sharedWorlds = new Map(worlds ?? []);
       for (const player of this.knownPlayers.values()) {
         const key = player.name.trim().toLocaleLowerCase();
         if (!this.nameOwners.has(key)) this.nameOwners.set(key, player.playerId);
       }
     });
     await this.ready;
+  }
+
+  private saveWorlds() {
+    return this.ctx.storage.put('worlds-v1', [...this.sharedWorlds]);
   }
 
   private saveKnown() {
@@ -217,6 +226,34 @@ export class PlayerDirectory extends DurableObject<Env> {
       await this.saveInvitations();
       const delivered = await this.deliver(url.pathname, target.room, { targetId: target.playerId, requestId, from });
       return json({ sent: true, delivered });
+    }
+    if (url.pathname === '/worlds' && request.method === 'GET') {
+      return json({ worlds: [...this.sharedWorlds.values()].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 100) });
+    }
+    if (url.pathname === '/world' && request.method === 'POST') {
+      const data = await request.json() as Record<string, unknown>;
+      if (typeof data.id !== 'string' || data.id.length < 1 || data.id.length > 80 || typeof data.ownerId !== 'string' || data.ownerId.length > 80 || typeof data.gameplayMode !== 'string') return json({ error: 'Monde invalide' }, 400);
+      const id = data.id;
+      const world: SharedWorld = {
+        id,
+        name: typeof data.name === 'string' && data.name.trim() ? data.name.trim().slice(0, 80) : id,
+        ownerId: data.ownerId,
+        ownerName: typeof data.ownerName === 'string' && data.ownerName.trim() ? data.ownerName.trim().slice(0, 24) : 'Créateur',
+        gameplayMode: data.gameplayMode,
+        template: data.template === 'city-ancient' || data.template === 'city-modern' ? data.template : 'nature',
+        players: typeof data.players === 'number' && Number.isFinite(data.players) ? Math.max(0, Math.floor(data.players)) : 0,
+        updatedAt: now,
+      };
+      this.sharedWorlds.set(id, world);
+      await this.saveWorlds();
+      return json({ ok: true });
+    }
+    if (url.pathname === '/world' && request.method === 'DELETE') {
+      const data = await request.json() as { id?: unknown };
+      if (typeof data.id !== 'string') return json({ error: 'Monde invalide' }, 400);
+      this.sharedWorlds.delete(data.id);
+      await this.saveWorlds();
+      return json({ deleted: true });
     }
     return json({ error: 'Not found' }, 404);
   }

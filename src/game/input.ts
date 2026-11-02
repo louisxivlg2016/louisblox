@@ -355,7 +355,11 @@ export function initInput() {
 }
 
 export async function requestPlay() {
-  const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas canvas');
+  let canvas = document.querySelector<HTMLCanvasElement>('#game-canvas canvas, canvas#game-canvas');
+  if (!canvas) {
+    await new Promise<void>((resolve) => { requestAnimationFrame(() => resolve()); });
+    canvas = document.querySelector<HTMLCanvasElement>('#game-canvas canvas, canvas#game-canvas');
+  }
   if (!canvas) return;
 
   startMusic();
@@ -370,8 +374,14 @@ export async function requestPlay() {
 
   pointerLockFallback = false;
   try {
-    await canvas.requestPointerLock();
+    await Promise.race([
+      Promise.resolve(canvas.requestPointerLock()),
+      new Promise<never>((_, reject) => { window.setTimeout(() => reject(new Error('Verrouillage de la souris indisponible')), 600); }),
+    ]);
   } catch {
+    pointerLockFallback = true;
+  }
+  if (!document.pointerLockElement) {
     pointerLockFallback = true;
     clearInput(true);
     useGameStore.getState().setMode('play');

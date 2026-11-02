@@ -1,4 +1,4 @@
-import { useProtectionStore, canManageProtection, updateProtection } from '../game/protection';
+import { useProtectionStore, canManageProtection, updateProtection, banPlayer } from '../game/protection';
 import { playerIdentity } from '../game/playerIdentity';
 import { useFriendStore } from '../game/friends';
 import { useMultiplayerStore } from '../game/multiplayerStore';
@@ -18,19 +18,28 @@ export function ProtectionPanel() {
       <h3>Protection du territoire</h3>
       <p>Zone d’1 km × 1 km autour du centre du monde, propriété de {owner}.</p>
       <label className="protection-option"><input type="checkbox" checked={protection.enabled} disabled={!manage} onChange={(event) => updateProtection({ enabled: event.target.checked })} /> Activer la protection</label>
+      {manage && (
+        <>
+          <label className="protection-option"><input type="checkbox" checked={protection.canBreak === true} onChange={(event) => updateProtection({ canBreak: event.target.checked })} /> Les autres joueurs peuvent casser des blocs</label>
+          <label className="protection-option"><input type="checkbox" checked={protection.canPlace === true} onChange={(event) => updateProtection({ canPlace: event.target.checked })} /> Les autres joueurs peuvent poser des blocs</label>
+        </>
+      )}
       {manage ? (
         <>
           <p>Choisis qui peut construire et détruire dans cette zone. Ton autorisation est toujours conservée.</p>
           <div className="protection-players">
             {[...people].map(([playerId, name]) => (
-              <label className="protection-option" key={playerId}>
-                <input
-                  type="checkbox"
-                  checked={protection.allowedPlayerIds.includes(playerId)}
-                  onChange={(event) => updateProtection({ allowedPlayerIds: event.target.checked ? [...protection.allowedPlayerIds, playerId] : protection.allowedPlayerIds.filter((id) => id !== playerId) })}
-                />
-                <span>{name} · construire et détruire</span>
-              </label>
+              <div className="protection-player-row" key={playerId}>
+                <label className="protection-option">
+                  <input
+                    type="checkbox"
+                    checked={protection.allowedPlayerIds.includes(playerId)}
+                    onChange={(event) => updateProtection({ allowedPlayerIds: event.target.checked ? [...protection.allowedPlayerIds, playerId] : protection.allowedPlayerIds.filter((id) => id !== playerId) })}
+                  />
+                  <span>{name} · construire et détruire</span>
+                </label>
+                <button type="button" className="secondary-button" onClick={() => { if (window.confirm(`Exclure définitivement ${name} de ce monde ?`)) banPlayer(playerId); }}>Exclure définitivement</button>
+              </div>
             ))}
             {people.size === 0 && <p>Ajoute des amis pour leur autoriser la construction ici.</p>}
           </div>

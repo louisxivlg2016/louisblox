@@ -8,6 +8,7 @@ import { syncProjectileMotion, syncProjectileRemoval, syncProjectileSpawn } from
 import { AnimalPosition, Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition, Projectile, ProjectileMesh, ProjectilePosition, ProjectileVelocity } from '../traits';
 import { MIN_WORLD_Y } from '../levels';
 import { raycastVoxel } from '../voxel';
+import { damagePirateObjectivesInRadius } from '../piratesClient';
 
 const step = new Vector3();
 const next = new Vector3();
@@ -28,6 +29,7 @@ export function fireProjectile(world: World, origin: Vector3, direction: Vector3
 export function detonateProjectile(world: World, position: Vector3) {
   explodeVoxels(world, position.x, position.y, position.z, 2.8);
   damageBattlePlayersInRadius(world, position, 3.5);
+  damagePirateObjectivesInRadius(position, 3.5);
   world.spawn(
     Explosion({ time: 0.45, maxTime: 0.45 }),
     ExplosionPosition(position.clone()),

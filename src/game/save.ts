@@ -21,7 +21,7 @@ export function readWorldSave(worldId = DEFAULT_WORLD_ID): WorldSave | null {
     const raw = localStorage.getItem(worldKey(worldId)) ?? (worldId === DEFAULT_WORLD_ID ? localStorage.getItem(LEGACY_SAVE_KEY) : null);
     if (!raw) return null;
     const save = JSON.parse(raw) as WorldSave;
-    return save.version === 1 || save.version === 2 || save.version === 3 || save.version === 4 ? { ...save, worldId: save.worldId ?? worldId } : null;
+    return save.version === 1 || save.version === 2 || save.version === 3 || save.version === 4 || save.version === 5 ? { ...save, worldId: save.worldId ?? worldId } : null;
   } catch {
     return null;
   }
@@ -49,10 +49,11 @@ export function createWorldSave(world: World): WorldSave | null {
   if (!position || !state || !environment) return null;
   const store = useGameStore.getState();
   return {
-    version: 4,
+    version: 5,
     worldId: store.worldId,
     generation: store.generation,
     gameplayMode: store.gameplayMode,
+    template: store.worldTemplate,
     seed: getWorldSeed(world),
     player: { x: position.x, y: position.y, z: position.z, yaw: state.yaw, pitch: state.pitch, flying: state.flying },
     selected: store.selected,

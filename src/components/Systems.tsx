@@ -25,6 +25,8 @@ import { sleepSystem } from '../game/systems/sleepSystem';
 import { vehicleInteractionSystem, vehicleMovementSystem } from '../game/vehicles';
 import { vehicleCombatSystem } from '../game/systems/vehicleCombatSystem';
 import { BlockTarget, Player, PlayerPosition, Sleep, TargetMesh } from '../game/traits';
+import { footballControlSystem } from '../game/footballClient';
+import { mazeControlSystem } from '../game/mazeClient';
 
 export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } }) {
   const world = useWorld();
@@ -38,10 +40,11 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       playerSystem(world, dt, spawn);
       vehicleMovementSystem(world, dt);
       cameraSystem(world, camera, dt);
-      const itemHandled = !sleeping && itemSystem(world, camera, dt, actions);
-      const vehicleHandled = !sleeping && !itemHandled && vehicleInteractionSystem(world, actions.place + actions.harvest);
-      const vehicleTarget = !sleeping && vehicleCombatSystem(world, camera, dt, actions.tap);
-      const animalTarget = !sleeping && !vehicleTarget && animalCombatSystem(world, camera, dt, actions.tap);
+      const footballHandled = footballControlSystem(world, camera, dt, actions.tap, actions) || mazeControlSystem(world);
+      const itemHandled = !footballHandled && !sleeping && itemSystem(world, camera, dt, actions);
+      const vehicleHandled = !sleeping && !footballHandled && !itemHandled && vehicleInteractionSystem(world, actions.place + actions.harvest);
+      const vehicleTarget = !sleeping && !footballHandled && vehicleCombatSystem(world, camera, dt, actions.tap);
+      const animalTarget = !sleeping && !footballHandled && !vehicleTarget && animalCombatSystem(world, camera, dt, actions.tap);
       animalSystem(world, dt);
       fishSystem(world, dt);
       meatDropSystem(world, dt);
@@ -54,8 +57,8 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       waterSystem(world, dt);
       sleepSystem(world, dt);
       if (effectSystem(world, dt)) invalidate();
-      const remainingActions = sleeping || vehicleHandled || itemHandled ? { place: 0, harvest: 0 } : actions;
-      blockSystem(world, camera, dt, animalTarget || vehicleTarget || sleeping, remainingActions);
+      const remainingActions = sleeping || footballHandled || vehicleHandled || itemHandled ? { place: 0, harvest: 0 } : actions;
+      blockSystem(world, camera, dt, footballHandled || animalTarget || vehicleTarget || sleeping, remainingActions);
     } else {
       cameraSystem(world, camera, delta);
       const targetEntity = world.queryFirst(BlockTarget);

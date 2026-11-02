@@ -7,6 +7,8 @@ import { Player, PlayerBody, PlayerHealth, PlayerMount, PlayerPosition, PlayerSt
 import { world } from './world';
 import { dismount } from './vehicles';
 import { useEffectStore } from './effects';
+import { pirateSpawn } from './pirates';
+import { footballSpawn } from './footballArena';
 
 export type BattleHitKind = 'bullet' | 'rifle' | 'arrow' | 'bomb' | 'melee';
 export type BattleEvent = { id: string; killerName: string; victimName: string };
@@ -64,7 +66,7 @@ export function clearBattle() {
   useBattleStore.getState().clear();
 }
 
-export function respawnAtBase(world: World, team: BattleTeam | null, position = battleSpawn(team)) {
+export function respawnAtBase(world: World, team: BattleTeam | null, position = useGameStore.getState().gameplayMode === 'pirates' ? pirateSpawn(team === 'blue' ? 'blue' : 'red') : useGameStore.getState().gameplayMode === 'football' ? footballSpawn(team === 'blue' ? 'blue' : 'red') : battleSpawn(team)) {
   const player = world.queryFirst(Player);
   if (!player) return;
   useEffectStore.getState().reset();
@@ -78,10 +80,10 @@ export function respawnAtBase(world: World, team: BattleTeam | null, position = 
   useGameStore.getState().setLives(10);
 }
 
-export function chooseBattleTeam(team: 'red' | 'blue' | 'solo') {
+export function chooseBattleTeam(team: 'red' | 'blue' | 'solo' | 'auto') {
   const { localPlayerId, ready, team: currentTeam } = useBattleStore.getState();
   if (socket?.readyState !== WebSocket.OPEN || !ready || (team === 'solo' && !localPlayerId)) return false;
-  const nextTeam: BattleTeam = team === 'solo' ? `solo:${localPlayerId}` : team;
+  const nextTeam: BattleTeam = team === 'auto' ? 'red' : team === 'solo' ? `solo:${localPlayerId}` : team;
   if (currentTeam === nextTeam) return true;
   socket.send(JSON.stringify({ type: 'battle-team', team }));
   useBattleStore.setState({ team: nextTeam });

@@ -1,11 +1,11 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useQueryFirst } from 'koota/react';
+import type { Entity } from 'koota';
 import type { Group } from 'three';
 import { getItemMeta } from '../game/items';
 import { useCharacterStore } from '../game/characterStore';
 import { useGameStore } from '../game/store';
-import { Player, PlayerMesh, PlayerMount, PlayerState, PlayerVelocity } from '../game/traits';
+import { PlayerMesh, PlayerMount, PlayerState, PlayerVelocity } from '../game/traits';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { ItemModel, PixelPart } from './ItemModel';
 import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
@@ -18,8 +18,7 @@ import { hasFullCharacter } from './FullCharacterGlb';
 import { useEmoteStore } from '../game/emotes';
 import { useEatingStore } from '../game/eating';
 
-export function PlayerAvatar() {
-  const entity = useQueryFirst(Player);
+export function PlayerAvatar({ entity }: { entity: Entity }) {
   const cameraMode = useGameStore((state) => state.cameraMode);
   const sleeping = useGameStore((state) => state.sleepProgress !== null);
   const equipped = useGameStore((state) => state.equippedArmor);
@@ -36,10 +35,13 @@ export function PlayerAvatar() {
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
   const headRef = useRef<Group>(null);
+  const bodyMesh = useRef<Group>(null);
   const phase = useRef(0);
 
   useFrame((_, delta) => {
     if (!entity) return;
+    const mesh = entity.get(PlayerMesh);
+    if (mesh) mesh.value = bodyMesh.current;
     const velocity = entity.get(PlayerVelocity);
     const state = entity.get(PlayerState);
     const mounted = entity.get(PlayerMount)?.vehicle;
@@ -109,10 +111,7 @@ export function PlayerAvatar() {
   );
   return (
     <group
-      ref={(group) => {
-        const holder = entity.get(PlayerMesh);
-        if (holder) holder.value = group;
-      }}
+      ref={bodyMesh}
       visible={cameraMode !== 'first' || sleeping}
     >
       {(!hasFullCharacter(outfit) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}

@@ -1,9 +1,12 @@
 import { DurableObject } from 'cloudflare:workers';
 import { json, parseAppearance, parseSocialPlayer } from './directory';
 import type { Appearance, PlayerDirectory } from './directory';
+import { PirateEngine } from './pirates';
+import { FootballEngine } from './football';
+import { MazeEngine } from './maze';
 export { PlayerDirectory } from './directory';
 
-type PlayerState = {
+export type PlayerState = {
   x: number;
   y: number;
   z: number;
@@ -28,7 +31,8 @@ type VoxelEdit = number | {
   text?: string;
 } | null;
 type EditEntry = [string, VoxelEdit];
-type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern';
+type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern' | 'pirates' | 'football' | 'maze';
+type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern';
 type BattleTeam = 'red' | 'blue' | `solo:${string}`;
 
 function soloSpawn() {
@@ -36,8 +40,8 @@ function soloSpawn() {
   const radius = 11 + Math.random() * 8;
   return { x: Math.round(Math.cos(angle) * radius * 10) / 10, y: 8.51, z: Math.round(Math.sin(angle) * radius * 10) / 10 };
 }
-type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[] };
-type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; protection?: WorldProtection };
+type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; canBreak?: boolean; canPlace?: boolean; bannedPlayerIds?: string[] };
+type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; template?: WorldTemplate; protection?: WorldProtection; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']> };
 type SharedVehicle = {
   id: string;
   kind: 'car' | 'plane' | 'train' | 'boat';
@@ -49,7 +53,7 @@ type SharedVehicle = {
   driver: boolean;
 };
 
-type PlayerAttachment = {
+export type PlayerAttachment = {
   playerId: string;
   joinedAt: number;
   name: string;
@@ -190,6 +194,25 @@ function parseExplosion(value: unknown) {
   return { x: position.x as number, y: position.y as number, z: position.z as number };
 }
 
+function parseWorldProtection(value: unknown, ownerId: string): WorldProtection | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const data = value as Record<string, unknown>;
+  if (data.ownerId !== ownerId || typeof data.centerX !== 'number' || !Number.isFinite(data.centerX) || typeof data.centerZ !== 'number' || !Number.isFinite(data.centerZ) || data.radius !== 500 || typeof data.enabled !== 'boolean') return undefined;
+  if (!Array.isArray(data.allowedPlayerIds) || data.allowedPlayerIds.some((id) => typeof id !== 'string' || id.length < 1 || id.length > 80)) return undefined;
+  const banned = Array.isArray(data.bannedPlayerIds) ? data.bannedPlayerIds.filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= 80 && id !== ownerId).slice(0, 100) : [];
+  return {
+    ownerId,
+    centerX: data.centerX,
+    centerZ: data.centerZ,
+    radius: 500,
+    enabled: data.enabled,
+    allowedPlayerIds: [...new Set([ownerId, ...data.allowedPlayerIds])].slice(0, 50),
+    canBreak: data.canBreak === true,
+    canPlace: data.canPlace === true,
+    bannedPlayerIds: banned,
+  };
+}
+
 export class GameRoom extends DurableObject<Env> {
   private worldSeed: number | null = null;
   private worldId?: string;
@@ -197,10 +220,50 @@ export class GameRoom extends DurableObject<Env> {
   private worldEdits = new Map<string, VoxelEdit>();
   private vehicles = new Map<string, SharedVehicle>();
   private gameplayMode: GameplayMode = 'creative';
+  private worldTemplate: WorldTemplate = 'nature';
   private battleHealth = new Map<string, number>();
   private battleScores = { red: 0, blue: 0 };
   private playerScores = new Map<string, number>();
   private battleHits = new Map<string, number>();
+  private pirates = new PirateEngine({
+    mode: () => this.gameplayMode,
+    players: () => this.ctx.getWebSockets().flatMap((socket) => {
+      const attachment = this.attachment(socket);
+      return attachment ? [{ socket, attachment }] : [];
+    }),
+    health: this.battleHealth,
+    scores: this.playerScores,
+    hits: this.battleHits,
+    broadcast: (message) => this.broadcast(message),
+    broadcastBattle: () => this.broadcastBattleState(),
+    setEdit: (key, value) => this.worldEdits.set(key, value),
+    save: () => this.saveWorld(),
+  });
+  private football = new FootballEngine({
+    mode: () => this.gameplayMode,
+    players: () => this.ctx.getWebSockets().flatMap((socket) => {
+      const attachment = this.attachment(socket);
+      return attachment ? [{ socket, attachment }] : [];
+    }),
+    broadcast: (message) => this.broadcast(message),
+    save: () => this.saveWorld(),
+    owner: (playerId) => this.protection?.ownerId === playerId,
+  });
+  private maze = new MazeEngine({
+    mode: () => this.gameplayMode,
+    players: () => this.ctx.getWebSockets().flatMap((socket) => {
+      const attachment = this.attachment(socket);
+      return attachment ? [{ socket, attachment }] : [];
+    }),
+    broadcast: (message) => this.broadcast(message),
+    owner: (playerId) => this.protection?.ownerId === playerId,
+    barriers: (open) => {
+      const edits = MazeEngine.barrierKeys.map((key): EditEntry => [key, open ? null : { kind: 63, open: false, facing: 'north' }]);
+      for (const [key, value] of edits) this.worldEdits.set(key, value);
+      this.broadcast({ type: 'edits', edits });
+    },
+    save: () => this.saveWorld(),
+  });
   private worldReady?: Promise<void>;
 
   private async ensureWorld() {
@@ -211,22 +274,51 @@ export class GameRoom extends DurableObject<Env> {
       this.protection = stored?.protection;
       this.worldEdits = new Map(stored?.edits ?? []);
       this.gameplayMode = stored?.gameplayMode ?? 'creative';
+      this.worldTemplate = stored?.template ?? (this.gameplayMode === 'city-ancient' || this.gameplayMode === 'city-modern' ? this.gameplayMode : 'nature');
+      this.pirates.restore(stored?.pirates);
+      this.football.restore(stored?.football);
+      this.maze.restore(stored?.maze);
     });
     await this.worldReady;
   }
 
   private worldSnapshot() {
-    return { type: 'world', seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, protection: this.protection };
+    return { type: 'world', seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, template: this.worldTemplate, protection: this.protection };
   }
 
-  private async saveWorld() {
-    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, protection: this.protection } satisfies StoredWorld);
+  private publisherId?: string;
+  private publisherName?: string;
+
+  private publishWorld(attachment?: PlayerAttachment) {
+    const ownerId = this.protection?.ownerId ?? attachment?.playerId ?? this.publisherId;
+    if (!ownerId) return;
+    if (attachment) {
+      this.publisherId = ownerId;
+      this.publisherName = attachment.name;
+    }
+    const directory = this.env.PLAYER_DIRECTORY.get(this.env.PLAYER_DIRECTORY.idFromName('global'));
+    this.ctx.waitUntil(directory.fetch('https://directory/world', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: this.worldId ?? attachment?.room ?? 'main-room', name: this.worldId ?? attachment?.room ?? 'main-room', ownerId, ownerName: this.publisherName ?? 'Créateur', gameplayMode: this.gameplayMode, template: this.worldTemplate, players: this.ctx.getWebSockets().length }),
+    }));
   }
 
-  private canEditAt(playerId: string, x: number, z: number) {
+  private async saveWorld(publisher?: PlayerAttachment) {
+    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, template: this.worldTemplate, protection: this.protection, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot() } satisfies StoredWorld);
+    this.publishWorld(publisher);
+  }
+
+  private canEditAt(playerId: string, x: number, z: number, action: 'break' | 'place' | 'interact' = 'interact') {
+    if (this.gameplayMode === 'pirates') return true;
+    if (this.gameplayMode === 'football' || this.gameplayMode === 'maze') return false;
     const protection = this.protection;
+    if (protection?.bannedPlayerIds?.includes(playerId)) return false;
     if (!protection?.enabled || Math.hypot(x - protection.centerX, z - protection.centerZ) > protection.radius) return true;
-    return protection.allowedPlayerIds.includes(playerId);
+    if (protection.allowedPlayerIds.includes(playerId)) return true;
+    if (action === 'break') return protection.canBreak === true;
+    if (action === 'place') return protection.canPlace === true;
+    return true;
   }
 
   private battleSnapshot(excludeId?: string) {
@@ -250,6 +342,7 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private removeBattlePlayer(playerId: string) {
+    this.maze.leave(playerId);
     this.battleHealth.delete(playerId);
     this.battleHits.delete(playerId);
     this.playerScores.delete(playerId);
@@ -292,7 +385,12 @@ export class GameRoom extends DurableObject<Env> {
     this.battleHits.clear();
     this.battleScores = { red: 0, blue: 0 };
     this.playerScores.clear();
+    this.pirates.reset();
+    this.football.reset();
+    this.maze.reset();
     this.worldReady = undefined;
+    const directory = this.env.PLAYER_DIRECTORY.get(this.env.PLAYER_DIRECTORY.idFromName('global'));
+    this.ctx.waitUntil(directory.fetch('https://directory/world', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: this.worldId ?? 'main-room' }) }));
     return json({ deleted: true });
   }
 
@@ -322,6 +420,7 @@ export class GameRoom extends DurableObject<Env> {
     const params = url.searchParams;
     const requestedPlayerId = params.get('playerId');
     const playerId = requestedPlayerId && /^[0-9a-f-]{36}$/.test(requestedPlayerId) ? requestedPlayerId : crypto.randomUUID();
+    if (this.protection?.bannedPlayerIds?.includes(playerId)) return new Response('Banned from this world', { status: 403, headers: corsHeaders });
     const room = params.get('room')?.slice(0, 48) || 'main-room';
     const name = params.get('name')?.trim().slice(0, 24) || 'Joueur';
     const character = params.get('character') === 'girl' ? 'girl' : 'boy';
@@ -343,6 +442,13 @@ export class GameRoom extends DurableObject<Env> {
     server.send(JSON.stringify(this.worldSnapshot()));
     server.send(JSON.stringify({ type: 'vehicles', vehicles: [...this.vehicles.values()] }));
     server.send(JSON.stringify(this.battleSnapshot()));
+    if (this.gameplayMode === 'pirates') server.send(JSON.stringify(this.pirates.message()));
+    if (this.gameplayMode === 'football') server.send(JSON.stringify(this.football.message()));
+    if (this.gameplayMode === 'maze') {
+      server.send(JSON.stringify(this.maze.message()));
+      this.maze.join(attachment);
+    }
+    this.publishWorld(attachment);
     this.broadcast({ type: 'join', playerId, joinedAt: attachment.joinedAt, name, character, outfit, wig, appearance, state: null }, server);
     return new Response(null, { status: 101, webSocket: client, headers: corsHeaders });
   }
@@ -416,7 +522,16 @@ export class GameRoom extends DurableObject<Env> {
     return sent;
   }
 
+  private messageQueue: Promise<void> = Promise.resolve();
+
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
+    this.messageQueue = this.messageQueue.then(() => this.handleMessage(ws, message)).catch((error) => {
+      console.error('WebSocket message error', error);
+    });
+    await this.messageQueue;
+  }
+
+  private async handleMessage(ws: WebSocket, message: string | ArrayBuffer) {
     if (typeof message !== 'string' || message.length > 512000) return;
     let data: unknown;
     try {
@@ -435,8 +550,20 @@ export class GameRoom extends DurableObject<Env> {
     if (type === 'battle-team') {
       const attachment = this.attachment(ws);
       const requestedTeam = (data as { team?: unknown }).team;
-      if (this.gameplayMode !== 'battle' || !attachment || (requestedTeam !== 'red' && requestedTeam !== 'blue' && requestedTeam !== 'solo')) return;
-      const team: BattleTeam = requestedTeam === 'solo' ? `solo:${attachment.playerId}` : requestedTeam;
+      if (!attachment || (this.gameplayMode !== 'battle' && this.gameplayMode !== 'pirates' && this.gameplayMode !== 'football') || (requestedTeam !== 'red' && requestedTeam !== 'blue' && requestedTeam !== 'solo' && requestedTeam !== 'auto')) return;
+      let team: BattleTeam;
+      if (this.gameplayMode === 'pirates') {
+        const selected = this.pirates.chooseTeam(attachment, requestedTeam);
+        if (!selected) return;
+        team = selected;
+      } else if (this.gameplayMode === 'football') {
+        const selected = this.football.chooseTeam(attachment, requestedTeam);
+        if (!selected) return;
+        team = selected;
+      } else {
+        if (requestedTeam === 'auto') return;
+        team = requestedTeam === 'solo' ? `solo:${attachment.playerId}` : requestedTeam;
+      }
       const changed = attachment.team !== team;
       attachment.team = team;
       if (changed) {
@@ -469,6 +596,10 @@ export class GameRoom extends DurableObject<Env> {
       const attacker = this.attachment(ws);
       const targetId = (data as { targetId?: unknown }).targetId;
       const kind = (data as { kind?: unknown }).kind;
+      if (this.gameplayMode === 'pirates') {
+        if (attacker) this.pirates.hit(attacker, targetId, kind);
+        return;
+      }
       if (this.gameplayMode !== 'battle' || !attacker?.team || typeof targetId !== 'string') return;
       if (kind !== 'bullet' && kind !== 'rifle' && kind !== 'arrow' && kind !== 'bomb' && kind !== 'melee') return;
       const now = Date.now();
@@ -516,6 +647,21 @@ export class GameRoom extends DurableObject<Env> {
       this.broadcastBattleState();
       return;
     }
+    if (typeof type === 'string' && type.startsWith('football-')) {
+      const attachment = this.attachment(ws);
+      if (attachment) this.football.handle(attachment, data as Record<string, unknown>);
+      return;
+    }
+    if (typeof type === 'string' && type.startsWith('maze-')) {
+      const attachment = this.attachment(ws);
+      if (attachment) this.maze.handle(attachment, data as Record<string, unknown>);
+      return;
+    }
+    if (typeof type === 'string' && type.startsWith('pirates-')) {
+      const attachment = this.attachment(ws);
+      if (attachment) this.pirates.handle(ws, attachment, data as Record<string, unknown>);
+      return;
+    }
     if (type === 'chat') {
       const attachment = this.attachment(ws);
       const value = (data as { text?: unknown }).text;
@@ -549,6 +695,7 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
     if (type === 'projectile-spawn' || type === 'projectile-state') {
+      if (this.gameplayMode === 'football' || this.gameplayMode === 'maze') return;
       const projectile = parseProjectile((data as { projectile?: unknown }).projectile);
       if (projectile) this.broadcast({ type, projectile }, ws);
       return;
@@ -603,13 +750,27 @@ export class GameRoom extends DurableObject<Env> {
       const attachment = this.attachment(ws);
       const current = this.protection;
       if (!attachment || !current || current.ownerId !== attachment.playerId) return;
-      const value = (data as { protection?: unknown }).protection;
-      if (!value || typeof value !== 'object') return;
-      const protection = value as Partial<WorldProtection>;
-      if (protection.ownerId !== current.ownerId || protection.centerX !== current.centerX || protection.centerZ !== current.centerZ || protection.radius !== 500 || typeof protection.enabled !== 'boolean' || !Array.isArray(protection.allowedPlayerIds) || protection.allowedPlayerIds.some((id: unknown) => typeof id !== 'string' || id.length < 1 || id.length > 80)) return;
-      this.protection = { ownerId: current.ownerId, centerX: current.centerX, centerZ: current.centerZ, radius: 500, enabled: protection.enabled, allowedPlayerIds: [...new Set([current.ownerId, ...protection.allowedPlayerIds])].slice(0, 50) };
+      const protection = parseWorldProtection((data as { protection?: unknown }).protection, current.ownerId);
+      if (!protection || protection.centerX !== current.centerX || protection.centerZ !== current.centerZ) return;
+      this.protection = protection;
       await this.saveWorld();
       this.broadcast({ type: 'protection', protection: this.protection });
+      return;
+    }
+    if (type === 'moderation-ban') {
+      const attachment = this.attachment(ws);
+      const targetId = (data as { targetId?: unknown }).targetId;
+      if (!attachment || !this.protection || this.protection.ownerId !== attachment.playerId || typeof targetId !== 'string' || targetId === attachment.playerId) return;
+      this.protection.bannedPlayerIds = [...new Set([...(this.protection.bannedPlayerIds ?? []), targetId])].slice(0, 100);
+      await this.saveWorld();
+      this.broadcast({ type: 'protection', protection: this.protection });
+      const target = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
+      if (target) {
+        target.send(JSON.stringify({ type: 'banned', message: 'Le créateur t’a exclu définitivement de ce monde.' }));
+        target.close(4003, 'Banned by world owner');
+        const targetAttachment = this.attachment(target);
+        if (targetAttachment) this.removePresence(targetAttachment);
+      }
       return;
     }
     if (type === 'world-init') {
@@ -633,9 +794,14 @@ export class GameRoom extends DurableObject<Env> {
         this.worldSeed = seed;
         this.worldEdits = new Map(edits);
         const mode = (data as { gameplayMode?: unknown }).gameplayMode;
-        this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' ? mode : 'creative';
+        this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' || mode === 'pirates' || mode === 'football' || mode === 'maze' ? mode : 'creative';
+        const template = (data as { template?: unknown }).template;
+        this.worldTemplate = template === 'city-ancient' || template === 'city-modern' ? template : 'nature';
         if (this.gameplayMode === 'battle') this.protection = undefined;
-        else if (newWorld && !this.protection) this.protection = { ownerId: attachment.playerId, centerX: 0, centerZ: 0, radius: 500, enabled: true, allowedPlayerIds: [attachment.playerId] };
+        else if (newWorld && !this.protection) this.protection = parseWorldProtection((data as { protection?: unknown }).protection, attachment.playerId) ?? { ownerId: attachment.playerId, centerX: 0, centerZ: 0, radius: 500, enabled: true, allowedPlayerIds: [attachment.playerId], canBreak: false, canPlace: false, bannedPlayerIds: [] };
+        if (this.gameplayMode === 'pirates') this.pirates.reset();
+        if (this.gameplayMode === 'football') this.football.reset();
+        if (this.gameplayMode === 'maze') this.maze.reset();
         if (this.gameplayMode === 'battle') {
           this.battleScores = { red: 0, blue: 0 };
           this.playerScores.clear();
@@ -659,8 +825,9 @@ export class GameRoom extends DurableObject<Env> {
       const attachment = this.attachment(ws);
       if (!attachment) return;
       if (attachment.worldInitAccepted) {
-        await this.saveWorld();
+        await this.saveWorld(attachment);
         this.broadcastBattleState();
+        if (this.gameplayMode === 'maze') this.maze.join(attachment);
       }
       attachment.worldInitAccepted = false;
       ws.serializeAttachment(attachment);
@@ -677,9 +844,9 @@ export class GameRoom extends DurableObject<Env> {
       const attachment = this.attachment(ws);
       const edits = parseEdits((data as { edits?: unknown }).edits);
       if (!attachment || !edits || this.worldSeed === null) return;
-      const permitted = edits.filter(([position]) => {
+      const permitted = edits.filter(([position, edit]) => {
         const [x, y, z] = position.split(',').map(Number);
-        if (this.canEditAt(attachment.playerId, x, z)) return true;
+        if (this.canEditAt(attachment.playerId, x, z, edit === null ? 'break' : 'place')) return true;
         ws.send(JSON.stringify({ type: 'protection-denied', x, y, z }));
         return false;
       });
@@ -722,7 +889,13 @@ export class GameRoom extends DurableObject<Env> {
     const state = parseState((data as { state?: unknown }).state);
     const attachment = this.attachment(ws);
     if (!state || !attachment) return;
+    if (this.gameplayMode === 'football') this.football.constrainState(attachment, state);
+    if (this.gameplayMode === 'maze') this.maze.constrainState(attachment, state);
     attachment.state = state;
+    ws.serializeAttachment(attachment);
+    if (this.gameplayMode === 'pirates') this.pirates.tick(attachment);
+    if (this.gameplayMode === 'football') this.football.tick(attachment);
+    if (this.gameplayMode === 'maze') this.maze.tick(attachment);
     if (this.gameplayMode === 'battle' && attachment.team) {
       const now = Date.now();
       let changed = false;
@@ -768,7 +941,9 @@ export class GameRoom extends DurableObject<Env> {
     if (attachment) {
       this.releaseDriver(attachment.playerId, ws);
       this.removeBattlePlayer(attachment.playerId);
+      this.pirates.leave(attachment.playerId);
       this.removePresence(attachment);
+      this.publishWorld();
       this.broadcast({ type: 'leave', playerId: attachment.playerId }, ws);
     }
   }
@@ -779,7 +954,9 @@ export class GameRoom extends DurableObject<Env> {
     if (attachment) {
       this.releaseDriver(attachment.playerId, ws);
       this.removeBattlePlayer(attachment.playerId);
+      this.pirates.leave(attachment.playerId);
       this.removePresence(attachment);
+      this.publishWorld();
       this.broadcast({ type: 'leave', playerId: attachment.playerId }, ws);
     }
   }
@@ -802,6 +979,11 @@ export default {
       const roomId = url.searchParams.get('room')?.slice(0, 48);
       if (!roomId) return new Response('Missing room', { status: 400, headers: corsHeaders });
       const response = await env.GAME_ROOM.get(env.GAME_ROOM.idFromName(roomId)).fetch(request);
+      return new Response(response.body, { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (url.pathname === '/worlds') {
+      const directory = env.PLAYER_DIRECTORY.get(env.PLAYER_DIRECTORY.idFromName('global'));
+      const response = await directory.fetch(request);
       return new Response(response.body, { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     if (url.pathname === '/ws') {

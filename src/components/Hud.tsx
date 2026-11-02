@@ -23,6 +23,10 @@ import { useMultiplayerStore } from '../game/multiplayerStore';
 import { EmotePanel } from './EmotePanel';
 import { useEmoteStore } from '../game/emotes';
 import { EffectsHud } from './EffectsHud';
+import { PiratesHud } from './PiratesHud';
+import { usePirateStore } from '../game/piratesClient';
+import { FootballHud } from './FootballHud';
+import { MazeHud } from './MazeHud';
 
 export function Hud() {
   const mode = useGameStore((state) => state.mode);
@@ -42,7 +46,8 @@ export function Hud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   const battleTeam = useBattleStore((state) => state.team);
   const multiplayerReady = useMultiplayerStore((state) => state.enabled && state.status === 'online');
-  const teamSelection = mode === 'pause' && gameplayMode === 'battle' && multiplayerReady && battleTeam === null;
+  const pirateKit = usePirateStore((state) => state.kit);
+  const teamSelection = mode === 'pause' && multiplayerReady && ((gameplayMode === 'battle' && battleTeam === null) || (gameplayMode === 'pirates' && (battleTeam === null || pirateKit === null)) || (gameplayMode === 'football' && battleTeam === null));
   const sleepProgress = useGameStore((state) => state.sleepProgress);
   const teleportRequestOpen = useTeleportRequestStore((state) => state.incoming !== null);
   const selectBlock = useGameStore((state) => state.selectBlock);
@@ -82,6 +87,9 @@ export function Hud() {
       <TeleportPanel />
       <ChatPanel />
       <BattleHud />
+      <PiratesHud />
+      <FootballHud />
+      <MazeHud />
       <EmotePanel />
 
       {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && (

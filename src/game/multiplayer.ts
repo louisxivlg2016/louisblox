@@ -2,6 +2,7 @@ import { isSelectedKind } from './items';
 import type { SelectedKind } from './items';
 import type { EmoteKind } from './emotes';
 import { isPotionEffect } from './effects';
+import { isGameplayMode } from './worldMode';
 
 export type PlayerSnapshot = {
   x: number;
@@ -93,7 +94,7 @@ export async function fetchRoomInfo(room: string, server: string, signal?: Abort
   const data = await response.json() as { gameplayMode?: unknown; players?: unknown };
   const mode = data.gameplayMode;
   return {
-    gameplayMode: mode === 'creative' || mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' ? mode : null,
+    gameplayMode: isGameplayMode(mode) ? mode : null,
     players: typeof data.players === 'number' ? data.players : 0,
   };
 }

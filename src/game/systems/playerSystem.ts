@@ -14,6 +14,9 @@ import { useBattleStore } from '../battle';
 import { resetEmote, useEmoteStore } from '../emotes';
 import { CITY_LIMIT, isCityMode } from '../worldMode';
 import { hasEffect, jumpMultiplier, movementMultiplier } from '../effects';
+import { isPirateEliminated } from '../piratesClient';
+import { footballBounds, isFootballFrozen } from '../footballClient';
+import { isMazeFrozen, mazeBounds } from '../mazeClient';
 
 const GRAVITY = 24;
 const JUMP_SPEED = 8.4;
@@ -53,13 +56,22 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     return;
   }
 
+  if (isPirateEliminated() || useGameStore.getState().gameplayMode === 'football' && isFootballFrozen() || useGameStore.getState().gameplayMode === 'maze' && isMazeFrozen()) {
+    consumeLook();
+    consumeFlightToggle();
+    velocity.set(0, 0, 0);
+    entity.set(PlayerState, { flying: false });
+    updateHud(world, position, health, false, dt);
+    return;
+  }
+
   const mouse = consumeLook();
   const edge = getEdgeLook();
   const yaw = state.yaw - mouse.x * 0.004 - edge.x * dt * 3.2;
   const pitch = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, state.pitch - mouse.y * 0.004 - edge.y * dt * 3.2));
   const flightToggles = consumeFlightToggle();
   const canDoubleJump = hasEffect('doubleJump') && !state.grounded && !state.flying && (airJumps.get(world) ?? 0) < 1;
-  const flying = !canDoubleJump && flightToggles % 2 === 1 ? !state.flying : state.flying;
+  const flying = !['pirates', 'football', 'maze'].includes(useGameStore.getState().gameplayMode) && !canDoubleJump && flightToggles % 2 === 1 ? !state.flying : state.flying;
   if (health && health.value <= 0 && entity.get(PlayerMount)?.vehicle) dismount(world);
 
   const mount = entity.get(PlayerMount);
@@ -128,6 +140,17 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   if (gameplayMode === 'battle') {
     next.x = Math.max(-BATTLE_LIMIT, Math.min(BATTLE_LIMIT, next.x));
     next.z = Math.max(-BATTLE_LIMIT, Math.min(BATTLE_LIMIT, next.z));
+  } else if (gameplayMode === 'pirates') {
+    next.x = Math.max(-47.5, Math.min(47.5, next.x));
+    next.z = Math.max(-47.5, Math.min(47.5, next.z));
+  } else if (gameplayMode === 'football') {
+    const bounds = footballBounds();
+    next.x = Math.max(bounds.minX, Math.min(bounds.maxX, next.x));
+    next.z = Math.max(bounds.minZ, Math.min(bounds.maxZ, next.z));
+  } else if (gameplayMode === 'maze') {
+    const bounds = mazeBounds();
+    next.x = Math.max(bounds.minX, Math.min(bounds.maxX, next.x));
+    next.z = Math.max(bounds.minZ, Math.min(bounds.maxZ, next.z));
   } else if (isCityMode(gameplayMode)) {
     next.x = Math.max(-CITY_LIMIT + 0.5, Math.min(CITY_LIMIT - 0.5, next.x));
     next.z = Math.max(-CITY_LIMIT + 0.5, Math.min(CITY_LIMIT - 0.5, next.z));

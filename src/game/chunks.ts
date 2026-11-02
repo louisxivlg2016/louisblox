@@ -5,8 +5,11 @@ import { useEffectStore } from './effects';
 import { CHUNK_SIZE, MAX_BUILD_Y, MIN_WORLD_Y, VIEW_DISTANCE, biomeAt, generateChunk, heightAt } from './levels';
 import type { LevelData } from './levels';
 import { battleSpawn, generateBattleChunk } from './battleArena';
+import { generatePirateChunk } from './pirates';
+import { footballSpawn, generateFootballChunk } from './footballArena';
+import { generateMazeChunk, mazeSpawn } from './maze';
 import type { GameplayMode } from './worldMode';
-import { isCityMode } from './worldMode';
+import { isCityMode, isMinigameMode } from './worldMode';
 import { generateCityChunk } from './cities';
 import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnChunkFish } from './fish';
@@ -33,10 +36,11 @@ export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: 
 export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: 'car' | 'plane' | 'train' | 'boat' };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
-  version: 1 | 2 | 3 | 4;
+  version: 1 | 2 | 3 | 4 | 5;
   worldId?: string;
   generation: number;
   gameplayMode?: GameplayMode;
+  template?: import('./worldMode').WorldTemplate;
   seed: number;
   player: { x: number; y: number; z: number; yaw: number; pitch: number; flying: boolean };
   selected: SelectedKind;
@@ -249,8 +253,9 @@ function loadChunk(world: World, cx: number, cz: number) {
   if (state.chunks.has(key)) return;
 
   const mode = useGameStore.getState().gameplayMode;
+  const template = useGameStore.getState().worldTemplate;
   const battle = mode === 'battle';
-  const generated = battle ? generateBattleChunk(cx, cz) : isCityMode(mode) ? generateCityChunk(cx, cz, state.seed, mode === 'city-modern') : generateChunk(cx, cz, state.seed);
+  const generated = mode === 'pirates' ? generatePirateChunk(cx, cz) : mode === 'football' ? generateFootballChunk(cx, cz) : mode === 'maze' ? generateMazeChunk(cx, cz) : battle ? generateBattleChunk(cx, cz) : template !== 'nature' ? generateCityChunk(cx, cz, state.seed, template === 'city-modern') : generateChunk(cx, cz, state.seed);
   const blockMap = new Map(generated.blocks.map((block) => [voxelKey(block.x, block.y, block.z), block]));
   const edits = state.edits.get(key);
   if (edits) {
@@ -274,8 +279,8 @@ function loadChunk(world: World, cx: number, cz: number) {
     state.blocks.set(voxelKey(block.x, block.y, block.z), block);
     indexBlock(state, block);
   }
-  data.animals = battle || isCityMode(mode) ? [] : spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
-  data.fish = battle || isCityMode(mode) ? [] : spawnChunkFish(world, cx, cz, generated.water, state.seed);
+  data.animals = isMinigameMode(mode) || isCityMode(mode) ? [] : spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
+  data.fish = isMinigameMode(mode) || isCityMode(mode) ? [] : spawnChunkFish(world, cx, cz, generated.water, state.seed);
   for (const savedHorse of state.saddledHorses) {
     if (chunkCoordinate(savedHorse.x) !== cx || chunkCoordinate(savedHorse.z) !== cz) continue;
     const existing = data.animals.find((animal) => {
@@ -385,7 +390,7 @@ export function getWorldSeed(world: World) {
 }
 
 export function removeVoxel(world: World, hit: VoxelHit) {
-  if (!canEditAt(hit.x, hit.z)) return;
+  if (!canEditAt(hit.x, hit.z, 'break')) return;
   const state = stateFor(world);
   const cx = chunkCoordinate(hit.x);
   const cz = chunkCoordinate(hit.z);
@@ -414,7 +419,7 @@ export function explodeVoxels(world: World, x: number, y: number, z: number, rad
       let changed = false;
       for (const block of data.blocks) {
         const distance = Math.hypot(block.x - x, block.y - y, block.z - z);
-        if (distance <= radius && block.kind !== BlockKind.Bedrock) {
+        if (distance <= radius && block.kind !== BlockKind.Bedrock && !(useGameStore.getState().gameplayMode === 'pirates' && block.kind === BlockKind.Chest)) {
           const position = voxelKey(block.x, block.y, block.z);
           state.blocks.delete(position);
           unindexBlock(state, block);
@@ -480,7 +485,7 @@ export function growSapling(world: World, kind: BlockKind, x: number, y: number,
 }
 
 export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?: boolean, growth?: number, items?: SelectedKind[], facing?: Voxel['facing']) {
-  if (!canEditAt(hit.x, hit.z)) return;
+  if (!canEditAt(hit.x, hit.z, 'interact')) return;
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
   if (!block) return;
@@ -512,7 +517,7 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
 }
 
 export function addVoxel(world: World, x: number, y: number, z: number, kind: BlockKind, growth?: number, facing?: Voxel['facing'], fireGeneration = 0) {
-  if (!canEditAt(x, z)) return;
+  if (!canEditAt(x, z, 'place')) return;
   const state = stateFor(world);
   const cx = chunkCoordinate(x);
   const cz = chunkCoordinate(z);
@@ -589,8 +594,9 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   for (const entity of [...world.query(Vehicle)]) entity.destroy();
   for (const entity of [...world.query(Sleep)]) entity.destroy();
 
-  const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3 || saved.version === 4) ? saved : null;
+  const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3 || saved.version === 4 || saved.version === 5) ? saved : null;
   useEffectStore.getState().reset();
+  Object.assign(useGameStore.getState(), { worldTemplate: restore?.template ?? (restore?.gameplayMode === 'city-ancient' || restore?.gameplayMode === 'city-modern' ? restore.gameplayMode : 'nature') });
   useProtectionStore.getState().setProtection(restore?.protection ?? (restore ? null : useProtectionStore.getState().protection ?? newProtection()));
   const seed = restore?.seed ?? 73421 + generation * 977;
   const edits: WorldChunks['edits'] = restore ? new Map(restore.edits.map(([chunk, values]) => [chunk, new Map(values)])) : new Map();
@@ -612,7 +618,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   const gameplayMode = restore?.gameplayMode ?? (restore ? 'creative' : useGameStore.getState().gameplayMode);
   const spawn = restore && restorePosition
     ? { x: restore.player.x, y: restore.player.y, z: restore.player.z }
-    : gameplayMode === 'battle' ? battleSpawn(null) : isCityMode(gameplayMode) ? { x: 0, y: 5.51, z: 0 } : { x: 0, y: heightAt(0, 0, seed) + 1.01, z: 0 };
+    : gameplayMode === 'pirates' ? { x: -22, y: 8.51, z: 3 } : gameplayMode === 'football' ? footballSpawn(null) : gameplayMode === 'maze' ? mazeSpawn(0) : gameplayMode === 'battle' ? battleSpawn(null) : useGameStore.getState().worldTemplate !== 'nature' ? { x: 0, y: 5.51, z: 0 } : { x: 0, y: heightAt(0, 0, seed) + 1.01, z: 0 };
   world.spawn(
     Player,
     PlayerBody(),
@@ -635,14 +641,15 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     ? restore.hotbar
     : useGameStore.getState().hotbarSlots;
   const itemCounts: Record<string, number> = gameplayMode === 'survival' ? { hand: 1, ...restore?.itemCounts } : { ...DEFAULT_ITEM_COUNTS, ...restore?.itemCounts };
-  const restoredSelection = restore && isSelectedKind(restore.selected) ? restore.selected : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass;
+  const sports = gameplayMode === 'football' || gameplayMode === 'maze';
+  const restoredSelection = sports ? 'hand' : restore && isSelectedKind(restore.selected) ? restore.selected : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass;
   const selected = gameplayMode === 'survival' && restoredSelection !== 'hand'
     && (itemCounts[typeof restoredSelection === 'number' ? `block_${restoredSelection}` : restoredSelection] ?? 0) <= 0 ? 'hand' : restoredSelection;
   useGameStore.setState({
     gameplayMode,
     meat: { ...createMeatInventory(), ...restore?.meat },
     selected,
-    hotbarSlots: hotbar.map((kind, index) => gameplayMode !== 'survival' ? kind ?? BlockKind.Grass : index === 0 ? 'hand'
+    hotbarSlots: sports ? ['hand', ...Array(9).fill(null)] : hotbar.map((kind, index) => gameplayMode !== 'survival' ? kind ?? BlockKind.Grass : index === 0 ? 'hand'
       : kind !== null && kind !== 'hand' && (itemCounts[typeof kind === 'number' ? `block_${kind}` : kind] ?? 0) > 0 ? kind : null),
     itemCounts,
     equippedArmor: restore?.equippedArmor ?? null,

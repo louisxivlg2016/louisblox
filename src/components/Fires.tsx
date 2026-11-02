@@ -1,10 +1,13 @@
-import { useRef } from 'react';
+import { Suspense, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 import { useQuery, useQueryFirst } from 'koota/react';
 import type { Entity } from 'koota';
-import { BoxGeometry, InstancedMesh, Matrix4, MeshBasicMaterial } from 'three';
+import { Box3, BoxGeometry, InstancedMesh, Matrix4, MeshBasicMaterial, Vector3 } from 'three';
+import { SkeletonUtils } from 'three-stdlib';
 import { Fire, FirePosition, Player, PlayerPosition } from '../game/traits';
 import { BlockKind } from '../game/voxel';
+import redFireUrl from '../../assets/models/red-fire.glb';
 
 const geometry = new BoxGeometry(1, 1, 1);
 const matrix = new Matrix4();
@@ -57,6 +60,27 @@ function FlameInstances({ kind, fires }: { kind: BlockKind; fires: readonly Enti
   );
 }
 
+function RedFlame({ entity }: { entity: Entity }) {
+  const group = useRef<import('three').Group>(null);
+  const { scene } = useGLTF(redFireUrl);
+  const { model, center, minY, height } = useMemo(() => {
+    const model = SkeletonUtils.clone(scene);
+    const bounds = new Box3().setFromObject(model);
+    const center = bounds.getCenter(new Vector3());
+    return { model, center, minY: bounds.min.y, height: Math.max(0.01, bounds.max.y - bounds.min.y) };
+  }, [scene]);
+  useFrame(() => {
+    const fire = entity.get(Fire);
+    const position = entity.get(FirePosition);
+    if (!group.current || !fire || !position) return;
+    const scale = (1.2 + Math.min(fire.age / 20, 1.6)) / height;
+    group.current.scale.setScalar(scale);
+    group.current.position.set(position.x, position.y - 0.5, position.z);
+    group.current.rotation.y = Math.sin(fire.age * 2) * 0.04;
+  });
+  return <group ref={group} name="red-fire"><primitive object={model} position={[-center.x, -minY, -center.z]} dispose={null} /></group>;
+}
+
 export function Fires() {
   const fires = useQuery(Fire, FirePosition);
   const player = useQueryFirst(Player);
@@ -71,7 +95,9 @@ export function Fires() {
   return (
     <>
       <FlameInstances kind={BlockKind.Campfire} fires={fires} />
-      <FlameInstances kind={BlockKind.Wildfire} fires={fires} />
+      <Suspense fallback={<FlameInstances kind={BlockKind.Wildfire} fires={fires} />}>
+        {fires.filter((entity) => entity.get(Fire)?.kind === BlockKind.Wildfire).map((entity) => <RedFlame key={entity} entity={entity} />)}
+      </Suspense>
       {position && <pointLight position={[position.x, position.y, position.z]} color={destructive ? '#ff632e' : '#ff9b45'} intensity={destructive ? 2.2 : 1.4} distance={12} decay={2} />}
     </>
   );

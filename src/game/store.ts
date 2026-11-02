@@ -7,6 +7,7 @@ import type { Biome } from './levels';
 import { createMeatInventory } from './meats';
 import { BlockKind, HOTBAR_BLOCKS } from './voxel';
 import type { GameplayMode } from './worldMode';
+import { PIRATE_KITS } from './pirates';
 
 export type GameMode = 'menu' | 'play' | 'pause';
 export type WeatherKind = 'clear' | 'rain' | 'snow';
@@ -34,6 +35,7 @@ type GameStore = {
   generation: number;
   worldId: string;
   worldName: string;
+  worldTemplate: import('./worldMode').WorldTemplate;
   blockCount: number;
   apples: number;
   meat: Record<AnimalKind, number>;
@@ -71,7 +73,7 @@ type GameStore = {
   collectMeat: (kind: AnimalKind) => void;
   discardApple: () => void;
   discardMeat: (kind: AnimalKind) => void;
-  regenerate: (gameplayMode?: GameplayMode, worldId?: string) => void;
+  regenerate: (gameplayMode?: GameplayMode, worldId?: string, template?: import('./worldMode').WorldTemplate) => void;
   openWorld: (worldId: string, worldName: string) => void;
 };
 
@@ -95,6 +97,7 @@ export const useGameStore = create<GameStore>((set) => ({
   worldId: currentWorldId(),
   worldName: currentWorldId() === 'main-room' ? 'Monde principal' : currentWorldId(),
   gameplayMode: 'creative',
+  worldTemplate: 'nature',
   selected: BlockKind.Grass,
   hotbarSlots: [...HOTBAR_BLOCKS.slice(0, 10)],
   backpackItem: null,
@@ -166,17 +169,18 @@ export const useGameStore = create<GameStore>((set) => ({
   collectMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: state.meat[kind] + 1 } })),
   discardApple: () => set((state) => ({ apples: Math.max(0, state.apples - 1) })),
   discardMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: Math.max(0, state.meat[kind] - 1) } })),
-  regenerate: (gameplayMode = 'creative', worldId = `monde-${crypto.randomUUID().slice(0, 8)}`) => {
+  regenerate: (gameplayMode = 'creative', worldId = `monde-${crypto.randomUUID().slice(0, 8)}`, template: import('./worldMode').WorldTemplate = 'nature') => {
     rememberWorld(worldId);
     set((state) => ({
       worldId,
       worldName: worldId,
       generation: state.generation + 1,
       gameplayMode,
-      selected: gameplayMode === 'battle' ? 'pistol_iron' : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass,
+      worldTemplate: gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : template,
+      selected: gameplayMode === 'battle' ? 'pistol_iron' : gameplayMode === 'pirates' ? 'pistol_bomb' : gameplayMode === 'survival' || gameplayMode === 'football' || gameplayMode === 'maze' ? 'hand' : BlockKind.Grass,
       hotbarSlots: gameplayMode === 'battle'
         ? ['pistol_iron', 'rifle_auto', 'pistol_bomb', 'bow', 'sword_iron', ...HOTBAR_BLOCKS.slice(0, 5)]
-        : gameplayMode === 'survival' ? ['hand', ...Array(9).fill(null)] : [...HOTBAR_BLOCKS.slice(0, 10)],
+        : gameplayMode === 'pirates' ? [...PIRATE_KITS.defender.hotbar] : gameplayMode === 'survival' || gameplayMode === 'football' || gameplayMode === 'maze' ? ['hand', ...Array(9).fill(null)] : [...HOTBAR_BLOCKS.slice(0, 10)],
       backpackItem: null,
       itemCounts: gameplayMode === 'survival' ? { hand: 1 } : { ...DEFAULT_ITEM_COUNTS },
       equippedArmor: null,

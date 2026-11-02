@@ -6,6 +6,7 @@ import { isBattleEnemy } from './battleArena';
 import type { PlayerSnapshot } from './multiplayer';
 import { useRemotePlayerStore } from './multiplayerStore';
 import { useGameStore } from './store';
+import { hasTeamCombat } from './worldMode';
 
 const offset = new Vector3();
 const renderedTargets = new Map<string, { position: Vector3; yaw: number; flat: boolean }>();
@@ -44,7 +45,7 @@ function battleTargetPosition(playerId: string, state: PlayerSnapshot) {
 }
 
 export function findBattleTarget(world: World, origin: Vector3, direction: Vector3, maxDistance = 100) {
-  if (useGameStore.getState().gameplayMode !== 'battle') return null;
+  if (!hasTeamCombat(useGameStore.getState().gameplayMode)) return null;
   const team = useBattleStore.getState().team;
   if (!team) return null;
   let target: { playerId: string; distance: number; position: Vector3 } | null = null;
@@ -63,7 +64,7 @@ export function findBattleTarget(world: World, origin: Vector3, direction: Vecto
 }
 
 export function damageBattlePlayersInRadius(world: World, position: Vector3, radius: number) {
-  if (useGameStore.getState().gameplayMode !== 'battle') return;
+  if (!hasTeamCombat(useGameStore.getState().gameplayMode)) return;
   const team = useBattleStore.getState().team;
   if (!team) return;
   for (const [playerId, state] of Object.entries(useRemotePlayerStore.getState().players)) {

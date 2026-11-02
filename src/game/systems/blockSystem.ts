@@ -17,6 +17,9 @@ import { changeInventory, hasInventory } from '../inventory';
 import { BlockTarget, Chunk, ChunkData, Player, PlayerPosition, TargetMesh } from '../traits';
 import { BLOCK_HARDNESS, BlockKind, raycastVoxel, voxelKey } from '../voxel';
 import { miningMultiplier } from '../effects';
+import { fireProjectile } from './projectileSystem';
+import { isPirateObjective } from '../pirates';
+import { requestPirateObjectiveHit } from '../piratesClient';
 
 const direction = new Vector3();
 const origin = new Vector3();
@@ -77,8 +80,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   const kind = hit?.block.kind;
-  const canMine = (store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
-    || (typeof store.selected === 'string' && (['pickaxe', 'shovel'].includes(getItemMeta(store.selected).category) || getItemMeta(store.selected).shape === 'shears'));
+  const canMine = store.gameplayMode !== 'football' && store.gameplayMode !== 'maze' && ((store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
+    || (typeof store.selected === 'string' && (['pickaxe', 'shovel'].includes(getItemMeta(store.selected).category) || getItemMeta(store.selected).shape === 'shears')));
   const mining = canMine && isMouseDown(0) && hit !== null && useGameStore.getState().mode === 'play';
   if (mining && hit && kind !== undefined) {
     const key = voxelKey(hit.x, hit.y, hit.z);
@@ -91,6 +94,13 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     if (Math.abs(store.miningProgress - progress) >= 0.01) store.setMiningProgress(progress);
 
     if (progress >= 1) {
+      if (isPirateObjective(hit.x, hit.y, hit.z)) {
+        requestPirateObjectiveHit('melee');
+        target.miningKey = '';
+        target.miningProgress = 0;
+        store.setMiningProgress(0);
+        return;
+      }
       removeVoxel(world, hit);
       if (store.gameplayMode === 'survival') changeInventory(hit.block.kind, 1);
       target.visible = false;
@@ -125,6 +135,10 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     return;
   }
   if ((actions.place > 0 || actions.harvest > 0) && isFurnace(hit.block.kind)) {
+    if (store.gameplayMode === 'pirates') {
+      fireProjectile(world, origin, direction, 'bomb', 3);
+      return;
+    }
     openFurnace(hit);
     return;
   }

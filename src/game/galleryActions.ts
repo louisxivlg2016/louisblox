@@ -190,7 +190,16 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     store.setNotice(result.message);
     return true;
   }
-  if (shape === 'splash_potion' || shape === 'arrow_potion' || shape === 'firecracker' || shape === 'bomb') {
+  if (shape === 'splash_potion' || shape === 'arrow_potion') {
+    const result = usePotion(world, meta.name);
+    if (result.used) {
+      if (store.gameplayMode === 'survival') store.setItemCount(selected, (store.itemCounts[selected] ?? 1) - 1);
+      useEatingStore.getState().startEating(selected);
+    }
+    store.setNotice(result.message);
+    return true;
+  }
+  if (shape === 'firecracker' || shape === 'bomb') {
     fireProjectile(world, origin, direction, 'bomb');
     return true;
   }

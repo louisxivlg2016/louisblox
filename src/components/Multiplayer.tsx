@@ -1,3 +1,4 @@
+import { isGameplayMode, isMinigameMode } from '../game/worldMode';
 import type { GameplayMode } from '../game/worldMode';
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
@@ -37,6 +38,7 @@ import { removeBattleTargetPose, updateBattleTargetPose } from '../game/battleCo
 import { useEmoteStore } from '../game/emotes';
 import { receiveAppleGift } from '../game/gifts';
 import { applyProtection, isWorldProtection, setProtectionSocket, useProtectionStore } from '../game/protection';
+import { clearMinigames, receiveMinigameMessage, setMinigameSocket } from '../game/minigameSync';
 
 type ServerMessage = {
   type?: unknown;
@@ -61,9 +63,10 @@ type ServerMessage = {
   appearance?: unknown;
   gameplayMode?: unknown;
   worldId?: unknown;
+  template?: unknown;
   protection?: unknown;
 };
-type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string; protection?: import('../game/protection').WorldProtection };
+type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string; template?: import('../game/worldMode').WorldTemplate; protection?: import('../game/protection').WorldProtection };
 
 let requestedRoomMode: GameplayMode | null = null;
 
@@ -73,7 +76,7 @@ export function requestRoomMode(mode: GameplayMode | null) {
 
 function sendWorldInitialization(socket: WebSocket, world: World, force: boolean) {
   const edits = snapshotWorldEdits(world).flatMap(([, entries]) => entries);
-  socket.send(JSON.stringify({ type: 'world-init', seed: getWorldSeed(world), edits: edits.slice(0, 256), gameplayMode: useGameStore.getState().gameplayMode, worldId: useGameStore.getState().worldId, force }));
+  socket.send(JSON.stringify({ type: 'world-init', seed: getWorldSeed(world), edits: edits.slice(0, 256), gameplayMode: useGameStore.getState().gameplayMode, worldId: useGameStore.getState().worldId, template: useGameStore.getState().worldTemplate, protection: useProtectionStore.getState().protection, force }));
   for (let index = 256; index < edits.length; index += 256) {
     socket.send(JSON.stringify({ type: 'world-init-edits', edits: edits.slice(index, index + 256) }));
   }
@@ -240,6 +243,7 @@ export function MultiplayerConnection() {
     clearTeleportRequests();
     clearChat();
     clearBattle();
+    clearMinigames();
     store.setPlayers([]);
     remote.setPlayers({});
     remote.setCharacters({});
@@ -325,6 +329,8 @@ export function MultiplayerConnection() {
       const saved = createWorldSave(world);
       if (!saved) return;
       saved.gameplayMode = pending.gameplayMode ?? saved.gameplayMode ?? 'creative';
+      saved.template = pending.template ?? saved.template ?? 'nature';
+      useGameStore.setState({ worldTemplate: saved.template });
       saved.protection = pending.protection;
       useProtectionStore.getState().setProtection(pending.protection ?? null);
       const unchanged = saved.seed === pending.seed && saved.gameplayMode === useGameStore.getState().gameplayMode && JSON.stringify(saved.edits) === JSON.stringify(groupVoxelEdits(pending.edits));
@@ -353,7 +359,7 @@ export function MultiplayerConnection() {
         pendingSpawn.current = null;
       }
       pendingWorld.current = null;
-      useBattleStore.setState({ ready: pending.gameplayMode === 'battle' });
+      useBattleStore.setState({ ready: isMinigameMode(pending.gameplayMode ?? 'creative') });
       applyPendingVehicles();
       if (roomCreator) {
         const current = socket.current;
@@ -401,6 +407,7 @@ export function MultiplayerConnection() {
       setTeleportSocket(next);
       setChatSocket(next);
       setBattleSocket(next);
+      setMinigameSocket(next);
       setProtectionSocket(next);
       next.onopen = () => store.setStatus('online');
       next.onmessage = (event) => {
@@ -415,6 +422,7 @@ export function MultiplayerConnection() {
           leaveDeletedRoom(next);
           return;
         }
+        if (receiveMinigameMessage(data)) return;
         if (data.type === 'battle-state') {
           receiveBattleState(data);
           return;
@@ -487,7 +495,7 @@ export function MultiplayerConnection() {
           return;
         }
         if (data.type === 'world' && (data.seed === null || typeof data.seed === 'number') && Array.isArray(data.edits)) {
-          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: data.gameplayMode === 'survival' || data.gameplayMode === 'battle' || data.gameplayMode === 'city-ancient' || data.gameplayMode === 'city-modern' ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined, protection: isWorldProtection(data.protection) ? data.protection : undefined };
+          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: isGameplayMode(data.gameplayMode) ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined, template: data.template === 'city-ancient' || data.template === 'city-modern' ? data.template : 'nature', protection: isWorldProtection(data.protection) ? data.protection : undefined };
           applyPendingWorld();
           return;
         }
@@ -581,6 +589,13 @@ export function MultiplayerConnection() {
         next.close();
       };
       next.onclose = (event) => {
+        if (event.code === 4003) {
+          if (socket.current === next) socket.current = null;
+          store.setEnabled(false);
+          store.setStatus('error', 'Tu as été exclu définitivement de ce monde par son créateur.');
+          useGameStore.setState({ mode: 'menu' });
+          return;
+        }
         if (event.code === 4004) {
           leaveDeletedRoom(next);
           return;
@@ -590,6 +605,7 @@ export function MultiplayerConnection() {
           clearTeleportRequests();
           clearChat();
           clearBattle();
+    clearMinigames();
         }
         if (disposed) return;
         localPlayerId.current = null;
@@ -645,6 +661,7 @@ export function MultiplayerConnection() {
       clearTeleportRequests();
       clearChat();
       clearBattle();
+    clearMinigames();
       if (current) {
         current.onclose = null;
         current.close();

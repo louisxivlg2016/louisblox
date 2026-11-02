@@ -64,15 +64,24 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
     const jumping = airborne ?? Boolean(!state?.grounded || state?.flying || Math.abs(velocity?.y ?? 0) > 2);
     const name = jumping ? 'jump' : walking ? 'run' : 'idle';
     const action = actions[name];
-    if (name !== current.current && action) {
-      actions[current.current]?.fadeOut(0.18);
-      action.reset().setLoop(LoopRepeat, Infinity).fadeIn(0.18).play();
+    if (name !== current.current) {
+      if (action) {
+        actions[current.current]?.fadeOut(0.18);
+        action.reset().setLoop(LoopRepeat, Infinity).fadeIn(0.18).play();
+      }
       current.current = name;
     }
     group.current.userData.clip = name;
     const sitting = seated || emote === 'sit' || Boolean(mounted);
     group.current.userData.gesture = sitting ? 'sit' : emote;
-    applyCharacterGesture(character, emote, sitting, !walking && !jumping, performance.now() / 1000, delta);
+    if (animations.length === 0) {
+      const time = performance.now() / 1000;
+      group.current.position.y = name === 'run' ? Math.abs(Math.sin(time * 8)) * 0.045 : name === 'idle' ? Math.sin(time * 2) * 0.012 : 0;
+      group.current.rotation.z = name === 'run' ? Math.sin(time * 8) * 0.035 : 0;
+      group.current.rotation.x = name === 'jump' ? -0.12 : 0;
+    } else {
+      applyCharacterGesture(character, emote, sitting, !walking && !jumping, performance.now() / 1000, delta);
+    }
   });
 
   return (

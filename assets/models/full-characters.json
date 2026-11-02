@@ -1,23 +1,23 @@
 {
   "king": {
-    "nativeHeight": 1.1286851167678833
+    "nativeHeight": 1.9000003337860107
   },
   "military": {
-    "nativeHeight": 1.078981101512909
+    "nativeHeight": 1.9000003337860107
   },
   "knight": {
-    "nativeHeight": 1.1403811573982239
+    "nativeHeight": 1.9000003337860107
   },
   "explorer": {
-    "nativeHeight": 1.124631106853485
+    "nativeHeight": 1.8981313705444336
   },
   "princess": {
-    "nativeHeight": 1.0416041016578674
+    "nativeHeight": 1.9000003337860107
   },
   "louis14": {
-    "nativeHeight": 1.1412911415100098
+    "nativeHeight": 1.9000003337860107
   },
   "louis15": {
-    "nativeHeight": 1.0770671367645264
+    "nativeHeight": 1.9000003337860107
   }
 }

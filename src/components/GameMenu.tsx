@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '../game/store';
+import { newProtection, useProtectionStore } from '../game/protection';
 import { readWorldSave } from '../game/save';
 import { useMultiplayerStore } from '../game/multiplayerStore';
+import { isMinigameMode } from '../game/worldMode';
 import type { GameplayMode } from '../game/worldMode';
+import piratesUrl from '../../assets/menu/pirates.webp';
+import footballUrl from '../../assets/menu/football.webp';
+import mazeUrl from '../../assets/menu/maze.webp';
 import { MultiplayerLobby } from './MultiplayerLobby';
 import { MenuActionBar } from './MenuActionBar';
 import { CreateWorldDialog } from './CreateWorldDialog';
 import { ProfileDialog } from './ProfileDialog';
 import { WorldLibrary } from './WorldLibrary';
 import { FriendsPanel } from './FriendsPanel';
+import { CommunityWorlds } from './CommunityWorlds';
 import { requestRoomMode } from './Multiplayer';
 import myWorldsUrl from '../../assets/menu/my-worlds.webp';
 import survivalUrl from '../../assets/menu/survival.webp';
@@ -46,30 +52,29 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     setPendingWorld(null);
     void onPlay();
   }, [pendingWorld, room, status, onPlay]);
-  const create = (gameplayMode: GameplayMode, sharedOverride?: boolean) => {
-    if (enabled && gameplayMode === 'battle') {
-      requestRoomMode('battle');
-      if (status === 'online' && useGameStore.getState().gameplayMode === 'battle') {
+  const create = (gameplayMode: GameplayMode, sharedOverride?: boolean, options?: import('./CreateWorldDialog').CreateWorldOptions) => {
+    if (enabled && isMinigameMode(gameplayMode)) {
+      requestRoomMode(gameplayMode);
+      if (status === 'online' && useGameStore.getState().gameplayMode === gameplayMode) {
         requestRoomMode(null);
         void onPlay();
         return;
       }
-      if (status === 'online') {
-        regenerate('battle', room);
-        void onPlay();
-        return;
-      }
-      setPendingWorld(room);
-      configure({ playerName, room, server });
+      const minigameRoom = `salon-${crypto.randomUUID().slice(0, 8)}`;
+      setPendingWorld(minigameRoom);
+      regenerate(gameplayMode, minigameRoom);
+      configure({ playerName, room: minigameRoom, server });
       return;
     }
     const shared = sharedOverride ?? (enabled && gameplayMode !== 'battle');
+    const template = options?.template ?? (gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : 'nature');
     const publicId = gameplayMode === 'survival' ? 'survie-public-v1' : gameplayMode === 'creative' ? 'creatif-public-v1' : `${gameplayMode}-public-v1`;
     const worldId = shared ? publicId : `monde-${crypto.randomUUID().slice(0, 8)}`;
-    const names: Record<GameplayMode, string> = { survival: 'Survie avec tous les joueurs', creative: 'Créatif avec tous les joueurs', battle: worldId, 'city-ancient': 'Ville ancienne · 10 km', 'city-modern': 'Ville moderne · 10 km' };
+    const names: Record<GameplayMode, string> = { survival: 'Survie avec tous les joueurs', creative: 'Créatif avec tous les joueurs', battle: worldId, 'city-ancient': 'Ville ancienne · 10 km', 'city-modern': 'Ville moderne · 10 km', pirates: 'Pirates en équipe', football: 'Match de football', maze: 'Course Labyrinthe' };
     const worldName = names[gameplayMode];
+    if (options) useProtectionStore.getState().setProtection({ ...newProtection(), canBreak: options.canBreak, canPlace: options.canPlace });
     if (shared && readWorldSave(worldId)) useGameStore.getState().openWorld(worldId, worldName);
-    else regenerate(gameplayMode, worldId);
+    else regenerate(gameplayMode, worldId, template);
     if (shared) useGameStore.setState({ worldName });
     if (shared) {
       setEnabled(true);
@@ -89,7 +94,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           <button className="sidebar-shop" onClick={onShop}><img src={shopUrl} alt="" /><span>Ouvrir la boutique</span></button>
         </aside>
         <main className="world-browser">
-          <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}</h1></div>{paused && <button className="primary-button resume-button" onClick={onPlay}>Reprendre</button>}</div>
+          <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}<span className="creator-label">JEU DU CRÉATEUR</span></h1></div>{paused && <button className="primary-button resume-button" onClick={onPlay}>Reprendre</button>}</div>
           <div className="world-cards">
             <button className="world-card featured" aria-controls="mes-mondes" aria-expanded={libraryOpen} aria-haspopup="dialog" onClick={() => setLibraryOpen(true)}>
               <img src={myWorldsUrl} alt="Mes mondes" />
@@ -110,6 +115,21 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               <span className="world-card-label"><strong>Bataille</strong><small>Arène limitée · Rouge, Bleu ou chacun son équipe</small></span>
               <span className="world-mode-tag">1 joueur = 1 équipe possible</span>
             </button>
+            <button className="world-card battle-card pirates-card" onClick={() => create('pirates')} disabled={!enabled || pendingWorld !== null}>
+              <img src={piratesUrl} alt="Bataille navale du mode Pirates" />
+              <span className="world-card-label"><strong>Pirates</strong><small>Deux navires, un trésor à détruire et des abordages en équipe</small></span>
+              <span className="world-mode-tag">Combat naval</span>
+            </button>
+            <button className="world-card battle-card football-card" onClick={() => create('football')} disabled={!enabled || pendingWorld !== null}>
+              <img src={footballUrl} alt="Stade et ballon du mode Football" />
+              <span className="world-card-label"><strong>Football</strong><small>Match de 5 minutes, cartons, corners, penaltys et hors-jeu</small></span>
+              <span className="world-mode-tag">Rouge contre Bleu</span>
+            </button>
+            <button className="world-card battle-card maze-card" onClick={() => create('maze')} disabled={!enabled || pendingWorld !== null}>
+              <img src={mazeUrl} alt="Labyrinthe du mode Course Labyrinthe" />
+              <span className="world-card-label"><strong>Course Labyrinthe</strong><small>Trouve la sortie après le coup de sifflet de l’arbitre</small></span>
+              <span className="world-mode-tag">Course chronométrée</span>
+            </button>
             <button className="world-card city-card" data-world-mode="city-ancient" onClick={() => create('city-ancient')} disabled={pendingWorld !== null}>
               <img src={citiesUrl} alt="Ville ancienne et ses bâtiments parisiens" />
               <span className="world-card-label"><strong>Ville ancienne</strong><small>Bâtiments parisiens · 10 km × 10 km</small></span>
@@ -123,7 +143,8 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           </div>
           <MenuActionBar multiplayer={enabled} onSolo={() => setEnabled(false)} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} />
           {enabled && <section className="lobby-section"><MultiplayerLobby onPlay={onPlay} /></section>}
-          {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(mode, multiplayer) => { setCreateOpen(false); create(mode, multiplayer); }} />}
+          <CommunityWorlds onPlay={onPlay} />
+          {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(options) => { setCreateOpen(false); create(options.mode, options.multiplayer, options); }} />}
           {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
           {libraryOpen && (
             <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setLibraryOpen(false); }}>

@@ -5,6 +5,7 @@ import { useGameStore } from '../store';
 import { useEmoteStore } from '../emotes';
 import { turnToward } from '../rotation';
 import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
+import { useMazeStore } from '../mazeClient';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
 
@@ -52,6 +53,12 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
     return;
   }
   const mount = entity.get(PlayerMount);
+  if (useGameStore.getState().gameplayMode === 'maze' && useMazeStore.getState().overview) {
+    camera.position.set(position.x, position.y + 12, position.z + 5);
+    camera.lookAt(position.x, position.y - 7.5, position.z - 24);
+    camera.updateMatrixWorld();
+    return;
+  }
   if (useGameStore.getState().cameraMode === 'front') {
     const distance = mount?.kind === 'plane' ? 12 : mount?.kind === 'train' ? 14 : 6;
     const height = Math.max(0.6, Math.min(5.5, 2.4 - Math.sin(state.pitch) * 3));
