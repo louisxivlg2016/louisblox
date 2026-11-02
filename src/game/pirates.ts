@@ -25,7 +25,7 @@ export const PIRATE_SHOP = [
 ] as const;
 
 export function pirateSpawn(team: 'red' | 'blue') {
-  return { x: team === 'red' ? -22 : 22, y: 8.51, z: 3 };
+  return { x: team === 'red' ? -24 : 24, y: 8.51, z: 3 };
 }
 
 function addShip(blocks: Voxel[], center: number, team: 'red' | 'blue') {
