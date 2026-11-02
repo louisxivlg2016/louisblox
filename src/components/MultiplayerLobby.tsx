@@ -30,7 +30,6 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
   const error = useMultiplayerStore((state) => state.error);
   const players = useMultiplayerStore((state) => state.players);
   const pendingJoin = useRef(false);
-  const setEnabled = useMultiplayerStore((state) => state.setEnabled);
   const configure = useMultiplayerStore((state) => state.configure);
   const [playerName, setPlayerName] = useState(savedName);
   const [room, setRoom] = useState(savedRoom);
@@ -105,10 +104,6 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
 
   return (
     <>
-      <div className="multiplayer-tabs" role="group" aria-label="Mode de jeu">
-        <button type="button" className={`multiplayer-tab ${!enabled ? 'active' : ''}`} aria-pressed={!enabled} onClick={() => setEnabled(false)}>Solo</button>
-        <button type="button" className={`multiplayer-tab ${enabled ? 'active' : ''}`} aria-pressed={enabled} onClick={() => setEnabled(true)}>Multijoueur</button>
-      </div>
       {enabled && (
         <form className="multiplayer-lobby" onSubmit={(event) => { event.preventDefault(); join(); }}>
           <div className="multiplayer-fields">

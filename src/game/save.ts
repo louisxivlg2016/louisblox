@@ -1,4 +1,6 @@
 import type { World } from 'koota';
+import { flushPlaytime } from './profile';
+import { useProtectionStore } from './protection';
 import { getWorldSeed, snapshotSaddledHorses, snapshotVehicles, snapshotWorldEdits } from './chunks';
 import type { WorldSave } from './chunks';
 import { useGameStore } from './store';
@@ -64,6 +66,7 @@ export function createWorldSave(world: World): WorldSave | null {
     meat: store.meat,
     elapsed: environment.elapsed,
     edits: snapshotWorldEdits(world),
+    protection: useProtectionStore.getState().protection ?? undefined,
   };
 }
 
@@ -82,5 +85,8 @@ export function saveWorld(world: World) {
 }
 
 export function initPersistence(world: World) {
-  window.addEventListener('pagehide', () => saveWorld(world));
+  window.addEventListener('pagehide', () => {
+    saveWorld(world);
+    flushPlaytime();
+  });
 }

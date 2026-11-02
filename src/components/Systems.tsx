@@ -3,6 +3,7 @@ import { useWorld } from 'koota/react';
 import { streamChunks } from '../game/chunks';
 import { consumeActions } from '../game/input';
 import { useGameStore } from '../game/store';
+import { recordPlaytime } from '../game/profile';
 import { animalCombatSystem } from '../game/systems/animalCombatSystem';
 import { animalSystem } from '../game/systems/animalSystem';
 import { blockSystem } from '../game/systems/blockSystem';
@@ -29,6 +30,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
 
   useFrame(({ camera }, delta) => {
     const dt = Math.min(delta, 0.05);
+    recordPlaytime(dt);
     if (useGameStore.getState().mode === 'play') {
       const sleeping = world.queryFirst(Sleep) !== undefined;
       const actions = consumeActions();

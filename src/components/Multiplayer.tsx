@@ -33,6 +33,7 @@ import { clearChat, receiveChatMessage, setChatSocket } from '../game/chat';
 import { clearBattle, receiveBattleElimination, receiveBattleRespawn, receiveBattleState, setBattleLocalPlayer, setBattleSocket, useBattleStore } from '../game/battle';
 import { useEmoteStore } from '../game/emotes';
 import { receiveAppleGift } from '../game/gifts';
+import { applyProtection, isWorldProtection, setProtectionSocket, useProtectionStore } from '../game/protection';
 
 type ServerMessage = {
   type?: unknown;
@@ -57,8 +58,9 @@ type ServerMessage = {
   appearance?: unknown;
   gameplayMode?: unknown;
   worldId?: unknown;
+  protection?: unknown;
 };
-type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string };
+type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string; protection?: import('../game/protection').WorldProtection };
 
 let requestedRoomMode: GameplayMode | null = null;
 
@@ -317,6 +319,8 @@ export function MultiplayerConnection() {
       const saved = createWorldSave(world);
       if (!saved) return;
       saved.gameplayMode = pending.gameplayMode ?? saved.gameplayMode ?? 'creative';
+      saved.protection = pending.protection;
+      useProtectionStore.getState().setProtection(pending.protection ?? null);
       const unchanged = saved.seed === pending.seed && saved.gameplayMode === useGameStore.getState().gameplayMode && JSON.stringify(saved.edits) === JSON.stringify(groupVoxelEdits(pending.edits));
       if (!unchanged) {
         saved.seed = pending.seed;
@@ -391,6 +395,7 @@ export function MultiplayerConnection() {
       setTeleportSocket(next);
       setChatSocket(next);
       setBattleSocket(next);
+      setProtectionSocket(next);
       next.onopen = () => store.setStatus('online');
       next.onmessage = (event) => {
         if (typeof event.data !== 'string') return;
@@ -463,8 +468,16 @@ export function MultiplayerConnection() {
           receiveTeleportResponse(data);
           return;
         }
+        if (data.type === 'protection-denied') {
+          useGameStore.getState().setNotice('Territoire protégé : tu n’as pas l’autorisation de modifier ces blocs.');
+          return;
+        }
+        if (data.type === 'protection') {
+          applyProtection(data.protection);
+          return;
+        }
         if (data.type === 'world' && (data.seed === null || typeof data.seed === 'number') && Array.isArray(data.edits)) {
-          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: data.gameplayMode === 'survival' || data.gameplayMode === 'battle' || data.gameplayMode === 'city-ancient' || data.gameplayMode === 'city-modern' ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined };
+          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: data.gameplayMode === 'survival' || data.gameplayMode === 'battle' || data.gameplayMode === 'city-ancient' || data.gameplayMode === 'city-modern' ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined, protection: isWorldProtection(data.protection) ? data.protection : undefined };
           applyPendingWorld();
           return;
         }
@@ -618,6 +631,7 @@ export function MultiplayerConnection() {
       unsubscribeProjectiles();
       const current = socket.current;
       socket.current = null;
+      setProtectionSocket(null);
       clearTeleportRequests();
       clearChat();
       clearBattle();

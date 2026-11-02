@@ -35,7 +35,8 @@ function soloSpawn() {
   const radius = 11 + Math.random() * 8;
   return { x: Math.round(Math.cos(angle) * radius * 10) / 10, y: 8.51, z: Math.round(Math.sin(angle) * radius * 10) / 10 };
 }
-type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string };
+type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[] };
+type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; protection?: WorldProtection };
 type SharedVehicle = {
   id: string;
   kind: 'car' | 'plane' | 'train' | 'boat';
@@ -186,6 +187,7 @@ function parseExplosion(value: unknown) {
 export class GameRoom extends DurableObject<Env> {
   private worldSeed: number | null = null;
   private worldId?: string;
+  private protection?: WorldProtection;
   private worldEdits = new Map<string, VoxelEdit>();
   private vehicles = new Map<string, SharedVehicle>();
   private gameplayMode: GameplayMode = 'creative';
@@ -200,6 +202,7 @@ export class GameRoom extends DurableObject<Env> {
       const stored = await this.ctx.storage.get<StoredWorld>('world-v1');
       this.worldSeed = stored?.seed ?? null;
       this.worldId = stored?.worldId;
+      this.protection = stored?.protection;
       this.worldEdits = new Map(stored?.edits ?? []);
       this.gameplayMode = stored?.gameplayMode ?? 'creative';
     });
@@ -207,11 +210,17 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private worldSnapshot() {
-    return { type: 'world', seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId };
+    return { type: 'world', seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, protection: this.protection };
   }
 
   private async saveWorld() {
-    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId } satisfies StoredWorld);
+    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, protection: this.protection } satisfies StoredWorld);
+  }
+
+  private canEditAt(playerId: string, x: number, z: number) {
+    const protection = this.protection;
+    if (!protection?.enabled || Math.hypot(x - protection.centerX, z - protection.centerZ) > protection.radius) return true;
+    return protection.allowedPlayerIds.includes(playerId);
   }
 
   private battleSnapshot(excludeId?: string) {
@@ -269,6 +278,7 @@ export class GameRoom extends DurableObject<Env> {
     await this.ctx.storage.deleteAlarm();
     await this.ctx.storage.deleteAll();
     this.worldSeed = null;
+    this.protection = undefined;
     this.worldEdits.clear();
     this.vehicles.clear();
     this.gameplayMode = 'creative';
@@ -548,21 +558,43 @@ export class GameRoom extends DurableObject<Env> {
       this.broadcast({ type, vehicleId }, ws);
       return;
     }
+    if (type === 'protection') {
+      const attachment = this.attachment(ws);
+      const current = this.protection;
+      if (!attachment || !current || current.ownerId !== attachment.playerId) return;
+      const value = (data as { protection?: unknown }).protection;
+      if (!value || typeof value !== 'object') return;
+      const protection = value as Partial<WorldProtection>;
+      if (protection.ownerId !== current.ownerId || protection.centerX !== current.centerX || protection.centerZ !== current.centerZ || protection.radius !== 500 || typeof protection.enabled !== 'boolean' || !Array.isArray(protection.allowedPlayerIds) || protection.allowedPlayerIds.some((id: unknown) => typeof id !== 'string' || id.length < 1 || id.length > 80)) return;
+      this.protection = { ownerId: current.ownerId, centerX: current.centerX, centerZ: current.centerZ, radius: 500, enabled: protection.enabled, allowedPlayerIds: [...new Set([current.ownerId, ...protection.allowedPlayerIds])].slice(0, 50) };
+      await this.saveWorld();
+      this.broadcast({ type: 'protection', protection: this.protection });
+      return;
+    }
     if (type === 'world-init') {
       const attachment = this.attachment(ws);
       const seed = (data as { seed?: unknown }).seed;
       const edits = parseEdits((data as { edits?: unknown }).edits);
       if (!attachment || typeof seed !== 'number' || !Number.isSafeInteger(seed) || Math.abs(seed) > 1000000000 || !edits) return;
       const replace = this.worldSeed === null || (data as { force?: unknown }).force === true;
+      if ((data as { force?: unknown }).force === true && this.protection && this.protection.ownerId !== attachment.playerId) {
+        attachment.worldInitAccepted = false;
+        ws.serializeAttachment(attachment);
+        ws.send(JSON.stringify({ type: 'protection-denied' }));
+        return;
+      }
       attachment.worldInitAccepted = replace;
       ws.serializeAttachment(attachment);
       if (replace) {
+        const newWorld = this.worldSeed === null;
         const worldId = (data as { worldId?: unknown }).worldId;
         this.worldId = typeof worldId === 'string' && worldId.length <= 80 ? worldId : undefined;
         this.worldSeed = seed;
         this.worldEdits = new Map(edits);
         const mode = (data as { gameplayMode?: unknown }).gameplayMode;
         this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' ? mode : 'creative';
+        if (this.gameplayMode === 'battle') this.protection = undefined;
+        else if (newWorld && !this.protection) this.protection = { ownerId: attachment.playerId, centerX: 0, centerZ: 0, radius: 500, enabled: true, allowedPlayerIds: [attachment.playerId] };
         if (this.gameplayMode === 'battle') {
           this.battleScores = { red: 0, blue: 0 };
           this.playerScores.clear();
@@ -601,11 +633,19 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
     if (type === 'edits') {
+      const attachment = this.attachment(ws);
       const edits = parseEdits((data as { edits?: unknown }).edits);
-      if (!edits || this.worldSeed === null) return;
-      for (const [position, edit] of edits) this.worldEdits.set(position, edit);
+      if (!attachment || !edits || this.worldSeed === null) return;
+      const permitted = edits.filter(([position]) => {
+        const [x, y, z] = position.split(',').map(Number);
+        if (this.canEditAt(attachment.playerId, x, z)) return true;
+        ws.send(JSON.stringify({ type: 'protection-denied', x, y, z }));
+        return false;
+      });
+      if (permitted.length === 0) return;
+      for (const [position, edit] of permitted) this.worldEdits.set(position, edit);
       await this.saveWorld();
-      this.broadcast({ type: 'edits', edits }, ws);
+      this.broadcast({ type: 'edits', edits: permitted }, ws);
       return;
     }
     if (type === 'outfit') {

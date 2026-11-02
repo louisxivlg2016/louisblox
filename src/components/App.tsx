@@ -8,6 +8,7 @@ import { MultiplayerConnection } from './Multiplayer';
 import { useRemotePlayerStore } from '../game/multiplayerStore';
 import { isMouseDown } from '../game/input';
 import { useBattleStore } from '../game/battle';
+import { useProtectionStore } from '../game/protection';
 
 export function App() {
   const mode = useGameStore((state) => state.mode);
@@ -25,8 +26,8 @@ export function App() {
             if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') Object.assign(window, {
               louisbloxRenderer: gl,
               louisbloxDebug: async () => {
-                const [traits, chunks, vehicles, ruins] = await Promise.all([import('../game/traits'), import('../game/chunks'), import('../game/vehicles'), import('../game/ruins')]);
-                return { world, gl, camera, store: useGameStore, remote: useRemotePlayerStore, battle: useBattleStore, mining: () => isMouseDown(0), ...traits, ...chunks, ...vehicles, ...ruins };
+                const [traits, chunks, vehicles, ruins, collision] = await Promise.all([import('../game/traits'), import('../game/chunks'), import('../game/vehicles'), import('../game/ruins'), import('../game/systems/collisionSystem')]);
+                return { world, gl, camera, store: useGameStore, remote: useRemotePlayerStore, battle: useBattleStore, protection: useProtectionStore, mining: () => isMouseDown(0), ...traits, ...chunks, ...vehicles, ...ruins, ...collision };
               },
             });
           }}

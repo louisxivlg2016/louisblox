@@ -1,4 +1,5 @@
 import { WorldStats } from './WorldStats';
+import { ProtectionPanel } from './ProtectionPanel';
 
 export function SettingsPanel() {
   return (
@@ -9,6 +10,7 @@ export function SettingsPanel() {
         <p>Retrouve ici les informations du monde et les touches de jeu.</p>
       </div>
       <WorldStats />
+      <ProtectionPanel />
       <div className="controls-hint">
         <span><strong>WASD / FLÈCHES</strong> se déplacer / conduire</span>
         <span><strong>ESPACE</strong> sauter / remonter / voler</span>

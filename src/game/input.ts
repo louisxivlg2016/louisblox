@@ -23,6 +23,7 @@ let touchLookY = 0;
 let touchStartX = 0;
 let touchStartY = 0;
 let miningLatched = false;
+let captureMouseDown = false;
 let edgeResetTimer: ReturnType<typeof setTimeout> | null = null;
 let touchMineTimer: ReturnType<typeof setTimeout> | null = null;
 let touchDidMine = false;
@@ -53,7 +54,8 @@ function beginTouchMining() {
   touchMouseButtons.add(0);
 }
 
-export function clearInput() {
+export function clearInput(preserveCaptureClick?: boolean | Event) {
+  if (preserveCaptureClick !== true) captureMouseDown = false;
   keys.clear();
   touchKeys.clear();
   mouseButtons.clear();
@@ -240,6 +242,7 @@ export function initInput() {
 
   window.addEventListener('pointerdown', (event) => {
     if (event.pointerType !== 'touch' && event.target instanceof HTMLCanvasElement && useGameStore.getState().mode === 'play' && document.pointerLockElement === null) {
+      captureMouseDown = true;
       void requestPlay();
       return;
     }
@@ -306,6 +309,10 @@ export function initInput() {
   window.addEventListener('pointercancel', endTouchLook);
 
   window.addEventListener('mousedown', (event) => {
+    if (captureMouseDown) {
+      captureMouseDown = false;
+      return;
+    }
     const capabilities = (event as MouseEvent & { sourceCapabilities?: { firesTouchEvents?: boolean } }).sourceCapabilities;
     if (capabilities?.firesTouchEvents) return;
     if (!hasMouseControl() || useGameStore.getState().mode !== 'play') return;
@@ -356,7 +363,7 @@ export async function requestPlay() {
   const touchDevice = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
   if (touchDevice || typeof canvas.requestPointerLock !== 'function') {
     pointerLockFallback = true;
-    clearInput();
+    clearInput(true);
     useGameStore.getState().setMode('play');
     return;
   }
@@ -366,7 +373,7 @@ export async function requestPlay() {
     await canvas.requestPointerLock();
   } catch {
     pointerLockFallback = true;
-    clearInput();
+    clearInput(true);
     useGameStore.getState().setMode('play');
   }
 }

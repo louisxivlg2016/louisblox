@@ -25,6 +25,8 @@ import { createMeatInventory } from './meats';
 import { useGameStore } from './store';
 import { BlockKind, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
+import { canEditAt, newProtection, useProtectionStore } from './protection';
+import type { WorldProtection } from './protection';
 
 export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string } | null;
 export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: 'car' | 'plane' | 'train' | 'boat' };
@@ -47,6 +49,7 @@ export type WorldSave = {
   meat?: Record<import('./animals').AnimalKind, number>;
   elapsed: number;
   edits: Array<[string, Array<[string, ChunkEdit]>]>;
+  protection?: WorldProtection;
 };
 
 type WorldChunks = {
@@ -195,6 +198,7 @@ function blockEdit(block: Voxel): ChunkEdit {
 }
 
 export function setVoxelText(world: World, position: { x: number; y: number; z: number }, text: string) {
+  if (!canEditAt(position.x, position.z)) return false;
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(position.x, position.y, position.z));
   if (!block) return false;
@@ -380,6 +384,7 @@ export function getWorldSeed(world: World) {
 }
 
 export function removeVoxel(world: World, hit: VoxelHit) {
+  if (!canEditAt(hit.x, hit.z)) return;
   const state = stateFor(world);
   const cx = chunkCoordinate(hit.x);
   const cz = chunkCoordinate(hit.z);
@@ -474,6 +479,7 @@ export function growSapling(world: World, kind: BlockKind, x: number, y: number,
 }
 
 export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?: boolean, growth?: number, items?: SelectedKind[], facing?: Voxel['facing']) {
+  if (!canEditAt(hit.x, hit.z)) return;
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
   if (!block) return;
@@ -505,6 +511,7 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
 }
 
 export function addVoxel(world: World, x: number, y: number, z: number, kind: BlockKind, growth?: number, facing?: Voxel['facing'], fireGeneration = 0) {
+  if (!canEditAt(x, z)) return;
   const state = stateFor(world);
   const cx = chunkCoordinate(x);
   const cz = chunkCoordinate(z);
@@ -582,6 +589,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   for (const entity of [...world.query(Sleep)]) entity.destroy();
 
   const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3 || saved.version === 4) ? saved : null;
+  useProtectionStore.getState().setProtection(restore?.protection ?? (restore ? null : useProtectionStore.getState().protection ?? newProtection()));
   const seed = restore?.seed ?? 73421 + generation * 977;
   const edits: WorldChunks['edits'] = restore ? new Map(restore.edits.map(([chunk, values]) => [chunk, new Map(values)])) : new Map();
   worlds.set(world, {

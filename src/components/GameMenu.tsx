@@ -4,6 +4,9 @@ import { readWorldSave } from '../game/save';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import type { GameplayMode } from '../game/worldMode';
 import { MultiplayerLobby } from './MultiplayerLobby';
+import { MenuActionBar } from './MenuActionBar';
+import { CreateWorldDialog } from './CreateWorldDialog';
+import { ProfileDialog } from './ProfileDialog';
 import { WorldLibrary } from './WorldLibrary';
 import { FriendsPanel } from './FriendsPanel';
 import { requestRoomMode } from './Multiplayer';
@@ -22,8 +25,11 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const playerName = useMultiplayerStore((state) => state.playerName);
   const server = useMultiplayerStore((state) => state.server);
   const configure = useMultiplayerStore((state) => state.configure);
+  const setEnabled = useMultiplayerStore((state) => state.setEnabled);
   const [pendingWorld, setPendingWorld] = useState<string | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   useEffect(() => {
     if (!libraryOpen) return;
     const close = (event: KeyboardEvent) => {
@@ -40,7 +46,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     setPendingWorld(null);
     void onPlay();
   }, [pendingWorld, room, status, onPlay]);
-  const create = (gameplayMode: GameplayMode) => {
+  const create = (gameplayMode: GameplayMode, sharedOverride?: boolean) => {
     if (enabled && gameplayMode === 'battle') {
       requestRoomMode('battle');
       if (status === 'online' && useGameStore.getState().gameplayMode === 'battle') {
@@ -57,7 +63,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
       configure({ playerName, room, server });
       return;
     }
-    const shared = enabled && gameplayMode !== 'battle';
+    const shared = sharedOverride ?? (enabled && gameplayMode !== 'battle');
     const publicId = gameplayMode === 'survival' ? 'survie-public-v1' : gameplayMode === 'creative' ? 'creatif-public-v1' : `${gameplayMode}-public-v1`;
     const worldId = shared ? publicId : `monde-${crypto.randomUUID().slice(0, 8)}`;
     const names: Record<GameplayMode, string> = { survival: 'Survie avec tous les joueurs', creative: 'Créatif avec tous les joueurs', battle: worldId, 'city-ancient': 'Ville ancienne · 10 km', 'city-modern': 'Ville moderne · 10 km' };
@@ -65,10 +71,12 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     if (shared && readWorldSave(worldId)) useGameStore.getState().openWorld(worldId, worldName);
     else regenerate(gameplayMode, worldId);
     if (shared) useGameStore.setState({ worldName });
-    if (enabled) {
+    if (shared) {
+      setEnabled(true);
       setPendingWorld(worldId);
       configure({ playerName, room: worldId, server });
     } else {
+      setEnabled(false);
       void onPlay();
     }
   };
@@ -113,10 +121,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               <span className="world-mode-tag">{enabled ? 'Multijoueur' : 'Solo'}</span>
             </button>
           </div>
-          <section className="lobby-section">
-            <div className="lobby-heading"><h2>Jouer ensemble</h2><p>Crée un salon ou rejoins tes amis avec le même nom de salon.</p></div>
-            <MultiplayerLobby onPlay={onPlay} />
-          </section>
+          <MenuActionBar multiplayer={enabled} onSolo={() => setEnabled(false)} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} />
+          {enabled && <section className="lobby-section"><MultiplayerLobby onPlay={onPlay} /></section>}
+          {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(mode, multiplayer) => { setCreateOpen(false); create(mode, multiplayer); }} />}
+          {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
           {libraryOpen && (
             <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setLibraryOpen(false); }}>
               <section className="world-library-modal" role="dialog" aria-modal="true" aria-label="Mes mondes">
