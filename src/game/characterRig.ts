@@ -1,6 +1,7 @@
-import { Box3, BufferGeometry, Group, MathUtils, Mesh, Vector3 } from 'three';
+import { Box3, BoxGeometry, BufferGeometry, Group, MathUtils, Mesh, Vector3 } from 'three';
 import type { Material, Object3D } from 'three';
 import { SkeletonUtils } from 'three-stdlib';
+import { animalMaterial } from './animalTextures';
 import type { OutfitKind } from './outfits';
 
 type Part = 'body' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
@@ -25,6 +26,24 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     indices[part].push(a, b, c);
   }
   return { geometry, indices, material };
+}
+
+function addPrincessHair(root: Group, width: number, height: number, depth: number, floor: number) {
+  const hair = new Group();
+  hair.name = 'princess-back-hair';
+  const material = animalMaterial('#5a321c');
+  const back = new Mesh(new BoxGeometry(width * 0.32, height * 0.28, depth * 0.14), material);
+  back.position.set(0, floor + height * 0.76, -depth * 0.55);
+  hair.add(back);
+  const crown = new Mesh(new BoxGeometry(width * 0.31, height * 0.075, depth * 0.56), material);
+  crown.position.set(0, floor + height * 0.89, 0);
+  hair.add(crown);
+  for (const side of [-1, 1]) {
+    const strand = new Mesh(new BoxGeometry(width * 0.1, height * 0.26, depth * 0.12), animalMaterial('#704126'));
+    strand.position.set(side * width * 0.12, floor + height * 0.68, -depth * 0.62);
+    hair.add(strand);
+  }
+  root.add(hair);
 }
 
 export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind, 'default'>, scale: number) {
@@ -65,6 +84,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
       }
     }
   }
+  if (outfit === 'princess') addPrincessHair(root, width, height, bounds.max.z - bounds.min.z, floor);
   root.userData.rig = rig;
   const center = bounds.getCenter(new Vector3());
   root.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
