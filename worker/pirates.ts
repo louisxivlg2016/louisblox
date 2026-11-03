@@ -1,3 +1,5 @@
+import { generatePirateChunk } from '../src/game/pirates';
+import { BlockKind } from '../src/game/voxel';
 import type { PlayerAttachment } from './index';
 
 type PirateKit = 'defender' | 'gunner' | 'raider';
@@ -133,13 +135,14 @@ export class PirateEngine {
     this.eliminate(target, attacker.name, attacker);
   }
 
-  damageObjective(attacker: PlayerAttachment, kind: unknown) {
-    if (this.room.mode() !== 'pirates' || !attacker.team || !attacker.state || (kind !== 'melee' && kind !== 'cannon')) return;
+  damageObjective(attacker: PlayerAttachment, kind: unknown, impact?: { x: number; y: number; z: number }) {
+    const point = impact ?? attacker.state;
+    if (this.room.mode() !== 'pirates' || !attacker.team || !point || (kind !== 'melee' && kind !== 'cannon')) return;
     const team = attacker.team === 'red' ? 'blue' : 'red';
     if (this.objectives[team] <= 0) return;
     const objective = objectives[team];
-    const distance = Math.hypot(attacker.state.x - objective.x, attacker.state.y - objective.y, attacker.state.z - objective.z);
-    if (distance > (kind === 'melee' ? 6 : 90)) return;
+    const distance = Math.hypot(point.x - objective.x, point.y - objective.y, point.z - objective.z);
+    if (distance > (impact ? 3.5 : kind === 'melee' ? 6 : 90)) return;
     this.objectives[team] -= 1;
     if (this.objectives[team] === 0) {
       this.room.setEdit(`${objective.x},${objective.y},${objective.z}`, null);
@@ -147,6 +150,25 @@ export class PirateEngine {
       void this.room.save();
     }
     this.update();
+  }
+
+  explode(position: { x: number; y: number; z: number }) {
+    if (this.room.mode() !== 'pirates') return;
+    const radius = 2.8;
+    const edits = new Map<string, null>();
+    for (let cx = Math.floor((position.x - radius + 8) / 16); cx <= Math.floor((position.x + radius + 8) / 16); cx++) {
+      for (let cz = Math.floor((position.z - radius + 8) / 16); cz <= Math.floor((position.z + radius + 8) / 16); cz++) {
+        for (const block of generatePirateChunk(cx, cz).blocks) {
+          if (block.kind === BlockKind.Sand || block.kind === BlockKind.Water || block.kind === BlockKind.Chest) continue;
+          if (Math.hypot(block.x - position.x, block.y - position.y, block.z - position.z) > radius) continue;
+          edits.set(`${block.x},${block.y},${block.z}`, null);
+        }
+      }
+    }
+    if (edits.size === 0) return;
+    for (const [key, value] of edits) this.room.setEdit(key, value);
+    this.room.broadcast({ type: 'edits', edits: [...edits] });
+    void this.room.save();
   }
 
   tick(player: PlayerAttachment) {

@@ -715,6 +715,11 @@ export class GameRoom extends DurableObject<Env> {
       if (typeof projectileId !== 'string' || projectileId.length < 1 || projectileId.length > 80) return;
       const explosion = parseExplosion((data as { explosion?: unknown }).explosion);
       if (explosion === null) return;
+      const attacker = this.attachment(ws);
+      if (explosion && attacker && this.gameplayMode === 'pirates') {
+        this.pirates.explode(explosion);
+        this.pirates.damageObjective(attacker, 'cannon', explosion);
+      }
       this.broadcast({ type, projectileId, explosion }, ws);
       return;
     }
