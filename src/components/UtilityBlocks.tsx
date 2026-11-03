@@ -2,6 +2,7 @@ import { MeshBasicMaterial } from 'three';
 import { BlockKind } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { PixelPart } from './ItemModel';
+import { NormalStreetLampModel, ParisStreetLampModel } from './StreetLights';
 import { EXTRA_BLOCK_META, isBed, isRail } from '../game/extraBlocks';
 
 const fire = new MeshBasicMaterial({ color: '#ff9a32' });
@@ -97,8 +98,8 @@ export function TrafficLightModel() {
   );
 }
 
-export function UtilityBlockModel({ kind }: { kind: BlockKind }) {
-  return kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
+export function UtilityBlockModel({ kind, withLight = true }: { kind: BlockKind; withLight?: boolean }) {
+  return kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
 }
 
 export function UtilityBlocks({ blocks }: { blocks: Voxel[] }) {

@@ -87,7 +87,7 @@ export function Hands() {
             {selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : <CampfireModel destructive={selected === BlockKind.Wildfire} />}
           </group>
         ) : isUtilityBlock(selected) ? (
-          <group position={[0.36, -0.4, -0.78]} scale={0.48}><UtilityBlockModel kind={selected} /></group>
+          <group position={[0.36, -0.4, -0.78]} scale={0.48}><UtilityBlockModel kind={selected} withLight={false} /></group>
         ) : (
           <mesh args={[blockGeometry, heldMaterials]} position={[0.36, -0.26, -0.72]} rotation={[0.2, 0.55, 0.05]} scale={0.24} renderOrder={11} frustumCulled={false} />
         )

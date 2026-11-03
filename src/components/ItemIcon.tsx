@@ -5,6 +5,8 @@ import { brickTexture, texture } from '../game/textures';
 import tntUrl from '../../assets/references/tnt.png';
 import redFireUrl from '../../assets/ui/red-fire.png';
 import trafficLightUrl from '../../assets/ui/traffic-light.png';
+import streetLampUrl from '../../assets/ui/street-lamp.png';
+import parisStreetLampUrl from '../../assets/ui/paris-street-lamp.png';
 
 const iconCache = new Map<BlockKind, string>();
 
@@ -22,6 +24,8 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
   if (kind === BlockKind.Tnt) return <img className="tnt-icon" src={tntUrl} alt="" />;
   if (kind === BlockKind.Wildfire) return <img className="tnt-icon red-fire-icon" src={redFireUrl} alt="" />;
   if (kind === BlockKind.TrafficLight) return <img className="tnt-icon traffic-light-icon" src={trafficLightUrl} alt="" />;
+  if (kind === BlockKind.StreetLamp) return <img className="tnt-icon street-lamp-icon" src={streetLampUrl} alt="" />;
+  if (kind === BlockKind.ParisStreetLamp) return <img className="tnt-icon paris-street-lamp-icon" src={parisStreetLampUrl} alt="" />;
   if (typeof kind === 'number') {
     if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) return <span className="block-swatch block-concrete" style={{ backgroundColor: info.color }} />;
     const brick = kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick;

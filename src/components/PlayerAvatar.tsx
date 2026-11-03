@@ -123,7 +123,7 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
         {!hasFullCharacter(outfit) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
         <group position={[0.13, -0.48, -0.24]} scale={typeof selected === 'string' && getItemMeta(selected).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof selected === 'number'
-            ? selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : selected === BlockKind.Campfire || selected === BlockKind.Wildfire ? <CampfireModel destructive={selected === BlockKind.Wildfire} /> : isUtilityBlock(selected) ? <UtilityBlockModel kind={selected} /> : <mesh args={[blockGeometry, blockMaterials[selected]]} />
+            ? selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : selected === BlockKind.Campfire || selected === BlockKind.Wildfire ? <CampfireModel destructive={selected === BlockKind.Wildfire} /> : isUtilityBlock(selected) ? <UtilityBlockModel kind={selected} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[selected]]} />
             : <ItemModel kind={selected} />}
         </group>
       </group>
