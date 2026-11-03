@@ -1,8 +1,10 @@
-import { Suspense } from 'react';
-import { useQuery, useTrait } from 'koota/react';
+import { Suspense, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useQuery, useTrait, useWorld } from 'koota/react';
 import type { Entity } from 'koota';
 import { Mesh } from 'three';
-import { Animal, AnimalMesh, AnimalPosition, HorseRider } from '../game/traits';
+import { Animal, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerMount } from '../game/traits';
+import { useRemotePlayerStore } from '../game/multiplayerStore';
 import { AnimalGlb } from './AnimalGlb';
 import { SaddleModel } from './ItemModel';
 
@@ -29,12 +31,51 @@ function AnimalView({ entity }: { entity: Entity }) {
       <Suspense fallback={null}>
         <AnimalGlb kind={kind} />
       </Suspense>
-      {kind === 'horse' && rider?.saddled && <group position={[0, 1.28, 0]} scale={0.85}><SaddleModel /></group>}
+      {kind === 'horse' && rider?.saddled && <group name="horse-saddle" position={[0, 1.08, 0]} scale={0.85}><SaddleModel /></group>}
     </group>
   );
 }
 
+function RemoteHorseSync() {
+  const world = useWorld();
+  const previous = useRef(new Set<Entity>());
+  useFrame(() => {
+    const current = new Set<Entity>();
+    const localMount = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
+    const horses = world.query(Animal, AnimalId, AnimalPosition, AnimalMotion, AnimalMesh);
+    for (const state of Object.values(useRemotePlayerStore.getState().players)) {
+      const snapshot = state.horse;
+      if (!snapshot) continue;
+      const entity = horses.find((candidate) => candidate.get(AnimalId) === snapshot.id);
+      if (!entity || entity === localMount) continue;
+      current.add(entity);
+      const rider = entity.get(HorseRider);
+      if (rider) {
+        if (!rider.saddled || !rider.mounted) entity.set(HorseRider, { saddled: true, mounted: true });
+      } else {
+        entity.add(HorseRider({ saddled: true, mounted: true }));
+      }
+      const position = entity.get(AnimalPosition)!;
+      position.set(snapshot.x, snapshot.y, snapshot.z);
+      const motion = entity.get(AnimalMotion)!;
+      motion.yaw = snapshot.yaw;
+      motion.displayYaw = snapshot.yaw;
+      const mesh = entity.get(AnimalMesh)?.value;
+      if (mesh) {
+        mesh.position.copy(position);
+        mesh.rotation.y = snapshot.yaw;
+      }
+    }
+    for (const entity of previous.current) {
+      if (current.has(entity) || entity === localMount || !entity.get(HorseRider)) continue;
+      entity.set(HorseRider, { mounted: false, speed: 0 });
+    }
+    previous.current = current;
+  });
+  return null;
+}
+
 export function Animals() {
   const animals = useQuery(Animal);
-  return animals.map((entity) => <AnimalView key={entity} entity={entity} />);
+  return <><RemoteHorseSync />{animals.map((entity) => <AnimalView key={entity} entity={entity} />)}</>;
 }

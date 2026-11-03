@@ -4,6 +4,8 @@ import type { EmoteKind } from './emotes';
 import { isPotionEffect } from './effects';
 import { isGameplayMode } from './worldMode';
 
+export type HorseSnapshot = { id: string; x: number; y: number; z: number; yaw: number };
+
 export type PlayerSnapshot = {
   x: number;
   y: number;
@@ -15,6 +17,7 @@ export type PlayerSnapshot = {
   airborne?: boolean;
   mounted?: boolean;
   vehicleKind?: 'car' | 'horse' | 'plane' | 'train' | 'boat';
+  horse?: HorseSnapshot;
   emote?: EmoteKind | null;
   selected?: SelectedKind;
   effects?: import('./effects').PotionEffect[];
@@ -57,6 +60,13 @@ export function resolveMultiplayerUrl(
   return url.toString();
 }
 
+function isHorseSnapshot(value: unknown): value is HorseSnapshot {
+  if (!value || typeof value !== 'object') return false;
+  const horse = value as Record<string, unknown>;
+  return typeof horse.id === 'string' && horse.id.length > 0 && horse.id.length <= 80
+    && ['x', 'y', 'z', 'yaw'].every((key) => typeof horse[key] === 'number' && Number.isFinite(horse[key]));
+}
+
 export function isPlayerSnapshot(value: unknown): value is PlayerSnapshot {
   if (!value || typeof value !== 'object') return false;
   const state = value as Record<string, unknown>;
@@ -66,6 +76,7 @@ export function isPlayerSnapshot(value: unknown): value is PlayerSnapshot {
     && (state.airborne === undefined || typeof state.airborne === 'boolean')
     && (state.mounted === undefined || typeof state.mounted === 'boolean')
     && (state.vehicleKind === undefined || state.vehicleKind === 'car' || state.vehicleKind === 'horse' || state.vehicleKind === 'plane' || state.vehicleKind === 'train' || state.vehicleKind === 'boat')
+    && (state.horse === undefined || isHorseSnapshot(state.horse))
     && (state.emote === undefined || state.emote === null || state.emote === 'sit' || state.emote === 'lie' || state.emote === 'wave')
     && (state.selected === undefined || isSelectedKind(state.selected))
     && (state.effects === undefined || Array.isArray(state.effects) && state.effects.every(isPotionEffect));

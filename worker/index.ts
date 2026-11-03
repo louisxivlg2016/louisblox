@@ -17,6 +17,7 @@ export type PlayerState = {
   airborne?: boolean;
   mounted?: boolean;
   vehicleKind?: 'car' | 'horse' | 'plane' | 'train' | 'boat';
+  horse?: { id: string; x: number; y: number; z: number; yaw: number };
   emote?: 'sit' | 'lie' | 'wave' | null;
   selected?: string | number;
   effects?: string[];
@@ -87,6 +88,14 @@ const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'p
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
 const potionEffects = new Set(['speed', 'slowness', 'jump', 'doubleJump', 'haste', 'strength', 'weakness', 'defence', 'regeneration', 'poison', 'invisibility', 'heatResistance', 'knockback']);
 
+function parseHorse(value: unknown): PlayerState['horse'] {
+  if (!value || typeof value !== 'object') return undefined;
+  const horse = value as Record<string, unknown>;
+  if (typeof horse.id !== 'string' || horse.id.length === 0 || horse.id.length > 80) return undefined;
+  if (!['x', 'y', 'z', 'yaw'].every((key) => typeof horse[key] === 'number' && Number.isFinite(horse[key]))) return undefined;
+  return { id: horse.id, x: horse.x as number, y: horse.y as number, z: horse.z as number, yaw: horse.yaw as number };
+}
+
 function parseState(value: unknown): PlayerState | null {
   if (!value || typeof value !== 'object') return null;
   const state = value as Record<string, unknown>;
@@ -102,6 +111,7 @@ function parseState(value: unknown): PlayerState | null {
     airborne: state.airborne === true,
     mounted: state.mounted === true,
     vehicleKind: state.vehicleKind === 'car' || state.vehicleKind === 'horse' || state.vehicleKind === 'plane' || state.vehicleKind === 'train' || state.vehicleKind === 'boat' ? state.vehicleKind : undefined,
+    horse: state.vehicleKind === 'horse' ? parseHorse(state.horse) : undefined,
     emote: state.emote === 'sit' || state.emote === 'lie' || state.emote === 'wave' ? state.emote : null,
     selected: typeof state.selected === 'string' && state.selected.length > 0 && state.selected.length <= 96
       ? state.selected

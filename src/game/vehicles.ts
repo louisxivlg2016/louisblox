@@ -305,9 +305,9 @@ export function vehicleMovementSystem(world: World, dt: number) {
     if (!active) return;
     const target = input.forward * (input.forward < 0 ? 2.2 : 6.2);
     rider.speed += Math.max(-10 * dt, Math.min(10 * dt, target - rider.speed));
-    motion.yaw = state.yaw + Math.PI;
+    motion.yaw = state.yaw;
     if (input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(rider.speed || 1);
-    if (!moveMount(world, position, motion.yaw - Math.PI, rider.speed, dt)) rider.speed = 0;
+    if (!moveMount(world, position, motion.yaw, rider.speed, dt)) rider.speed = 0;
     motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * 7);
     if (mesh.value) {
       mesh.value.position.copy(position);

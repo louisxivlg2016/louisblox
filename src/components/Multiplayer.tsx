@@ -14,7 +14,7 @@ import { useMultiplayerStore, useRemotePlayerStore } from '../game/multiplayerSt
 import { createWorldSave } from '../game/save';
 import { rememberWorld, useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
-import { Chunk, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from '../game/traits';
+import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from '../game/traits';
 import { getItemMeta } from '../game/items';
 import { ItemModel, PixelPart } from './ItemModel';
 import { clearTeleportRequests, receiveTeleportRequest, receiveTeleportResponse, setTeleportSocket } from '../game/teleportRequests';
@@ -641,10 +641,13 @@ export function MultiplayerConnection() {
       const playerState = entity?.get(PlayerState);
       const velocity = entity?.get(PlayerVelocity);
       const mounted = entity?.get(PlayerMount)?.vehicle;
+      const horse = entity?.get(PlayerMount)?.kind === 'horse' && mounted
+        ? { id: mounted.get(AnimalId)!, ...mounted.get(AnimalPosition)!, yaw: mounted.get(AnimalMotion)?.yaw ?? 0 }
+        : undefined;
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, emote: useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, horse, emote: useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

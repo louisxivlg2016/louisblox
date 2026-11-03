@@ -2,7 +2,7 @@ import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
 import { biomeAt, heightAt, SEA_LEVEL } from './levels';
 import type { Biome, WaterTile } from './levels';
-import { Animal, AnimalHealth, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition } from './traits';
+import { Animal, AnimalHealth, AnimalHit, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition } from './traits';
 import { useGameStore } from './store';
 
 export type AnimalKind =
@@ -43,6 +43,7 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
   const yaw = hash(x, z, seed + 41) * Math.PI * 2;
   return world.spawn(
     Animal({ kind }),
+    AnimalId(`${kind}:${x}:${z}`),
     AnimalHealth({ value: health[kind] }),
     AnimalHit(),
     AnimalPosition(new Vector3(x, y, z)),
