@@ -7,7 +7,7 @@ export const CHUNK_SIZE = 16;
 export const VIEW_DISTANCE = 1;
 export const SEA_LEVEL = 5;
 export const MIN_WORLD_Y = -64;
-export const MAX_BUILD_Y = 80;
+export const MAX_BUILD_Y = Number.MAX_SAFE_INTEGER;
 
 export type Biome = 'prairie' | 'forest' | 'winter' | 'desert' | 'autumn';
 export type WaterTile = { x: number; z: number };

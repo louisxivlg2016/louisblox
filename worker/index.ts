@@ -126,7 +126,7 @@ function parseEdits(value: unknown): EditEntry[] | null {
   for (const entry of value) {
     if (!Array.isArray(entry) || entry.length !== 2) return null;
     const [x, y, z] = String(entry[0]).split(',').map(Number);
-    if (![x, y, z].every(Number.isInteger) || Math.abs(x) > 10000000 || Math.abs(z) > 10000000 || y < -64 || y > 80) return null;
+    if (![x, y, z].every(Number.isInteger) || Math.abs(x) > 10000000 || Math.abs(z) > 10000000 || y < -64 || !Number.isSafeInteger(y)) return null;
     const key = `${x},${y},${z}`;
     const edit = entry[1];
     if (edit === null) {
