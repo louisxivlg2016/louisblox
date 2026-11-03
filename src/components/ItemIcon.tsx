@@ -4,6 +4,7 @@ import { BlockKind } from '../game/voxel';
 import { brickTexture, texture } from '../game/textures';
 import tntUrl from '../../assets/references/tnt.png';
 import redFireUrl from '../../assets/ui/red-fire.png';
+import trafficLightUrl from '../../assets/ui/traffic-light.png';
 
 const iconCache = new Map<BlockKind, string>();
 
@@ -20,6 +21,7 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
   const info = selectionInfo(kind);
   if (kind === BlockKind.Tnt) return <img className="tnt-icon" src={tntUrl} alt="" />;
   if (kind === BlockKind.Wildfire) return <img className="tnt-icon red-fire-icon" src={redFireUrl} alt="" />;
+  if (kind === BlockKind.TrafficLight) return <img className="tnt-icon traffic-light-icon" src={trafficLightUrl} alt="" />;
   if (typeof kind === 'number') {
     if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) return <span className="block-swatch block-concrete" style={{ backgroundColor: info.color }} />;
     const brick = kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick;

@@ -205,8 +205,10 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       }
       const facing = isLadder(kind)
         ? hit.normal.x === 1 ? 'east' : hit.normal.x === -1 ? 'west' : hit.normal.z === 1 ? 'south' : 'north'
-        : Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
-      const placed = addVoxel(world, x, y, z, kind, undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) ? facing : undefined);
+        : kind === BlockKind.TrafficLight
+          ? Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'south' : 'north'
+          : Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
+      const placed = addVoxel(world, x, y, z, kind, undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || kind === BlockKind.TrafficLight ? facing : undefined);
       if (placed && store.gameplayMode === 'survival') changeInventory(kind, -1);
       if (kind === BlockKind.Tnt) {
         const bomb = spawnBomb(world, x, y, z);

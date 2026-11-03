@@ -497,7 +497,7 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
   if (isChest(kind)) block.items = items ?? block.items ?? [];
   else delete block.items;
   if (facing !== undefined) block.facing = facing;
-  if (!isLadder(kind) && !isDoor(kind) && !isTrapdoor(kind) && !isRail(kind) && !isSign(kind)) delete block.facing;
+  if (!isLadder(kind) && !isDoor(kind) && !isTrapdoor(kind) && !isRail(kind) && !isSign(kind) && kind !== BlockKind.TrafficLight) delete block.facing;
   indexBlock(state, block);
   const cx = chunkCoordinate(hit.x);
   const cz = chunkCoordinate(hit.z);
@@ -507,7 +507,7 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
   const edit = door ? { kind, open: block.open ?? false, facing: block.facing ?? 'north' }
     : isCrop(kind) ? { kind, growth: block.growth ?? 0 }
       : isChest(kind) ? { kind, items: block.items ?? [] }
-        : isLadder(kind) || isRail(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
+        : isLadder(kind) || isRail(kind) || kind === BlockKind.TrafficLight ? { kind, facing: block.facing ?? 'north' } : kind;
   editsFor(state, cx, cz).set(voxelKey(hit.x, hit.y, hit.z), edit);
   recordVoxelEdit(state, cx, cz, hit.x, hit.y, hit.z);
   if (wasFire || isFireBlock(kind)) {
@@ -535,14 +535,14 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
   if (isCrop(kind)) block.growth = growth ?? 3;
   if (isChest(kind)) block.items = [];
   if (isSign(kind)) block.text = '';
-  if (isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind)) block.facing = facing ?? 'north';
+  if (isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || kind === BlockKind.TrafficLight) block.facing = facing ?? 'north';
   data.blocks.push(block);
   state.blocks.set(position, block);
   indexBlock(state, block);
   const edit = isCrop(kind) ? { kind, growth: block.growth ?? 0 }
     : isChest(kind) ? { kind, items: [] }
       : isSign(kind) ? { kind, text: '', facing: block.facing ?? 'north' }
-        : isLadder(kind) || isRail(kind) ? { kind, facing: block.facing ?? 'north' } : kind;
+        : isLadder(kind) || isRail(kind) || kind === BlockKind.TrafficLight ? { kind, facing: block.facing ?? 'north' } : kind;
   editsFor(state, cx, cz).set(position, edit);
   recordVoxelEdit(state, cx, cz, x, y, z);
   if (isFireBlock(kind)) spawnFire(world, block, fireGeneration);

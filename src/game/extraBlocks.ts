@@ -102,6 +102,7 @@ export const EXTRA_BLOCKS = {
   GlassGreen: 122,
   GlassRed: 123,
   GlassBlack: 124,
+  TrafficLight: 125,
 } as const;
 
 export type ExtraBlockKind = (typeof EXTRA_BLOCKS)[keyof typeof EXTRA_BLOCKS];
@@ -120,7 +121,7 @@ export const isBed = (kind: number) => kind >= EXTRA_BLOCKS.Bed && kind <= EXTRA
 export const isFireBlock = (kind: number) => kind === EXTRA_BLOCKS.Campfire || kind === EXTRA_BLOCKS.Wildfire;
 export const isRail = (kind: number) => kind === EXTRA_BLOCKS.Rail;
 export const isSign = (kind: number) => kind === EXTRA_BLOCKS.Sign;
-export const isUtilityBlock = (kind: number) => isFurnace(kind) || isChest(kind) || isLadder(kind) || isBed(kind) || isRail(kind);
+export const isUtilityBlock = (kind: number) => isFurnace(kind) || isChest(kind) || isLadder(kind) || isBed(kind) || isRail(kind) || kind === EXTRA_BLOCKS.TrafficLight;
 
 function shade(hex: string, amount: number) {
   const value = Number.parseInt(hex.slice(1), 16);
@@ -241,4 +242,5 @@ export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.GlassGreen]: block('Verre vert à motif', '#3f7c3a', 0.35),
   [EXTRA_BLOCKS.GlassRed]: block('Verre rouge à motif', '#b83935', 0.35),
   [EXTRA_BLOCKS.GlassBlack]: block('Verre noir à motif', '#25282b', 0.35),
+  [EXTRA_BLOCKS.TrafficLight]: block('Feu rouge de circulation', '#ef3b32', 0.8),
 };

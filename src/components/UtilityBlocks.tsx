@@ -74,14 +74,37 @@ export function BedModel({ kind }: { kind: BlockKind }) {
   );
 }
 
+export function TrafficLightModel() {
+  return (
+    <group name="traffic-light">
+      <PixelPart position={[0, 0.05, 0]} size={[0.52, 0.1, 0.52]} color="#505961" />
+      <PixelPart position={[0, 0.65, 0]} size={[0.14, 1.2, 0.14]} color="#75818a" />
+      <PixelPart position={[0, 1.49, 0]} size={[0.46, 0.94, 0.36]} color="#272d32" />
+      <PixelPart position={[0, 1.49, -0.19]} size={[0.38, 0.84, 0.035]} color="#151a1e" />
+      {[[1.75, '#ff3028'], [1.49, '#76621b'], [1.23, '#194b29']].map(([y, color], index) => (
+        <group key={y}>
+          <PixelPart position={[0, Number(y) + 0.12, -0.23]} size={[0.31, 0.06, 0.14]} color="#111619" />
+          {index === 0 ? (
+            <mesh name="traffic-red-light" position={[0, Number(y), -0.225]}>
+              <boxGeometry args={[0.23, 0.23, 0.06]} />
+              <meshBasicMaterial color={color} />
+            </mesh>
+          ) : <PixelPart position={[0, Number(y), -0.225]} size={[0.23, 0.23, 0.06]} color={color as string} />}
+        </group>
+      ))}
+      <PixelPart position={[0, 1.02, -0.12]} size={[0.18, 0.22, 0.1]} color="#c4a934" />
+    </group>
+  );
+}
+
 export function UtilityBlockModel({ kind }: { kind: BlockKind }) {
-  return kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
+  return kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
 }
 
 export function UtilityBlocks({ blocks }: { blocks: Voxel[] }) {
   return blocks.map((block) => {
     const rail = isRail(block.kind);
-    const oriented = block.kind === BlockKind.Ladder || isBed(block.kind) || rail;
+    const oriented = block.kind === BlockKind.Ladder || block.kind === BlockKind.TrafficLight || isBed(block.kind) || rail;
     const rotation = rail
       ? block.facing === 'east' || block.facing === 'west' ? Math.PI / 2 : 0
       : !oriented ? 0 : block.facing === 'north' ? Math.PI : block.facing === 'east' ? -Math.PI / 2 : block.facing === 'west' ? Math.PI / 2 : 0;
