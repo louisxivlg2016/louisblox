@@ -151,7 +151,9 @@ export function effectSystem(world: World, _dt: number) {
 const effectClocks = new WeakMap<World, number>();
 
 export function usePotion(world: World, name: string) {
-  const value = name.toLowerCase().replace(/^splash /, '');
+  const normalized = name.toLowerCase().replace(/^splash /, '');
+  const arrow = normalized.startsWith('arrow of ') ? normalized.slice('arrow of '.length) : null;
+  const value = arrow === null ? normalized : `${arrow === 'jumping' ? 'jump' : arrow === 'shield' ? 'sheild' : arrow} potion`;
   const store = useGameStore.getState();
   if (value === 'empty bottle') return { used: false, message: 'Bouteille vide : utilise-la sur de l’eau pour la remplir.' };
   if (value === 'water bottle' || value === 'milk potion') {
@@ -160,9 +162,8 @@ export function usePotion(world: World, name: string) {
     return { used: true, message: value === 'water bottle' ? 'Les effets négatifs sont supprimés.' : 'Le lait supprime tous les effets.' };
   }
   if (value === 'instant healing potion') {
-    return healPlayer(world, 6)
-      ? { used: true, message: 'Soin instantané : +6 vies.' }
-      : { used: false, message: 'Toutes tes vies sont déjà récupérées.' };
+    const healed = healPlayer(world, 6);
+    return { used: true, message: healed ? 'Soin instantané : +6 vies.' : 'Soin instantané : toutes tes vies sont déjà récupérées.' };
   }
   if (value === 'instant damage potion') {
     harmPlayer(world, 3);

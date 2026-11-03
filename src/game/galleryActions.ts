@@ -80,7 +80,7 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
   const player = playerEntity?.get(PlayerPosition);
   if (!playerEntity || !player) return true;
   const blocks = getBlockIndex(world);
-  const hit = raycastVoxel(blocks, origin, direction, 6);
+  const hit = raycastVoxel(blocks, origin, direction, 6, meta.name === 'Empty Bottle');
   const x = hit ? hit.x + hit.normal.x : Math.round(player.x + direction.x * 2);
   const z = hit ? hit.z + hit.normal.z : Math.round(player.z + direction.z * 2);
   const ground = groundAt(world, x, z, player.y + 4);
