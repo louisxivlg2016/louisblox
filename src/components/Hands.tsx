@@ -3,7 +3,8 @@ import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import type { Group } from 'three';
 import type { SelectedKind } from '../game/items';
 import { useEatingStore } from '../game/eating';
-import { CanvasTexture, NearestFilter, SRGBColorSpace } from 'three';
+import { CanvasTexture, Color, NearestFilter, SRGBColorSpace } from 'three';
+import { useCharacterStore } from '../game/characterStore';
 import type { MeshLambertMaterial } from 'three';
 import { getItemMeta } from '../game/items';
 import { useGameStore } from '../game/store';
@@ -14,12 +15,13 @@ import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
 import { isUtilityBlock } from '../game/extraBlocks';
 
-function createSkinTexture() {
+function createSkinTexture(base: string) {
   const canvas = document.createElement('canvas');
   canvas.width = 8;
   canvas.height = 8;
   const context = canvas.getContext('2d')!;
-  const colors = ['#e7a0aa', '#f0b0b7', '#d98e9b', '#f4bec2'];
+  const color = new Color(base);
+  const colors = [color.getStyle(), color.clone().offsetHSL(0, 0, 0.04).getStyle(), color.clone().offsetHSL(0, 0, -0.04).getStyle(), color.clone().offsetHSL(0, 0, 0.08).getStyle()];
   for (let x = 0; x < 8; x += 1) {
     for (let y = 0; y < 8; y += 1) {
       context.fillStyle = colors[(x * 3 + y * 5) % colors.length];
@@ -54,7 +56,8 @@ export function Hands() {
   const cameraMode = useGameStore((state) => state.cameraMode);
   const riding = useGameStore((state) => state.riding);
   const sleeping = useGameStore((state) => state.sleepProgress !== null);
-  const skinTexture = useMemo(createSkinTexture, []);
+  const skinColor = useCharacterStore((state) => state.appearance.skinColor);
+  const skinTexture = useMemo(() => createSkinTexture(skinColor), [skinColor]);
   const selectedBlock = typeof selected === 'number' ? selected : BlockKind.Grass;
   const heldMaterials = useMemo(() => blockMaterials[selectedBlock].map((material) => {
     const clone = material.clone() as MeshLambertMaterial;

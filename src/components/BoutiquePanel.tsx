@@ -8,6 +8,7 @@ import { SettingsPanel } from './SettingsPanel';
 import shopUrl from '../../assets/menu/shop.webp';
 import settingsButtonUrl from '../../assets/ui/settings-button.webp';
 
+const SKIN_COLORS = ['#f0c7a6', '#e7a0aa', '#c98962', '#966045', '#704735', '#493329'];
 const HAIR_COLORS = ['#49382f', '#25232a', '#8a5838', '#d6b46a', '#d7d0c3', '#a74a82', '#4e79a7', '#50844a'];
 const EYE_COLORS = ['#273b4b', '#3d6e45', '#6f4d35', '#4e79a7', '#784da0', '#a13c3c'];
 const CLOTHING_COLORS = ['#4d83a7', '#9a5f9f', '#8e303d', '#526647', '#c467a5', '#2d467f', '#b98a53', '#35434c'];
@@ -57,6 +58,8 @@ export function BoutiquePanel() {
             <button className={appearance.hairStyle === 'short' ? 'active' : ''} onClick={() => setAppearance({ hairStyle: 'short' })}>Cheveux courts</button>
             <button className={appearance.hairStyle === 'long' ? 'active' : ''} onClick={() => setAppearance({ hairStyle: 'long' })}>Cheveux longs</button>
           </div>
+          <h3>Couleur de la peau</h3>
+          <div className="appearance-options">{SKIN_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.skinColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ skinColor: color })} aria-label={`Peau ${color}`} />)}</div>
           <h3>Couleur des cheveux</h3>
           <div className="appearance-options">{HAIR_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.hairColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ hairColor: color })} aria-label={`Cheveux ${color}`} />)}</div>
           <h3>Couleur des yeux</h3>

@@ -8,9 +8,10 @@ import { WigGlb } from './WardrobeGlb';
 import { FullCharacterGlb } from './FullCharacterGlb';
 import { useEmoteStore } from '../game/emotes';
 import type { EmoteKind } from '../game/emotes';
+import type { CharacterAppearance } from '../game/appearance';
 
-function PeriodWig({ large }: { large: boolean }) {
-  const colors = large ? ['#3c2a20', '#5a4030', '#4b3528'] : ['#d7d0c3', '#eee9dd', '#c5bcaf'];
+function PeriodWig({ large, color }: { large: boolean; color?: string }) {
+  const colors = color ? [color, color, color] : large ? ['#3c2a20', '#5a4030', '#4b3528'] : ['#d7d0c3', '#eee9dd', '#c5bcaf'];
   return (
     <>
       <PixelPart position={[0, 1.99, 0]} size={large ? [0.58, 0.22, 0.56] : [0.52, 0.16, 0.5]} color={colors[0]} />
@@ -27,14 +28,14 @@ function PeriodWig({ large }: { large: boolean }) {
   );
 }
 
-export function CharacterOutfit({ outfit, wig = 'auto', moving, airborne, remote = false, seated = false, emote, head, headRef }: { outfit: OutfitKind; wig?: WigSelection; color?: string | null; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; head?: ReactNode; headRef?: Ref<Object3D> }) {
+export function CharacterOutfit({ outfit, wig = 'auto', moving, airborne, remote = false, seated = false, emote, head, headRef, appearance }: { outfit: OutfitKind; wig?: WigSelection; color?: string | null; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; head?: ReactNode; headRef?: Ref<Object3D>; appearance?: CharacterAppearance }) {
   const localEmote = useEmoteStore((state) => state.current);
-  if (outfit !== 'default') return <FullCharacterGlb outfit={outfit} moving={moving} airborne={airborne} remote={remote} seated={seated} emote={remote ? emote : localEmote} headRef={headRef} />;
+  if (outfit !== 'default') return <FullCharacterGlb outfit={outfit} moving={moving} airborne={airborne} remote={remote} seated={seated} emote={remote ? emote : localEmote} headRef={headRef} appearance={appearance} />;
   return (
     <group name="character-head" ref={headRef} position={[0, 1.45, 0]}>
       <group position={[0, -1.45, 0]}>
         {head}
-        {selectedWig(outfit, wig) && <Suspense fallback={<PeriodWig large={selectedWig(outfit, wig) === 'louis14'} />}><WigGlb kind={selectedWig(outfit, wig)!} /></Suspense>}
+        {selectedWig(outfit, wig) && <Suspense fallback={<PeriodWig large={selectedWig(outfit, wig) === 'louis14'} color={appearance?.hairColor} />}><WigGlb kind={selectedWig(outfit, wig)!} color={appearance?.hairColor} /></Suspense>}
       </group>
     </group>
   );

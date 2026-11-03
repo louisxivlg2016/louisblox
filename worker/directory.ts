@@ -1,6 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 
 export type Appearance = {
+  skinColor: string;
   hairColor: string;
   eyeColor: string;
   clothingColor: string | null;
@@ -39,6 +40,7 @@ const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
 export function parseAppearance(value: unknown, character: 'boy' | 'girl' = 'boy'): Appearance {
   const data = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   return {
+    skinColor: color(data.skinColor) ? data.skinColor as string : '#e7a0aa',
     hairColor: color(data.hairColor) ? data.hairColor as string : '#49382f',
     eyeColor: color(data.eyeColor) ? data.eyeColor as string : '#273b4b',
     clothingColor: data.clothingColor === null || color(data.clothingColor) ? data.clothingColor as string | null : null,

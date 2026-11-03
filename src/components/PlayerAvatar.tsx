@@ -74,12 +74,12 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
   const armor = equipped ? getItemMeta(`armor_${equipped}`).color : null;
   const girl = character === 'girl';
   const body = armor ?? appearance.clothingColor ?? (outfit === 'default' ? (girl ? '#9a5f9f' : '#4d83a7') : OUTFITS[outfit].body);
-  const limbs = armor ?? '#e7a0aa';
+  const limbs = armor ?? appearance.skinColor;
   const legs = armor ?? appearance.clothingColor ?? (outfit === 'default' ? (girl ? '#4b405e' : '#354d6d') : OUTFITS[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
   const headContent = (
     <>
-      <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color="#e7a0aa" />
+      <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color={appearance.skinColor} />
       {!hasWig && (
         <group name="natural-hair">
           <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={appearance.hairColor} />
@@ -117,7 +117,7 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
       visible={cameraMode !== 'first' || sleeping}
     >
       {(!hasFullCharacter(outfit) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
-      <CharacterOutfit outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding)} head={headContent} headRef={headRef} />
+      <CharacterOutfit outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding)} head={headContent} headRef={headRef} appearance={appearance} />
       <group ref={leftArm} visible={!hasFullCharacter(outfit)} position={[-0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
       </group>

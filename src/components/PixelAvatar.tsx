@@ -14,12 +14,12 @@ export function PixelAvatar({ character = 'boy', outfit = 'default', wig = 'auto
 }) {
   const current = sanitizeAppearance(appearance, character);
   const periodWig = selectedWig(outfit, wig);
-  const hair = periodWig === 'louis14' ? '#4b3528' : periodWig === 'louis15' ? '#d7d0c3' : current.hairColor;
+  const hair = current.hairColor;
   const crowned = outfit === 'king' || outfit === 'louis14' || outfit === 'princess';
   return (
     <span
       className={`pixel-avatar hair-${current.hairStyle} ${periodWig ? `wig-${periodWig}` : ''} ${crowned ? 'has-crown' : ''}`}
-      style={{ '--avatar-size': `${size}px`, '--skin': '#e7a0aa', '--hair': hair, '--eyes': current.eyeColor } as CSSProperties}
+      style={{ '--avatar-size': `${size}px`, '--skin': current.skinColor, '--hair': hair, '--eyes': current.eyeColor } as CSSProperties}
       aria-hidden="true"
     >
       <span className="avatar-crown" />

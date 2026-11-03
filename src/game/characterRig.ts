@@ -2,12 +2,14 @@ import { Box3, BoxGeometry, BufferGeometry, Group, MathUtils, Mesh, Vector3 } fr
 import type { Material, Object3D } from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { animalMaterial } from './animalTextures';
+import { colorCharacterMaterial } from './characterAppearance';
+import type { CharacterAppearance } from './appearance';
 import type { OutfitKind } from './outfits';
 
 type Part = 'body' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
 type Rig = Partial<Record<Exclude<Part, 'body'>, Group>>;
 
-function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean) {
+function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean, bounds: Box3, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor'>, allowGrayHair = false) {
   const geometry = source.clone().applyMatrix4(matrix);
   const position = geometry.getAttribute('position');
   const index = geometry.index;
@@ -26,14 +28,14 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     else if (legs && Math.abs(x) < width * 0.28 && y < floor + height * 0.48) part = `${side}Leg`;
     indices[part].push(a, b, c);
   }
-  return { geometry, indices, material };
+  return { geometry, indices, material: appearance ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair) : material };
 }
 
-function addPrincessHair(root: Group, width: number, height: number, depth: number, floor: number, offsetY: number) {
+function addPrincessHair(root: Group, width: number, height: number, depth: number, floor: number, offsetY: number, hairColor?: string) {
   const hair = new Group();
   hair.name = 'princess-back-hair';
   hair.position.y = offsetY;
-  const material = animalMaterial('#5a321c');
+  const material = animalMaterial(hairColor ?? '#5a321c');
   const back = new Mesh(new BoxGeometry(width * 0.32, height * 0.28, depth * 0.14), material);
   back.position.set(0, floor + height * 0.76, -depth * 0.55);
   hair.add(back);
@@ -41,14 +43,14 @@ function addPrincessHair(root: Group, width: number, height: number, depth: numb
   crown.position.set(0, floor + height * 0.89, 0);
   hair.add(crown);
   for (const side of [-1, 1]) {
-    const strand = new Mesh(new BoxGeometry(width * 0.1, height * 0.26, depth * 0.12), animalMaterial('#704126'));
+    const strand = new Mesh(new BoxGeometry(width * 0.1, height * 0.26, depth * 0.12), material);
     strand.position.set(side * width * 0.12, floor + height * 0.68, -depth * 0.62);
     hair.add(strand);
   }
   root.add(hair);
 }
 
-export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind, 'default'>, scale: number) {
+export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind, 'default'>, scale: number, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor'>) {
   const scene = SkeletonUtils.clone(source);
   scene.updateMatrixWorld(true);
   const bounds = new Box3().setFromObject(scene);
@@ -57,7 +59,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   const floor = bounds.min.y;
   const pieces: Array<ReturnType<typeof splitGeometry>> = [];
   scene.traverse((object) => {
-    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, outfit !== 'princess'));
+    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, outfit !== 'princess', bounds, appearance, outfit === 'louis15'));
   });
   const root = new Group();
   const rig: Rig = {};
@@ -86,7 +88,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
       }
     }
   }
-  if (outfit === 'princess') addPrincessHair(rig.head ?? root, width, height, bounds.max.z - bounds.min.z, floor, rig.head ? -(floor + height * 0.68) : 0);
+  if (outfit === 'princess') addPrincessHair(rig.head ?? root, width, height, bounds.max.z - bounds.min.z, floor, rig.head ? -(floor + height * 0.68) : 0, appearance?.hairColor);
   root.userData.rig = rig;
   const center = bounds.getCenter(new Vector3());
   root.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);

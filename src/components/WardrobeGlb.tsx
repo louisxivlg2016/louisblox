@@ -28,6 +28,7 @@ function Model({ url, width, height, depth, centerY, tint = null }: { url: strin
     const clone = scene.clone(true);
     clone.traverse((object) => {
       if (!(object instanceof Mesh)) return;
+      object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) {
         if (tint) material.color.lerp(new Color(tint), 0.65);
@@ -49,13 +50,13 @@ function Model({ url, width, height, depth, centerY, tint = null }: { url: strin
   return <primitive object={model} />;
 }
 
-export function WigGlb({ kind }: { kind: WigKind }) {
+export function WigGlb({ kind, color = null }: { kind: WigKind; color?: string | null }) {
   const large = kind === 'louis14';
   return (
     <Suspense fallback={null}>
-      {large && <PixelPart position={[0, 1.98, 0]} size={[0.53, 0.14, 0.53]} color="#3c2a20" />}
-      {large && <PixelPart position={[0, 1.68, 0.24]} size={[0.46, 0.5, 0.12]} color="#4b3528" />}
-      <Model url={wigModels[kind]} width={large ? 0.68 : 0.6} height={large ? 0.88 : 0.5} depth={large ? 0.64 : 0.57} centerY={large ? 1.8 : 1.91} />
+      {large && <PixelPart position={[0, 1.98, 0]} size={[0.53, 0.14, 0.53]} color={color ?? '#3c2a20'} />}
+      {large && <PixelPart position={[0, 1.68, 0.24]} size={[0.46, 0.5, 0.12]} color={color ?? '#4b3528'} />}
+      <Model url={wigModels[kind]} width={large ? 0.68 : 0.6} height={large ? 0.88 : 0.5} depth={large ? 0.64 : 0.57} centerY={large ? 1.8 : 1.91} tint={color} />
     </Suspense>
   );
 }

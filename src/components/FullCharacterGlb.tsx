@@ -12,6 +12,7 @@ import { Player, PlayerMount, PlayerState, PlayerVelocity } from '../game/traits
 import { fullCharacterHeights } from '../game/fullCharacters';
 import { applyCharacterGesture } from '../game/characterGestures';
 import type { EmoteKind } from '../game/emotes';
+import type { CharacterAppearance } from '../game/appearance';
 import kingUrl from '../../assets/models/full-king.glb';
 import militaryUrl from '../../assets/models/full-military.glb';
 import knightUrl from '../../assets/models/full-knight.glb';
@@ -26,12 +27,12 @@ export function hasFullCharacter(outfit: OutfitKind) {
   return outfit !== 'default';
 }
 
-function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef }: { outfit: Exclude<OutfitKind, 'default'>; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D> }) {
+function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance }: { outfit: Exclude<OutfitKind, 'default'>; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance }) {
   const group = useRef<Object3D>(null);
   const current = useRef('');
   const { scene, animations } = useGLTF(models[outfit]);
   const scale = 2.05 / fullCharacterHeights[outfit];
-  const character = useMemo(() => createCharacterRig(scene, outfit, scale), [scene, outfit, scale]);
+  const character = useMemo(() => createCharacterRig(scene, outfit, scale, appearance), [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor]);
   const { actions } = useAnimations(animations, group);
   const metadata = useMemo(() => ({ outfit, source: 'Hunyuan', whole: true }), [outfit]);
   const eating = useEatingStore((state) => remote ? null : state.eating);
