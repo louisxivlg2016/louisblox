@@ -2,14 +2,14 @@ import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Camera } from 'three';
 import { findAnimalTarget } from '../combat';
-import { getBlockIndex } from '../chunks';
+import { addVoxel, getBlockIndex, removeVoxel } from '../chunks';
 import { consumeActions, isDown, isMouseButtonDown } from '../input';
 import { getItemMeta } from '../items';
 import { isGalleryItem } from '../galleryCatalog';
 import { useGalleryItem } from '../galleryActions';
 import { hasInventory } from '../inventory';
 import type { GalleryItemId, ItemKind } from '../items';
-import { SEA_LEVEL } from '../levels';
+import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { useGameStore } from '../store';
 import { HorseRider, Player, PlayerHealth, PlayerPosition, Vehicle, VehicleMotion, VehiclePosition } from '../traits';
 import { groundAt, spawnVehicle } from '../vehicles';
@@ -21,6 +21,51 @@ import { healPlayer } from '../effects';
 const cooldowns = new WeakMap<World, number>();
 const origin = new Vector3();
 const direction = new Vector3();
+
+function changeHeldBucket(from: 'bucket' | 'water_bucket', to: 'bucket' | 'water_bucket') {
+  const store = useGameStore.getState();
+  const slot = store.hotbarSlots.indexOf(from);
+  const replaceHeld = store.gameplayMode !== 'survival' || (store.itemCounts[from] ?? 0) === 1;
+  if (store.gameplayMode === 'survival') {
+    store.setItemCount(from, (store.itemCounts[from] ?? 0) - 1);
+    store.setItemCount(to, (store.itemCounts[to] ?? 0) + 1);
+  }
+  if (!replaceHeld) return;
+  if (slot >= 0) store.setHotbarSlot(slot, to);
+  else store.selectBlock(to);
+}
+
+function useBucket(world: World, filled: boolean, origin: Vector3, direction: Vector3) {
+  const store = useGameStore.getState();
+  const blocks = getBlockIndex(world);
+  const hit = raycastVoxel(blocks, origin, direction, 6, !filled);
+  if (filled) {
+    if (hit) {
+      const x = hit.x + hit.normal.x;
+      const y = hit.y + hit.normal.y;
+      const z = hit.z + hit.normal.z;
+      if (y >= MIN_WORLD_Y && y <= MAX_BUILD_Y && !blocks.has(voxelKey(x, y, z)) && addVoxel(world, x, y, z, BlockKind.Water)) {
+        changeHeldBucket('water_bucket', 'bucket');
+        store.setNotice('Eau posée. Le sceau est vide.');
+        return true;
+      }
+    }
+    store.setNotice('Vise un bloc avec le sceau plein pour y poser l’eau.');
+    return true;
+  }
+  if (hit && isWaterBlock(hit.block.kind)) {
+    removeVoxel(world, hit);
+    if (!blocks.has(voxelKey(hit.x, hit.y, hit.z))) {
+      changeHeldBucket('bucket', 'water_bucket');
+      store.setNotice('Sceau rempli d’eau. Utilise-le ailleurs pour la poser.');
+      return true;
+    }
+    store.setNotice('Tu ne peux pas récupérer cette eau ici.');
+    return true;
+  }
+  store.setNotice('Vise un bloc d’eau avec le sceau vide.');
+  return true;
+}
 
 export function eatItem(world: World, kind: ItemKind | GalleryItemId) {
   const meta = getItemMeta(kind);
@@ -74,6 +119,8 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
   origin.copy(player);
   origin.y += 1.62;
   camera.getWorldDirection(direction);
+
+  if ((selected === 'bucket' || selected === 'water_bucket') && interact > 0) return useBucket(world, selected === 'water_bucket', origin, direction);
 
   if (meta.shape === 'book' && interact > 0) {
     useGameStore.getState().setBookOpen(true);

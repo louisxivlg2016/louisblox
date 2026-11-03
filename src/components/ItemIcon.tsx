@@ -35,6 +35,7 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
     return <img className={`block-swatch block-icon${brick ? ' block-icon-smooth' : ''}`} src={blockIcon(kind)} alt="" />;
   }
   const meta = getItemMeta(kind);
+  if (meta.shape === 'bucket' || meta.shape === 'water_bucket') return <span className={`item-icon item-bucket ${meta.shape === 'water_bucket' ? 'full' : 'empty'}`} aria-hidden="true"><i /><b /><em /></span>;
   const rawShape = meta.shape ?? meta.category;
   const aliases: Record<string, string> = {
     axe: 'pickaxe', hoe: 'pickaxe', spade: 'shovel', spear: 'sword', dagger: 'sword', club: 'sword', mace: 'sword', whip: 'sword', boomerang: 'sword',

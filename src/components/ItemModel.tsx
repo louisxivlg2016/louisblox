@@ -14,6 +14,26 @@ export function PixelPart({ position, size, color, rotation }: PartProps) {
   );
 }
 
+function BucketModel({ filled }: { filled: boolean }) {
+  return (
+    <group name={filled ? 'water-bucket' : 'empty-bucket'}>
+      <PixelPart position={[0, -0.22, 0]} size={[0.46, 0.07, 0.4]} color="#6d7c85" />
+      <PixelPart position={[-0.23, 0, 0]} size={[0.07, 0.44, 0.4]} color="#a7b4bb" />
+      <PixelPart position={[0.23, 0, 0]} size={[0.07, 0.44, 0.4]} color="#a7b4bb" />
+      <PixelPart position={[0, 0, -0.19]} size={[0.46, 0.44, 0.06]} color="#bdc8cd" />
+      <PixelPart position={[0, 0, 0.19]} size={[0.46, 0.44, 0.06]} color="#85959e" />
+      <PixelPart position={[-0.24, 0.25, 0]} size={[0.08, 0.07, 0.46]} color="#d3dce0" />
+      <PixelPart position={[0.24, 0.25, 0]} size={[0.08, 0.07, 0.46]} color="#d3dce0" />
+      <PixelPart position={[0, 0.25, -0.2]} size={[0.46, 0.07, 0.06]} color="#d3dce0" />
+      <PixelPart position={[0, 0.25, 0.2]} size={[0.46, 0.07, 0.06]} color="#d3dce0" />
+      {filled && <PixelPart position={[0, 0.17, 0]} size={[0.38, 0.04, 0.32]} color="#359bd5" />}
+      <PixelPart position={[-0.29, 0.38, 0]} size={[0.06, 0.26, 0.06]} color="#7f8e96" />
+      <PixelPart position={[0.29, 0.38, 0]} size={[0.06, 0.26, 0.06]} color="#7f8e96" />
+      <PixelPart position={[0, 0.51, 0]} size={[0.58, 0.06, 0.06]} color="#9baab2" />
+    </group>
+  );
+}
+
 export function SwordModel({ color }: { color: string }) {
   return (
     <group position={[0, 0.42, 0]} rotation={[0, 0, -0.35]}>
@@ -470,6 +490,7 @@ export function ItemModel({ kind, held = false }: ModelProps) {
   if (kind === 'hand') return null;
   let model;
   if (isGalleryItem(kind)) model = <GalleryModel kind={kind} />;
+  else if (kind === 'bucket' || kind === 'water_bucket') model = <BucketModel filled={kind === 'water_bucket'} />;
   else if (meta.category === 'sword') model = <SwordModel color={meta.color} />;
   else if (meta.category === 'bow') model = <BowModel crossbow={kind === 'crossbow'} />;
   else if (meta.category === 'gun') model = <GunModel color={meta.color} bomb={kind === 'pistol_bomb'} rifle={kind === 'rifle_auto'} />;

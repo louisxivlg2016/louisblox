@@ -65,7 +65,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     return;
   }
   if (store.blockCount !== blocks.size) store.setBlockCount(blocks.size);
-  const hit = raycastVoxel(blocks, origin, direction, 6, store.gameplayMode === 'pirates' || typeof store.selected === 'number');
+  const hit = raycastVoxel(blocks, origin, direction, 6, store.gameplayMode === 'pirates' || typeof store.selected === 'number' || store.selected === 'bucket');
 
   target.visible = hit !== null;
   if (hit) {
