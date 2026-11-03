@@ -26,6 +26,11 @@ function ProjectileView({ entity }: { entity: Entity }) {
           <PixelPart position={[0, 0, -0.4]} size={[0.1, 0.1, 0.13]} color="#dbe2e0" />
           <PixelPart position={[0, 0, 0.3]} size={[0.14, 0.04, 0.16]} color="#e9e8d6" />
         </group>
+      ) : projectile.color ? (
+        <group name="paintball-projectile" userData={{ color: projectile.color }}>
+          <PixelPart position={[0, 0, 0]} size={[0.16, 0.16, 0.16]} color={projectile.color} />
+          <PixelPart position={[0, 0.08, 0.04]} size={[0.08, 0.08, 0.08]} color={projectile.color} />
+        </group>
       ) : <PixelPart position={[0, 0, 0]} size={[0.07, 0.07, 0.22]} color="#ffdc75" />}
     </group>
   );

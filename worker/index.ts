@@ -193,6 +193,7 @@ function parseProjectile(value: unknown) {
     vz: data.vz as number,
     life: data.life,
     damage: data.damage,
+    color: typeof data.color === 'string' && /^#[0-9a-f]{6}$/i.test(data.color) ? data.color : undefined,
   };
 }
 
@@ -202,6 +203,15 @@ function parseExplosion(value: unknown) {
   const position = value as Record<string, unknown>;
   if (!['x', 'y', 'z'].every((key) => typeof position[key] === 'number' && Number.isFinite(position[key]) && Math.abs(position[key] as number) <= 10000000)) return null;
   return { x: position.x as number, y: position.y as number, z: position.z as number };
+}
+
+function parsePaint(value: unknown) {
+  const position = parseExplosion(value);
+  if (position === undefined || position === null) return position;
+  const data = value as Record<string, unknown>;
+  if (!['nx', 'ny', 'nz'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]) && Math.abs(data[key] as number) <= 1)) return null;
+  if (typeof data.color !== 'string' || !/^#[0-9a-f]{6}$/i.test(data.color)) return null;
+  return { ...position, nx: data.nx as number, ny: data.ny as number, nz: data.nz as number, color: data.color };
 }
 
 function parseWorldProtection(value: unknown, ownerId: string): WorldProtection | undefined {
@@ -722,12 +732,14 @@ export class GameRoom extends DurableObject<Env> {
       if (typeof projectileId !== 'string' || projectileId.length < 1 || projectileId.length > 80) return;
       const explosion = parseExplosion((data as { explosion?: unknown }).explosion);
       if (explosion === null) return;
+      const paint = parsePaint((data as { paint?: unknown }).paint);
+      if (paint === null) return;
       const attacker = this.attachment(ws);
       if (explosion && attacker && this.gameplayMode === 'pirates') {
         this.pirates.explode(explosion);
         this.pirates.damageObjective(attacker, 'cannon', explosion);
       }
-      this.broadcast({ type, projectileId, explosion }, ws);
+      this.broadcast({ type, projectileId, explosion, paint }, ws);
       return;
     }
     if (type === 'vehicle-spawn') {

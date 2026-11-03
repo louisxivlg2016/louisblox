@@ -8,15 +8,22 @@ import { syncProjectileMotion, syncProjectileRemoval, syncProjectileSpawn } from
 import { AnimalPosition, Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition, Projectile, ProjectileMesh, ProjectilePosition, ProjectileVelocity } from '../traits';
 import { MIN_WORLD_Y } from '../levels';
 import { raycastVoxel } from '../voxel';
+import { spawnPaintSplash } from '../paintball';
 
 const step = new Vector3();
 const next = new Vector3();
 
-export function fireProjectile(world: World, origin: Vector3, direction: Vector3, kind: 'arrow' | 'bullet' | 'bomb', damage = 1) {
+function paintImpact(world: World, color: string | undefined, position: Vector3, normal: Vector3) {
+  if (!color) return undefined;
+  spawnPaintSplash(world, position, normal, color);
+  return { position: position.clone(), normal: normal.clone() };
+}
+
+export function fireProjectile(world: World, origin: Vector3, direction: Vector3, kind: 'arrow' | 'bullet' | 'bomb', damage = 1, color?: string | null) {
   const velocity = direction.clone().normalize().multiplyScalar(kind === 'bullet' ? 48 : kind === 'bomb' ? 18 : 30);
   const position = origin.clone().addScaledVector(direction, 0.8);
   const entity = world.spawn(
-    Projectile({ id: crypto.randomUUID(), kind, life: kind === 'bullet' ? 1.5 : 8, damage }),
+    Projectile({ id: crypto.randomUUID(), kind, life: kind === 'bullet' ? 1.5 : 8, damage, color: color ?? undefined }),
     ProjectilePosition(position),
     ProjectileVelocity(velocity),
     ProjectileMesh(),
@@ -73,7 +80,8 @@ export function projectileSystem(world: World, dt: number) {
         } else {
           requestBattleHit(playerTarget.playerId, projectile.kind === 'bullet' && projectile.damage > 1 ? 'rifle' : projectile.kind);
         }
-        syncProjectileRemoval(world, entity, projectile.kind === 'bomb');
+        const paint = paintImpact(world, projectile.color, playerTarget.position, direction.clone().negate());
+        syncProjectileRemoval(world, entity, projectile.kind === 'bomb', paint);
         entity.destroy();
         return;
       }
@@ -86,7 +94,8 @@ export function projectileSystem(world: World, dt: number) {
         } else {
           damageAnimal(world, target.entity, projectile.damage, position);
         }
-        syncProjectileRemoval(world, entity, projectile.kind === 'bomb');
+        const paint = paintImpact(world, projectile.color, animalPosition, direction.clone().negate());
+        syncProjectileRemoval(world, entity, projectile.kind === 'bomb', paint);
         entity.destroy();
         return;
       }
@@ -96,7 +105,8 @@ export function projectileSystem(world: World, dt: number) {
           position.copy(next);
           detonateProjectile(world, position);
         }
-        syncProjectileRemoval(world, entity, projectile.kind === 'bomb');
+        const paint = hit ? paintImpact(world, projectile.color, position.clone().addScaledVector(direction, hit.distance), new Vector3(hit.normal.x, hit.normal.y, hit.normal.z)) : undefined;
+        syncProjectileRemoval(world, entity, projectile.kind === 'bomb', paint);
         entity.destroy();
         return;
       }

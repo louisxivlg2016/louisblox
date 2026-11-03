@@ -19,6 +19,7 @@ import { moveVoxelCharacter } from './systems/collisionSystem';
 import { fireProjectile } from './systems/projectileSystem';
 import { usePotion } from './effects';
 import { useEatingStore } from './eating';
+import { paintballColor } from './paintball';
 
 const caughtAnimals = new WeakMap<World, Map<string, AnimalKind>>();
 
@@ -200,11 +201,11 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     return true;
   }
   if (shape === 'firecracker' || shape === 'bomb') {
-    fireProjectile(world, origin, direction, 'bomb');
+    fireProjectile(world, origin, direction, 'bomb', 1, paintballColor(selected));
     return true;
   }
   if (shape === 'arrow' || shape === 'ball' || shape === 'pebble') {
-    fireProjectile(world, origin, direction, 'bullet');
+    fireProjectile(world, origin, direction, 'bullet', 1, paintballColor(selected));
     return true;
   }
   if (shape === 'updraft' || shape === 'snowdash') {

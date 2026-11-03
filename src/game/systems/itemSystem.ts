@@ -17,6 +17,7 @@ import { BlockKind, isWaterBlock, raycastVoxel, voxelKey } from '../voxel';
 import { fireProjectile } from './projectileSystem';
 import { useEatingStore } from '../eating';
 import { healPlayer } from '../effects';
+import { paintballColor } from '../paintball';
 
 const cooldowns = new WeakMap<World, number>();
 const origin = new Vector3();
@@ -140,7 +141,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     return true;
   }
   if ((meta.category === 'bow' || meta.category === 'gun') && (interact > 0 || isMouseButtonDown(0) || (meta.category === 'gun' && isDown('KeyE'))) && cooldown <= 0) {
-    fireProjectile(world, origin, direction, meta.category === 'bow' ? 'arrow' : meta.shape === 'rpg' || selected === 'pistol_bomb' ? 'bomb' : 'bullet', meta.damage);
+    fireProjectile(world, origin, direction, meta.category === 'bow' ? 'arrow' : meta.shape === 'rpg' || selected === 'pistol_bomb' ? 'bomb' : 'bullet', meta.damage, paintballColor(selected));
     cooldowns.set(world, meta.cooldown ?? 0.5);
     return true;
   }

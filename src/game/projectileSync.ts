@@ -1,6 +1,7 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
 import { Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition, Projectile, ProjectileMesh, ProjectilePosition, ProjectileVelocity } from './traits';
+import { spawnPaintSplash } from './paintball';
 
 export type ProjectileSnapshot = {
   id: string;
@@ -13,12 +14,14 @@ export type ProjectileSnapshot = {
   vz: number;
   life: number;
   damage: number;
+  color?: string;
 };
 
 export type ExplosionSnapshot = { x: number; y: number; z: number };
+export type PaintSplashSnapshot = { x: number; y: number; z: number; nx: number; ny: number; nz: number; color: string };
 export type ProjectileSyncMessage =
   | { type: 'projectile-spawn' | 'projectile-state'; projectile: ProjectileSnapshot }
-  | { type: 'projectile-remove'; projectileId: string; explosion?: ExplosionSnapshot };
+  | { type: 'projectile-remove'; projectileId: string; explosion?: ExplosionSnapshot; paint?: PaintSplashSnapshot };
 
 export function isProjectileSnapshot(value: unknown): value is ProjectileSnapshot {
   if (!value || typeof value !== 'object') return false;
@@ -27,12 +30,21 @@ export function isProjectileSnapshot(value: unknown): value is ProjectileSnapsho
     && (data.kind === 'arrow' || data.kind === 'bullet' || data.kind === 'bomb')
     && ['x', 'y', 'z', 'vx', 'vy', 'vz', 'life', 'damage'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]))
     && (data.life as number) >= 0 && (data.life as number) <= 30
-    && (data.damage as number) >= 0 && (data.damage as number) <= 100;
+    && (data.damage as number) >= 0 && (data.damage as number) <= 100
+    && (data.color === undefined || typeof data.color === 'string' && /^#[0-9a-f]{6}$/i.test(data.color));
 }
 
 export function isExplosionSnapshot(value: unknown): value is ExplosionSnapshot | undefined {
   return value === undefined || Boolean(value && typeof value === 'object'
     && ['x', 'y', 'z'].every((key) => typeof (value as Record<string, unknown>)[key] === 'number' && Number.isFinite((value as Record<string, unknown>)[key])));
+}
+
+export function isPaintSplashSnapshot(value: unknown): value is PaintSplashSnapshot | undefined {
+  if (value === undefined) return true;
+  if (!value || typeof value !== 'object') return false;
+  const data = value as Record<string, unknown>;
+  return typeof data.color === 'string' && /^#[0-9a-f]{6}$/i.test(data.color)
+    && ['x', 'y', 'z', 'nx', 'ny', 'nz'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]));
 }
 
 type Listener = (message: ProjectileSyncMessage) => void;
@@ -71,6 +83,7 @@ function snapshotFromEntity(entity: Entity): ProjectileSnapshot | null {
     vz: velocity.z,
     life: Math.max(0, projectile.life),
     damage: projectile.damage,
+    color: projectile.color,
   };
 }
 
@@ -88,7 +101,7 @@ export function syncProjectileMotion(world: World, entity: Entity) {
   emit(world, { type: 'projectile-state', projectile });
 }
 
-export function syncProjectileRemoval(world: World, entity: Entity, exploded: boolean) {
+export function syncProjectileRemoval(world: World, entity: Entity, exploded: boolean, paint?: { position: Vector3; normal: Vector3 }) {
   const projectile = entity.get(Projectile);
   const position = entity.get(ProjectilePosition);
   if (!projectile?.id || !position) return;
@@ -96,6 +109,7 @@ export function syncProjectileRemoval(world: World, entity: Entity, exploded: bo
     type: 'projectile-remove',
     projectileId: projectile.id,
     explosion: exploded ? { x: position.x, y: position.y, z: position.z } : undefined,
+    paint: paint && projectile.color ? { x: paint.position.x, y: paint.position.y, z: paint.position.z, nx: paint.normal.x, ny: paint.normal.y, nz: paint.normal.z, color: projectile.color } : undefined,
   });
 }
 
@@ -105,12 +119,12 @@ export function applyProjectileSnapshot(world: World, snapshot: ProjectileSnapsh
   applying.set(world, true);
   try {
     if (existing) {
-      existing.set(Projectile, { life: snapshot.life, damage: snapshot.damage });
+      existing.set(Projectile, { life: snapshot.life, damage: snapshot.damage, color: snapshot.color });
       existing.get(ProjectilePosition)?.set(snapshot.x, snapshot.y, snapshot.z);
       existing.get(ProjectileVelocity)?.set(snapshot.vx, snapshot.vy, snapshot.vz);
     } else {
       world.spawn(
-        Projectile({ id: snapshot.id, kind: snapshot.kind, life: snapshot.life, damage: snapshot.damage, remote: true }),
+        Projectile({ id: snapshot.id, kind: snapshot.kind, life: snapshot.life, damage: snapshot.damage, remote: true, color: snapshot.color }),
         ProjectilePosition(new Vector3(snapshot.x, snapshot.y, snapshot.z)),
         ProjectileVelocity(new Vector3(snapshot.vx, snapshot.vy, snapshot.vz)),
         ProjectileMesh(),
@@ -121,7 +135,7 @@ export function applyProjectileSnapshot(world: World, snapshot: ProjectileSnapsh
   }
 }
 
-export function applyProjectileRemoval(world: World, projectileId: string, explosion?: ExplosionSnapshot) {
+export function applyProjectileRemoval(world: World, projectileId: string, explosion?: ExplosionSnapshot, paint?: PaintSplashSnapshot) {
   applying.set(world, true);
   try {
     for (const entity of world.query(Projectile)) {
@@ -136,6 +150,7 @@ export function applyProjectileRemoval(world: World, projectileId: string, explo
         ExplosionMaterial(),
       );
     }
+    if (paint) spawnPaintSplash(world, new Vector3(paint.x, paint.y, paint.z), new Vector3(paint.nx, paint.ny, paint.nz), paint.color);
   } finally {
     applying.set(world, false);
   }

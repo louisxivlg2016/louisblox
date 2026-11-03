@@ -29,7 +29,7 @@ import { sanitizeAppearance } from '../game/appearance';
 import type { CharacterAppearance } from '../game/appearance';
 import { receiveFriendAcceptance, receiveFriendRequest, registerSelfProfile } from '../game/friends';
 import { playerIdentity } from '../game/playerIdentity';
-import { applyProjectileRemoval, applyProjectileSnapshot, isExplosionSnapshot, isProjectileSnapshot, onProjectileSync } from '../game/projectileSync';
+import { applyProjectileRemoval, applyProjectileSnapshot, isExplosionSnapshot, isPaintSplashSnapshot, isProjectileSnapshot, onProjectileSync } from '../game/projectileSync';
 import { clearChat, receiveChatMessage, setChatSocket } from '../game/chat';
 import { clearBattle, receiveBattleElimination, receiveBattleKnockback, receiveBattleRespawn, receiveBattleState, setBattleLocalPlayer, setBattleSocket, useBattleStore } from '../game/battle';
 import { activeEffectKeys } from '../game/effects';
@@ -58,6 +58,7 @@ type ServerMessage = {
   projectile?: unknown;
   projectileId?: unknown;
   explosion?: unknown;
+  paint?: unknown;
   outfit?: unknown;
   wig?: unknown;
   appearance?: unknown;
@@ -460,8 +461,8 @@ export function MultiplayerConnection() {
           applyProjectileSnapshot(world, data.projectile);
           return;
         }
-        if (data.type === 'projectile-remove' && typeof data.projectileId === 'string' && isExplosionSnapshot(data.explosion)) {
-          applyProjectileRemoval(world, data.projectileId, data.explosion);
+        if (data.type === 'projectile-remove' && typeof data.projectileId === 'string' && isExplosionSnapshot(data.explosion) && isPaintSplashSnapshot(data.paint)) {
+          applyProjectileRemoval(world, data.projectileId, data.explosion, data.paint);
           return;
         }
         if (data.type === 'vehicles' && Array.isArray(data.vehicles)) {
