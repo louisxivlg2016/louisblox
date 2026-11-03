@@ -5,7 +5,7 @@ import { isCrop } from '../extraBlocks';
 import { biomeAt, MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
-import { BlockKind, voxelKey } from '../voxel';
+import { isWaterBlock, voxelKey } from '../voxel';
 import type { AnimalKind } from '../animals';
 import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
 import { damagePlayer } from '../combat';
@@ -44,7 +44,7 @@ const isLoaded = isChunkLoaded;
 function bodyClear(world: World, x: number, z: number, feetY: number) {
   for (const height of [0.35, 1.15]) {
     const block = blockAt(world, x, feetY + height, z);
-    if (!block || block.kind === BlockKind.Water || isCrop(block.kind) || block.open) continue;
+    if (!block || isWaterBlock(block.kind) || isCrop(block.kind) || block.open) continue;
     return false;
   }
   return true;
@@ -55,7 +55,7 @@ function climbRise(world: World, x: number, z: number) {
 }
 
 function walkableGround(world: World, x: number, z: number, ground: number) {
-  return ground > MIN_WORLD_Y + 0.5 && blockAt(world, x, ground + 1, z)?.kind !== BlockKind.Water;
+  return ground > MIN_WORLD_Y + 0.5 && !isWaterBlock(blockAt(world, x, ground + 1, z)?.kind);
 }
 
 function canAdvance(world: World, kind: AnimalKind, position: Vector3, yaw: number) {
@@ -64,7 +64,7 @@ function canAdvance(world: World, kind: AnimalKind, position: Vector3, yaw: numb
   if (!isLoaded(world, x, z)) return false;
   if (kind === 'duck') {
     const ground = groundAt(world, x, z, MAX_BUILD_Y);
-    return ground < SEA_LEVEL + 0.5 && blockAt(world, x, SEA_LEVEL, z)?.kind === BlockKind.Water;
+    return ground < SEA_LEVEL + 0.5 && isWaterBlock(blockAt(world, x, SEA_LEVEL, z)?.kind);
   }
   const rise = climbRise(world, x, z);
   const ground = groundAt(world, x, z, position.y + rise + 0.05);
@@ -93,7 +93,7 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
 
   if (kind === 'duck') {
     const ground = groundAt(world, x, z, MAX_BUILD_Y);
-    if (!isLoaded(world, x, z) || ground >= SEA_LEVEL + 0.5 || blockAt(world, x, SEA_LEVEL, z)?.kind !== BlockKind.Water) {
+    if (!isLoaded(world, x, z) || ground >= SEA_LEVEL + 0.5 || !isWaterBlock(blockAt(world, x, SEA_LEVEL, z)?.kind)) {
       blocked = true;
     } else {
       position.set(x, SEA_LEVEL + 0.35 + Math.sin(motion.phase) * 0.05, z);

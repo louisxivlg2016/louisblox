@@ -1,11 +1,11 @@
 import type { Vector3 } from 'three';
-import { BlockKind, voxelKey } from './voxel';
+import { isWaterBlock, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
 
 export type SwimState = { inWater: boolean; underwater: boolean; surface: number };
 
 export function waterAt(blocks: Map<string, Voxel>, x: number, y: number, z: number) {
-  return blocks.get(voxelKey(Math.floor(x + 0.5), Math.floor(y + 0.5), Math.floor(z + 0.5)))?.kind === BlockKind.Water;
+  return isWaterBlock(blocks.get(voxelKey(Math.floor(x + 0.5), Math.floor(y + 0.5), Math.floor(z + 0.5)))?.kind);
 }
 
 export function getSwimState(blocks: Map<string, Voxel>, position: Vector3): SwimState {

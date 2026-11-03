@@ -6,7 +6,7 @@ import { Color } from 'three';
 import { getBlockIndex, loadLevel } from '../game/chunks';
 import { readWorldSave } from '../game/save';
 import { useGameStore } from '../game/store';
-import { BlockKind, voxelKey } from '../game/voxel';
+import { BlockKind, isWaterBlock, voxelKey } from '../game/voxel';
 import { Animals } from './Animals';
 import { Explosions } from './Explosions';
 import { Hands } from './Hands';
@@ -61,7 +61,7 @@ function Atmosphere() {
   const skyDaylight = Math.max(0, (daylight - 0.2) / 0.8);
   const center = camera.position;
   const cameraBlock = getBlockIndex(world).get(voxelKey(Math.floor(center.x + 0.5), Math.floor(center.y + 0.5), Math.floor(center.z + 0.5)));
-  const underwater = cameraBlock?.kind === BlockKind.Water;
+  const underwater = isWaterBlock(cameraBlock?.kind);
   const waterColor = new Color('#217fac');
   const skyColor = underwater
     ? waterColor

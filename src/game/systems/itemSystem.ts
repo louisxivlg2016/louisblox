@@ -13,7 +13,7 @@ import { SEA_LEVEL } from '../levels';
 import { useGameStore } from '../store';
 import { HorseRider, Player, PlayerHealth, PlayerPosition, Vehicle, VehicleMotion, VehiclePosition } from '../traits';
 import { groundAt, spawnVehicle } from '../vehicles';
-import { BlockKind, raycastVoxel, voxelKey } from '../voxel';
+import { BlockKind, isWaterBlock, raycastVoxel, voxelKey } from '../voxel';
 import { fireProjectile } from './projectileSystem';
 import { useEatingStore } from '../eating';
 import { healPlayer } from '../effects';
@@ -118,7 +118,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
       for (let distance = 1; distance <= 6; distance += 0.5) {
         const x = Math.round(origin.x + direction.x * distance);
         const z = Math.round(origin.z + direction.z * distance);
-        if (blocks.get(voxelKey(x, SEA_LEVEL, z))?.kind !== BlockKind.Water) continue;
+        if (!isWaterBlock(blocks.get(voxelKey(x, SEA_LEVEL, z))?.kind)) continue;
         if (groundAt(world, x, z, SEA_LEVEL) >= SEA_LEVEL) continue;
         spawnVehicle(world, 'boat', x, SEA_LEVEL + 0.55, z, meta.color);
         useGameStore.getState().setNotice('Bateau prêt ! E : choisis le siège avant pour conduire ou l’arrière pour être passager.');

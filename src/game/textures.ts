@@ -1,6 +1,6 @@
 import { BoxGeometry, CanvasTexture, LinearFilter, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
-import { BlockKind } from './voxel';
+import { BlockKind, isWaterBlock } from './voxel';
 import { EXTRA_BLOCK_META, isGlass, isSapling } from './extraBlocks';
 import type { ExtraBlockKind } from './extraBlocks';
 
@@ -38,6 +38,7 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
     [BlockKind.Tnt]: ['#b52e29', '#c93d32', '#a92522', '#dc4b3c', '#93201e'],
     [BlockKind.Candle]: ['#e6c877', '#f2d68a', '#d9b965', '#ffe6a0', '#cfa954'],
     [BlockKind.Water]: ['#2c8bc4', '#3b9bd5', '#55b5e8', '#2578b0', '#6ac6ef'],
+    [BlockKind.CalmWater]: ['#2a78b8', '#3599d0', '#4aade0', '#2467a5', '#69c4ed'],
   };
 
   for (const [kind, meta] of Object.entries(EXTRA_BLOCK_META)) palettes[Number(kind) as BlockKind] = meta.palette;
@@ -303,9 +304,9 @@ function material(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   return new MeshLambertMaterial({
     map: texture(kind, face),
     alphaTest: foliage || isSapling(kind) ? 0.35 : glass ? 0.05 : 0,
-    transparent: glass || kind === BlockKind.Water,
-    opacity: glass ? 0.7 : kind === BlockKind.Water ? 0.55 : 1,
-    depthWrite: !(glass || kind === BlockKind.Water),
+    transparent: glass || isWaterBlock(kind),
+    opacity: glass ? 0.7 : isWaterBlock(kind) ? 0.55 : 1,
+    depthWrite: !(glass || isWaterBlock(kind)),
   });
 }
 
@@ -346,6 +347,7 @@ const baseBlockMaterials = {
   [BlockKind.Tnt]: [material(BlockKind.Tnt, 'side'), material(BlockKind.Tnt, 'side'), material(BlockKind.Tnt, 'top'), material(BlockKind.Tnt, 'bottom'), material(BlockKind.Tnt, 'side'), material(BlockKind.Tnt, 'side')],
   [BlockKind.Candle]: repeated(material(BlockKind.Candle, 'side')),
   [BlockKind.Water]: repeated(material(BlockKind.Water, 'side')),
+  [BlockKind.CalmWater]: repeated(material(BlockKind.CalmWater, 'side')),
 };
 
 export const blockMaterials = {

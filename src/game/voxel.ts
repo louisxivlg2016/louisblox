@@ -25,9 +25,11 @@ export const BlockKind = {
   Candle: 20,
   ...EXTRA_BLOCKS,
   Water: 47,
+  CalmWater: 126,
 } as const;
 
 export type BlockKind = (typeof BlockKind)[keyof typeof BlockKind];
+export const isWaterBlock = (kind: number | undefined) => kind === BlockKind.Water || kind === BlockKind.CalmWater;
 
 export type Voxel = {
   x: number;
@@ -67,6 +69,7 @@ export const HOTBAR_BLOCKS = [
   BlockKind.Candle,
   ...EXTRA_BLOCK_ORDER,
   BlockKind.Water,
+  BlockKind.CalmWater,
 ] as const;
 
 const baseBlockInfo = {
@@ -92,6 +95,7 @@ const baseBlockInfo = {
   [BlockKind.Tnt]: { name: 'Bombe TNT', color: '#c93d32' },
   [BlockKind.Candle]: { name: 'Bougie', color: '#f2d68a' },
   [BlockKind.Water]: { name: 'Eau', color: '#3b9bd5' },
+  [BlockKind.CalmWater]: { name: 'Eau calme (sans inondation)', color: '#3599d0' },
 };
 
 const baseBlockHardness = {
@@ -117,6 +121,7 @@ const baseBlockHardness = {
   [BlockKind.Tnt]: 0.8,
   [BlockKind.Candle]: 0.4,
   [BlockKind.Water]: 0.1,
+  [BlockKind.CalmWater]: 0.1,
 };
 
 export const BLOCK_INFO = {
@@ -156,7 +161,7 @@ export function raycastVoxel(
 
   for (let steps = 0; steps < 128 && distance <= maxDistance; steps += 1) {
     const block = blocks.get(voxelKey(x, y, z));
-    if (block !== undefined && (includeWater || block.kind !== BlockKind.Water) && (!block.open || isDoor(block.kind) || isTrapdoor(block.kind))) {
+    if (block !== undefined && (includeWater || !isWaterBlock(block.kind)) && (!block.open || isDoor(block.kind) || isTrapdoor(block.kind))) {
       return { block, x, y, z, normal, distance };
     }
 

@@ -13,7 +13,7 @@ import { SEA_LEVEL } from './levels';
 import { spawnSapling } from './saplingLifecycle';
 import { useGameStore } from './store';
 import { Animal, Chunk, ChunkData, Player, PlayerBody, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
-import { BlockKind, raycastVoxel, voxelKey } from './voxel';
+import { BlockKind, isWaterBlock, raycastVoxel, voxelKey } from './voxel';
 import { groundAt } from './vehicles';
 import { moveVoxelCharacter } from './systems/collisionSystem';
 import { fireProjectile } from './systems/projectileSystem';
@@ -162,7 +162,7 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
       const waterX = Math.round(origin.x + direction.x * distance);
       const waterY = Math.round(origin.y + direction.y * distance);
       const waterZ = Math.round(origin.z + direction.z * distance);
-      if (blocks.get(voxelKey(waterX, waterY, waterZ))?.kind !== BlockKind.Water) continue;
+      if (!isWaterBlock(blocks.get(voxelKey(waterX, waterY, waterZ))?.kind)) continue;
       const caughtFish = GALLERY_ITEMS.find((item) => item.name === 'Caught Fish')?.id;
       if (!caughtFish) return true;
       store.setItemCount(caughtFish, (store.itemCounts[caughtFish] ?? 0) + 1);
@@ -174,7 +174,7 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
   }
   if (shape === 'potion') {
     if (meta.name === 'Empty Bottle') {
-      if (hit?.block.kind === BlockKind.Water) {
+      if (isWaterBlock(hit?.block.kind)) {
         const bottle = GALLERY_ITEMS.find((item) => item.name === 'Water Bottle');
         if (bottle) store.setItemCount(bottle.id, (store.itemCounts[bottle.id] ?? 0) + 1);
         if (store.gameplayMode === 'survival') store.setItemCount(selected, (store.itemCounts[selected] ?? 1) - 1);

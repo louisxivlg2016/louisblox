@@ -5,7 +5,7 @@ import { getTouchMovement, isDown } from './input';
 import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from './levels';
 import { useGameStore } from './store';
 import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerBody, PlayerCollider, PlayerMount, PlayerPosition, PlayerState, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
-import { BlockKind, raycastVoxel, voxelKey } from './voxel';
+import { BlockKind, isWaterBlock, raycastVoxel, voxelKey } from './voxel';
 import { EXTRA_BLOCKS, isCrop, isDoor, isRail, isSign, isTrapdoor, isUtilityBlock } from './extraBlocks';
 import { turnToward } from './rotation';
 import { syncVehicleMotion, syncVehicleSpawn } from './vehicleSync';
@@ -18,7 +18,7 @@ export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y
   const blocks = getBlockIndex(world);
   for (let y = Math.min(top ?? MAX_BUILD_Y, Math.floor(fromY + 0.5)); y >= MIN_WORLD_Y; y -= 1) {
     const block = blocks.get(voxelKey(bx, y, bz));
-    if (block && block.kind !== BlockKind.Water && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
+    if (block && !isWaterBlock(block.kind) && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
   }
   return MIN_WORLD_Y + 0.5;
 }
@@ -217,7 +217,7 @@ function movePlane(world: World, position: Vector3, yaw: number, speed: number, 
   const blocks = getBlockIndex(world);
   for (const height of [0.6, 1.5]) {
     const block = blocks.get(voxelKey(Math.round(x), Math.round(y + height), Math.round(z)));
-    if (block && block.kind !== BlockKind.Water) return false;
+    if (block && !isWaterBlock(block.kind)) return false;
   }
   position.set(x, y, z);
   return true;
@@ -229,7 +229,7 @@ function moveBoat(world: World, position: Vector3, yaw: number, speed: number, d
   const blocks = getBlockIndex(world);
   const water = blocks.get(voxelKey(Math.round(x), SEA_LEVEL, Math.round(z)));
   const above = blocks.get(voxelKey(Math.round(x), SEA_LEVEL + 1, Math.round(z)));
-  if (water?.kind !== BlockKind.Water || (above && above.kind !== BlockKind.Water)) return false;
+  if (!isWaterBlock(water?.kind) || (above && !isWaterBlock(above.kind))) return false;
   if (groundAt(world, x, z, SEA_LEVEL) >= SEA_LEVEL) return false;
   position.set(x, SEA_LEVEL + 0.55, z);
   return true;

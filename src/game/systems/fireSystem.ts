@@ -1,8 +1,9 @@
 import type { World } from 'koota';
-import { addVoxel, batchVoxelEdits, getBlockIndex, removeVoxel } from '../chunks';
+import { addVoxel, batchVoxelEdits, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
 import { isCrop, isSapling } from '../extraBlocks';
+import { extinguishFireAt } from '../fireLifecycle';
 import { Fire, FirePosition, Player, PlayerPosition } from '../traits';
-import { BlockKind, voxelKey } from '../voxel';
+import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import type { VoxelHit } from '../voxel';
 import { damagePlayer } from '../combat';
 
@@ -44,6 +45,13 @@ export function fireSystem(world: World, dt: number) {
   batchVoxelEdits(world, () => {
     fires.updateEach(([fire, position]) => {
       if (position.distanceToSquared(player) > 64 * 64) return;
+      const water = [[0, 0, 0], ...directions].map(([dx, dy, dz]) => blocks.get(voxelKey(position.x + dx, position.y + dy, position.z + dz))).find((block) => isWaterBlock(block?.kind));
+      if (water) {
+        const block = blocks.get(voxelKey(position.x, position.y, position.z));
+        if (block) replaceVoxel(world, hitAt(block), water.kind);
+        else extinguishFireAt(world, position.x, position.y, position.z);
+        return;
+      }
       fire.age += dt;
       fire.spreadIn -= dt;
       if (fire.spreadIn > 0 || fires.length >= 96 || fire.generation >= (fire.kind === BlockKind.Wildfire ? 6 : 3)) return;
@@ -65,7 +73,7 @@ export function fireSystem(world: World, dt: number) {
         }
         if (target || (dy !== 0 && dy !== 1 && dy !== -1)) continue;
         const support = blocks.get(voxelKey(x, y - 1, z));
-        if (!support || support.kind === BlockKind.Water || support.kind === BlockKind.Campfire || support.kind === BlockKind.Wildfire) continue;
+        if (!support || isWaterBlock(support.kind) || support.kind === BlockKind.Campfire || support.kind === BlockKind.Wildfire) continue;
         addVoxel(world, x, y, z, BlockKind.Campfire, undefined, undefined, fire.generation + 1);
         created += 1;
       }

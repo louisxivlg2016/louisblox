@@ -4,7 +4,7 @@ import { getBlockIndex } from './chunks';
 import { SEA_LEVEL } from './levels';
 import type { WaterTile } from './levels';
 import { Fish, FishMesh, FishMotion, FishPosition, Player, PlayerPosition } from './traits';
-import { BlockKind, voxelKey } from './voxel';
+import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import { turnToward } from './rotation';
 
 export type FishKind = 'salmon' | 'clownfish' | 'blueTang';
@@ -37,7 +37,7 @@ export function spawnChunkFish(world: World, cx: number, cz: number, water: Wate
   for (let index = 0; index < count; index += 1) {
     const tile = water[Math.floor(hash(cx + index, cz, seed + 911) * water.length)];
     const blocks = getBlockIndex(world);
-    if (blocks.get(voxelKey(tile.x, 3, tile.z))?.kind !== BlockKind.Water || blocks.get(voxelKey(tile.x, 4, tile.z))?.kind !== BlockKind.Water) continue;
+    if (!isWaterBlock(blocks.get(voxelKey(tile.x, 3, tile.z))?.kind) || !isWaterBlock(blocks.get(voxelKey(tile.x, 4, tile.z))?.kind)) continue;
     const kind = kinds[Math.floor(hash(tile.x, tile.z, seed + 912 + index) * kinds.length)];
     entities.push(spawnFish(world, kind, tile.x, SEA_LEVEL - 1.2, tile.z, seed + index));
   }
@@ -49,7 +49,7 @@ const distantClocks = new WeakMap<Vector3, number>();
 export function fishSystem(world: World, dt: number) {
   const playerPosition = world.queryFirst(Player)?.get(PlayerPosition);
   const blocks = getBlockIndex(world);
-  const isWater = (x: number, y: number, z: number) => blocks.get(voxelKey(Math.round(x), Math.round(y), Math.round(z)))?.kind === BlockKind.Water;
+  const isWater = (x: number, y: number, z: number) => isWaterBlock(blocks.get(voxelKey(Math.round(x), Math.round(y), Math.round(z)))?.kind);
   world.query(Fish, FishPosition, FishMotion, FishMesh).updateEach(([, position, motion, mesh]) => {
     const distanceSquared = playerPosition ? position.distanceToSquared(playerPosition) : Infinity;
     if (mesh.value) mesh.value.visible = distanceSquared < 40 * 40;

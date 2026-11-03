@@ -27,7 +27,7 @@ import {
 } from './traits';
 import { createMeatInventory } from './meats';
 import { useGameStore } from './store';
-import { BlockKind, voxelKey } from './voxel';
+import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
 import { canEditAt, newProtection, useProtectionStore } from './protection';
 import type { WorldProtection } from './protection';
@@ -90,7 +90,7 @@ export const chunkCoordinate = (value: number) => Math.floor((value + 0.5) / CHU
 const columnKey = (x: number, z: number) => `${x},${z}`;
 
 function supportsGround(block: Voxel) {
-  return block.kind !== BlockKind.Water && !isCrop(block.kind) && !isRail(block.kind)
+  return !isWaterBlock(block.kind) && !isCrop(block.kind) && !isRail(block.kind)
     && !(block.open && block.kind >= 48 && block.kind <= 79);
 }
 
@@ -528,7 +528,8 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
   const data = chunkEntity.get(ChunkData)!;
   const position = voxelKey(x, y, z);
   const existing = state.blocks.get(position);
-  if (existing && existing.kind !== BlockKind.Water) return;
+  if (existing && isFireBlock(existing.kind) && isWaterBlock(kind)) extinguishFireAt(world, x, y, z);
+  else if (existing && !isWaterBlock(existing.kind)) return;
   if (existing) data.blocks = data.blocks.filter((block) => voxelKey(block.x, block.y, block.z) !== position);
 
   const block: Voxel = { x, y, z, kind };

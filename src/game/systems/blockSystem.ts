@@ -15,7 +15,7 @@ import { useGameStore } from '../store';
 import { getItemMeta, isSword, miningSpeed } from '../items';
 import { changeInventory, hasInventory } from '../inventory';
 import { BlockTarget, Chunk, ChunkData, Player, PlayerPosition, TargetMesh } from '../traits';
-import { BLOCK_HARDNESS, BlockKind, raycastVoxel, voxelKey } from '../voxel';
+import { BLOCK_HARDNESS, BlockKind, isWaterBlock, raycastVoxel, voxelKey } from '../voxel';
 import { miningMultiplier } from '../effects';
 import { fireProjectile } from './projectileSystem';
 import { isPirateObjective } from '../pirates';
@@ -80,8 +80,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   const kind = hit?.block.kind;
-  const canMine = store.gameplayMode === 'creative' || kind !== BlockKind.Water && store.gameplayMode !== 'football' && store.gameplayMode !== 'maze' && ((store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
-    || (typeof store.selected === 'string' && (['pickaxe', 'shovel'].includes(getItemMeta(store.selected).category) || getItemMeta(store.selected).shape === 'shears')));
+  const canMine = !isWaterBlock(kind) && (store.gameplayMode === 'creative' || store.gameplayMode !== 'football' && store.gameplayMode !== 'maze' && ((store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
+    || (typeof store.selected === 'string' && (['pickaxe', 'shovel'].includes(getItemMeta(store.selected).category) || getItemMeta(store.selected).shape === 'shears'))));
   const mining = canMine && isMouseDown(0) && hit !== null && useGameStore.getState().mode === 'play';
   if (mining && hit && kind !== undefined) {
     const key = voxelKey(hit.x, hit.y, hit.z);
@@ -176,7 +176,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   if (actions.place > 0 || actions.harvest > 0) {
-    const floating = store.gameplayMode === 'pirates' && hit.block.kind === BlockKind.Water;
+    const floating = store.gameplayMode === 'pirates' && isWaterBlock(hit.block.kind);
     const x = hit.x + (floating ? 0 : hit.normal.x);
     const y = hit.y + (floating ? 0 : hit.normal.y);
     const z = hit.z + (floating ? 0 : hit.normal.z);
