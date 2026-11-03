@@ -1,14 +1,30 @@
 import { getItemMeta, selectionInfo } from '../game/items';
 import type { SelectedKind } from '../game/items';
 import { BlockKind } from '../game/voxel';
+import { brickTexture, texture } from '../game/textures';
 import tntUrl from '../../assets/references/tnt.png';
 import redFireUrl from '../../assets/ui/red-fire.png';
+
+const iconCache = new Map<BlockKind, string>();
+
+function blockIcon(kind: BlockKind) {
+  const cached = iconCache.get(kind);
+  if (cached) return cached;
+  const source = kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick ? brickTexture(kind) : texture(kind, 'side');
+  const url = source.image.toDataURL();
+  iconCache.set(kind, url);
+  return url;
+}
 
 export function ItemIcon({ kind }: { kind: SelectedKind }) {
   const info = selectionInfo(kind);
   if (kind === BlockKind.Tnt) return <img className="tnt-icon" src={tntUrl} alt="" />;
   if (kind === BlockKind.Wildfire) return <img className="tnt-icon red-fire-icon" src={redFireUrl} alt="" />;
-  if (typeof kind === 'number') return <span className="block-swatch" style={{ backgroundColor: info.color }} />;
+  if (typeof kind === 'number') {
+    if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) return <span className="block-swatch block-concrete" style={{ backgroundColor: info.color }} />;
+    const brick = kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick;
+    return <img className={`block-swatch block-icon${brick ? ' block-icon-smooth' : ''}`} src={blockIcon(kind)} alt="" />;
+  }
   const meta = getItemMeta(kind);
   const rawShape = meta.shape ?? meta.category;
   const aliases: Record<string, string> = {
