@@ -44,6 +44,14 @@ function addPrincessHair(root: Group, width: number, height: number, depth: numb
     hair.add(strand);
   }
   root.add(hair);
+  const sides = new Group();
+  sides.name = 'princess-side-hair';
+  for (const side of [-1, 1]) {
+    const panel = new Mesh(new BoxGeometry(width * 0.05, height * 0.28, depth * 1.06), material);
+    panel.position.set(side * width * 0.35, floor + height * 0.76, 0);
+    sides.add(panel);
+  }
+  root.add(sides);
 }
 
 export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind, 'default'>, scale: number) {
