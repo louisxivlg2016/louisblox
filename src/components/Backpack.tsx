@@ -109,7 +109,7 @@ export function Backpack() {
                 <button onClick={() => eatItem(world, kind)}>Manger</button>
               </div>
             ))}
-            <div className="backpack-resource"><span>Pommes cueillies ×{apples}</span><button onClick={discardApple} disabled={apples === 0}>Jeter 1</button></div>
+            <div className="backpack-resource"><span>Pommes cueillies ×{apples}</span><span><button onClick={() => eatItem(world, 'apple')} disabled={apples === 0}>Manger</button> <button onClick={discardApple} disabled={apples === 0}>Jeter 1</button></span></div>
             {resources.map(([kind, count]) => (
               <div className="backpack-resource" key={kind}>
                 <span>{MEAT_NAMES[kind]} ×{count}</span>
