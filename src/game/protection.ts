@@ -12,6 +12,7 @@ export type WorldProtection = {
   canBreak?: boolean;
   canPlace?: boolean;
   bannedPlayerIds?: string[];
+  bannedPlayerNames?: Record<string, string>;
 };
 
 export const useProtectionStore = create<{
@@ -42,7 +43,8 @@ export function isWorldProtection(value: unknown): value is WorldProtection {
     && Array.isArray(data.allowedPlayerIds) && data.allowedPlayerIds.every((id) => typeof id === 'string' && id.length > 0 && id.length <= 80)
     && (data.canBreak === undefined || typeof data.canBreak === 'boolean')
     && (data.canPlace === undefined || typeof data.canPlace === 'boolean')
-    && (data.bannedPlayerIds === undefined || Array.isArray(data.bannedPlayerIds) && data.bannedPlayerIds.every((id) => typeof id === 'string' && id.length > 0 && id.length <= 80));
+    && (data.bannedPlayerIds === undefined || Array.isArray(data.bannedPlayerIds) && data.bannedPlayerIds.every((id) => typeof id === 'string' && id.length > 0 && id.length <= 80))
+    && (data.bannedPlayerNames === undefined || data.bannedPlayerNames !== null && typeof data.bannedPlayerNames === 'object' && Object.entries(data.bannedPlayerNames).every(([id, name]) => id.length > 0 && id.length <= 80 && typeof name === 'string' && name.length <= 24));
 }
 
 export function applyProtection(value: unknown) {
@@ -77,6 +79,13 @@ export function banPlayer(targetId: string) {
   return true;
 }
 
+export function unbanPlayer(targetId: string) {
+  if (!canManageProtection() || targetId === playerIdentity()) return false;
+  if (socket?.readyState !== WebSocket.OPEN) return false;
+  socket.send(JSON.stringify({ type: 'moderation-unban', targetId }));
+  return true;
+}
+
 export function canEditAt(x: number, z: number, action: 'break' | 'place' | 'interact' = 'interact') {
   const mode = useGameStore.getState().gameplayMode;
   if (mode === 'pirates') return true;
@@ -86,7 +95,7 @@ export function canEditAt(x: number, z: number, action: 'break' | 'place' | 'int
   if (!protection?.enabled) return true;
   if (Math.hypot(x - protection.centerX, z - protection.centerZ) > protection.radius) return true;
   if (protection.bannedPlayerIds?.includes(playerIdentity())) {
-    useGameStore.getState().setNotice('Tu as été exclu définitivement de ce monde.');
+    useGameStore.getState().setNotice('Tu as été exclu de ce monde. Le créateur peut te réadmettre.');
     return false;
   }
   if (protection.allowedPlayerIds.includes(playerIdentity())) return true;

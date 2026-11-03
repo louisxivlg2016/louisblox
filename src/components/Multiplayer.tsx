@@ -593,7 +593,7 @@ export function MultiplayerConnection() {
         if (event.code === 4003) {
           if (socket.current === next) socket.current = null;
           store.setEnabled(false);
-          store.setStatus('error', 'Tu as été exclu définitivement de ce monde par son créateur.');
+          store.setStatus('error', 'Tu as été exclu de ce monde. Le créateur peut te réadmettre : rejoins ensuite ce salon.');
           useGameStore.setState({ mode: 'menu' });
           return;
         }

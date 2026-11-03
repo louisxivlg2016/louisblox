@@ -41,7 +41,7 @@ function soloSpawn() {
   const radius = 11 + Math.random() * 8;
   return { x: Math.round(Math.cos(angle) * radius * 10) / 10, y: 8.51, z: Math.round(Math.sin(angle) * radius * 10) / 10 };
 }
-type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; canBreak?: boolean; canPlace?: boolean; bannedPlayerIds?: string[] };
+type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; canBreak?: boolean; canPlace?: boolean; bannedPlayerIds?: string[]; bannedPlayerNames?: Record<string, string> };
 type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; template?: WorldTemplate; protection?: WorldProtection; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']> };
 type SharedVehicle = {
   id: string;
@@ -210,6 +210,12 @@ function parseWorldProtection(value: unknown, ownerId: string): WorldProtection 
   if (data.ownerId !== ownerId || typeof data.centerX !== 'number' || !Number.isFinite(data.centerX) || typeof data.centerZ !== 'number' || !Number.isFinite(data.centerZ) || data.radius !== 500 || typeof data.enabled !== 'boolean') return undefined;
   if (!Array.isArray(data.allowedPlayerIds) || data.allowedPlayerIds.some((id) => typeof id !== 'string' || id.length < 1 || id.length > 80)) return undefined;
   const banned = Array.isArray(data.bannedPlayerIds) ? data.bannedPlayerIds.filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= 80 && id !== ownerId).slice(0, 100) : [];
+  const bannedPlayerNames: Record<string, string> = {};
+  const savedNames = data.bannedPlayerNames && typeof data.bannedPlayerNames === 'object' ? data.bannedPlayerNames as Record<string, unknown> : {};
+  for (const id of banned) {
+    const name = savedNames[id];
+    if (typeof name === 'string') bannedPlayerNames[id] = name.trim().slice(0, 24) || 'Joueur';
+  }
   return {
     ownerId,
     centerX: data.centerX,
@@ -220,6 +226,7 @@ function parseWorldProtection(value: unknown, ownerId: string): WorldProtection 
     canBreak: data.canBreak === true,
     canPlace: data.canPlace === true,
     bannedPlayerIds: banned,
+    bannedPlayerNames,
   };
 }
 
@@ -772,16 +779,28 @@ export class GameRoom extends DurableObject<Env> {
       this.broadcast({ type: 'protection', protection: this.protection });
       return;
     }
+    if (type === 'moderation-unban') {
+      const attachment = this.attachment(ws);
+      const targetId = (data as { targetId?: unknown }).targetId;
+      if (!attachment || !this.protection || this.protection.ownerId !== attachment.playerId || typeof targetId !== 'string') return;
+      this.protection.bannedPlayerIds = (this.protection.bannedPlayerIds ?? []).filter((id) => id !== targetId);
+      if (this.protection.bannedPlayerNames) delete this.protection.bannedPlayerNames[targetId];
+      await this.saveWorld();
+      this.broadcast({ type: 'protection', protection: this.protection });
+      return;
+    }
     if (type === 'moderation-ban') {
       const attachment = this.attachment(ws);
       const targetId = (data as { targetId?: unknown }).targetId;
       if (!attachment || !this.protection || this.protection.ownerId !== attachment.playerId || typeof targetId !== 'string' || targetId === attachment.playerId) return;
+      const target = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
+      const name = target ? this.attachment(target)?.name : undefined;
       this.protection.bannedPlayerIds = [...new Set([...(this.protection.bannedPlayerIds ?? []), targetId])].slice(0, 100);
+      this.protection.bannedPlayerNames = { ...this.protection.bannedPlayerNames, [targetId]: name ?? this.protection.bannedPlayerNames?.[targetId] ?? 'Joueur' };
       await this.saveWorld();
       this.broadcast({ type: 'protection', protection: this.protection });
-      const target = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
       if (target) {
-        target.send(JSON.stringify({ type: 'banned', message: 'Le créateur t’a exclu définitivement de ce monde.' }));
+        target.send(JSON.stringify({ type: 'banned', message: 'Le créateur t’a exclu de ce monde. Il peut te réadmettre ensuite.' }));
         target.close(4003, 'Banned by world owner');
         const targetAttachment = this.attachment(target);
         if (targetAttachment) this.removePresence(targetAttachment);

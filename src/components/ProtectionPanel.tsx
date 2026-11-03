@@ -1,4 +1,4 @@
-import { useProtectionStore, canManageProtection, updateProtection, banPlayer } from '../game/protection';
+import { useProtectionStore, canManageProtection, updateProtection, banPlayer, unbanPlayer } from '../game/protection';
 import { playerIdentity } from '../game/playerIdentity';
 import { useFriendStore } from '../game/friends';
 import { useMultiplayerStore } from '../game/multiplayerStore';
@@ -12,6 +12,8 @@ export function ProtectionPanel() {
   const people = new Map<string, string>();
   for (const friend of friends) people.set(friend.playerId, friend.name);
   for (const player of players) if (!player.self) people.set(player.playerId, player.name);
+  const banned = protection.bannedPlayerIds ?? [];
+  for (const playerId of banned) people.delete(playerId);
   const owner = protection.ownerId === playerIdentity() ? 'toi' : people.get(protection.ownerId) ?? 'le propriétaire du monde';
   return (
     <section className="protection-panel">
@@ -38,11 +40,20 @@ export function ProtectionPanel() {
                   />
                   <span>{name} · construire et détruire</span>
                 </label>
-                <button type="button" className="secondary-button" onClick={() => { if (window.confirm(`Exclure définitivement ${name} de ce monde ?`)) banPlayer(playerId); }}>Exclure définitivement</button>
+                <button type="button" className="secondary-button" onClick={() => { if (window.confirm(`Exclure ${name} de ce monde ? Tu pourras le réadmettre ensuite.`)) banPlayer(playerId); }}>Exclure</button>
               </div>
             ))}
             {people.size === 0 && <p>Ajoute des amis pour leur autoriser la construction ici.</p>}
           </div>
+          {banned.length > 0 && (
+            <div className="protection-players protection-banned">
+              <p>Joueurs exclus · tu peux les laisser revenir dans ce monde.</p>
+              {banned.map((playerId) => {
+                const name = protection.bannedPlayerNames?.[playerId] ?? 'Joueur';
+                return <div className="protection-player-row" key={playerId}><span>{name}</span><button type="button" className="primary-button" aria-label={`Réadmettre ${name}`} onClick={() => unbanPlayer(playerId)}>Réadmettre</button></div>;
+              })}
+            </div>
+          )}
         </>
       ) : <p>Seul le propriétaire peut choisir les autorisations de ce territoire.</p>}
     </section>
