@@ -245,6 +245,6 @@ export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.GlassRed]: block('Verre rouge à motif', '#b83935', 0.35),
   [EXTRA_BLOCKS.GlassBlack]: block('Verre noir à motif', '#25282b', 0.35),
   [EXTRA_BLOCKS.TrafficLight]: block('Feu rouge de circulation', '#ef3b32', 0.8),
-  [EXTRA_BLOCKS.StreetLamp]: block('Lampadaire', '#75818a', 1),
+  [EXTRA_BLOCKS.StreetLamp]: block('Lampadaire moderne', '#75818a', 1),
   [EXTRA_BLOCKS.ParisStreetLamp]: block('Lampadaire parisien', '#294e3b', 1),
 };
