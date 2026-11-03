@@ -37,7 +37,7 @@ export function droppedItemSystem(gameWorld: World, dt: number) {
       entity.destroy();
       return;
     }
-    if (player && item.age > 0.8 && position.distanceToSquared(player) < 1.7 * 1.7) {
+    if (player && item.age > 0.8 && position.distanceToSquared(player) < 2.5 * 2.5) {
       changeInventory(item.kind, 1);
       entity.destroy();
       return;
