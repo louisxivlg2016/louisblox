@@ -2,6 +2,7 @@ import { BoxGeometry, CanvasTexture, LinearFilter, MeshBasicMaterial, MeshLamber
 import type { Material } from 'three';
 import { BlockKind, isWaterBlock } from './voxel';
 import { EXTRA_BLOCK_META, isGlass, isSapling } from './extraBlocks';
+import { getVitrailTexture } from './vitrailDesigns';
 import type { ExtraBlockKind } from './extraBlocks';
 
 function random(x: number, y: number, seed: number) {
@@ -302,10 +303,10 @@ function material(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves;
   const glass = isGlass(kind);
   return new MeshLambertMaterial({
-    map: texture(kind, face),
+    map: glass ? getVitrailTexture(kind) : texture(kind, face),
     alphaTest: foliage || isSapling(kind) ? 0.35 : glass ? 0.05 : 0,
     transparent: glass || isWaterBlock(kind),
-    opacity: glass ? 0.7 : isWaterBlock(kind) ? 0.55 : 1,
+    opacity: glass ? 0.82 : isWaterBlock(kind) ? 0.55 : 1,
     depthWrite: !(glass || isWaterBlock(kind)),
   });
 }

@@ -2,6 +2,7 @@ import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, MeshBasic
 import type { Material } from 'three';
 import { brickTexture, texture } from './textures';
 import { EXTRA_BLOCK_META, isCrop, isDoor, isGlass, isSapling, isSign, isTrapdoor, isUtilityBlock } from './extraBlocks';
+import { getVitrailDesign } from './vitrailDesigns';
 import type { ExtraBlockKind } from './extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
@@ -40,8 +41,23 @@ function createAtlas() {
   let index = 0;
   for (const kind of kinds) {
     for (const face of ['side', 'top', 'bottom'] as const) {
-      tileIndices.set(`${kind}:${face}`, index);
-      context.drawImage(texture(kind, face).image, (index % ATLAS_COLUMNS) * TILE_SIZE, Math.floor(index / ATLAS_COLUMNS) * TILE_SIZE);
+      const tileIndex = index;
+      tileIndices.set(`${kind}:${face}`, tileIndex);
+      if (isGlass(kind)) {
+        const design = getVitrailDesign(kind);
+        if (design) {
+          const image = new Image();
+          image.onload = () => {
+            context.drawImage(image, (tileIndex % ATLAS_COLUMNS) * TILE_SIZE, Math.floor(tileIndex / ATLAS_COLUMNS) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            if (atlas) atlas.needsUpdate = true;
+          };
+          image.src = design.url;
+        } else {
+          context.drawImage(texture(kind, face).image, (tileIndex % ATLAS_COLUMNS) * TILE_SIZE, Math.floor(tileIndex / ATLAS_COLUMNS) * TILE_SIZE);
+        }
+      } else {
+        context.drawImage(texture(kind, face).image, (tileIndex % ATLAS_COLUMNS) * TILE_SIZE, Math.floor(tileIndex / ATLAS_COLUMNS) * TILE_SIZE);
+      }
       index += 1;
     }
   }
@@ -148,7 +164,7 @@ function getMaterials() {
     unlit: new MeshBasicMaterial({ map, vertexColors: true }),
     foliage: new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.35 }),
     water: new MeshLambertMaterial({ map, vertexColors: true, transparent: true, opacity: 0.55, depthWrite: false }),
-    glass: new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.05, transparent: true, opacity: 0.7, depthWrite: false }),
+    glass: new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.05, transparent: true, opacity: 0.82, depthWrite: false }),
   };
   return materials;
 }

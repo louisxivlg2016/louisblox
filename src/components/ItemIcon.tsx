@@ -1,6 +1,8 @@
 import { getItemMeta, selectionInfo } from '../game/items';
 import type { SelectedKind } from '../game/items';
 import { BlockKind } from '../game/voxel';
+import { isGlass } from '../game/extraBlocks';
+import { getVitrailDesign, getVitrailIcon } from '../game/vitrailDesigns';
 import { brickTexture, texture } from '../game/textures';
 import tntUrl from '../../assets/references/tnt.png';
 import redFireUrl from '../../assets/ui/red-fire.png';
@@ -26,6 +28,7 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
   if (kind === BlockKind.TrafficLight) return <img className="tnt-icon traffic-light-icon" src={trafficLightUrl} alt="" />;
   if (kind === BlockKind.StreetLamp) return <img className="tnt-icon street-lamp-icon" src={streetLampUrl} alt="" />;
   if (kind === BlockKind.ParisStreetLamp) return <img className="tnt-icon paris-street-lamp-icon" src={parisStreetLampUrl} alt="" />;
+  if (typeof kind === 'number' && isGlass(kind)) return <img className="block-swatch block-icon stained-glass-icon" src={getVitrailIcon(kind)} alt={getVitrailDesign(kind)?.name ?? ''} />;
   if (typeof kind === 'number') {
     if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) return <span className="block-swatch block-concrete" style={{ backgroundColor: info.color }} />;
     const brick = kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick;
