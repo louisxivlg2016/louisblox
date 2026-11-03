@@ -40,10 +40,10 @@ function EatingHand({ kind, startedAt }: { kind: Exclude<SelectedKind, number>; 
     if (!group.current) return;
     const progress = Math.min(1, (performance.now() - startedAt) / 850);
     const bite = Math.sin(progress * Math.PI);
-    group.current.position.set(0.36, -0.3 + bite * 0.3, -0.78 - bite * 0.22);
+    group.current.position.set(0.36 - bite * 0.34, -0.3 + bite * 0.2, -0.78 + bite * 0.33);
     group.current.rotation.set(-bite * 0.75, 0.15, bite * 0.2);
   });
-  return <group ref={group} name="eating-animation"><ItemModel kind={kind} held /></group>;
+  return <group ref={group} name="eating-animation" scale={0.65}><ItemModel kind={kind} held /></group>;
 }
 
 export function Hands() {

@@ -7,6 +7,7 @@ import { animateCharacterRig, createCharacterRig } from '../game/characterRig';
 import type { Ref } from 'react';
 import type { OutfitKind } from '../game/outfits';
 import { world } from '../game/world';
+import { useEatingStore } from '../game/eating';
 import { Player, PlayerMount, PlayerState, PlayerVelocity } from '../game/traits';
 import { fullCharacterHeights } from '../game/fullCharacters';
 import { applyCharacterGesture } from '../game/characterGestures';
@@ -33,6 +34,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
   const character = useMemo(() => createCharacterRig(scene, outfit, scale), [scene, outfit, scale]);
   const { actions } = useAnimations(animations, group);
   const metadata = useMemo(() => ({ outfit, source: 'Hunyuan', whole: true }), [outfit]);
+  const eating = useEatingStore((state) => remote ? null : state.eating);
 
   useEffect(() => {
     const head = character.userData.rig?.head as Object3D | undefined;
@@ -61,7 +63,10 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
     const jumping = airborne ?? Boolean(!state?.grounded || state?.flying || Math.abs(velocity?.y ?? 0) > 2);
     const name = jumping ? 'jump' : walking ? 'run' : 'idle';
     const action = actions[name];
-    if (name !== current.current) {
+    if (eating) {
+      current.current = '';
+      for (const action of Object.values(actions)) action?.stop();
+    } else if (name !== current.current) {
       if (action) {
         actions[current.current]?.fadeOut(0.18);
         action.reset().setLoop(LoopRepeat, Infinity).fadeIn(0.18).play();
@@ -76,9 +81,10 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
       group.current.position.y = name === 'run' ? Math.abs(Math.sin(time * 8)) * 0.045 : name === 'idle' ? Math.sin(time * 2) * 0.012 : 0;
       group.current.rotation.z = name === 'run' ? Math.sin(time * 8) * 0.035 : 0;
       group.current.rotation.x = name === 'jump' ? -0.12 : 0;
-      animateCharacterRig(character, time, walking, jumping, sitting, Math.min(delta, 0.05));
+      animateCharacterRig(character, time, walking, jumping, sitting, Math.min(delta, 0.05), eating);
     } else {
       applyCharacterGesture(character, emote, sitting, !walking && !jumping, performance.now() / 1000, delta);
+      if (eating) animateCharacterRig(character, performance.now() / 1000, false, jumping, sitting, Math.min(delta, 0.05), eating);
     }
   });
 

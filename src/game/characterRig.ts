@@ -97,13 +97,15 @@ function turn(object: Group | undefined, target: number, delta: number) {
   if (object) object.rotation.x = MathUtils.damp(object.rotation.x, target, 14, delta);
 }
 
-export function animateCharacterRig(root: Object3D, time: number, walking: boolean, jumping: boolean, seated: boolean, delta: number) {
+export function animateCharacterRig(root: Object3D, time: number, walking: boolean, jumping: boolean, seated: boolean, delta: number, eating?: { startedAt: number } | null) {
   const rig = root.userData.rig as Rig | undefined;
   if (!rig) return;
   const moving = walking && !jumping && !seated;
   const swing = moving ? Math.sin(time * 8) * 0.42 : 0;
+  const bite = eating ? Math.sin(Math.min(1, (performance.now() - eating.startedAt) / 850) * Math.PI) : 0;
   turn(rig.leftArm, swing, delta);
-  turn(rig.rightArm, -swing, delta);
+  if (rig.rightArm && eating) rig.rightArm.rotation.x = 1.25 + bite * 0.65;
+  else turn(rig.rightArm, -swing, delta);
   turn(rig.leftLeg, -swing * 0.85, delta);
   turn(rig.rightLeg, swing * 0.85, delta);
 }

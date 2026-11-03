@@ -55,7 +55,8 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
     if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
     if (rightArm.current) {
       const bite = eating ? Math.sin(Math.min(1, (performance.now() - eating.startedAt) / 850) * Math.PI) : 0;
-      rightArm.current.rotation.x += ((eating ? -1.25 - bite * 0.65 : waving ? Math.PI : -swing) - rightArm.current.rotation.x) * amount;
+      if (eating) rightArm.current.rotation.x = 1.25 + bite * 0.65;
+      else rightArm.current.rotation.x += ((waving ? Math.PI : -swing) - rightArm.current.rotation.x) * amount;
       rightArm.current.rotation.z += ((waving ? Math.sin(phase.current) * 0.45 : 0) - rightArm.current.rotation.z) * amount;
     }
     if (leftLeg.current) leftLeg.current.rotation.x += (-swing - leftLeg.current.rotation.x) * amount;
@@ -109,6 +110,7 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
       <PixelPart position={[0, 1.62, -0.27]} size={[0.1, 0.08, 0.08]} color="#d98e9b" />
     </>
   );
+  const held = eating?.kind ?? selected;
   return (
     <group
       ref={bodyMesh}
@@ -121,10 +123,10 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
       </group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         {!hasFullCharacter(outfit) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
-        <group position={[0.13, -0.48, -0.24]} scale={typeof selected === 'string' && getItemMeta(selected).category === 'vehicle' ? 0.2 : 0.72}>
-          {typeof selected === 'number'
-            ? selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : selected === BlockKind.Campfire || selected === BlockKind.Wildfire ? <CampfireModel destructive={selected === BlockKind.Wildfire} /> : isUtilityBlock(selected) ? <UtilityBlockModel kind={selected} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[selected]]} />
-            : <ItemModel kind={selected} />}
+        <group position={[0.13, -0.48, -0.24]} scale={typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
+          {typeof held === 'number'
+            ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
+            : <ItemModel kind={held} />}
         </group>
       </group>
       {riding || emote === 'sit' ? (
