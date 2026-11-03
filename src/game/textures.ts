@@ -304,10 +304,10 @@ function material(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   const glass = isGlass(kind);
   return new MeshLambertMaterial({
     map: glass ? getVitrailTexture(kind) : texture(kind, face),
-    alphaTest: foliage || isSapling(kind) ? 0.35 : glass ? 0.05 : 0,
+    alphaTest: foliage || isSapling(kind) ? 0.35 : 0,
     transparent: glass || isWaterBlock(kind),
-    opacity: glass ? 0.82 : isWaterBlock(kind) ? 0.55 : 1,
-    depthWrite: !(glass || isWaterBlock(kind)),
+    opacity: glass ? 0.94 : isWaterBlock(kind) ? 0.55 : 1,
+    depthWrite: !isWaterBlock(kind),
   });
 }
 

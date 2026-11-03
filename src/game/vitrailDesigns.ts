@@ -1,14 +1,14 @@
-import { NearestFilter, SRGBColorSpace, TextureLoader } from 'three';
+import { LinearFilter, LinearMipmapLinearFilter, MirroredRepeatWrapping, SRGBColorSpace, TextureLoader } from 'three';
 import type { Texture } from 'three';
 import { BlockKind } from './voxel';
-import roseUrl from '../../assets/vitraux/rose.png';
-import geometricUrl from '../../assets/vitraux/geometric.png';
-import sunUrl from '../../assets/vitraux/sun.png';
-import forestUrl from '../../assets/vitraux/forest.png';
-import oceanUrl from '../../assets/vitraux/ocean.png';
-import violetUrl from '../../assets/vitraux/violet.png';
-import rainbowUrl from '../../assets/vitraux/rainbow.png';
-import doveUrl from '../../assets/vitraux/dove.png';
+import roseUrl from '../../assets/vitraux/rose-lisse.webp';
+import geometricUrl from '../../assets/vitraux/geometric-lisse.webp';
+import sunUrl from '../../assets/vitraux/sun-lisse.webp';
+import forestUrl from '../../assets/vitraux/forest-lisse.webp';
+import oceanUrl from '../../assets/vitraux/ocean-lisse.webp';
+import violetUrl from '../../assets/vitraux/violet-lisse.webp';
+import rainbowUrl from '../../assets/vitraux/rainbow-lisse.webp';
+import doveUrl from '../../assets/vitraux/dove-lisse.webp';
 
 export type VitrailDesign = { name: string; url: string };
 const designs: Partial<Record<BlockKind, VitrailDesign>> = {
@@ -44,9 +44,11 @@ export function getVitrailTexture(kind: BlockKind) {
   let texture = textures.get(kind);
   if (!texture) {
     texture = loader.load(design.url);
-    texture.magFilter = NearestFilter;
-    texture.minFilter = NearestFilter;
-    texture.generateMipmaps = false;
+    texture.magFilter = LinearFilter;
+    texture.minFilter = LinearMipmapLinearFilter;
+    texture.generateMipmaps = true;
+    texture.wrapS = MirroredRepeatWrapping;
+    texture.wrapT = MirroredRepeatWrapping;
     texture.colorSpace = SRGBColorSpace;
     textures.set(kind, texture);
   }

@@ -9,26 +9,26 @@ const client = new CommonClient('hunyuan.intl.tencentcloudapi.com', '2023-09-01'
   profile: { httpProfile: { endpoint: 'hunyuan.intl.tencentcloudapi.com', reqTimeout: 60 } },
 });
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const statePath = '.tmp/hunyuan-stained-glass-jobs.json';
+const statePath = '.tmp/hunyuan-stained-glass-smooth-jobs.json';
 await mkdir('assets/models', { recursive: true });
 await mkdir('assets/vitraux', { recursive: true });
 await mkdir('.tmp', { recursive: true });
 const state = await Bun.file(statePath).exists() ? await Bun.file(statePath).json() : {};
 const designs = [
-  ['rose', 'Minecraft pixel stained glass window, red and pink roses, green leaves, black lead lines, blue background, square ornate frame, flat vertical panel, front view, no room, no background'],
-  ['geometric', 'Minecraft pixel stained glass window, blue and golden diamond geometric Art Deco pattern, black lead lines, symmetrical square frame, flat vertical panel, front view, no room, no background'],
-  ['sun', 'Minecraft pixel stained glass window, golden orange sun over green hills, black lead lines, square ornate frame, flat vertical panel, front view, no room, no background'],
-  ['forest', 'Minecraft pixel stained glass window, green pine trees and brown trunks, black lead lines, square ornate frame, flat vertical panel, front view, no room, no background'],
-  ['ocean', 'Minecraft pixel stained glass window, turquoise blue ocean waves and small fish, black lead lines, square ornate frame, flat vertical panel, front view, no room, no background'],
-  ['violet', 'Minecraft pixel stained glass window, purple night sky, crescent moon and stars, black lead lines, square ornate frame, flat vertical panel, front view, no room, no background'],
-  ['rainbow', 'Minecraft pixel stained glass window, colorful rainbow abstract arches, black lead lines, square ornate frame, flat vertical panel, front view, no room, no background'],
-  ['dove', 'Minecraft pixel stained glass window, white dove with colorful glass feathers, black lead lines, square ornate frame, flat vertical panel, front view, no room, no background'],
+  ['rose', 'High resolution smooth stained glass artwork, red and pink roses, green leaves, thin elegant black lead lines, luminous blue glass, edge-to-edge seamless repeating pattern, full square panel, no frame, no border, no text, crisp details, not pixel art'],
+  ['geometric', 'High resolution smooth stained glass artwork, blue and golden Art Deco diamonds, thin black lead lines, symmetrical edge-to-edge repeating pattern, full square panel, no frame, no border, no text, crisp details, not pixel art'],
+  ['sun', 'High resolution smooth stained glass artwork, golden orange sun over green hills, thin black lead lines, edge-to-edge seamless repeating pattern, full square panel, no frame, no border, no text, crisp details, not pixel art'],
+  ['forest', 'High resolution smooth stained glass artwork, green pine trees and brown trunks, thin black lead lines, edge-to-edge seamless repeating pattern, full square panel, no frame, no border, no text, crisp details, not pixel art'],
+  ['ocean', 'High resolution smooth stained glass artwork, turquoise ocean waves and small fish, thin black lead lines, edge-to-edge seamless repeating pattern, full square panel, no frame, no border, no text, crisp details, not pixel art'],
+  ['violet', 'High resolution smooth stained glass artwork, purple night sky, crescent moon and stars, thin black lead lines, edge-to-edge seamless repeating pattern, full square panel, no frame, no border, no text, crisp details, not pixel art'],
+  ['rainbow', 'High resolution smooth stained glass artwork, colorful rainbow arches, thin black lead lines, edge-to-edge seamless repeating pattern, full square panel, no frame, no border, no text, crisp details, not pixel art'],
+  ['dove', 'High resolution smooth stained glass artwork, white dove with colorful glass feathers, thin black lead lines, edge-to-edge seamless repeating pattern, full square panel, no frame, no border, no text, crisp details, not pixel art'],
 ];
 
 async function generate([name, prompt]) {
   const raw = `assets/models/vitrail-${name}-raw.glb`;
   const output = `assets/models/vitrail-${name}.glb`;
-  if (state[name]?.status === 'DONE' && await Bun.file(output).exists()) {
+  if (state[name]?.status === 'DONE' && await Bun.file(output).exists() && await Bun.file(`assets/vitraux/${name}-lisse.webp`).exists()) {
     console.log(`${name}: déjà généré`);
     return;
   }
@@ -70,12 +70,20 @@ async function generate([name, prompt]) {
   if (!response.ok) throw new Error(`${name}: téléchargement ${response.status}`);
   await Bun.write(raw, await response.arrayBuffer());
   const optimized = Bun.spawnSync({
-    cmd: ['bunx', '@gltf-transform/cli', 'optimize', raw, output, '--texture-compress', 'webp', '--texture-size', '512', '--simplify-error', '0.003', '--no-compress'],
+    cmd: ['bunx', '@gltf-transform/cli', 'optimize', raw, output, '--texture-compress', 'webp', '--texture-size', '1024', '--simplify-error', '0.003', '--no-compress'],
     stdout: 'inherit',
     stderr: 'inherit',
   });
   if (optimized.exitCode !== 0) throw new Error(`${name}: optimisation échouée`);
   await unlink(raw);
+  const data = await Bun.file(output).arrayBuffer();
+  const view = new DataView(data);
+  const jsonLength = view.getUint32(12, true);
+  const gltf = JSON.parse(new TextDecoder().decode(data.slice(20, 20 + jsonLength)));
+  const image = gltf.images[0];
+  const bufferView = gltf.bufferViews[image.bufferView];
+  const binaryStart = 20 + jsonLength + 8;
+  await Bun.write(`assets/vitraux/${name}-lisse.webp`, data.slice(binaryStart + (bufferView.byteOffset ?? 0), binaryStart + (bufferView.byteOffset ?? 0) + bufferView.byteLength));
   state[name].status = 'DONE';
   await Bun.write(statePath, JSON.stringify(state, null, 2));
   console.log(`${name}: vitrail généré et optimisé`);

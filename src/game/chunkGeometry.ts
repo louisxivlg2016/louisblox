@@ -1,4 +1,4 @@
-import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
+import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, LinearFilter, LinearMipmapLinearFilter, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { brickTexture, texture } from './textures';
 import { EXTRA_BLOCK_META, isCrop, isDoor, isGlass, isSapling, isSign, isTrapdoor, isUtilityBlock } from './extraBlocks';
@@ -12,7 +12,25 @@ const ATLAS_COLUMNS = 16;
 const WHITE_TILE = 'white';
 const tileIndices = new Map<string, number>();
 let atlas: CanvasTexture | null = null;
+let glassAtlas: CanvasTexture | null = null;
 let materials: Record<string, Material> | null = null;
+
+function drawMirroredTile(context: CanvasRenderingContext2D, image: CanvasImageSource, index: number) {
+  const x = (index % ATLAS_COLUMNS) * TILE_SIZE;
+  const y = Math.floor(index / ATLAS_COLUMNS) * TILE_SIZE;
+  for (const mirrorX of [false, true]) {
+    for (const mirrorY of [false, true]) {
+      context.save();
+      context.beginPath();
+      context.rect(x + (mirrorX ? TILE_SIZE / 2 : 0), y + (mirrorY ? TILE_SIZE / 2 : 0), TILE_SIZE / 2, TILE_SIZE / 2);
+      context.clip();
+      context.translate(x + (mirrorX ? TILE_SIZE : 0), y + (mirrorY ? TILE_SIZE : 0));
+      context.scale(mirrorX ? -1 : 1, mirrorY ? -1 : 1);
+      context.drawImage(image, 0, 0, TILE_SIZE / 2, TILE_SIZE / 2);
+      context.restore();
+    }
+  }
+}
 
 const faces = [
   { direction: [1, 0, 0], corners: [[0.5, -0.5, -0.5], [0.5, 0.5, -0.5], [0.5, 0.5, 0.5], [0.5, -0.5, 0.5]] },
@@ -38,6 +56,10 @@ function createAtlas() {
   canvas.width = ATLAS_COLUMNS * TILE_SIZE;
   canvas.height = Math.ceil((kinds.length * 3 + 1) / ATLAS_COLUMNS) * TILE_SIZE;
   const context = canvas.getContext('2d')!;
+  const smoothCanvas = document.createElement('canvas');
+  smoothCanvas.width = canvas.width;
+  smoothCanvas.height = canvas.height;
+  const smoothContext = smoothCanvas.getContext('2d')!;
   let index = 0;
   for (const kind of kinds) {
     for (const face of ['side', 'top', 'bottom'] as const) {
@@ -49,7 +71,9 @@ function createAtlas() {
           const image = new Image();
           image.onload = () => {
             context.drawImage(image, (tileIndex % ATLAS_COLUMNS) * TILE_SIZE, Math.floor(tileIndex / ATLAS_COLUMNS) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            drawMirroredTile(smoothContext, image, tileIndex);
             if (atlas) atlas.needsUpdate = true;
+            if (glassAtlas) glassAtlas.needsUpdate = true;
           };
           image.src = design.url;
         } else {
@@ -69,29 +93,36 @@ function createAtlas() {
   atlas.minFilter = NearestFilter;
   atlas.generateMipmaps = false;
   atlas.colorSpace = SRGBColorSpace;
+  glassAtlas = new CanvasTexture(smoothCanvas);
+  glassAtlas.magFilter = LinearFilter;
+  glassAtlas.minFilter = LinearMipmapLinearFilter;
+  glassAtlas.generateMipmaps = true;
+  glassAtlas.colorSpace = SRGBColorSpace;
   return atlas;
 }
 
 const tileCoordinates = new Map<string, ReturnType<typeof calculateTileUV>>();
 
-function calculateTileUV(key: string) {
+function calculateTileUV(key: string, mirrorU: boolean, mirrorV: boolean) {
   const index = tileIndices.get(key)!;
   const x = (index % ATLAS_COLUMNS) * TILE_SIZE;
   const y = Math.floor(index / ATLAS_COLUMNS) * TILE_SIZE;
   const canvas = createAtlas().image as HTMLCanvasElement;
+  const padding = 0.04;
   return {
-    left: x / canvas.width,
-    right: (x + TILE_SIZE) / canvas.width,
-    top: 1 - y / canvas.height,
-    bottom: 1 - (y + TILE_SIZE) / canvas.height,
+    left: (mirrorU ? x + TILE_SIZE - padding : x + padding) / canvas.width,
+    right: (mirrorU ? x + padding : x + TILE_SIZE - padding) / canvas.width,
+    top: 1 - (mirrorV ? y + TILE_SIZE - padding : y + padding) / canvas.height,
+    bottom: 1 - (mirrorV ? y + padding : y + TILE_SIZE - padding) / canvas.height,
   };
 }
 
-function tileUV(key: string) {
-  let coordinates = tileCoordinates.get(key);
+function tileUV(key: string, mirrorU = false, mirrorV = false) {
+  const cacheKey = `${key}:${mirrorU ? 1 : 0}:${mirrorV ? 1 : 0}`;
+  let coordinates = tileCoordinates.get(cacheKey);
   if (!coordinates) {
-    coordinates = calculateTileUV(key);
-    tileCoordinates.set(key, coordinates);
+    coordinates = calculateTileUV(key, mirrorU, mirrorV);
+    tileCoordinates.set(cacheKey, coordinates);
   }
   return coordinates;
 }
@@ -115,7 +146,8 @@ function usesSeparateModel(kind: BlockKind) {
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {
   if (!neighbor || neighbor.open) return true;
   if (usesSeparateModel(neighbor.kind)) return !isWaterBlock(block.kind) && !isGlass(block.kind);
-  if (isWaterBlock(block.kind) || isGlass(block.kind)) return neighbor.kind !== block.kind;
+  if (isGlass(block.kind)) return !isGlass(neighbor.kind);
+  if (isWaterBlock(block.kind)) return neighbor.kind !== block.kind;
   return isWaterBlock(neighbor.kind) || isGlass(neighbor.kind);
 }
 
@@ -164,7 +196,7 @@ function getMaterials() {
     unlit: new MeshBasicMaterial({ map, vertexColors: true }),
     foliage: new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.35 }),
     water: new MeshLambertMaterial({ map, vertexColors: true, transparent: true, opacity: 0.55, depthWrite: false }),
-    glass: new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.05, transparent: true, opacity: 0.82, depthWrite: false }),
+    glass: new MeshLambertMaterial({ map: glassAtlas!, vertexColors: true, transparent: true, opacity: 0.94, depthWrite: true }),
   };
   return materials;
 }
@@ -206,7 +238,9 @@ export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxe
         group = { positions: [], normals: [], uvs: [], colors: [], indices: [] };
         groups.set(groupName, group);
       }
-      addFace(group, block, face, tileUV(faceTexture(block, face.direction)), color);
+      const mirrorU = isGlass(block.kind) && (face.direction[0] !== 0 ? block.z % 2 !== 0 : block.x % 2 !== 0);
+      const mirrorV = isGlass(block.kind) && (face.direction[1] !== 0 ? block.z % 2 !== 0 : block.y % 2 !== 0);
+      addFace(group, block, face, tileUV(faceTexture(block, face.direction), mirrorU, mirrorV), color);
     }
   }
   const sharedMaterials = getMaterials();
