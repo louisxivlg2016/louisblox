@@ -20,13 +20,13 @@ type PirateRoom = {
 };
 
 const objectives: Record<Team, { x: number; y: number; z: number }> = {
-  red: { x: -22, y: 7, z: 0 },
-  blue: { x: 22, y: 7, z: 0 },
+  red: { x: -16, y: 7, z: 0 },
+  blue: { x: 16, y: 7, z: 0 },
 };
 const prices: Record<string, number> = { sword_diamond: 12, bow: 6, pistol_bomb: 10, Tnt: 5, OakPlanks: 3, apple: 2 };
 
 function spawn(team: Team) {
-  return { x: team === 'red' ? -24 : 24, y: 8.51, z: 3 };
+  return { x: team === 'red' ? -18 : 18, y: 8.51, z: 3 };
 }
 
 export class PirateEngine {

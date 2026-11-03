@@ -7,7 +7,7 @@ import type { BattleTeam } from './battleArena';
 
 export type PirateKit = 'defender' | 'gunner' | 'raider';
 export const PIRATE_WATER_Y = 4.5;
-export const PIRATE_OBJECTIVES = { red: { x: -22, y: 7, z: 0 }, blue: { x: 22, y: 7, z: 0 } } as const;
+export const PIRATE_OBJECTIVES = { red: { x: -16, y: 7, z: 0 }, blue: { x: 16, y: 7, z: 0 } } as const;
 
 export const PIRATE_KITS: Record<PirateKit, { name: string; description: string; hotbar: SelectedKind[] }> = {
   defender: { name: 'Défenseur', description: 'Épée, murs et nourriture pour protéger le trésor.', hotbar: ['sword_iron', 'pistol_iron', BlockKind.OakPlanks, BlockKind.Stone, BlockKind.OakPlanks, 'cooked_meat', 'bow', 'pistol_bomb', BlockKind.Tnt, 'apple'] },
@@ -25,7 +25,7 @@ export const PIRATE_SHOP = [
 ] as const;
 
 export function pirateSpawn(team: 'red' | 'blue') {
-  return { x: team === 'red' ? -24 : 24, y: 8.51, z: 3 };
+  return { x: team === 'red' ? -18 : 18, y: 8.51, z: 3 };
 }
 
 function addShip(blocks: Voxel[], center: number, team: 'red' | 'blue') {
@@ -61,9 +61,9 @@ export function generatePirateChunk(cx: number, cz: number): GeneratedChunk {
       blocks.push({ x, y: 4, z, kind: BlockKind.Water });
     }
   }
-  if (Math.abs(cx * CHUNK_SIZE + 8 + 22) <= 16 || Math.abs(cx * CHUNK_SIZE + 8 - 22) <= 16) {
-    if (cx * CHUNK_SIZE <= -22 + 7 && cx * CHUNK_SIZE + CHUNK_SIZE - 1 >= -22 - 7) addShip(blocks, -22, 'red');
-    if (cx * CHUNK_SIZE <= 22 + 7 && cx * CHUNK_SIZE + CHUNK_SIZE - 1 >= 22 - 7) addShip(blocks, 22, 'blue');
+  if (Math.abs(cx * CHUNK_SIZE + 8 + 16) <= 16 || Math.abs(cx * CHUNK_SIZE + 8 - 16) <= 16) {
+    if (cx * CHUNK_SIZE <= -16 + 7 && cx * CHUNK_SIZE + CHUNK_SIZE - 1 >= -16 - 7) addShip(blocks, -16, 'red');
+    if (cx * CHUNK_SIZE <= 16 + 7 && cx * CHUNK_SIZE + CHUNK_SIZE - 1 >= 16 - 7) addShip(blocks, 16, 'blue');
   }
   return { blocks, water: [] };
 }
