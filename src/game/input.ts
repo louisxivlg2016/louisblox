@@ -23,7 +23,6 @@ let touchLookX = 0;
 let touchLookY = 0;
 let touchStartX = 0;
 let touchStartY = 0;
-let miningLatched = false;
 let captureMouseDown = false;
 let edgeResetTimer: ReturnType<typeof setTimeout> | null = null;
 let touchMineTimer: ReturnType<typeof setTimeout> | null = null;
@@ -68,7 +67,6 @@ export function clearInput(preserveCaptureClick?: boolean | Event) {
   touchKeys.clear();
   mouseButtons.clear();
   touchMouseButtons.clear();
-  miningLatched = false;
   stopTouchMining();
   if (edgeResetTimer) clearTimeout(edgeResetTimer);
   resetEdgeLook();
@@ -338,7 +336,6 @@ export function initInput() {
       return;
     }
     mouseButtons.add(event.button);
-    if (event.button === 0) miningLatched = !miningLatched;
     if (event.button === 2) actions.place += 1;
   });
   window.addEventListener('mouseup', (event) => {
@@ -410,12 +407,11 @@ export async function requestPlay() {
 
 export const isDown = (code: string) => keys.has(code) || touchKeys.has(code);
 export const isMouseButtonDown = (button: number) => mouseButtons.has(button) || touchMouseButtons.has(button);
-export const isMouseDown = (button: number) => isMouseButtonDown(button) || (button === 0 && miningLatched);
+export const isMouseDown = isMouseButtonDown;
 export const getTouchMovement = () => touchMovement;
 export const getEdgeLook = () => edgeLook;
 
 export function stopMining() {
-  miningLatched = false;
   mouseButtons.delete(0);
   touchMouseButtons.delete(0);
 }

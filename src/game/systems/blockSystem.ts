@@ -80,7 +80,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   const kind = hit?.block.kind;
-  const canMine = kind !== BlockKind.Water && store.gameplayMode !== 'football' && store.gameplayMode !== 'maze' && ((store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
+  const canMine = store.gameplayMode === 'creative' || kind !== BlockKind.Water && store.gameplayMode !== 'football' && store.gameplayMode !== 'maze' && ((store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
     || (typeof store.selected === 'string' && (['pickaxe', 'shovel'].includes(getItemMeta(store.selected).category) || getItemMeta(store.selected).shape === 'shears')));
   const mining = canMine && isMouseDown(0) && hit !== null && useGameStore.getState().mode === 'play';
   if (mining && hit && kind !== undefined) {
@@ -90,7 +90,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       target.miningProgress = 0;
     }
     target.miningProgress += dt;
-    const progress = Math.min(1, target.miningProgress / (BLOCK_HARDNESS[kind] / (miningSpeed(store.selected, kind) * miningMultiplier())));
+    const progress = Math.min(1, target.miningProgress / (store.gameplayMode === 'creative' ? 0.18 : BLOCK_HARDNESS[kind] / (miningSpeed(store.selected, kind) * miningMultiplier())));
     if (Math.abs(store.miningProgress - progress) >= 0.01) store.setMiningProgress(progress);
 
     if (progress >= 1) {
