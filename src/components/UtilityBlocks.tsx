@@ -76,7 +76,7 @@ export function BedModel({ kind }: { kind: BlockKind }) {
 
 export function TrafficLightModel() {
   return (
-    <group name="traffic-light">
+    <group name="traffic-light" scale={1.25}>
       <PixelPart position={[0, 0.05, 0]} size={[0.52, 0.1, 0.52]} color="#505961" />
       <PixelPart position={[0, 0.65, 0]} size={[0.14, 1.2, 0.14]} color="#75818a" />
       <PixelPart position={[0, 1.49, 0]} size={[0.46, 0.94, 0.36]} color="#272d32" />
