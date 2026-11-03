@@ -16,6 +16,8 @@ type MultiplayerStore = MultiplayerSettings & {
   setStatus: (status: MultiplayerStatus, error?: string) => void;
   setPlayers: (players: LobbyPlayer[]) => void;
   setPlayerName: (name: string) => void;
+  serverEditing: boolean;
+  setServerEditing: (editing: boolean) => void;
 };
 
 const query = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search);
@@ -37,6 +39,8 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
   status: 'offline',
   error: '',
   players: [],
+  serverEditing: false,
+  setServerEditing: (serverEditing) => set({ serverEditing }),
   setEnabled: (enabled) => set({ enabled, status: enabled ? 'connecting' : 'offline', error: '', players: [] }),
   configure: (settings) => {
     const playerName = settings.playerName.trim().slice(0, 24) || 'Joueur';

@@ -32,6 +32,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const server = useMultiplayerStore((state) => state.server);
   const configure = useMultiplayerStore((state) => state.configure);
   const setEnabled = useMultiplayerStore((state) => state.setEnabled);
+  const serverEditing = useMultiplayerStore((state) => state.serverEditing);
   const [pendingWorld, setPendingWorld] = useState<string | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -109,22 +110,22 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               <span className="world-card-label"><strong>Créatif</strong><small>{enabled ? 'Monde public avec tous les joueurs' : 'Nouveau monde solo avec tous les objets'}</small></span>
               <span className="world-mode-tag creative">{enabled ? 'Multijoueur' : 'Solo'}</span>
             </button>
-            <button className="world-card battle-card" onClick={() => create('battle')} disabled={!enabled || pendingWorld !== null}>
+            <button className="world-card battle-card" onClick={() => create('battle')} disabled={!enabled || serverEditing || pendingWorld !== null} title={serverEditing ? "Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre" : undefined}>
               <img src={battleUrl} alt="Monde Combat du mode Bataille" />
               <span className="world-card-label"><strong>Bataille</strong><small>Arène limitée · Rouge, Bleu ou chacun son équipe</small></span>
               <span className="world-mode-tag">1 joueur = 1 équipe possible</span>
             </button>
-            <button className="world-card battle-card pirates-card" onClick={() => create('pirates')} disabled={!enabled || pendingWorld !== null}>
+            <button className="world-card battle-card pirates-card" onClick={() => create('pirates')} disabled={!enabled || serverEditing || pendingWorld !== null} title={serverEditing ? "Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre" : undefined}>
               <img src={piratesUrl} alt="Bataille navale du mode Pirates" />
               <span className="world-card-label"><strong>Pirates</strong><small>Deux navires, un trésor à détruire et des abordages en équipe</small></span>
               <span className="world-mode-tag">Combat naval</span>
             </button>
-            <button className="world-card battle-card football-card" onClick={() => create('football')} disabled={!enabled || pendingWorld !== null}>
+            <button className="world-card battle-card football-card" onClick={() => create('football')} disabled={!enabled || serverEditing || pendingWorld !== null} title={serverEditing ? "Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre" : undefined}>
               <img src={footballUrl} alt="Stade et ballon du mode Football" />
               <span className="world-card-label"><strong>Football</strong><small>Match de 5 minutes, cartons, corners, penaltys et hors-jeu</small></span>
               <span className="world-mode-tag">Rouge contre Bleu</span>
             </button>
-            <button className="world-card battle-card maze-card" onClick={() => create('maze')} disabled={!enabled || pendingWorld !== null}>
+            <button className="world-card battle-card maze-card" onClick={() => create('maze')} disabled={!enabled || serverEditing || pendingWorld !== null} title={serverEditing ? "Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre" : undefined}>
               <img src={mazeUrl} alt="Labyrinthe du mode Course Labyrinthe" />
               <span className="world-card-label"><strong>Course Labyrinthe</strong><small>Trouve la sortie après le coup de sifflet de l’arbitre</small></span>
               <span className="world-mode-tag">Course chronométrée</span>

@@ -31,6 +31,7 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
   const players = useMultiplayerStore((state) => state.players);
   const pendingJoin = useRef(false);
   const configure = useMultiplayerStore((state) => state.configure);
+  const setServerEditing = useMultiplayerStore((state) => state.setServerEditing);
   const [playerName, setPlayerName] = useState(savedName);
   const [room, setRoom] = useState(savedRoom);
   const [server, setServer] = useState(savedServer);
@@ -39,6 +40,10 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
   const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(null);
   const currentMode = useGameStore((state) => state.gameplayMode);
   useEffect(() => setPlayerName(savedName), [savedName]);
+  useEffect(() => {
+    setServerEditing(showServer);
+    return () => setServerEditing(false);
+  }, [showServer, setServerEditing]);
   useEffect(() => {
     if (!enabled || !room.trim()) return;
     const controller = new AbortController();
