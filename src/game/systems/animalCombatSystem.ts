@@ -21,7 +21,8 @@ export function animalCombatSystem(world: World, camera: Camera, dt: number, tou
   const store = useGameStore.getState();
   const selected = store.selected;
   if (!hasInventory(selected, store)) return false;
-  if (!player || (touchTaps === 0 && typeof selected === 'string' && selected !== 'hand' && !isSword(selected))) return false;
+  const attacking = touchTaps > 0 || isMouseButtonDown(0);
+  if (!player || (!attacking && (typeof selected === 'number' || selected === 'hand' || !isSword(selected)))) return false;
   origin.copy(player);
   origin.y += 1.62;
   camera.getWorldDirection(direction);

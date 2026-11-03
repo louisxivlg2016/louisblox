@@ -146,7 +146,7 @@ export function vehicleInteractionSystem(world: World, interact: number) {
   const origin = position.clone();
   origin.y += 1.62;
   const direction = state ? new Vector3(0, 0, -1).applyEuler(new Euler(state.pitch, state.yaw, 0, 'YXZ')) : null;
-  const hit = direction ? raycastVoxel(getBlockIndex(world), origin, direction, 6) : null;
+  const hit = direction ? raycastVoxel(getBlockIndex(world), origin, direction, 6, typeof useGameStore.getState().selected === 'number') : null;
   if (hit && (isSign(hit.block.kind) || isUtilityBlock(hit.block.kind) || isCrop(hit.block.kind) || isDoor(hit.block.kind) || isTrapdoor(hit.block.kind))) return false;
   let nearest: Entity | undefined;
   let horse = false;
