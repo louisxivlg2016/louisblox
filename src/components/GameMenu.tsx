@@ -68,8 +68,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     }
     const shared = sharedOverride ?? (enabled && gameplayMode !== 'battle');
     const template = options?.template ?? (gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : 'nature');
-    const publicId = gameplayMode === 'survival' ? 'survie-public-v1' : gameplayMode === 'creative' ? 'creatif-public-v1' : `${gameplayMode}-public-v1`;
-    const worldId = shared ? publicId : `monde-${crypto.randomUUID().slice(0, 8)}`;
+    const worldId = `monde-${crypto.randomUUID().slice(0, 8)}`;
     const names: Record<GameplayMode, string> = { survival: 'Survie avec tous les joueurs', creative: 'Créatif avec tous les joueurs', battle: worldId, 'city-ancient': 'Ville ancienne · 10 km', 'city-modern': 'Ville moderne · 10 km', pirates: 'Pirates en équipe', football: 'Match de football', maze: 'Course Labyrinthe' };
     const worldName = names[gameplayMode];
     if (options) useProtectionStore.getState().setProtection({ ...newProtection(), canBreak: options.canBreak, canPlace: options.canPlace });
