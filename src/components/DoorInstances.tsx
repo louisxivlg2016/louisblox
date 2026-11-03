@@ -13,7 +13,7 @@ export function DoorInstances({ blocks }: { blocks: Voxel[] }) {
         if (trapdoor) {
           return (
             <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.42, block.z]} rotation={[0, facing, 0]}>
-              <group position={[0, 0, 0.43]} rotation={[block.open ? -Math.PI / 2 : 0, 0, 0]}>
+              <group position={[0, 0, 0.43]} rotation={[block.open ? Math.PI / 2 : 0, 0, 0]}>
                 <group position={[0, 0, -0.43]}>
                   <PixelPart position={[0, 0, 0]} size={[0.92, 0.14, 0.92]} color={color} />
                   <PixelPart position={[0, 0.08, -0.26]} size={[0.62, 0.035, 0.6]} color={color} />
