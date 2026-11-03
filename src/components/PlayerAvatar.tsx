@@ -66,7 +66,8 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
       const headYaw = Math.atan2(Math.sin(state.yaw - bodyYaw), Math.cos(state.yaw - bodyYaw));
       headRef.current.rotation.order = 'YXZ';
       headRef.current.rotation.y += (headYaw - headRef.current.rotation.y) * amount;
-      headRef.current.rotation.x += (state.pitch - headRef.current.rotation.x) * amount;
+      const pitch = hasFullCharacter(outfit) ? -state.pitch : state.pitch;
+      headRef.current.rotation.x += (pitch - headRef.current.rotation.x) * amount;
     }
   });
 
