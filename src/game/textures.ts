@@ -214,6 +214,8 @@ function paintTnt(context: CanvasRenderingContext2D, face: 'side' | 'top' | 'bot
     return;
   }
   if (face !== 'side') return;
+  context.translate(16, 16);
+  context.rotate(Math.PI);
   context.fillStyle = '#dce1d5';
   context.fillRect(0, 6, 16, 5);
   context.fillStyle = '#bfc9bf';
