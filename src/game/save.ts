@@ -86,8 +86,24 @@ export function saveWorld(world: World) {
 }
 
 export function initPersistence(world: World) {
-  window.addEventListener('pagehide', () => {
+  let saveTimer: number | undefined;
+  const flush = () => {
+    if (saveTimer !== undefined) window.clearTimeout(saveTimer);
+    saveTimer = undefined;
     saveWorld(world);
     flushPlaytime();
+  };
+  useGameStore.subscribe((state, previous) => {
+    if (state.selected === previous.selected && state.hotbarSlots === previous.hotbarSlots && state.itemCounts === previous.itemCounts
+      && state.equippedArmor === previous.equippedArmor && state.apples === previous.apples && state.meat === previous.meat) return;
+    if (saveTimer !== undefined) window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => {
+      saveTimer = undefined;
+      saveWorld(world);
+    }, 200);
+  });
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flush();
   });
 }
