@@ -257,7 +257,7 @@ export function initInput() {
   });
 
   window.addEventListener('pointerdown', (event) => {
-    if (event.pointerType !== 'touch' && event.target instanceof HTMLCanvasElement && useGameStore.getState().mode === 'play' && document.pointerLockElement === null) {
+    if (event.pointerType !== 'touch' && event.target instanceof HTMLCanvasElement && useGameStore.getState().mode === 'play' && !hasMouseControl()) {
       captureMouseDown = true;
       void requestPlay();
       return;
