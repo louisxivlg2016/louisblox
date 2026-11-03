@@ -136,6 +136,7 @@ export function raycastVoxel(
   origin: Vector3,
   direction: Vector3,
   maxDistance = 6,
+  includeWater = false,
 ): VoxelHit | null {
   let x = Math.floor(origin.x + 0.5);
   let y = Math.floor(origin.y + 0.5);
@@ -155,7 +156,7 @@ export function raycastVoxel(
 
   for (let steps = 0; steps < 128 && distance <= maxDistance; steps += 1) {
     const block = blocks.get(voxelKey(x, y, z));
-    if (block !== undefined && block.kind !== BlockKind.Water && (!block.open || isDoor(block.kind) || isTrapdoor(block.kind))) {
+    if (block !== undefined && (includeWater || block.kind !== BlockKind.Water) && (!block.open || isDoor(block.kind) || isTrapdoor(block.kind))) {
       return { block, x, y, z, normal, distance };
     }
 

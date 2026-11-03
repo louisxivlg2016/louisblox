@@ -151,7 +151,7 @@ export class PirateEngine {
 
   tick(player: PlayerAttachment) {
     if (this.room.mode() !== 'pirates' || !player.state || !player.team) return;
-    if (player.state.y < 4.7 && !this.eliminated.has(player.playerId)) {
+    if (player.state.y < 4.45 && !this.eliminated.has(player.playerId)) {
       const socket = this.room.players().find(({ attachment }) => attachment.playerId === player.playerId);
       if (socket) this.eliminate(socket, 'Océan');
     }

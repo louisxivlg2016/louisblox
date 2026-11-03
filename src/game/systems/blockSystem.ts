@@ -65,7 +65,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     return;
   }
   if (store.blockCount !== blocks.size) store.setBlockCount(blocks.size);
-  const hit = raycastVoxel(blocks, origin, direction);
+  const hit = raycastVoxel(blocks, origin, direction, 6, store.gameplayMode === 'pirates');
 
   target.visible = hit !== null;
   if (hit) {
@@ -80,7 +80,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   const kind = hit?.block.kind;
-  const canMine = store.gameplayMode !== 'football' && store.gameplayMode !== 'maze' && ((store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
+  const canMine = kind !== BlockKind.Water && store.gameplayMode !== 'football' && store.gameplayMode !== 'maze' && ((store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
     || (typeof store.selected === 'string' && (['pickaxe', 'shovel'].includes(getItemMeta(store.selected).category) || getItemMeta(store.selected).shape === 'shears')));
   const mining = canMine && isMouseDown(0) && hit !== null && useGameStore.getState().mode === 'play';
   if (mining && hit && kind !== undefined) {
@@ -176,12 +176,13 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   if (actions.place > 0 || actions.harvest > 0) {
-    const x = hit.x + hit.normal.x;
-    const y = hit.y + hit.normal.y;
-    const z = hit.z + hit.normal.z;
+    const floating = store.gameplayMode === 'pirates' && hit.block.kind === BlockKind.Water;
+    const x = hit.x + (floating ? 0 : hit.normal.x);
+    const y = hit.y + (floating ? 0 : hit.normal.y);
+    const z = hit.z + (floating ? 0 : hit.normal.z);
     const inBounds = y >= MIN_WORLD_Y && y <= MAX_BUILD_Y;
 
-    if (inBounds && !blocks.has(voxelKey(x, y, z)) && !intersectsPlayer(x, y, z, player)) {
+    if (inBounds && (floating || !blocks.has(voxelKey(x, y, z))) && !intersectsPlayer(x, y, z, player)) {
       const kind = useGameStore.getState().selected;
       if (typeof kind !== 'number') return;
       if (!hasInventory(kind, store)) {
