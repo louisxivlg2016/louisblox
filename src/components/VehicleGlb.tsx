@@ -16,8 +16,8 @@ const models = {
   train: trainUrl,
 };
 const dimensions = {
-  raceCar: [1.8, 1.15, 3.3],
-  blueCar: [2.7, 2.5, 5],
+  raceCar: [3, 2.6, 5.5],
+  blueCar: [3.6, 3.4, 6.6],
   airplane: [7.2 * PLANE_SCALE, 2.5 * PLANE_SCALE, 8.2 * PLANE_SCALE],
   train: [2.8, 3.2, 10.5],
 } as const;
@@ -55,7 +55,7 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'b
       object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) {
-        if (interior && kind !== 'car') {
+        if (interior) {
           material.transparent = true;
           material.opacity = Math.min(material.opacity, 0.18);
           material.depthWrite = false;

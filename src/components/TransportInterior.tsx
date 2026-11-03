@@ -30,7 +30,7 @@ export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
   passengerSeat: number | null;
 }) {
   if (kind === 'car') {
-    return <SteeringWheel position={[-0.35, 0.8, -0.48]} />;
+    return <SteeringWheel position={[-0.5, 1.05, -0.65]} />;
   }
 
   if (kind === 'boat') {

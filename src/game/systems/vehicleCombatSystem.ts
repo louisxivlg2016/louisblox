@@ -29,8 +29,8 @@ export function vehicleCombatSystem(world: World, camera: Camera, dt: number, to
     const vehicle = entity.get(Vehicle)!;
     const position = entity.get(VehiclePosition)!;
     const maxDistance = vehicle.kind === 'car' ? 5.5 : 8;
-    const height = vehicle.kind === 'car' ? 0.65 : vehicle.kind === 'plane' ? 2 : vehicle.kind === 'boat' ? 0.55 : 1.5;
-    const radius = vehicle.kind === 'car' ? 1.4 : vehicle.kind === 'plane' ? 4 : vehicle.kind === 'boat' ? 1.8 : 3.5;
+    const height = vehicle.kind === 'car' ? 1.1 : vehicle.kind === 'plane' ? 2 : vehicle.kind === 'boat' ? 0.55 : 1.5;
+    const radius = vehicle.kind === 'car' ? 1.8 : vehicle.kind === 'plane' ? 4 : vehicle.kind === 'boat' ? 1.8 : 3.5;
     offset.set(position.x, position.y + height, position.z).sub(origin);
     const distance = offset.dot(direction);
     if (distance < 0 || distance >= closest || distance > maxDistance) continue;

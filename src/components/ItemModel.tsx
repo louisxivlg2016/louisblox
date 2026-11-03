@@ -196,7 +196,7 @@ export function SaddleModel() {
 
 export function SteeringWheel({ position = [0, 0, 0] }: { position?: [number, number, number] }) {
   return (
-    <group position={position} rotation={[-0.3, 0, 0]}>
+    <group name="steering-wheel" position={position} rotation={[-0.3, 0, 0]}>
       {[[0, 0.18], [0.13, 0.13], [0.18, 0], [0.13, -0.13], [0, -0.18], [-0.13, -0.13], [-0.18, 0], [-0.13, 0.13]].map(([x, y]) => (
         <PixelPart key={`${x},${y}`} position={[x, y, 0]} size={[0.075, 0.075, 0.06]} color="#252c32" />
       ))}
