@@ -35,10 +35,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
   const metadata = useMemo(() => ({ outfit, source: 'Hunyuan', whole: true }), [outfit]);
 
   useEffect(() => {
-    let head: Object3D | undefined;
-    character.traverse((object: Object3D) => {
-      if (!head && object.type === 'Bone' && /head/i.test(object.name)) head = object;
-    });
+    const head = character.userData.rig?.head as Object3D | undefined;
     if (typeof headRef === 'function') headRef(head ?? null);
     else if (headRef) headRef.current = head ?? null;
     return () => {

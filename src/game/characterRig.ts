@@ -4,14 +4,14 @@ import { SkeletonUtils } from 'three-stdlib';
 import { animalMaterial } from './animalTextures';
 import type { OutfitKind } from './outfits';
 
-type Part = 'body' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
+type Part = 'body' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
 type Rig = Partial<Record<Exclude<Part, 'body'>, Group>>;
 
 function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean) {
   const geometry = source.clone().applyMatrix4(matrix);
   const position = geometry.getAttribute('position');
   const index = geometry.index;
-  const indices: Record<Part, number[]> = { body: [], leftArm: [], rightArm: [], leftLeg: [], rightLeg: [] };
+  const indices: Record<Part, number[]> = { body: [], head: [], leftArm: [], rightArm: [], leftLeg: [], rightLeg: [] };
   const count = index?.count ?? position.count;
   for (let offset = 0; offset < count; offset += 3) {
     const a = index?.getX(offset) ?? offset;
@@ -21,16 +21,18 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     const y = (position.getY(a) + position.getY(b) + position.getY(c)) / 3;
     const side = x < 0 ? 'left' : 'right';
     let part: Part = 'body';
-    if (Math.abs(x) > width * 0.25 && y > floor + height * 0.28 && y < floor + height * 0.82) part = `${side}Arm`;
+    if (Math.abs(x) < width * 0.38 && y > floor + height * 0.68) part = 'head';
+    else if (Math.abs(x) > width * 0.25 && y > floor + height * 0.28 && y < floor + height * 0.82) part = `${side}Arm`;
     else if (legs && Math.abs(x) < width * 0.28 && y < floor + height * 0.48) part = `${side}Leg`;
     indices[part].push(a, b, c);
   }
   return { geometry, indices, material };
 }
 
-function addPrincessHair(root: Group, width: number, height: number, depth: number, floor: number) {
+function addPrincessHair(root: Group, width: number, height: number, depth: number, floor: number, offsetY: number) {
   const hair = new Group();
   hair.name = 'princess-back-hair';
+  hair.position.y = offsetY;
   const material = animalMaterial('#5a321c');
   const back = new Mesh(new BoxGeometry(width * 0.32, height * 0.28, depth * 0.14), material);
   back.position.set(0, floor + height * 0.76, -depth * 0.55);
@@ -46,6 +48,7 @@ function addPrincessHair(root: Group, width: number, height: number, depth: numb
   root.add(hair);
   const sides = new Group();
   sides.name = 'princess-side-hair';
+  sides.position.y = offsetY;
   for (const side of [-1, 1]) {
     const panel = new Mesh(new BoxGeometry(width * 0.05, height * 0.28, depth * 1.06), material);
     panel.position.set(side * width * 0.35, floor + height * 0.76, 0);
@@ -67,8 +70,8 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   });
   const root = new Group();
   const rig: Rig = {};
-  const names: Record<Part, string> = { body: 'body', leftArm: 'left-arm', rightArm: 'right-arm', leftLeg: 'left-leg', rightLeg: 'right-leg' };
-  const parts: Part[] = ['body', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg'];
+  const names: Record<Part, string> = { body: 'body', head: 'head', leftArm: 'left-arm', rightArm: 'right-arm', leftLeg: 'left-leg', rightLeg: 'right-leg' };
+  const parts: Part[] = ['body', 'head', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg'];
   for (const part of parts) {
     for (const piece of pieces) {
       const indices = piece.indices[part];
@@ -80,8 +83,8 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
         root.add(mesh);
       } else {
         const side = part.startsWith('left') ? -1 : 1;
-        const pivotY = floor + height * (part.endsWith('Arm') ? 0.7 : 0.48);
-        const pivotX = side * width * (part.endsWith('Arm') ? 0.27 : 0.12);
+        const pivotY = floor + height * (part === 'head' ? 0.68 : part.endsWith('Arm') ? 0.7 : 0.48);
+        const pivotX = part === 'head' ? 0 : side * width * (part.endsWith('Arm') ? 0.27 : 0.12);
         subset.translate(-pivotX, -pivotY, 0);
         const pivot = new Group();
         pivot.name = names[part];
@@ -92,7 +95,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
       }
     }
   }
-  if (outfit === 'princess') addPrincessHair(root, width, height, bounds.max.z - bounds.min.z, floor);
+  if (outfit === 'princess') addPrincessHair(rig.head ?? root, width, height, bounds.max.z - bounds.min.z, floor, rig.head ? -(floor + height * 0.68) : 0);
   root.userData.rig = rig;
   const center = bounds.getCenter(new Vector3());
   root.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
