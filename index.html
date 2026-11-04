@@ -196,6 +196,11 @@
       .block-icon-smooth, .block-concrete { image-rendering: auto; }
       .block-concrete { background-image: none; }
       .tnt-icon { width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; }
+      .traffic-sign-icon { display: grid; place-items: center; width: 38px; height: 38px; padding: 2px; border: 2px solid rgba(255,255,255,.7); color: #fff; background: #397bb9; font: 700 8px/1.1 "Courier New", monospace; text-align: center; text-shadow: 1px 1px #111; }
+      .traffic-sign-icon.stop { clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); background: #c93d35; font-size: 10px; }
+      .traffic-sign-icon.no-entry { border-radius: 50%; background: #c93d35; font-size: 7px; }
+      .traffic-sign-icon.speed { border-radius: 50%; border-color: #c93d35; background: #f1eee6; color: #c93d35; font-size: 16px; text-shadow: none; }
+      .traffic-sign-icon.parking, .traffic-sign-icon.direction, .traffic-sign-icon.danger, .traffic-sign-icon.priority { font-size: 22px; }
       .paintball-palette { position: absolute; left: 14px; bottom: 105px; z-index: 100; display: grid; grid-template-columns: repeat(8, 24px); gap: 7px; max-width: calc(100vw - 28px); padding: 8px; background: rgba(15, 23, 18, 0.88); border: 1px solid rgba(255,255,255,.3); pointer-events: auto; }
       .paintball-palette-title { grid-column: 1 / -1; color: #fff; font-size: 11px; font-weight: 700; text-shadow: 1px 1px #000; }
       .paintball-color { width: 24px; height: 24px; padding: 0; border: 2px solid rgba(255,255,255,.45); border-radius: 50%; cursor: pointer; touch-action: manipulation; }

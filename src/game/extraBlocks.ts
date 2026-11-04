@@ -105,6 +105,18 @@ export const EXTRA_BLOCKS = {
   TrafficLight: 125,
   StreetLamp: 127,
   ParisStreetLamp: 128,
+  StopSign: 130,
+  YieldSign: 131,
+  NoEntrySign: 132,
+  OneWaySign: 133,
+  SpeedLimitSign: 134,
+  PedestrianSign: 135,
+  SchoolSign: 136,
+  ParkingSign: 137,
+  DirectionSign: 138,
+  DangerSign: 139,
+  RoundaboutSign: 140,
+  PrioritySign: 141,
 } as const;
 
 export type ExtraBlockKind = (typeof EXTRA_BLOCKS)[keyof typeof EXTRA_BLOCKS];
@@ -123,7 +135,8 @@ export const isBed = (kind: number) => kind >= EXTRA_BLOCKS.Bed && kind <= EXTRA
 export const isFireBlock = (kind: number) => kind === EXTRA_BLOCKS.Campfire || kind === EXTRA_BLOCKS.Wildfire;
 export const isRail = (kind: number) => kind === EXTRA_BLOCKS.Rail;
 export const isSign = (kind: number) => kind === EXTRA_BLOCKS.Sign;
-export const isUtilityBlock = (kind: number) => isFurnace(kind) || isChest(kind) || isLadder(kind) || isBed(kind) || isRail(kind) || kind === EXTRA_BLOCKS.TrafficLight || kind === EXTRA_BLOCKS.StreetLamp || kind === EXTRA_BLOCKS.ParisStreetLamp;
+export const isTrafficSign = (kind: number) => kind >= EXTRA_BLOCKS.StopSign && kind <= EXTRA_BLOCKS.PrioritySign;
+export const isUtilityBlock = (kind: number) => isFurnace(kind) || isChest(kind) || isLadder(kind) || isBed(kind) || isRail(kind) || kind === EXTRA_BLOCKS.TrafficLight || kind === EXTRA_BLOCKS.StreetLamp || kind === EXTRA_BLOCKS.ParisStreetLamp || isTrafficSign(kind);
 
 function shade(hex: string, amount: number) {
   const value = Number.parseInt(hex.slice(1), 16);
@@ -247,4 +260,16 @@ export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.TrafficLight]: block('Feu rouge de circulation', '#ef3b32', 0.8),
   [EXTRA_BLOCKS.StreetLamp]: block('Lampadaire moderne', '#75818a', 1),
   [EXTRA_BLOCKS.ParisStreetLamp]: block('Lampadaire parisien', '#294e3b', 1),
+  [EXTRA_BLOCKS.StopSign]: block('Panneau STOP', '#c93d35', 0.35),
+  [EXTRA_BLOCKS.YieldSign]: block('Cédez le passage', '#e8e0d5', 0.35),
+  [EXTRA_BLOCKS.NoEntrySign]: block('Sens interdit', '#c93d35', 0.35),
+  [EXTRA_BLOCKS.OneWaySign]: block('Sens unique', '#397bb9', 0.35),
+  [EXTRA_BLOCKS.SpeedLimitSign]: block('Limitation 50', '#eeeae0', 0.35),
+  [EXTRA_BLOCKS.PedestrianSign]: block('Passage piéton', '#397bb9', 0.35),
+  [EXTRA_BLOCKS.SchoolSign]: block('École', '#e8e0d5', 0.35),
+  [EXTRA_BLOCKS.ParkingSign]: block('Parking', '#397bb9', 0.35),
+  [EXTRA_BLOCKS.DirectionSign]: block('Direction tout droit', '#397bb9', 0.35),
+  [EXTRA_BLOCKS.DangerSign]: block('Danger', '#e8e0d5', 0.35),
+  [EXTRA_BLOCKS.RoundaboutSign]: block('Giratoire', '#397bb9', 0.35),
+  [EXTRA_BLOCKS.PrioritySign]: block('Route prioritaire', '#e9c83f', 0.35),
 };

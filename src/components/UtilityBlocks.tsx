@@ -3,7 +3,8 @@ import { BlockKind } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { PixelPart } from './ItemModel';
 import { NormalStreetLampModel, ParisStreetLampModel } from './StreetLights';
-import { EXTRA_BLOCK_META, isBed, isRail } from '../game/extraBlocks';
+import { EXTRA_BLOCK_META, isBed, isRail, isTrafficSign } from '../game/extraBlocks';
+import { TrafficSignModel } from './TrafficSigns';
 
 const fire = new MeshBasicMaterial({ color: '#ff9a32' });
 
@@ -102,14 +103,14 @@ export function TrafficLightModel() {
   );
 }
 
-export function UtilityBlockModel({ kind, withLight = true }: { kind: BlockKind; withLight?: boolean }) {
-  return kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
+export function UtilityBlockModel({ kind, withLight = true, held = false }: { kind: BlockKind; withLight?: boolean; held?: boolean }) {
+  return isTrafficSign(kind) ? <TrafficSignModel kind={kind} held={held} /> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
 }
 
 export function UtilityBlocks({ blocks }: { blocks: Voxel[] }) {
   return blocks.map((block) => {
     const rail = isRail(block.kind);
-    const oriented = block.kind === BlockKind.Ladder || block.kind === BlockKind.TrafficLight || isBed(block.kind) || rail;
+    const oriented = block.kind === BlockKind.Ladder || block.kind === BlockKind.TrafficLight || isTrafficSign(block.kind) || isBed(block.kind) || rail;
     const rotation = rail
       ? block.facing === 'east' || block.facing === 'west' ? Math.PI / 2 : 0
       : !oriented ? 0 : block.facing === 'north' ? Math.PI : block.facing === 'east' ? -Math.PI / 2 : block.facing === 'west' ? Math.PI / 2 : 0;

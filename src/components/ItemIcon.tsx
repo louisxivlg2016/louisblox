@@ -1,7 +1,7 @@
 import { getItemMeta, selectionInfo } from '../game/items';
 import type { SelectedKind } from '../game/items';
 import { BlockKind } from '../game/voxel';
-import { isGlass } from '../game/extraBlocks';
+import { isGlass, isTrafficSign } from '../game/extraBlocks';
 import { getVitrailDesign, getVitrailIcon } from '../game/vitrailDesigns';
 import { brickTexture, texture } from '../game/textures';
 import tntUrl from '../../assets/references/tnt.png';
@@ -11,6 +11,20 @@ import streetLampUrl from '../../assets/ui/street-lamp.png';
 import parisStreetLampUrl from '../../assets/ui/paris-street-lamp.png';
 
 const iconCache = new Map<BlockKind, string>();
+const trafficSignLabels: Partial<Record<BlockKind, { label: string; className?: string }>> = {
+  [BlockKind.StopSign]: { label: 'STOP', className: 'stop' },
+  [BlockKind.YieldSign]: { label: 'CÉDEZ' },
+  [BlockKind.NoEntrySign]: { label: 'INTERDIT', className: 'no-entry' },
+  [BlockKind.OneWaySign]: { label: 'UNIQUE' },
+  [BlockKind.SpeedLimitSign]: { label: '50', className: 'speed' },
+  [BlockKind.PedestrianSign]: { label: 'PIÉTON' },
+  [BlockKind.SchoolSign]: { label: 'ÉCOLE' },
+  [BlockKind.ParkingSign]: { label: 'P', className: 'parking' },
+  [BlockKind.DirectionSign]: { label: '➜', className: 'direction' },
+  [BlockKind.DangerSign]: { label: '!', className: 'danger' },
+  [BlockKind.RoundaboutSign]: { label: '↻' },
+  [BlockKind.PrioritySign]: { label: '◆', className: 'priority' },
+};
 
 function blockIcon(kind: BlockKind) {
   const cached = iconCache.get(kind);
@@ -28,6 +42,10 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
   if (kind === BlockKind.TrafficLight) return <img className="tnt-icon traffic-light-icon" src={trafficLightUrl} alt="" />;
   if (kind === BlockKind.StreetLamp) return <img className="tnt-icon street-lamp-icon" src={streetLampUrl} alt="" />;
   if (kind === BlockKind.ParisStreetLamp) return <img className="tnt-icon paris-street-lamp-icon" src={parisStreetLampUrl} alt="" />;
+  if (typeof kind === 'number' && isTrafficSign(kind)) {
+    const sign = trafficSignLabels[kind];
+    return <span className={`traffic-sign-icon ${sign?.className ?? ''}`} style={{ backgroundColor: info.color }}>{sign?.label}</span>;
+  }
   if (typeof kind === 'number' && isGlass(kind)) return <img className="block-swatch block-icon stained-glass-icon" src={getVitrailIcon(kind)} alt={getVitrailDesign(kind)?.name ?? ''} />;
   if (typeof kind === 'number') {
     if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) return <span className="block-swatch block-concrete" style={{ backgroundColor: info.color }} />;
