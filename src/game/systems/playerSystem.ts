@@ -7,7 +7,7 @@ import { getSwimState, swimVerticalVelocity } from '../swimming';
 import { dismount, vehicleSeatPosition } from '../vehicles';
 import { isLadder } from '../extraBlocks';
 import { BlockKind, voxelKey } from '../voxel';
-import { AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
+import { AnimalMotion, AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 import { moveVoxelCharacter } from './collisionSystem';
 import { BATTLE_LIMIT } from '../battleArena';
 import { useBattleStore } from '../battle';
@@ -78,7 +78,8 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   if (mount?.vehicle) {
     if (mount.kind === 'horse') {
       const vehiclePosition = mount.vehicle.get(AnimalPosition);
-      if (vehiclePosition) position.set(vehiclePosition.x, vehiclePosition.y + 1.05, vehiclePosition.z);
+      const vehicleYaw = mount.vehicle.get(AnimalMotion)?.yaw ?? state.yaw;
+      if (vehiclePosition) position.set(vehiclePosition.x + Math.sin(vehicleYaw) * 0.3, vehiclePosition.y + 1, vehiclePosition.z + Math.cos(vehicleYaw) * 0.3);
     } else if (mount.kind) {
       position.copy(vehicleSeatPosition(mount.vehicle, mount.kind, mount.role, mount.seat));
     }
