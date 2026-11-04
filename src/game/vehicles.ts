@@ -8,6 +8,7 @@ import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, P
 import { BlockKind, isWaterBlock, raycastVoxel, voxelKey } from './voxel';
 import { EXTRA_BLOCKS, isCrop, isDoor, isRail, isSign, isTrapdoor, isUtilityBlock } from './extraBlocks';
 import { turnToward } from './rotation';
+import { isCollidable } from './systems/collisionSystem';
 import { syncVehicleMotion, syncVehicleSpawn } from './vehicleSync';
 
 export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y) {
@@ -118,7 +119,22 @@ export function dismount(world: World) {
   const vehicle = mount.vehicle;
   const vehiclePosition = mount.kind === 'horse' ? vehicle.get(AnimalPosition) : vehicle.get(VehiclePosition);
   if (vehiclePosition) {
-    position.set(vehiclePosition.x + 1.6, groundAt(world, vehiclePosition.x + 1.6, vehiclePosition.z, vehiclePosition.y + 2) + 0.02, vehiclePosition.z);
+    const yaw = mount.kind === 'horse' ? vehicle.get(AnimalMotion)?.yaw ?? 0 : vehicle.get(VehicleMotion)?.yaw ?? 0;
+    const offsets: Array<[number, number]> = mount.kind === 'horse' ? [[1.6, 0], [-1.6, 0], [0, -1.6], [0, 1.6]] : [[2, 0], [-2, 0], [0, -3.6], [0, 3.6]];
+    const blocks = getBlockIndex(world);
+    let exit: { x: number; y: number; z: number } | null = null;
+    for (const [side, forward] of offsets) {
+      const x = vehiclePosition.x + side * Math.cos(yaw) + forward * Math.sin(yaw);
+      const z = vehiclePosition.z - side * Math.sin(yaw) + forward * Math.cos(yaw);
+      const ground = groundAt(world, x, z, vehiclePosition.y + 3.5);
+      if (Math.abs(ground - vehiclePosition.y) > 2.2) continue;
+      const feet = Math.floor(ground + 0.5);
+      if (isCollidable(blocks.get(voxelKey(Math.round(x), feet, Math.round(z)))) || isCollidable(blocks.get(voxelKey(Math.round(x), feet + 1, Math.round(z))))) continue;
+      exit = { x, y: ground + 0.02, z };
+      break;
+    }
+    if (exit) position.set(exit.x, exit.y, exit.z);
+    else position.set(vehiclePosition.x + 1.6, groundAt(world, vehiclePosition.x + 1.6, vehiclePosition.z, vehiclePosition.y + 2) + 0.02, vehiclePosition.z);
     body?.setTranslation(position, true);
   }
   if (mount.kind === 'horse') vehicle.set(HorseRider, { mounted: false, speed: 0 });

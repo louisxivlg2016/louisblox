@@ -124,12 +124,13 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
       </group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         {!hasFullCharacter(outfit) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
-        <group position={[0.13, -0.48, -0.24]} scale={typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
+        <group visible={!eating} position={[0.13, -0.48, -0.24]} scale={typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof held === 'number'
             ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
             : <ItemModel kind={held} />}
         </group>
       </group>
+      {eating && <group name="eating-food" position={[0, 1.72, -0.42]} scale={0.65}><ItemModel kind={eating.kind} /></group>}
       {riding || emote === 'sit' ? (
         <>
           <group name="left-leg" visible={!hasFullCharacter(outfit)} position={[-0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>

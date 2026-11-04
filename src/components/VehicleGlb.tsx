@@ -44,6 +44,34 @@ function blueCarTexture(source: Texture) {
   return texture;
 }
 
+function raceCarTexture(source: Texture, color: string) {
+  const image = source.image as HTMLImageElement | HTMLCanvasElement | ImageBitmap;
+  const canvas = document.createElement('canvas');
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const context = canvas.getContext('2d')!;
+  context.drawImage(image, 0, 0);
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+  const value = Number.parseInt(color.slice(1), 16);
+  const red = (value >> 16) & 255;
+  const green = (value >> 8) & 255;
+  const blue = value & 255;
+  for (let index = 0; index < pixels.data.length; index += 4) {
+    const r = pixels.data[index];
+    const g = pixels.data[index + 1];
+    const b = pixels.data[index + 2];
+    if (g < r * 1.08 || b < r * 1.08 || g + b < 110 || Math.abs(g - b) > 110) continue;
+    const brightness = Math.max(r, g, b) / 255;
+    pixels.data[index] = red * brightness;
+    pixels.data[index + 1] = green * brightness;
+    pixels.data[index + 2] = blue * brightness;
+  }
+  context.putImageData(pixels, 0, 0);
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  return texture;
+}
+
 function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'boat'; color: string; interior: boolean }) {
   const modelKind = kind === 'car' && color.toLowerCase() === '#347cd0' ? 'blueCar' : kind === 'car' ? 'raceCar' : kind === 'plane' ? 'airplane' : 'train';
   const { scene } = useGLTF(models[modelKind]);
@@ -62,6 +90,7 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'b
         }
         if (!material.map) continue;
         if (modelKind === 'blueCar') material.map = blueCarTexture(material.map);
+        else if (modelKind === 'raceCar') material.map = raceCarTexture(material.map, color);
         material.map.magFilter = NearestFilter;
         material.map.minFilter = NearestFilter;
         material.map.generateMipmaps = false;
@@ -76,7 +105,7 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'b
     clone.scale.set(width / Math.max(size.x, 0.001), height / Math.max(size.y, 0.001), length / Math.max(size.z, 0.001));
     clone.position.set(-center.x * clone.scale.x, -box.min.y * clone.scale.y, -center.z * clone.scale.z);
     return clone;
-  }, [scene, modelKind, interior, kind]);
+  }, [scene, modelKind, interior, kind, color]);
   return <primitive object={model} />;
 }
 
