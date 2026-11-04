@@ -32,6 +32,7 @@ export function bombSystem(world: World, dt: number) {
 
 export function explosionSystem(world: World, dt: number) {
   world.query(Explosion, ExplosionMesh, ExplosionMaterial).updateEach(([explosion, mesh, material], entity) => {
+    if (explosion.paintColor) return;
     explosion.time -= dt;
     const progress = 1 - Math.max(0, explosion.time) / explosion.maxTime;
     if (mesh.value) mesh.value.scale.setScalar(1 + progress * 6);
