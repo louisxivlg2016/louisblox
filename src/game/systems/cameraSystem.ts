@@ -71,7 +71,11 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
     camera.lookAt(position.x, position.y + 1.1, position.z);
   } else {
     camera.position.copy(position);
-    if (mount?.kind === 'plane') {
+    if (mount?.kind === 'car' && mount.role === 'passenger') {
+      camera.position.y += 1.2;
+      camera.position.x -= Math.sin(state.yaw) * 0.65;
+      camera.position.z -= Math.cos(state.yaw) * 0.65;
+    } else if (mount?.kind === 'plane') {
       camera.position.x -= Math.sin(state.yaw) * 0.35;
       camera.position.y += 0.05;
       camera.position.z -= Math.cos(state.yaw) * 0.35;

@@ -14,7 +14,7 @@ import { useMultiplayerStore, useRemotePlayerStore } from '../game/multiplayerSt
 import { createWorldSave } from '../game/save';
 import { rememberWorld, useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
-import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from '../game/traits';
+import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Vehicle } from '../game/traits';
 import { getItemMeta } from '../game/items';
 import { ItemModel, PixelPart } from './ItemModel';
 import { clearTeleportRequests, receiveTeleportRequest, receiveTeleportResponse, setTeleportSocket } from '../game/teleportRequests';
@@ -85,6 +85,7 @@ function sendWorldInitialization(socket: WebSocket, world: World, force: boolean
 }
 
 function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: { playerId: string; state: PlayerSnapshot; character: 'boy' | 'girl'; outfit: OutfitKind; wig: WigSelection; appearance?: CharacterAppearance }) {
+  const world = useWorld();
   const group = useRef<Group>(null);
   const leftArm = useRef<Group>(null);
   const rightArm = useRef<Group>(null);
@@ -104,7 +105,10 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
 
   useFrame((_, delta) => {
     if (!group.current) return;
-    group.current.visible = !state.effects?.includes('invisibility');
+    const mount = world.queryFirst(Player)?.get(PlayerMount);
+    const vehicleId = mount?.vehicle?.get(Vehicle)?.id;
+    const hiddenOccupant = useGameStore.getState().cameraMode === 'first' && mount?.kind === 'car' && vehicleId !== undefined && state.vehicleId === vehicleId;
+    group.current.visible = !state.effects?.includes('invisibility') && !hiddenOccupant;
     const amount = 1 - Math.exp(-delta * 14);
     const seatedHeight = state.mounted && state.vehicleKind !== 'horse' ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
     const lyingHeight = !state.mounted && state.emote === 'lie' ? 0.18 : 0;
@@ -648,7 +652,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, horse, emote: useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

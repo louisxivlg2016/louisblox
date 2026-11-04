@@ -85,7 +85,7 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'b
       for (const material of materials) {
         if (interior) {
           material.transparent = true;
-          material.opacity = Math.min(material.opacity, 0.18);
+          material.opacity = Math.min(material.opacity, kind === 'car' ? 0.03 : 0.18);
           material.depthWrite = false;
         }
         if (!material.map) continue;

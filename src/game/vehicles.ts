@@ -57,7 +57,7 @@ export function spawnCar(world: World, x: number, y: number, z: number, color = 
 export const PLANE_SCALE = 1.75;
 
 export function seatOffset(kind: 'car' | 'plane' | 'train' | 'boat', role: 'driver' | 'passenger', seat = 0): [number, number, number] {
-  if (kind === 'car') return [-0.5, 0.65, 0];
+  if (kind === 'car') return role === 'driver' ? [-0.58, 0.65, -0.05] : [0.58, 1.05, -0.05];
   if (kind === 'boat') return role === 'driver' ? [0, 0.56, -0.72] : [0, 0.56, 0.72];
   if (kind === 'plane') {
     const [x, y, z] = role === 'driver' ? [-0.5, 1.1, -2.4] : [0.55, 1.1, 0.3 + seat * 1.4];
