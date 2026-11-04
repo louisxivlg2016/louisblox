@@ -95,7 +95,6 @@ export function Backpack() {
           <p className="backpack-label">{survival ? 'Objets fabriqués' : 'Pioches, pelles, épées, armures et équipement · clic gauche pour miner ou utiliser'}</p>
           <div className="backpack-blocks">{ITEM_ORDER.filter((kind) => matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div>
           {survival && <CraftingPanel />}
-          <p className="backpack-label">Galerie Bloxd.io · {GALLERY_ITEMS.length} objets</p>
           <div className="gallery-controls">
             <select aria-label="Catégorie de la galerie" value={galleryCategory} onChange={(event) => setGalleryCategory(event.target.value)}>
               <option value="all">Toutes les catégories</option>
