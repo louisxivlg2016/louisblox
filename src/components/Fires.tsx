@@ -60,6 +60,46 @@ function FlameInstances({ kind, fires }: { kind: BlockKind; fires: readonly Enti
   );
 }
 
+const SMOKE_PUFFS = 6;
+const SMOKE_CAPACITY = 96 * SMOKE_PUFFS;
+const smokeMaterial = new MeshBasicMaterial({ color: '#6d777f', transparent: true, opacity: 0.34, depthWrite: false });
+
+function SmokeInstances({ fires }: { fires: readonly Entity[] }) {
+  const smoke = useRef<InstancedMesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!smoke.current) return;
+    const time = clock.elapsedTime;
+    let index = 0;
+    for (const entity of fires) {
+      const fire = entity.get(Fire);
+      const position = entity.get(FirePosition);
+      if (!fire || !position) continue;
+      const flameScale = 1.2 + Math.min(fire.age / 20, 1.6);
+      const offset = ((position.x * 0.17 + position.z * 0.29) % 1 + 1) % 1;
+      for (let puff = 0; puff < SMOKE_PUFFS && index < SMOKE_CAPACITY; puff += 1) {
+        const progress = (time * 0.3 + puff / SMOKE_PUFFS + offset) % 1;
+        const spread = 0.08 + progress * 0.65;
+        const size = (0.16 + progress * 0.4) * Math.sin(progress * Math.PI) * (0.75 + flameScale * 0.2);
+        const angle = time * 0.6 + puff * 1.9 + offset * Math.PI * 2;
+        matrix.makeScale(size, size * 0.82, size);
+        matrix.setPosition(
+          position.x + Math.sin(angle) * spread + progress * 0.3,
+          position.y - 0.5 + flameScale * 0.8 + progress * 3.4,
+          position.z + Math.cos(angle * 0.83) * spread * 0.65,
+        );
+        smoke.current.setMatrixAt(index, matrix);
+        index += 1;
+      }
+      if (index >= SMOKE_CAPACITY) break;
+    }
+    smoke.current.count = index;
+    smoke.current.instanceMatrix.needsUpdate = true;
+  });
+
+  return <instancedMesh name="fire-smoke" ref={smoke} args={[geometry, smokeMaterial, SMOKE_CAPACITY]} count={0} frustumCulled={false} dispose={null} />;
+}
+
 function RedFlame({ entity }: { entity: Entity }) {
   const group = useRef<import('three').Group>(null);
   const { scene } = useGLTF(redFireUrl);
@@ -94,6 +134,7 @@ export function Fires() {
   const destructive = nearest?.get(Fire)?.kind === BlockKind.Wildfire;
   return (
     <>
+      <SmokeInstances fires={fires} />
       <FlameInstances kind={BlockKind.Campfire} fires={fires} />
       <Suspense fallback={<FlameInstances kind={BlockKind.Wildfire} fires={fires} />}>
         {fires.filter((entity) => entity.get(Fire)?.kind === BlockKind.Wildfire).map((entity) => <RedFlame key={entity} entity={entity} />)}
