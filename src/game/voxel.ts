@@ -26,6 +26,7 @@ export const BlockKind = {
   ...EXTRA_BLOCKS,
   Water: 47,
   CalmWater: 126,
+  Food: 129,
 } as const;
 
 export type BlockKind = (typeof BlockKind)[keyof typeof BlockKind];
@@ -41,6 +42,8 @@ export type Voxel = {
   items?: import('./items').SelectedKind[];
   text?: string;
   facing?: 'north' | 'south' | 'east' | 'west';
+  food?: import('./items').SelectedKind;
+  meat?: import('./animals').AnimalKind;
 };
 
 export type VoxelHit = {
@@ -96,6 +99,7 @@ const baseBlockInfo = {
   [BlockKind.Candle]: { name: 'Bougie', color: '#f2d68a' },
   [BlockKind.Water]: { name: 'Eau', color: '#3b9bd5' },
   [BlockKind.CalmWater]: { name: 'Eau calme (sans inondation)', color: '#3599d0' },
+  [BlockKind.Food]: { name: 'Nourriture', color: '#d9a75f' },
 };
 
 const baseBlockHardness = {
@@ -122,6 +126,7 @@ const baseBlockHardness = {
   [BlockKind.Candle]: 0.4,
   [BlockKind.Water]: 0.1,
   [BlockKind.CalmWater]: 0.1,
+  [BlockKind.Food]: 0.2,
 };
 
 export const BLOCK_INFO = {

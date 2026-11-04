@@ -7,6 +7,7 @@ import { buildChunkGeometry } from '../game/chunkGeometry';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { Chunk, ChunkData } from '../game/traits';
 import { SpecialBlocks } from './SpecialBlocks';
+import { FoodBlocks } from './FoodBlocks';
 import { DoorInstances } from './DoorInstances';
 import { CropInstances } from './CropInstances';
 import { UtilityBlocks } from './UtilityBlocks';
@@ -133,6 +134,7 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
       {[...saplingGroups.entries()].map(([kind, values]) => (
         <SaplingInstances key={kind} kind={kind} blocks={values} />
       ))}
+      <FoodBlocks blocks={data.blocks} />
       <CropInstances blocks={cropBlocks} />
       <UtilityBlocks blocks={utilityBlocks} />
       <SignBlocks blocks={signBlocks} />

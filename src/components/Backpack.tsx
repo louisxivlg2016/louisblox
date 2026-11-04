@@ -7,6 +7,7 @@ import { MEAT_NAMES } from '../game/meats';
 import type { AnimalKind } from '../game/animals';
 import { useGameStore } from '../game/store';
 import { eatItem, eatMeat } from '../game/systems/itemSystem';
+import { placeMeat } from '../game/foods';
 import { HOTBAR_BLOCKS } from '../game/voxel';
 import { world } from '../game/world';
 import { ItemIcon } from './ItemIcon';
@@ -113,7 +114,7 @@ export function Backpack() {
             {resources.map(([kind, count]) => (
               <div className="backpack-resource" key={kind}>
                 <span>{MEAT_NAMES[kind]} ×{count}</span>
-                <span><button onClick={() => eatMeat(world, kind)}>Manger</button> <button onClick={() => discardMeat(kind)}>Jeter 1</button></span>
+                <span><button onClick={() => eatMeat(world, kind)}>Manger</button> <button onClick={() => { if (placeMeat(world, kind)) close(); }}>Poser</button> <button onClick={() => discardMeat(kind)}>Jeter 1</button></span>
               </div>
             ))}
           </div>

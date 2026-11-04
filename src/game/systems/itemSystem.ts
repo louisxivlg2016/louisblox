@@ -7,17 +7,17 @@ import { consumeActions, isDown, isMouseButtonDown } from '../input';
 import { getItemMeta } from '../items';
 import { isGalleryItem } from '../galleryCatalog';
 import { useGalleryItem } from '../galleryActions';
+import { useFood } from '../foods';
 import { hasInventory } from '../inventory';
-import type { GalleryItemId, ItemKind } from '../items';
 import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { useGameStore } from '../store';
-import { HorseRider, Player, PlayerHealth, PlayerPosition, Vehicle, VehicleMotion, VehiclePosition } from '../traits';
+import { HorseRider, Player, PlayerPosition, Vehicle, VehicleMotion, VehiclePosition } from '../traits';
 import { groundAt, spawnVehicle } from '../vehicles';
 import { BlockKind, isWaterBlock, raycastVoxel, voxelKey } from '../voxel';
 import { fireProjectile } from './projectileSystem';
-import { useEatingStore } from '../eating';
-import { healPlayer } from '../effects';
 import { paintballColor } from '../paintball';
+
+export { eatItem, eatMeat } from '../foods';
 
 const cooldowns = new WeakMap<World, number>();
 const origin = new Vector3();
@@ -68,40 +68,6 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
   return true;
 }
 
-export function eatItem(world: World, kind: ItemKind | GalleryItemId) {
-  const meta = getItemMeta(kind);
-  const store = useGameStore.getState();
-  if (meta.category !== 'food') return false;
-  const count = kind === 'apple' ? store.apples : store.itemCounts[kind] ?? 1;
-  if (count <= 0) {
-    store.setNotice(kind === 'apple' ? 'Cueille des pommes avec E sur un arbre de prairie.' : `Plus de ${meta.name.toLowerCase()}.`);
-    return false;
-  }
-  const health = world.queryFirst(Player)?.get(PlayerHealth);
-  if (!health) return false;
-  const healing = Math.min(health.max - health.value, meta.healing ?? 1);
-  if (healing > 0) healPlayer(world, healing);
-  if (store.gameplayMode === 'survival') {
-    if (kind === 'apple') store.discardApple();
-    else store.setItemCount(kind, count - 1);
-  }
-  store.setNotice(healing > 0 ? `${meta.name} : +${healing} vie${healing > 1 ? 's' : ''}` : kind === 'apple' ? 'Pomme mangée.' : `${meta.name} mangé.`);
-  useEatingStore.getState().startEating(kind);
-  return true;
-}
-
-export function eatMeat(world: World, kind: import('../animals').AnimalKind) {
-  const store = useGameStore.getState();
-  const health = world.queryFirst(Player)?.get(PlayerHealth);
-  if (!health || store.meat[kind] <= 0) return false;
-  const healing = Math.min(health.max - health.value, 2);
-  if (healing > 0) healPlayer(world, healing);
-  store.discardMeat(kind);
-  store.setNotice(healing > 0 ? `Viande mangée : +${healing} vie${healing > 1 ? 's' : ''}` : 'Viande mangée.');
-  useEatingStore.getState().startEating('cooked_meat');
-  return true;
-}
-
 export function itemSystem(world: World, camera: Camera, dt: number, pendingActions?: { place: number; harvest: number }) {
   const cooldown = Math.max(0, (cooldowns.get(world) ?? 0) - dt);
   cooldowns.set(world, cooldown);
@@ -121,6 +87,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
   origin.y += 1.62;
   camera.getWorldDirection(direction);
 
+  if (useFood(world, selected, origin, direction, interact)) return true;
   if ((selected === 'bucket' || selected === 'water_bucket') && interact > 0) return useBucket(world, selected === 'water_bucket', origin, direction);
 
   if (meta.shape === 'book' && interact > 0) {
@@ -134,10 +101,6 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     const armor = store.equippedArmor === meta.armor ? null : meta.armor ?? null;
     store.equipArmor(armor);
     store.setNotice(armor ? `${meta.name} équipée.` : 'Armure retirée dans le sac.');
-    return true;
-  }
-  if (meta.category === 'food' && interact > 0) {
-    eatItem(world, selected);
     return true;
   }
   if ((meta.category === 'bow' || meta.category === 'gun') && (interact > 0 || isMouseButtonDown(0) || (meta.category === 'gun' && isDown('KeyE'))) && cooldown <= 0) {

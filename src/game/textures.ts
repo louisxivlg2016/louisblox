@@ -40,6 +40,7 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
     [BlockKind.Candle]: ['#e6c877', '#f2d68a', '#d9b965', '#ffe6a0', '#cfa954'],
     [BlockKind.Water]: ['#2c8bc4', '#3b9bd5', '#55b5e8', '#2578b0', '#6ac6ef'],
     [BlockKind.CalmWater]: ['#2a78b8', '#3599d0', '#4aade0', '#2467a5', '#69c4ed'],
+    [BlockKind.Food]: ['#d9a75f', '#e5bd78', '#c68f4d', '#edca8e', '#ba7e43'],
   };
 
   for (const [kind, meta] of Object.entries(EXTRA_BLOCK_META)) palettes[Number(kind) as BlockKind] = meta.palette;
@@ -349,6 +350,7 @@ const baseBlockMaterials = {
   [BlockKind.Candle]: repeated(material(BlockKind.Candle, 'side')),
   [BlockKind.Water]: repeated(material(BlockKind.Water, 'side')),
   [BlockKind.CalmWater]: repeated(material(BlockKind.CalmWater, 'side')),
+  [BlockKind.Food]: repeated(material(BlockKind.Food, 'side')),
 };
 
 export const blockMaterials = {

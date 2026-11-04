@@ -140,7 +140,7 @@ function groupFor(kind: BlockKind) {
 }
 
 function usesSeparateModel(kind: BlockKind) {
-  return kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind) || isSign(kind);
+  return kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || kind === BlockKind.Food || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind) || isSign(kind);
 }
 
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {

@@ -31,6 +31,8 @@ type VoxelEdit = number | {
   items?: Array<string | number>;
   facing?: string;
   text?: string;
+  food?: string;
+  meat?: string;
 } | null;
 type EditEntry = [string, VoxelEdit];
 type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern' | 'pirates' | 'football' | 'maze';
@@ -148,6 +150,8 @@ function parseEdits(value: unknown): EditEntry[] | null {
     if (typeof data.growth === 'number' && Number.isInteger(data.growth) && data.growth >= 0 && data.growth <= 16) result.growth = data.growth;
     if (typeof data.facing === 'string' && facings.has(data.facing)) result.facing = data.facing;
     if (typeof data.text === 'string') result.text = data.text.replace(/\r/g, '').slice(0, 120);
+    if (typeof data.food === 'string' && data.food.length > 0 && data.food.length <= 96) result.food = data.food;
+    if (typeof data.meat === 'string' && ['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'zombie'].includes(data.meat)) result.meat = data.meat;
     if (Array.isArray(data.items)) {
       result.items = data.items.slice(0, 64).filter((item): item is string | number => typeof item === 'string' && item.length <= 96 || typeof item === 'number' && Number.isFinite(item));
     }

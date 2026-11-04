@@ -9,6 +9,7 @@ import { useSignStore } from '../signs';
 import { startSleep } from './sleepSystem';
 import { openChest, openFurnace } from '../containers';
 import { cropDefinition } from '../crops';
+import { pickUpFood } from '../foods';
 import { consumeActions, isMouseDown, stopMining } from '../input';
 import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
@@ -102,8 +103,11 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         store.setMiningProgress(0);
         return;
       }
-      removeVoxel(world, hit);
-      if (store.gameplayMode === 'survival') changeInventory(hit.block.kind, 1);
+      if (kind === BlockKind.Food) pickUpFood(world, hit);
+      else {
+        removeVoxel(world, hit);
+        if (store.gameplayMode === 'survival') changeInventory(hit.block.kind, 1);
+      }
       target.visible = false;
       target.miningKey = '';
       target.miningProgress = 0;

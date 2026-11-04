@@ -1,4 +1,6 @@
 import { animalMaterial } from '../game/animalTextures';
+import { MEAT_COLORS } from '../game/meats';
+import type { AnimalKind } from '../game/animals';
 import { getItemMeta } from '../game/items';
 import { isGalleryItem } from '../game/galleryCatalog';
 import type { GalleryItemId, ItemKind } from '../game/items';
@@ -11,6 +13,16 @@ export function PixelPart({ position, size, color, rotation }: PartProps) {
     <mesh position={position} rotation={rotation} material={animalMaterial(color)} dispose={null}>
       <boxGeometry args={size} />
     </mesh>
+  );
+}
+
+export function MeatModel({ kind }: { kind: AnimalKind }) {
+  return (
+    <>
+      <PixelPart position={[0, 0, 0]} size={[0.44, 0.24, 0.34]} color={MEAT_COLORS[kind]} />
+      <PixelPart position={[0, 0.02, 0.25]} size={[0.15, 0.13, 0.18]} color="#ead9b8" />
+      <PixelPart position={[0.13, 0.14, -0.05]} size={[0.12, 0.05, 0.18]} color="#f2c4b8" />
+    </>
   );
 }
 
