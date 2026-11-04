@@ -2,7 +2,7 @@ import { Box3, CanvasTexture, Color, NearestFilter, SRGBColorSpace, Vector3 } fr
 import type { BufferGeometry, Material } from 'three';
 import type { CharacterAppearance } from './appearance';
 
-function maskCanvas(geometry: BufferGeometry, bounds: Box3, hair: boolean, width: number, height: number, flipY: boolean) {
+function maskCanvas(geometry: BufferGeometry, bounds: Box3, hair: boolean, width: number, height: number, flipY: boolean, princessHair = false) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -17,12 +17,14 @@ function maskCanvas(geometry: BufferGeometry, bounds: Box3, hair: boolean, width
     const indices = [geometry.index?.getX(offset) ?? offset, geometry.index?.getX(offset + 1) ?? offset + 1, geometry.index?.getX(offset + 2) ?? offset + 2];
     const x = indices.reduce((sum, index) => sum + position.getX(index), 0) / 3;
     const y = indices.reduce((sum, index) => sum + position.getY(index), 0) / 3;
+    const z = indices.reduce((sum, index) => sum + position.getZ(index), 0) / 3;
     const horizontal = Math.abs(x) < size.x * 0.4;
     const head = horizontal && y > bounds.min.y + size.y * 0.68;
     const arm = Math.abs(x) > size.x * 0.25 && y > bounds.min.y + size.y * 0.28 && y < bounds.min.y + size.y * 0.82;
     const leg = horizontal && y < bounds.min.y + size.y * 0.48;
+    const lowerStrand = princessHair && z > 0 && Math.abs(x) > size.x * 0.13 && Math.abs(x) < size.x * 0.33 && y > bounds.min.y + size.y * 0.38 && y < bounds.min.y + size.y * 0.7;
     const visible = hair
-      ? horizontal && y > bounds.min.y + size.y * 0.67
+      ? horizontal && (y > bounds.min.y + size.y * 0.67 || lowerStrand)
       : head || arm || leg;
     if (!visible) continue;
     context.beginPath();
@@ -51,7 +53,7 @@ function hairPixel(red: number, green: number, blue: number, allowGrayHair: bool
   return (brown || gray) && !gold && maximum > 30;
 }
 
-export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor'>, allowGrayHair = false) {
+export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor'>, allowGrayHair = false, princessHair = false) {
   const material = source.clone();
   const image = material.map?.image as { width?: number; height?: number } | undefined;
   if (!material.map || !image?.width || !image.height || !geometry.getAttribute('uv')) return material;
@@ -62,7 +64,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   context.drawImage(material.map.image as CanvasImageSource, 0, 0);
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
   const skinMask = maskCanvas(geometry, bounds, false, canvas.width, canvas.height, material.map.flipY).getImageData(0, 0, canvas.width, canvas.height).data;
-  const hairMask = maskCanvas(geometry, bounds, true, canvas.width, canvas.height, material.map.flipY).getImageData(0, 0, canvas.width, canvas.height).data;
+  const hairMask = maskCanvas(geometry, bounds, true, canvas.width, canvas.height, material.map.flipY, princessHair).getImageData(0, 0, canvas.width, canvas.height).data;
   const skin = new Color(appearance.skinColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const hair = new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   for (let index = 0; index < pixels.data.length; index += 4) {
