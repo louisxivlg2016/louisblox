@@ -60,7 +60,7 @@ export function seatOffset(kind: 'car' | 'plane' | 'train' | 'boat', role: 'driv
   if (kind === 'car') return role === 'driver' ? [-0.58, 0.65, -0.05] : [0.58, 1.05, -0.05];
   if (kind === 'boat') return role === 'driver' ? [0, 0.56, -0.72] : [0, 0.56, 0.72];
   if (kind === 'plane') {
-    const [x, y, z] = role === 'driver' ? [-0.5, 1.1, -2.4] : [0.55, 1.1, 0.3 + seat * 1.4];
+    const [x, y, z] = role === 'driver' ? [-0.5, 1.1, -2.85] : [0.55, 1.1, 0.3 + seat * 1.4];
     return [x * PLANE_SCALE, y * PLANE_SCALE, z * PLANE_SCALE];
   }
   return role === 'driver' ? [-0.65, 1.25, -3.7] : [0.65, 1.25, -1 + seat * 1.5];

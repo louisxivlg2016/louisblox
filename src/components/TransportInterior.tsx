@@ -60,8 +60,8 @@ export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
             {passengerSeat !== index && <Person position={position} color={index === 1 ? '#8d5e9d' : '#568b62'} />}
           </group>
         ))}
-        <Seat position={[-0.5, 0.56, -2.4]} />
-        {driverPresent && <Person position={[-0.5, 0.56, -2.4]} color="#31537b" worker />}
+        <Seat position={[-0.5, 0.56, -2.85]} />
+        {driverPresent && <Person position={[-0.5, 0.56, -2.85]} color="#31537b" worker />}
         <Person position={[0.55, 0.56, 4.2]} color="#31537b" worker />
       </group>
     );

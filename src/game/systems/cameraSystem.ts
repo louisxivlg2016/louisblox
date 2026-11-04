@@ -76,9 +76,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
       camera.position.x -= Math.sin(state.yaw) * 0.65;
       camera.position.z -= Math.cos(state.yaw) * 0.65;
     } else if (mount?.kind === 'plane') {
-      camera.position.x -= Math.sin(state.yaw) * 0.35;
       camera.position.y += 0.05;
-      camera.position.z -= Math.cos(state.yaw) * 0.35;
     } else {
       camera.position.y += mount?.vehicle && mount.kind !== 'horse' ? mount.kind === 'car' ? 0.65 : 0.55 : 1.62;
     }
