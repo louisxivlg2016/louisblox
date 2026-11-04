@@ -26,6 +26,7 @@ import {
   Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition,
 } from './traits';
 import { createMeatInventory } from './meats';
+import { clearPaintSplashAt } from './paintball';
 import { useGameStore } from './store';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
@@ -546,6 +547,7 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
         : isLadder(kind) || isRail(kind) || kind === BlockKind.TrafficLight ? { kind, facing: block.facing ?? 'north' } : kind;
   editsFor(state, cx, cz).set(position, edit);
   recordVoxelEdit(state, cx, cz, x, y, z);
+  if (isWaterBlock(kind)) clearPaintSplashAt(world, x, y, z);
   if (isFireBlock(kind)) spawnFire(world, block, fireGeneration);
   return block;
 }

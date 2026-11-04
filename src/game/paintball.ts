@@ -10,14 +10,22 @@ export function paintballColor(kind: SelectedKind) {
 
 export function spawnPaintSplash(world: World, position: Vector3, normal: Vector3, color: string) {
   const existing = world.query(Explosion).filter((entity) => entity.get(Explosion)?.paintColor);
-  if (existing.length >= 40) existing[0].destroy();
+  if (existing.length >= 160) existing[0].destroy();
   const direction = normal.clone();
   if (direction.lengthSq() === 0) direction.set(0, 1, 0);
   direction.normalize();
   world.spawn(
-    Explosion({ time: 45, maxTime: 45, paintColor: color, paintNormal: direction }),
+    Explosion({ time: 90, maxTime: 90, paintColor: color, paintNormal: direction }),
     ExplosionPosition(position.clone().addScaledVector(direction, 0.015)),
     ExplosionMesh(),
     ExplosionMaterial(),
   );
+}
+
+export function clearPaintSplashAt(world: World, x: number, y: number, z: number, radius = 1.75) {
+  for (const entity of world.query(Explosion, ExplosionPosition)) {
+    if (!entity.get(Explosion)?.paintColor) continue;
+    const position = entity.get(ExplosionPosition)!;
+    if (Math.hypot(position.x - x, position.y - y, position.z - z) <= radius) entity.destroy();
+  }
 }
