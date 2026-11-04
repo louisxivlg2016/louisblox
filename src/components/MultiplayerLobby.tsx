@@ -81,7 +81,7 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
 
   const createRoom = () => {
     const worldId = `salon-${crypto.randomUUID().slice(0, 8)}`;
-    useGameStore.getState().regenerate(useGameStore.getState().gameplayMode, worldId);
+    useGameStore.getState().regenerate(useGameStore.getState().gameplayMode, worldId, undefined, room.trim().slice(0, 48) || worldId);
     join(worldId);
   };
 

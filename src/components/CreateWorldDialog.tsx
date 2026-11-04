@@ -3,6 +3,7 @@ import { MenuDialog } from './MenuDialog';
 import type { WorldTemplate } from '../game/worldMode';
 
 export type CreateWorldOptions = {
+  name: string;
   mode: 'survival' | 'creative';
   template: WorldTemplate;
   multiplayer: boolean;
@@ -11,12 +12,15 @@ export type CreateWorldOptions = {
 };
 
 export function CreateWorldDialog({ onClose, onCreate }: { onClose: () => void; onCreate: (options: CreateWorldOptions) => void }) {
-  const [options, setOptions] = useState<CreateWorldOptions>({ mode: 'creative', template: 'nature', multiplayer: false, canBreak: true, canPlace: true });
+  const [options, setOptions] = useState<CreateWorldOptions>({ name: 'Mon aventure', mode: 'creative', template: 'nature', multiplayer: false, canBreak: true, canPlace: true });
   const change = <K extends keyof CreateWorldOptions>(key: K, value: CreateWorldOptions[K]) => setOptions((current) => ({ ...current, [key]: value }));
   return (
     <MenuDialog title="Créer un monde" onClose={onClose} className="create-world-dialog">
       <form className="create-world-form" onSubmit={(event) => { event.preventDefault(); onCreate(options); }}>
         <div className="world-library-heading"><h2>Créer un monde</h2></div>
+        <label htmlFor="world-name">Nom du monde
+          <input id="world-name" value={options.name} onChange={(event) => change('name', event.target.value)} placeholder="Nom de ton monde" maxLength={48} required autoFocus />
+        </label>
         <fieldset>
           <legend>Qui peut rejoindre ce monde ?</legend>
           <label><input type="radio" name="world-sharing" checked={!options.multiplayer} onChange={() => change('multiplayer', false)} /> Solo</label>

@@ -71,10 +71,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     const template = options?.template ?? (gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : 'nature');
     const worldId = `monde-${crypto.randomUUID().slice(0, 8)}`;
     const names: Record<GameplayMode, string> = { survival: 'Survie avec tous les joueurs', creative: 'Créatif avec tous les joueurs', battle: worldId, 'city-ancient': 'Ville ancienne · 10 km', 'city-modern': 'Ville moderne · 10 km', pirates: 'Pirates en équipe', football: 'Match de football', maze: 'Course Labyrinthe' };
-    const worldName = names[gameplayMode];
+    const worldName = options?.name.trim().slice(0, 48) || names[gameplayMode];
     if (options) useProtectionStore.getState().setProtection({ ...newProtection(), canBreak: options.canBreak, canPlace: options.canPlace });
     if (shared && readWorldSave(worldId)) useGameStore.getState().openWorld(worldId, worldName);
-    else regenerate(gameplayMode, worldId, template);
+    else regenerate(gameplayMode, worldId, template, worldName);
     if (shared) useGameStore.setState({ worldName });
     if (shared) {
       setEnabled(true);

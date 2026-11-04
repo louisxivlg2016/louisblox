@@ -73,7 +73,7 @@ type GameStore = {
   collectMeat: (kind: AnimalKind) => void;
   discardApple: () => void;
   discardMeat: (kind: AnimalKind) => void;
-  regenerate: (gameplayMode?: GameplayMode, worldId?: string, template?: import('./worldMode').WorldTemplate) => void;
+  regenerate: (gameplayMode?: GameplayMode, worldId?: string, template?: import('./worldMode').WorldTemplate, worldName?: string) => void;
   openWorld: (worldId: string, worldName: string) => void;
 };
 
@@ -92,10 +92,23 @@ export function rememberWorld(worldId: string) {
   }
 }
 
+function currentWorldName() {
+  const worldId = currentWorldId();
+  try {
+    const worlds = JSON.parse(localStorage.getItem('louisblox-worlds-v1') ?? '[]');
+    if (Array.isArray(worlds)) {
+      const saved = worlds.find((world) => world && world.id === worldId && typeof world.name === 'string');
+      if (saved) return saved.name;
+    }
+  } catch {
+  }
+  return worldId === 'main-room' ? 'Monde principal' : worldId;
+}
+
 export const useGameStore = create<GameStore>((set) => ({
   mode: 'menu',
   worldId: currentWorldId(),
-  worldName: currentWorldId() === 'main-room' ? 'Monde principal' : currentWorldId(),
+  worldName: currentWorldName(),
   gameplayMode: 'creative',
   worldTemplate: 'nature',
   selected: BlockKind.Grass,
@@ -169,11 +182,11 @@ export const useGameStore = create<GameStore>((set) => ({
   collectMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: state.meat[kind] + 1 } })),
   discardApple: () => set((state) => ({ apples: Math.max(0, state.apples - 1) })),
   discardMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: Math.max(0, state.meat[kind] - 1) } })),
-  regenerate: (gameplayMode = 'creative', worldId = `monde-${crypto.randomUUID().slice(0, 8)}`, template: import('./worldMode').WorldTemplate = 'nature') => {
+  regenerate: (gameplayMode = 'creative', worldId = `monde-${crypto.randomUUID().slice(0, 8)}`, template: import('./worldMode').WorldTemplate = 'nature', worldName?: string) => {
     rememberWorld(worldId);
     set((state) => ({
       worldId,
-      worldName: worldId,
+      worldName: worldName ?? worldId,
       generation: state.generation + 1,
       gameplayMode,
       worldTemplate: gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : template,
