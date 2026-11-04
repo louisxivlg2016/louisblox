@@ -497,6 +497,15 @@ function GalleryModel({ kind }: { kind: GalleryItemId }) {
   return <GalleryGenericModel shape={shape} color={meta.color} />;
 }
 
+export function itemGripOffset(kind: ItemKind | GalleryItemId) {
+  const meta = getItemMeta(kind);
+  if (meta.category === 'sword' || meta.shape === 'sword') return 0.09;
+  if (meta.shape === 'dagger') return 0.063;
+  if (meta.category === 'gun' || meta.shape === 'gun' || meta.shape === 'rpg') return -0.22;
+  if (meta.category === 'pickaxe' || meta.category === 'shovel' || meta.shape === 'pickaxe' || meta.shape === 'spade') return -0.17;
+  return 0;
+}
+
 export function ItemModel({ kind, held = false }: ModelProps) {
   const meta = getItemMeta(kind);
   if (kind === 'hand') return null;

@@ -7,7 +7,8 @@ import { useCharacterStore } from '../game/characterStore';
 import { useGameStore } from '../game/store';
 import { PlayerMesh, PlayerMount, PlayerState, PlayerVelocity } from '../game/traits';
 import { blockGeometry, blockMaterials } from '../game/textures';
-import { ItemModel, PixelPart } from './ItemModel';
+import { ItemModel, PixelPart, itemGripOffset } from './ItemModel';
+import { attachCharacterHand } from '../game/characterRig';
 import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
 import { isUtilityBlock } from '../game/extraBlocks';
@@ -52,8 +53,9 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
     else if (moving) phase.current += delta * (5 + Math.min(speed, 4));
     const swing = moving ? Math.sin(phase.current) * 0.85 : 0;
     const amount = Math.min(1, delta * 12);
+    const fullHand = attachCharacterHand(bodyMesh.current, rightArm.current, hasFullCharacter(outfit));
     if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
-    if (rightArm.current) {
+    if (rightArm.current && !fullHand) {
       const bite = eating ? Math.sin(Math.min(1, (performance.now() - eating.startedAt) / 850) * Math.PI) : 0;
       if (eating) rightArm.current.rotation.x = 1.25 + bite * 0.65;
       else rightArm.current.rotation.x += ((waving ? Math.PI : -swing) - rightArm.current.rotation.x) * amount;
@@ -126,7 +128,7 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
       </group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         {!hasFullCharacter(outfit) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
-        <group visible={!eating} position={[0.13, -0.48, -0.24]} scale={typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
+        <group name="held-item" visible={!eating} position={hasFullCharacter(outfit) ? [0, -(typeof held === 'string' ? itemGripOffset(held) : 0) * 0.72, 0] : [0.05, -0.58 - (typeof held === 'string' ? itemGripOffset(held) : 0) * 0.72, -0.12]} scale={typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof held === 'number'
             ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
             : <ItemModel kind={held} />}

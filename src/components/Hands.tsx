@@ -10,7 +10,7 @@ import { getItemMeta } from '../game/items';
 import { useGameStore } from '../game/store';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { BlockKind } from '../game/voxel';
-import { ItemModel } from './ItemModel';
+import { ItemModel, itemGripOffset } from './ItemModel';
 import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
 import { isUtilityBlock } from '../game/extraBlocks';
@@ -95,7 +95,7 @@ export function Hands() {
           <mesh args={[blockGeometry, heldMaterials]} position={[0.36, -0.26, -0.72]} rotation={[0.2, 0.55, 0.05]} scale={0.24} renderOrder={11} frustumCulled={false} />
         )
       ) : (
-        <group position={[0.36, -0.32, -0.78]} rotation={[0.08, 0.15, 0]} scale={getItemMeta(selected).category === 'vehicle' ? 0.34 : 1.3}>
+        <group name="held-item" position={[0.36, -0.58 - itemGripOffset(selected) * (getItemMeta(selected).category === 'vehicle' ? 0.1972 : 0.754), -0.78]} rotation={[0.08, 0.15, 0]} scale={getItemMeta(selected).category === 'vehicle' ? 0.34 : 1.3}>
           <ItemModel kind={selected} held />
         </group>
       )}

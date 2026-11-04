@@ -111,3 +111,38 @@ export function animateCharacterRig(root: Object3D, time: number, walking: boole
   turn(rig.leftLeg, -swing * 0.85, delta);
   turn(rig.rightLeg, swing * 0.85, delta);
 }
+
+export function attachCharacterHand(avatar: Object3D | null, hand: Group | null, fullCharacter: boolean) {
+  if (!hand) return fullCharacter;
+  if (!fullCharacter) {
+    if (avatar && hand.parent !== avatar) {
+      avatar.add(hand);
+      hand.position.set(0.39, 1.4, 0);
+      hand.rotation.set(0, 0, 0);
+      hand.scale.setScalar(1);
+    }
+    return false;
+  }
+  const rig = avatar?.getObjectByName('full-character')?.getObjectByName('right-arm') as Group | undefined;
+  if (!rig || hand.parent === rig) return true;
+  const bounds = new Box3();
+  const vertex = new Vector3();
+  for (const child of rig.children) {
+    if (!(child instanceof Mesh)) continue;
+    const position = child.geometry.getAttribute('position');
+    const index = child.geometry.index;
+    if (index) {
+      for (let offset = 0; offset < index.count; offset += 1) bounds.expandByPoint(vertex.fromBufferAttribute(position, index.getX(offset)));
+    } else {
+      child.geometry.computeBoundingBox();
+      if (child.geometry.boundingBox) bounds.union(child.geometry.boundingBox);
+    }
+  }
+  if (bounds.isEmpty()) return true;
+  const center = bounds.getCenter(new Vector3());
+  rig.add(hand);
+  hand.position.set(center.x, bounds.min.y + 0.08, center.z);
+  hand.rotation.set(0, 0, 0);
+  hand.scale.setScalar(1);
+  return true;
+}

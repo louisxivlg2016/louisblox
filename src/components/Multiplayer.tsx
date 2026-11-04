@@ -16,7 +16,8 @@ import { rememberWorld, useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
 import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Vehicle } from '../game/traits';
 import { getItemMeta } from '../game/items';
-import { ItemModel, PixelPart } from './ItemModel';
+import { ItemModel, PixelPart, itemGripOffset } from './ItemModel';
+import { attachCharacterHand } from '../game/characterRig';
 import { clearTeleportRequests, receiveTeleportRequest, receiveTeleportResponse, setTeleportSocket } from '../game/teleportRequests';
 import { dismount } from '../game/vehicles';
 import { applyVehicleRemoval, applyVehicleSnapshot, isVehicleSnapshot, onVehicleSync } from '../game/vehicleSync';
@@ -126,8 +127,9 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
     if (waving) phase.current += delta * 10;
     else if (state.moving) phase.current += delta * 8;
     const swing = state.moving ? Math.sin(phase.current) * 0.85 : 0;
+    const fullHand = attachCharacterHand(group.current, rightArm.current, hasFullCharacter(outfit));
     if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
-    if (rightArm.current) {
+    if (rightArm.current && !fullHand) {
       rightArm.current.rotation.x += ((waving ? Math.PI : -swing) - rightArm.current.rotation.x) * amount;
       rightArm.current.rotation.z += ((waving ? Math.sin(phase.current) * 0.45 : 0) - rightArm.current.rotation.z) * amount;
     }
@@ -180,7 +182,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
         {typeof state.selected === 'string' && (
           <group
             name="remote-held-item"
-            position={[0.13, -0.48, -0.24]}
+            position={hasFullCharacter(outfit) ? [0, -itemGripOffset(state.selected) * 0.72, 0] : [0.05, -0.58 - itemGripOffset(state.selected) * 0.72, -0.12]}
             scale={getItemMeta(state.selected).category === 'vehicle' ? 0.2 : 0.72}
             userData={{ item: state.selected }}
           >
