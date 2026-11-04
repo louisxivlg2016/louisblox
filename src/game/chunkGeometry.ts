@@ -1,8 +1,8 @@
-import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, LinearFilter, LinearMipmapLinearFilter, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
+import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { brickTexture, texture } from './textures';
 import { EXTRA_BLOCK_META, isCrop, isDoor, isGlass, isSapling, isSign, isTrapdoor, isUtilityBlock } from './extraBlocks';
-import { getVitrailDesign } from './vitrailDesigns';
+import { getVitrailDesign, getVitrailTexture } from './vitrailDesigns';
 import type { ExtraBlockKind } from './extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
@@ -11,26 +11,13 @@ const TILE_SIZE = 16;
 const ATLAS_COLUMNS = 16;
 const WHITE_TILE = 'white';
 const tileIndices = new Map<string, number>();
-let atlas: CanvasTexture | null = null;
-let glassAtlas: CanvasTexture | null = null;
-let materials: Record<string, Material> | null = null;
-
-function drawMirroredTile(context: CanvasRenderingContext2D, image: CanvasImageSource, index: number) {
-  const x = (index % ATLAS_COLUMNS) * TILE_SIZE;
-  const y = Math.floor(index / ATLAS_COLUMNS) * TILE_SIZE;
-  for (const mirrorX of [false, true]) {
-    for (const mirrorY of [false, true]) {
-      context.save();
-      context.beginPath();
-      context.rect(x + (mirrorX ? TILE_SIZE / 2 : 0), y + (mirrorY ? TILE_SIZE / 2 : 0), TILE_SIZE / 2, TILE_SIZE / 2);
-      context.clip();
-      context.translate(x + (mirrorX ? TILE_SIZE : 0), y + (mirrorY ? TILE_SIZE : 0));
-      context.scale(mirrorX ? -1 : 1, mirrorY ? -1 : 1);
-      context.drawImage(image, 0, 0, TILE_SIZE / 2, TILE_SIZE / 2);
-      context.restore();
-    }
-  }
+const glassDesignKinds = new Map<string, BlockKind>();
+for (const kind of Object.values(BlockKind)) {
+  const design = isGlass(kind) ? getVitrailDesign(kind) : undefined;
+  if (design) glassDesignKinds.set(design.url, kind);
 }
+let atlas: CanvasTexture | null = null;
+let materials: Record<string, Material> | null = null;
 
 const faces = [
   { direction: [1, 0, 0], corners: [[0.5, -0.5, -0.5], [0.5, 0.5, -0.5], [0.5, 0.5, 0.5], [0.5, -0.5, 0.5]] },
@@ -56,32 +43,11 @@ function createAtlas() {
   canvas.width = ATLAS_COLUMNS * TILE_SIZE;
   canvas.height = Math.ceil((kinds.length * 3 + 1) / ATLAS_COLUMNS) * TILE_SIZE;
   const context = canvas.getContext('2d')!;
-  const smoothCanvas = document.createElement('canvas');
-  smoothCanvas.width = canvas.width;
-  smoothCanvas.height = canvas.height;
-  const smoothContext = smoothCanvas.getContext('2d')!;
   let index = 0;
   for (const kind of kinds) {
     for (const face of ['side', 'top', 'bottom'] as const) {
-      const tileIndex = index;
-      tileIndices.set(`${kind}:${face}`, tileIndex);
-      if (isGlass(kind)) {
-        const design = getVitrailDesign(kind);
-        if (design) {
-          const image = new Image();
-          image.onload = () => {
-            context.drawImage(image, (tileIndex % ATLAS_COLUMNS) * TILE_SIZE, Math.floor(tileIndex / ATLAS_COLUMNS) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            drawMirroredTile(smoothContext, image, tileIndex);
-            if (atlas) atlas.needsUpdate = true;
-            if (glassAtlas) glassAtlas.needsUpdate = true;
-          };
-          image.src = design.url;
-        } else {
-          context.drawImage(texture(kind, face).image, (tileIndex % ATLAS_COLUMNS) * TILE_SIZE, Math.floor(tileIndex / ATLAS_COLUMNS) * TILE_SIZE);
-        }
-      } else {
-        context.drawImage(texture(kind, face).image, (tileIndex % ATLAS_COLUMNS) * TILE_SIZE, Math.floor(tileIndex / ATLAS_COLUMNS) * TILE_SIZE);
-      }
+      tileIndices.set(`${kind}:${face}`, index);
+      if (!isGlass(kind)) context.drawImage(texture(kind, face).image, (index % ATLAS_COLUMNS) * TILE_SIZE, Math.floor(index / ATLAS_COLUMNS) * TILE_SIZE);
       index += 1;
     }
   }
@@ -93,11 +59,6 @@ function createAtlas() {
   atlas.minFilter = NearestFilter;
   atlas.generateMipmaps = false;
   atlas.colorSpace = SRGBColorSpace;
-  glassAtlas = new CanvasTexture(smoothCanvas);
-  glassAtlas.magFilter = LinearFilter;
-  glassAtlas.minFilter = LinearMipmapLinearFilter;
-  glassAtlas.generateMipmaps = true;
-  glassAtlas.colorSpace = SRGBColorSpace;
   return atlas;
 }
 
@@ -105,6 +66,9 @@ function createAtlas() {
 const tileCoordinates = [0, 1, 2, 3].map(() => new Map<string, ReturnType<typeof calculateTileUV>>());
 
 function calculateTileUV(key: string, mirrorU: boolean, mirrorV: boolean) {
+  if (isGlass(Number(key.split(':')[0]) as BlockKind)) {
+    return { left: mirrorU ? 1 : 0, right: mirrorU ? 0 : 1, top: mirrorV ? 0 : 1, bottom: mirrorV ? 1 : 0 };
+  }
   const index = tileIndices.get(key)!;
   const x = (index % ATLAS_COLUMNS) * TILE_SIZE;
   const y = Math.floor(index / ATLAS_COLUMNS) * TILE_SIZE;
@@ -134,7 +98,7 @@ function isBrick(kind: BlockKind) {
 
 function groupFor(kind: BlockKind) {
   if (isWaterBlock(kind)) return 'water';
-  if (isGlass(kind)) return 'glass';
+  if (isGlass(kind)) return `glass:${glassDesignKinds.get(getVitrailDesign(kind)?.url ?? '') ?? kind}`;
   if (kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves) return 'foliage';
   if (isBrick(kind)) return `brick:${kind}`;
   return 'opaque';
@@ -255,9 +219,19 @@ function getMaterials() {
     unlit: new MeshBasicMaterial({ map, vertexColors: true }),
     foliage: new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.35 }),
     water: new MeshLambertMaterial({ map, vertexColors: true, transparent: true, opacity: 0.55, depthWrite: false }),
-    glass: new MeshLambertMaterial({ map: glassAtlas!, vertexColors: true, transparent: true, opacity: 0.94, depthWrite: true }),
   };
   return materials;
+}
+
+const glassMaterials = new Map<BlockKind, Material>();
+
+function glassMaterial(kind: BlockKind) {
+  let material = glassMaterials.get(kind);
+  if (!material) {
+    material = new MeshLambertMaterial({ map: getVitrailTexture(kind), vertexColors: true, transparent: true, opacity: 0.94, depthWrite: true });
+    glassMaterials.set(kind, material);
+  }
+  return material;
 }
 
 const brickMaterials = new Map<BlockKind, Material>();
@@ -305,6 +279,6 @@ export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxe
   const sharedMaterials = getMaterials();
   return [...groups.entries()].map(([name, group]) => ({
     geometry: makeGeometry(group),
-    material: name.startsWith('brick:') ? brickMaterial(Number(name.slice(6)) as BlockKind) : sharedMaterials[name],
+    material: name.startsWith('brick:') ? brickMaterial(Number(name.slice(6)) as BlockKind) : name.startsWith('glass:') ? glassMaterial(Number(name.slice(6)) as BlockKind) : sharedMaterials[name],
   }));
 }
