@@ -101,7 +101,8 @@ function createAtlas() {
   return atlas;
 }
 
-const tileCoordinates = new Map<string, ReturnType<typeof calculateTileUV>>();
+// Un cache par combinaison de miroirs (U, V) pour éviter de construire une clé par face.
+const tileCoordinates = [0, 1, 2, 3].map(() => new Map<string, ReturnType<typeof calculateTileUV>>());
 
 function calculateTileUV(key: string, mirrorU: boolean, mirrorV: boolean) {
   const index = tileIndices.get(key)!;
@@ -118,11 +119,11 @@ function calculateTileUV(key: string, mirrorU: boolean, mirrorV: boolean) {
 }
 
 function tileUV(key: string, mirrorU = false, mirrorV = false) {
-  const cacheKey = `${key}:${mirrorU ? 1 : 0}:${mirrorV ? 1 : 0}`;
-  let coordinates = tileCoordinates.get(cacheKey);
+  const cache = tileCoordinates[(mirrorU ? 2 : 0) + (mirrorV ? 1 : 0)];
+  let coordinates = cache.get(key);
   if (!coordinates) {
     coordinates = calculateTileUV(key, mirrorU, mirrorV);
-    tileCoordinates.set(cacheKey, coordinates);
+    cache.set(key, coordinates);
   }
   return coordinates;
 }
@@ -139,7 +140,18 @@ function groupFor(kind: BlockKind) {
   return 'opaque';
 }
 
+const separateModelKinds = new Map<number, boolean>();
+
 function usesSeparateModel(kind: BlockKind) {
+  let separate = separateModelKinds.get(kind);
+  if (separate === undefined) {
+    separate = computeSeparateModel(kind);
+    separateModelKinds.set(kind, separate);
+  }
+  return separate;
+}
+
+function computeSeparateModel(kind: BlockKind) {
   return kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || kind === BlockKind.Food || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind) || isSign(kind);
 }
 
@@ -151,12 +163,57 @@ function visibleFace(block: Voxel, neighbor: Voxel | undefined) {
   return isWaterBlock(neighbor.kind) || isGlass(neighbor.kind);
 }
 
+// Clés de texture [côté, dessus, dessous] par type de bloc, calculées une seule fois.
+const faceTextureKeys = new Map<number, readonly [string, string, string]>();
+
 function faceTexture(block: Voxel, direction: readonly number[]) {
-  if (block.kind === BlockKind.Grass || block.kind === BlockKind.AutumnGrass || block.kind === BlockKind.ForestGrass) {
-    return direction[1] < 0 ? `${BlockKind.Dirt}:side` : direction[1] > 0 ? `${block.kind}:top` : `${block.kind}:side`;
+  let keys = faceTextureKeys.get(block.kind);
+  if (!keys) {
+    const kind = block.kind;
+    keys = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass
+      ? [`${kind}:side`, `${kind}:top`, `${BlockKind.Dirt}:side`]
+      : kind === BlockKind.Wood || kind === BlockKind.Tnt
+        ? [`${kind}:side`, `${kind}:top`, `${kind}:bottom`]
+        : [`${kind}:side`, `${kind}:side`, `${kind}:side`];
+    faceTextureKeys.set(kind, keys);
   }
-  if (block.kind === BlockKind.Wood || block.kind === BlockKind.Tnt) return direction[1] === 0 ? `${block.kind}:side` : direction[1] > 0 ? `${block.kind}:top` : `${block.kind}:bottom`;
-  return `${block.kind}:side`;
+  return direction[1] === 0 ? keys[0] : direction[1] > 0 ? keys[1] : keys[2];
+}
+
+export type ChunkLookup = (x: number, y: number, z: number) => Voxel | undefined;
+
+// Grille locale du chunk : les voisins se trouvent par index numérique au lieu de construire
+// une clé "x,y,z" par recherche. Une case vide ou hors grille retombe sur l'index global,
+// ce qui garde exactement le même résultat (blocs des chunks voisins compris).
+export function createChunkLookup(blocks: Voxel[], blockIndex: Map<string, Voxel>): ChunkLookup {
+  const fallback: ChunkLookup = (x, y, z) => blockIndex.get(voxelKey(x, y, z));
+  if (blocks.length === 0) return fallback;
+  let minX = Infinity, minY = Infinity, minZ = Infinity, maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  for (const block of blocks) {
+    if (block.x < minX) minX = block.x;
+    if (block.x > maxX) maxX = block.x;
+    if (block.y < minY) minY = block.y;
+    if (block.y > maxY) maxY = block.y;
+    if (block.z < minZ) minZ = block.z;
+    if (block.z > maxZ) maxZ = block.z;
+  }
+  const sizeY = maxY - minY + 1;
+  const sizeZ = maxZ - minZ + 1;
+  const cellCount = (maxX - minX + 1) * sizeY * sizeZ;
+  if (!Number.isFinite(cellCount) || cellCount > 4_000_000) return fallback;
+  const cells = new Int32Array(cellCount).fill(-1);
+  blocks.forEach((block, index) => {
+    // Seuls les blocs qui sont aussi ceux de l'index global vont dans la grille.
+    if (blockIndex.get(voxelKey(block.x, block.y, block.z)) !== block) return;
+    cells[((block.x - minX) * sizeY + (block.y - minY)) * sizeZ + (block.z - minZ)] = index;
+  });
+  return (x, y, z) => {
+    if (x >= minX && x <= maxX && y >= minY && y <= maxY && z >= minZ && z <= maxZ) {
+      const index = cells[((x - minX) * sizeY + (y - minY)) * sizeZ + (z - minZ)];
+      if (index >= 0) return blocks[index];
+    }
+    return fallback(x, y, z);
+  };
 }
 
 const fullFaceUV = { left: 0, right: 1, top: 1, bottom: 0 };
@@ -167,13 +224,15 @@ function addFace(group: GeometryGroup, block: Voxel, face: (typeof faces)[number
   const base = group.positions.length / 3;
   const tile = isBrick(block.kind) ? fullFaceUV : block.kind >= BlockKind.ConcreteWhite && block.kind <= BlockKind.ConcreteBlack ? tileUV(WHITE_TILE) : uv;
   const uvCorners = [[tile.left, tile.top], [tile.right, tile.top], [tile.right, tile.bottom], [tile.left, tile.bottom]];
-  face.corners.forEach((corner, index) => {
+  const [nx, ny, nz] = face.direction;
+  for (let index = 0; index < 4; index += 1) {
+    const corner = face.corners[index];
     group.positions.push(block.x + corner[0] * scale, block.y + corner[1] * scale + offsetY, block.z + corner[2] * scale);
-    group.normals.push(...face.direction);
-    group.uvs.push(...uvCorners[index]);
+    group.normals.push(nx, ny, nz);
+    group.uvs.push(uvCorners[index][0], uvCorners[index][1]);
     if (color) group.colors.push(color.r, color.g, color.b);
     else group.colors.push(1, 1, 1);
-  });
+  }
   group.indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
 }
 
@@ -217,7 +276,7 @@ function brickMaterial(kind: BlockKind) {
 
 const concreteColors = new Map<BlockKind, Color>();
 
-export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxel>) {
+export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxel>, lookup = createChunkLookup(blocks, blockIndex)) {
   createAtlas();
   const groups = new Map<string, GeometryGroup>();
   for (const block of blocks) {
@@ -231,7 +290,7 @@ export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxe
     }
     for (const face of faces) {
       const [dx, dy, dz] = face.direction;
-      const neighbor = blockIndex.get(voxelKey(block.x + dx, block.y + dy, block.z + dz));
+      const neighbor = lookup(block.x + dx, block.y + dy, block.z + dz);
       if (!visibleFace(block, neighbor)) continue;
       let group = groups.get(groupName);
       if (!group) {

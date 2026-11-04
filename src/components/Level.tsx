@@ -3,7 +3,7 @@ import { useQuery, useTrait, useWorld } from 'koota/react';
 import type { Entity } from 'koota';
 import { InstancedMesh, Matrix4 } from 'three';
 import { getBlockIndex } from '../game/chunks';
-import { buildChunkGeometry } from '../game/chunkGeometry';
+import { buildChunkGeometry, createChunkLookup } from '../game/chunkGeometry';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { Chunk, ChunkData } from '../game/traits';
 import { SpecialBlocks } from './SpecialBlocks';
@@ -13,7 +13,7 @@ import { CropInstances } from './CropInstances';
 import { UtilityBlocks } from './UtilityBlocks';
 import { SignBlocks } from './SignBlocks';
 import { isCrop, isDoor, isGlass, isSapling, isSign, isTrapdoor, isUtilityBlock } from '../game/extraBlocks';
-import { BlockKind, isWaterBlock, voxelKey } from '../game/voxel';
+import { BlockKind, isWaterBlock } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 
 const matrix = new Matrix4();
@@ -78,21 +78,18 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
   const chunk = useTrait(entity, Chunk);
   const data = entity.get(ChunkData);
   const blockIndex = getBlockIndex(world);
-  const candleBlocks: Voxel[] = [];
-  const doorBlocks: Voxel[] = [];
-  const cropBlocks: Voxel[] = [];
-  const utilityBlocks: Voxel[] = [];
-  const signBlocks: Voxel[] = [];
-  const saplingGroups = new Map<BlockKind, Voxel[]>();
-  const geometries = useMemo(() => data ? buildChunkGeometry(data.blocks, blockIndex) : [], [data, blockIndex, chunk?.revision]);
-  useEffect(() => () => {
-    for (const { geometry } of geometries) geometry.dispose();
-  }, [geometries]);
-
-  if (chunk && data) {
+  const view = useMemo(() => {
+    const candleBlocks: Voxel[] = [];
+    const doorBlocks: Voxel[] = [];
+    const cropBlocks: Voxel[] = [];
+    const utilityBlocks: Voxel[] = [];
+    const signBlocks: Voxel[] = [];
+    const saplingGroups = new Map<BlockKind, Voxel[]>();
+    if (!data) return { geometries: [], candleBlocks, doorBlocks, cropBlocks, utilityBlocks, signBlocks, saplingGroups };
+    const lookup = createChunkLookup(data.blocks, blockIndex);
     for (const block of data.blocks) {
       const exposed = neighborOffsets.some(([x, y, z]) => {
-        const neighbor = blockIndex.get(voxelKey(block.x + x, block.y + y, block.z + z));
+        const neighbor = lookup(block.x + x, block.y + y, block.z + z);
         return !neighbor || isWaterBlock(neighbor.kind) || isGlass(neighbor.kind);
       });
       if (!exposed) continue;
@@ -123,7 +120,12 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         saplingGroups.set(block.kind, group);
       }
     }
-  }
+    return { geometries: buildChunkGeometry(data.blocks, blockIndex, lookup), candleBlocks, doorBlocks, cropBlocks, utilityBlocks, signBlocks, saplingGroups };
+  }, [data, blockIndex, chunk?.revision]);
+  const { geometries, candleBlocks, doorBlocks, cropBlocks, utilityBlocks, signBlocks, saplingGroups } = view;
+  useEffect(() => () => {
+    for (const { geometry } of geometries) geometry.dispose();
+  }, [geometries]);
 
   if (!chunk || !data) return null;
   return (
