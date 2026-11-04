@@ -10,8 +10,10 @@ import { requestRoomMode } from './Multiplayer';
 const MODE_ORDER: GameplayMode[] = ['battle', 'creative', 'survival', 'city-ancient', 'city-modern'];
 
 function modeFromUrl(): GameplayMode | 'room' {
-  const mode = new URLSearchParams(window.location.search).get('mode');
-  return isGameplayMode(mode) ? mode : 'room';
+  const params = new URLSearchParams(window.location.search);
+  const mode = params.get('mode');
+  if (isGameplayMode(mode)) return mode;
+  return params.has('room') ? 'room' : 'creative';
 }
 
 const STATUS_NAMES = {

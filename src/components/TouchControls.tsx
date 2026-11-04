@@ -1,7 +1,9 @@
 import { useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { requestFlightToggle, setTouchKey, setTouchMovement } from '../game/input';
+import { queueHarvest, requestFlightToggle, setTouchKey, setTouchMovement } from '../game/input';
 import { useGameStore } from '../game/store';
+import { landPlane } from '../game/vehicles';
+import { world } from '../game/world';
 
 function HoldButton({ code, label, onDoubleTap }: { code: string; label: string; onDoubleTap?: () => void }) {
   const lastTap = useRef(0);
@@ -14,6 +16,7 @@ function HoldButton({ code, label, onDoubleTap }: { code: string; label: string;
         event.stopPropagation();
         event.currentTarget.setPointerCapture(event.pointerId);
         setTouchKey(code, true);
+        if (code === 'KeyE' && useGameStore.getState().gameplayMode !== 'football') queueHarvest();
         if (onDoubleTap) {
           const now = performance.now();
           if (now - lastTap.current < 300) onDoubleTap();
@@ -33,6 +36,8 @@ export function TouchControls() {
   const joystick = useRef<HTMLDivElement>(null);
   const knob = useRef<HTMLDivElement>(null);
   const football = useGameStore((state) => state.gameplayMode === 'football');
+  const plane = useGameStore((state) => state.riding === 'plane');
+  const pilot = useGameStore((state) => state.ridingRole === 'driver');
 
   const moveJoystick = (event: ReactPointerEvent<HTMLDivElement>) => {
     const rect = joystick.current!.getBoundingClientRect();
@@ -55,7 +60,7 @@ export function TouchControls() {
 
   return (
     <div className="mobile-controls">
-      <div className="touch-gesture-hint">{football ? 'Appui court : tir · Glisser : caméra' : 'Appui court : poser · Glisser : caméra · Maintenir : casser'}</div>
+      <div className="touch-gesture-hint">{plane ? pilot ? 'Joystick : piloter · Glisser : caméra' : 'Passager de l’avion · Glisser : caméra' : football ? 'Appui court : tir · Glisser : caméra' : 'Appui court : poser · Glisser : caméra · Maintenir : casser'}</div>
       <div
         ref={joystick}
         className="touch-joystick"
@@ -80,19 +85,36 @@ export function TouchControls() {
         <HoldButton code="KeyT" label="Tacler" />
         <HoldButton code="KeyG" label="Passe" />
       </div>}
-      <div className="touch-actions">
-        <HoldButton code="Space" label="Sauter" onDoubleTap={requestFlightToggle} />
-        <button
-          className="touch-button touch-flight"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            requestFlightToggle();
-          }}
-        >
-          Vol
-        </button>
-        <HoldButton code="KeyC" label="Descendre" />
+      <div className={plane ? 'touch-actions plane-touch-actions' : 'touch-actions'}>
+        {!plane && <>
+          <HoldButton code="Space" label="Sauter" onDoubleTap={requestFlightToggle} />
+          <button
+            className="touch-button touch-flight"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              requestFlightToggle();
+            }}
+          >
+            Vol
+          </button>
+          <HoldButton code="KeyC" label="Descendre" />
+        </>}
+        {plane && pilot && <>
+          <HoldButton code="Space" label="Décoller / Monter" />
+          <HoldButton code="KeyC" label="Descendre" />
+          <button
+            className="touch-button touch-flight"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              landPlane(world);
+            }}
+          >
+            Atterrir
+          </button>
+        </>}
+        {plane && <HoldButton code="KeyE" label={pilot ? 'Sortir' : 'Quitter l’avion'} />}
         <button
           className="touch-button"
           onPointerDown={(event) => {

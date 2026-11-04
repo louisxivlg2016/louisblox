@@ -7,6 +7,7 @@ type MultiplayerSettings = { playerName: string; room: string; server: string };
 
 type MultiplayerStore = MultiplayerSettings & {
   enabled: boolean;
+  joined: boolean;
   connectionId: number;
   status: MultiplayerStatus;
   error: string;
@@ -21,6 +22,7 @@ type MultiplayerStore = MultiplayerSettings & {
 };
 
 const query = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search);
+const autoJoin = query.has('server') || query.has('room');
 
 function initialPlayerName() {
   try {
@@ -31,7 +33,8 @@ function initialPlayerName() {
 }
 
 export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
-  enabled: query.has('server') || query.has('room'),
+  enabled: autoJoin,
+  joined: autoJoin,
   connectionId: 0,
   playerName: initialPlayerName(),
   room: query.get('room') || 'main-room',
@@ -41,7 +44,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
   players: [],
   serverEditing: false,
   setServerEditing: (serverEditing) => set({ serverEditing }),
-  setEnabled: (enabled) => set({ enabled, status: enabled ? 'connecting' : 'offline', error: '', players: [] }),
+  setEnabled: (enabled) => set((state) => ({ enabled, joined: enabled && state.joined, status: enabled && state.joined ? 'connecting' : 'offline', error: '', players: [] })),
   configure: (settings) => {
     const playerName = settings.playerName.trim().slice(0, 24) || 'Joueur';
     const room = settings.room.trim().replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'main-room';
@@ -51,7 +54,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
     } catch {
     }
     rememberWorld(room);
-    set((state) => ({ playerName, room, server, enabled: true, connectionId: state.connectionId + 1, status: 'connecting', error: '', players: [] }));
+    set((state) => ({ playerName, room, server, enabled: true, joined: true, connectionId: state.connectionId + 1, status: 'connecting', error: '', players: [] }));
     return { playerName, room, server };
   },
   setStatus: (status, error = '') => set({ status, error }),
@@ -62,7 +65,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
       localStorage.setItem('louisblox-player-name', playerName);
     } catch {
     }
-    set((state) => ({ playerName, error: '', connectionId: state.enabled ? state.connectionId + 1 : state.connectionId, status: state.enabled ? 'connecting' : state.status }));
+    set((state) => ({ playerName, error: '', connectionId: state.enabled && state.joined ? state.connectionId + 1 : state.connectionId, status: state.enabled && state.joined ? 'connecting' : state.status }));
   },
 }));
 

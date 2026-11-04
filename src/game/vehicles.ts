@@ -73,6 +73,14 @@ export function vehicleSeatPosition(vehicle: Entity, kind: 'car' | 'plane' | 'tr
   return position.clone().add(offset);
 }
 
+export function landPlane(world: World) {
+  const mount = world.queryFirst(Player)?.get(PlayerMount);
+  if (!mount?.vehicle || mount.kind !== 'plane' || mount.role !== 'driver') return false;
+  mount.landing = true;
+  useGameStore.getState().setNotice('Atterrissage en cours · Monter ou Descendre pour reprendre les commandes.');
+  return true;
+}
+
 export function mountEntity(world: World, vehicle: Entity, kind: 'car' | 'horse' | 'plane' | 'train' | 'boat', role: 'driver' | 'passenger' = 'driver') {
   const player = world.queryFirst(Player);
   const mount = player?.get(PlayerMount);
@@ -98,6 +106,7 @@ export function mountEntity(world: World, vehicle: Entity, kind: 'car' | 'horse'
   mount.kind = kind;
   mount.role = role;
   mount.seat = 0;
+  mount.landing = false;
   useGameStore.getState().setRiding(kind, role);
   useGameStore.getState().setNotice(
     kind === 'horse' ? 'Cheval sellé · E : descendre'
@@ -146,6 +155,7 @@ export function dismount(world: World) {
   mount.kind = null;
   mount.role = 'driver';
   mount.seat = 0;
+  mount.landing = false;
   useGameStore.getState().setRiding(null);
   useGameStore.getState().setNotice('');
   return true;
@@ -226,17 +236,18 @@ function moveMount(world: World, position: Vector3, yaw: number, speed: number, 
   return true;
 }
 
-function movePlane(world: World, position: Vector3, yaw: number, speed: number, dt: number, vertical: number) {
+function movePlane(world: World, position: Vector3, yaw: number, speed: number, dt: number, vertical: number, landing: boolean) {
   const x = position.x - Math.sin(yaw) * speed * dt;
   const z = position.z - Math.cos(yaw) * speed * dt;
-  const y = Math.min(MAX_BUILD_Y - 5, Math.max(MIN_WORLD_Y + 2, position.y + vertical * dt * 8));
+  const ground = vertical < 0 ? groundAt(world, x, z, position.y + 1.01) + 0.02 : MIN_WORLD_Y + 2;
+  const y = Math.max(ground, Math.min(MAX_BUILD_Y - 5, position.y + vertical * dt * 8));
   const blocks = getBlockIndex(world);
   for (const height of [0.6, 1.5]) {
     const block = blocks.get(voxelKey(Math.round(x), Math.round(y + height), Math.round(z)));
     if (block && !isWaterBlock(block.kind)) return false;
   }
   position.set(x, y, z);
-  return true;
+  return landing && y <= ground + 0.001 ? 'landed' : true;
 }
 
 function moveBoat(world: World, position: Vector3, yaw: number, speed: number, dt: number) {
@@ -284,7 +295,8 @@ export function vehicleMovementSystem(world: World, dt: number) {
       position.set(x, groundAt(world, x, z, position.y + 1.5), z);
     } else {
       const active = driving && state;
-      const target = active ? input.forward * (input.forward < 0 ? 2.5 : vehicle.kind === 'car' ? 14 : vehicle.kind === 'plane' ? 18 : vehicle.kind === 'boat' ? 6 : 12) : 0;
+      const landing = Boolean(active && vehicle.kind === 'plane' && mount.landing);
+      const target = landing ? 0 : active ? input.forward * (input.forward < 0 ? 2.5 : vehicle.kind === 'car' ? 14 : vehicle.kind === 'plane' ? 18 : vehicle.kind === 'boat' ? 6 : 12) : 0;
       motion.speed += Math.max(-20 * dt, Math.min(20 * dt, target - motion.speed));
       if (Math.abs(motion.speed) < 0.03) motion.speed = 0;
       if (active) {
@@ -292,8 +304,16 @@ export function vehicleMovementSystem(world: World, dt: number) {
         if (input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(motion.speed || 1);
       }
       if (vehicle.kind === 'plane') {
-        const vertical = active ? Number(isDown('Space')) - Number(isDown('KeyC')) : 0;
-        if ((motion.speed !== 0 || vertical !== 0) && !movePlane(world, position, motion.yaw, motion.speed, dt, vertical)) motion.speed = 0;
+        if (active && (isDown('Space') || isDown('KeyC'))) mount.landing = false;
+        const vertical = active ? Number(isDown('Space')) - Number(isDown('KeyC')) - Number(landing) : 0;
+        if (motion.speed !== 0 || vertical !== 0) {
+          const movement = movePlane(world, position, motion.yaw, motion.speed, dt, vertical, landing);
+          if (!movement || movement === 'landed') motion.speed = 0;
+          if (movement === 'landed' && mount) {
+            mount.landing = false;
+            useGameStore.getState().setNotice('Avion posé · E : sortir · Décoller / Monter pour repartir');
+          }
+        }
       } else if (vehicle.kind === 'boat') {
         if (motion.speed !== 0 && !moveBoat(world, position, motion.yaw, motion.speed, dt)) motion.speed = 0;
       } else if (motion.speed !== 0 && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' ? 2.55 : vehicle.kind === 'car' ? vehicle.color.toLowerCase() === '#347cd0' ? 3.45 : 2.65 : 1.55)) {

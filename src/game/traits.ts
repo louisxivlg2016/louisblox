@@ -59,7 +59,7 @@ export const MeatDropPosition = trait(() => new Vector3());
 export const MeatDropMotion = trait({ age: 0, baseY: 0 });
 export const MeatDropMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 
-export const PlayerMount = trait(() => ({ vehicle: null as import('koota').Entity | null, kind: null as 'car' | 'horse' | 'plane' | 'train' | 'boat' | null, role: 'driver' as 'driver' | 'passenger', seat: 0 }));
+export const PlayerMount = trait(() => ({ vehicle: null as import('koota').Entity | null, kind: null as 'car' | 'horse' | 'plane' | 'train' | 'boat' | null, role: 'driver' as 'driver' | 'passenger', seat: 0, landing: false }));
 export const Vehicle = trait({ id: '', color: '#d63935', kind: 'car' as 'car' | 'plane' | 'train' | 'boat' });
 export const VehiclePosition = trait(() => new Vector3());
 export const VehicleMotion = trait({ speed: 0, yaw: 0, mounted: false, routeTime: 0, homeX: 0, homeY: 0, homeZ: 0, homeYaw: 0 });

@@ -436,6 +436,10 @@ export function requestFlightToggle() {
   flightToggles += 1;
 }
 
+export function queueHarvest() {
+  actions.harvest += 1;
+}
+
 export function queuePlacement() {
   if (useGameStore.getState().gameplayMode === 'football') {
     footballActions.shot += 1;

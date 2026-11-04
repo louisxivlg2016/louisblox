@@ -69,7 +69,8 @@ type ServerMessage = {
 };
 type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string; template?: import('../game/worldMode').WorldTemplate; protection?: import('../game/protection').WorldProtection };
 
-let requestedRoomMode: GameplayMode | null = null;
+const requestedMode = new URLSearchParams(window.location.search).get('mode');
+let requestedRoomMode: GameplayMode | null = isGameplayMode(requestedMode) ? requestedMode : null;
 
 export function requestRoomMode(mode: GameplayMode | null) {
   requestedRoomMode = mode;
@@ -226,6 +227,8 @@ export function MultiplayerConnection() {
   const applyingRemote = useRef(false);
   const worldInitSent = useRef(false);
   const enabled = useMultiplayerStore((state) => state.enabled);
+  const joined = useMultiplayerStore((state) => state.joined);
+  const connected = enabled && joined;
   const connectionId = useMultiplayerStore((state) => state.connectionId);
   const room = useMultiplayerStore((state) => state.room);
   const server = useMultiplayerStore((state) => state.server);
@@ -257,7 +260,7 @@ export function MultiplayerConnection() {
     remote.setOutfits({});
     remote.setWigs({});
     remote.setAppearances({});
-    if (!enabled) {
+    if (!connected) {
       store.setStatus('offline');
       return;
     }
@@ -690,33 +693,33 @@ export function MultiplayerConnection() {
         useRemotePlayerStore.getState().setAppearances({});
       useRemotePlayerStore.getState().setWigs({});
     };
-  }, [world, enabled, connectionId, room, server, playerName, character]);
+  }, [world, connected, connectionId, room, server, playerName, character]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!connected) return;
     const current = socket.current;
     if (current?.readyState !== WebSocket.OPEN) return;
     current.send(JSON.stringify({ type: 'outfit', outfit }));
     current.send(JSON.stringify({ type: 'wig', wig }));
-  }, [enabled, connectionId, outfit, wig]);
+  }, [connected, connectionId, outfit, wig]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!connected) return;
     const current = socket.current;
     if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify({ type: 'appearance', appearance }));
-  }, [enabled, connectionId, appearance]);
+  }, [connected, connectionId, appearance]);
 
   useEffect(() => {
     if (lastGeneration.current === generation) return;
     lastGeneration.current = generation;
-    if (!enabled) return;
+    if (!connected) return;
     const current = socket.current;
     if (current?.readyState === WebSocket.OPEN) {
       const force = requestedRoomMode !== null && requestedRoomMode === useGameStore.getState().gameplayMode;
       if (force) requestedRoomMode = null;
       sendWorldInitialization(current, world, force);
     }
-  }, [world, generation, enabled]);
+  }, [world, generation, connected]);
 
   return null;
 }
