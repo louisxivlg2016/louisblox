@@ -53,7 +53,7 @@ export function TrafficSignModel({ kind, held = false }: { kind: BlockKind; held
     const bounds = new Box3().setFromObject(clone);
     const size = bounds.getSize(new Vector3());
     const center = bounds.getCenter(new Vector3());
-    const scale = 2.2 / Math.max(size.y, 0.001);
+    const scale = (held ? 2.2 : 3.5) / Math.max(size.y, 0.001);
     clone.scale.setScalar(scale);
     clone.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
     return clone;
