@@ -6,10 +6,6 @@ import { BoxGeometry, Color, InstancedMesh, Matrix4, MeshBasicMaterial, Quaterni
 import { Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition } from '../game/traits';
 import { animalMaterial } from '../game/animalTextures';
 
-const paintPixels = [
-  [0, 0, 0.62, 0.44], [-0.32, 0.15, 0.18, 0.15], [0.3, -0.13, 0.17, 0.22],
-  [0.13, 0.28, 0.13, 0.13], [-0.18, -0.28, 0.14, 0.14], [0.38, 0.19, 0.09, 0.09],
-] as const;
 const paintGeometry = new BoxGeometry(1, 1, 0.018);
 const paintMaterial = new MeshBasicMaterial({ map: animalMaterial('#ffffff').map, toneMapped: false });
 const paintMatrix = new Matrix4();
@@ -18,52 +14,49 @@ const paintRotation = new Quaternion();
 const paintNormal = new Vector3(0, 0, 1);
 const unitScale = new Vector3(1, 1, 1);
 const paintColor = new Color();
+const strokeDirection = new Vector3();
+const strokeTangent = new Vector3();
+const strokeSide = new Vector3();
+const strokeBasis = new Matrix4();
 
-function PaintSplashes({ entities }: { entities: readonly Entity[] }) {
-  const meshes = useRef<Array<InstancedMesh | null>>([]);
+function PaintStrokes({ entities }: { entities: readonly Entity[] }) {
+  const stroke = useRef<InstancedMesh>(null);
   const capacity = Math.max(256, 2 ** Math.ceil(Math.log2(Math.max(1, entities.length))));
 
   useFrame(() => {
+    if (!stroke.current) return;
     let count = 0;
     for (const entity of entities) {
       const explosion = entity.get(Explosion);
       const position = entity.get(ExplosionPosition);
       if (!explosion?.paintColor || !explosion.paintNormal || !position) continue;
+      const width = explosion.paintWidth ?? 0.08;
+      let length = 0;
       paintRotation.setFromUnitVectors(paintNormal, explosion.paintNormal);
-      paintMatrix.compose(position, paintRotation, unitScale);
-      paintColor.set(explosion.paintColor);
-      for (let index = 0; index < paintPixels.length; index += 1) {
-        const mesh = meshes.current[index];
-        if (!mesh) continue;
-        const [x, y, width, height] = paintPixels[index];
-        pixelMatrix.makeScale(width, height, 1);
-        pixelMatrix.setPosition(x, y, 0);
-        pixelMatrix.premultiply(paintMatrix);
-        mesh.setMatrixAt(count, pixelMatrix);
-        mesh.setColorAt(count, paintColor);
+      if (explosion.paintFrom && explosion.paintTo) {
+        strokeDirection.subVectors(explosion.paintTo, explosion.paintFrom);
+        length = strokeDirection.length();
+        if (length > 0.000001) {
+          strokeTangent.copy(strokeDirection).normalize();
+          strokeSide.crossVectors(explosion.paintNormal, strokeTangent).normalize();
+          strokeBasis.makeBasis(strokeTangent, strokeSide, explosion.paintNormal);
+          paintRotation.setFromRotationMatrix(strokeBasis);
+        }
       }
+      paintMatrix.compose(position, paintRotation, unitScale);
+      pixelMatrix.makeScale(length > 0.000001 ? length + width : width, width, 1);
+      pixelMatrix.premultiply(paintMatrix);
+      stroke.current.setMatrixAt(count, pixelMatrix);
+      paintColor.set(explosion.paintColor);
+      stroke.current.setColorAt(count, paintColor);
       count += 1;
     }
-    for (const mesh of meshes.current) {
-      if (!mesh) continue;
-      mesh.count = count;
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    }
+    stroke.current.count = count;
+    stroke.current.instanceMatrix.needsUpdate = true;
+    if (stroke.current.instanceColor) stroke.current.instanceColor.needsUpdate = true;
   });
 
-  return paintPixels.map((_, index) => (
-    <instancedMesh
-      key={`${capacity}-${index}`}
-      name="paint-splashes"
-      ref={(mesh) => { meshes.current[index] = mesh; }}
-      args={[paintGeometry, paintMaterial, capacity]}
-      count={0}
-      frustumCulled={false}
-      renderOrder={20}
-      dispose={null}
-    />
-  ));
+  return <instancedMesh key={capacity} name="paint-strokes" ref={stroke} args={[paintGeometry, paintMaterial, capacity]} count={0} frustumCulled={false} renderOrder={20} dispose={null} />;
 }
 
 function ExplosionView({ entity }: { entity: Entity }) {
@@ -98,7 +91,7 @@ export function Explosions() {
   const explosions = useQuery(Explosion, ExplosionPosition);
   return (
     <>
-      <PaintSplashes entities={explosions.filter((entity) => entity.get(Explosion)?.paintColor)} />
+      <PaintStrokes entities={explosions.filter((entity) => entity.get(Explosion)?.paintColor)} />
       {explosions.filter((entity) => !entity.get(Explosion)?.paintColor).map((entity) => <ExplosionView key={entity} entity={entity} />)}
     </>
   );

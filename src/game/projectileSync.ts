@@ -1,7 +1,7 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
 import { Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition, Projectile, ProjectileMesh, ProjectilePosition, ProjectileVelocity } from './traits';
-import { spawnPaintSplash } from './paintball';
+import { spawnPaintSplash, spawnPaintStroke } from './paintball';
 
 export type ProjectileSnapshot = {
   id: string;
@@ -18,7 +18,7 @@ export type ProjectileSnapshot = {
 };
 
 export type ExplosionSnapshot = { x: number; y: number; z: number };
-export type PaintSplashSnapshot = { x: number; y: number; z: number; nx: number; ny: number; nz: number; color: string };
+export type PaintSplashSnapshot = { x: number; y: number; z: number; nx: number; ny: number; nz: number; color: string; x2?: number; y2?: number; z2?: number };
 export type ProjectileSyncMessage =
   | { type: 'projectile-spawn' | 'projectile-state'; projectile: ProjectileSnapshot }
   | { type: 'projectile-remove'; projectileId: string; explosion?: ExplosionSnapshot; paint?: PaintSplashSnapshot };
@@ -44,7 +44,8 @@ export function isPaintSplashSnapshot(value: unknown): value is PaintSplashSnaps
   if (!value || typeof value !== 'object') return false;
   const data = value as Record<string, unknown>;
   return typeof data.color === 'string' && /^#[0-9a-f]{6}$/i.test(data.color)
-    && ['x', 'y', 'z', 'nx', 'ny', 'nz'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]));
+    && ['x', 'y', 'z', 'nx', 'ny', 'nz'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]))
+    && (data.x2 === undefined || ['x2', 'y2', 'z2'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key])));
 }
 
 type Listener = (message: ProjectileSyncMessage) => void;
@@ -135,6 +136,14 @@ export function applyProjectileSnapshot(world: World, snapshot: ProjectileSnapsh
   }
 }
 
+export function syncPaintStroke(world: World, from: Vector3, to: Vector3, normal: Vector3, color: string) {
+  emit(world, {
+    type: 'projectile-remove',
+    projectileId: `paint-${crypto.randomUUID()}`,
+    paint: { x: from.x, y: from.y, z: from.z, nx: normal.x, ny: normal.y, nz: normal.z, color, x2: to.x, y2: to.y, z2: to.z },
+  });
+}
+
 export function applyProjectileRemoval(world: World, projectileId: string, explosion?: ExplosionSnapshot, paint?: PaintSplashSnapshot) {
   applying.set(world, true);
   try {
@@ -150,7 +159,12 @@ export function applyProjectileRemoval(world: World, projectileId: string, explo
         ExplosionMaterial(),
       );
     }
-    if (paint) spawnPaintSplash(world, new Vector3(paint.x, paint.y, paint.z), new Vector3(paint.nx, paint.ny, paint.nz), paint.color);
+    if (paint) {
+      const from = new Vector3(paint.x, paint.y, paint.z);
+      const normal = new Vector3(paint.nx, paint.ny, paint.nz);
+      if (paint.x2 !== undefined && paint.y2 !== undefined && paint.z2 !== undefined) spawnPaintStroke(world, from, new Vector3(paint.x2, paint.y2, paint.z2), normal, paint.color);
+      else spawnPaintSplash(world, from, normal, paint.color);
+    }
   } finally {
     applying.set(world, false);
   }

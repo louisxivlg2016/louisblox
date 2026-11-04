@@ -217,7 +217,8 @@ function parsePaint(value: unknown) {
   const data = value as Record<string, unknown>;
   if (!['nx', 'ny', 'nz'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]) && Math.abs(data[key] as number) <= 1)) return null;
   if (typeof data.color !== 'string' || !/^#[0-9a-f]{6}$/i.test(data.color)) return null;
-  return { ...position, nx: data.nx as number, ny: data.ny as number, nz: data.nz as number, color: data.color };
+  const hasEnd = ['x2', 'y2', 'z2'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]));
+  return { ...position, nx: data.nx as number, ny: data.ny as number, nz: data.nz as number, color: data.color, ...(hasEnd ? { x2: data.x2 as number, y2: data.y2 as number, z2: data.z2 as number } : {}) };
 }
 
 function parseWorldProtection(value: unknown, ownerId: string): WorldProtection | undefined {

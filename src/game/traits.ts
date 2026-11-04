@@ -36,7 +36,7 @@ export const Fire = trait({ kind: 105 as 105 | 106, age: 0, spreadIn: 2, generat
 export const FirePosition = trait(() => new Vector3());
 export const Sapling = trait({ kind: 0 as import('./voxel').BlockKind, age: 0 });
 export const SaplingPosition = trait(() => new Vector3());
-export const Explosion = trait(() => ({ time: 0.45, maxTime: 0.45 } as { time: number; maxTime: number; paintColor?: string; paintNormal?: Vector3 }));
+export const Explosion = trait(() => ({ time: 0.45, maxTime: 0.45 } as { time: number; maxTime: number; paintColor?: string; paintNormal?: Vector3; paintFrom?: Vector3; paintTo?: Vector3; paintWidth?: number }));
 export const ExplosionPosition = trait(() => new Vector3());
 export const ExplosionMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 export const ExplosionMaterial = trait(() => ({ value: null as import('three').MeshBasicMaterial | null }));

@@ -587,6 +587,7 @@ export function applyVoxelEdit(world: World, position: string, edit: ChunkEdit) 
     replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, data.kind, data.open, data.growth, data.items, data.facing, data.food, data.meat);
     if (typeof data.text === 'string') setVoxelText(world, { x, y, z }, data.text);
   }
+  if (isWaterBlock(data.kind)) clearPaintSplashAt(world, x, y, z);
 }
 
 export function applyVoxelEdits(world: World, edits: Array<[string, ChunkEdit]>) {

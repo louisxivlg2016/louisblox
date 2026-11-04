@@ -3,6 +3,7 @@ import { useGameStore } from './store';
 import { useSignStore } from './signs';
 import { useChatStore } from './chat';
 import { useEmoteStore } from './emotes';
+import { isPaintballGun } from './paintball';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -265,6 +266,7 @@ export function initInput() {
     const canvas = event.target;
     touchPointers.add(event.pointerId);
     touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (isPaintballGun(useGameStore.getState().selected)) touchMouseButtons.add(0);
     if (touchPointers.size === 1) {
       touchLookPointer = event.pointerId;
       touchLookX = event.clientX;
@@ -298,6 +300,7 @@ export function initInput() {
       stopTouchMining();
     }
     touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (isPaintballGun(useGameStore.getState().selected)) touchMouseButtons.add(0);
     if (event.pointerId !== touchLookPointer) return;
     look.x += (event.clientX - touchLookX) * 2;
     look.y += (event.clientY - touchLookY) * 2;
