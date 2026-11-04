@@ -8,6 +8,7 @@ import type { AnimalKind } from '../game/animals';
 import { useGameStore } from '../game/store';
 import { eatItem, eatMeat } from '../game/systems/itemSystem';
 import { placeMeat } from '../game/foods';
+import { isPaintballGun, WHITE_PAINTBALL_GUN_ID } from '../game/paintball';
 import { HOTBAR_BLOCKS } from '../game/voxel';
 import { world } from '../game/world';
 import { ItemIcon } from './ItemIcon';
@@ -48,6 +49,7 @@ export function Backpack() {
     || (kind === 'gallery_tools_weapons_book' && 'livre'.includes(query));
   const visibleGalleryItems = GALLERY_ITEMS.filter((item) =>
     (query !== '' || galleryCategory === 'all' || item.category === galleryCategory) && matchesSearch(item.id)
+    && (!isPaintballGun(item.id) || item.id === WHITE_PAINTBALL_GUN_ID)
     && (!survival || inventoryCount(item.id, inventory) > 0),
   );
   const itemButton = (kind: SelectedKind) => {

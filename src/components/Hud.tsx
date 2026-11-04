@@ -2,6 +2,7 @@ import { requestPlay } from '../game/input';
 import { useGameStore } from '../game/store';
 import { selectionInfo } from '../game/items';
 import { ItemIcon } from './ItemIcon';
+import { PaintballPalette } from './PaintballPalette';
 import backpackButtonUrl from '../../assets/ui/backpack-button.webp';
 import shopButtonUrl from '../../assets/ui/shop-button.webp';
 import { Backpack } from './Backpack';
@@ -92,6 +93,7 @@ export function Hud() {
       <FootballHud />
       <MazeHud />
       <EmotePanel />
+      <PaintballPalette />
 
       {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && (
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />

@@ -26,7 +26,7 @@ import {
   Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition,
 } from './traits';
 import { createMeatInventory } from './meats';
-import { clearPaintSplashAt } from './paintball';
+import { clearPaintSplashAt, normalizePaintballCounts, normalizePaintballGun } from './paintball';
 import { useGameStore } from './store';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
@@ -656,11 +656,11 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   const environmentEntity = world.spawn(Environment(), RainMaterial(), SnowMaterial());
   if (restore) environmentEntity.get(Environment)!.elapsed = restore.elapsed;
   const hotbar = restore?.hotbar?.length === 10 && restore.hotbar.every((kind) => kind === null || isSelectedKind(kind))
-    ? restore.hotbar
+    ? restore.hotbar.map((kind) => kind === null ? null : normalizePaintballGun(kind))
     : useGameStore.getState().hotbarSlots;
-  const itemCounts: Record<string, number> = gameplayMode === 'survival' ? { hand: 1, ...restore?.itemCounts } : { ...DEFAULT_ITEM_COUNTS, ...restore?.itemCounts };
+  const itemCounts: Record<string, number> = gameplayMode === 'survival' ? { hand: 1, ...normalizePaintballCounts(restore?.itemCounts) } : { ...DEFAULT_ITEM_COUNTS, ...normalizePaintballCounts(restore?.itemCounts) };
   const sports = gameplayMode === 'football' || gameplayMode === 'maze';
-  const restoredSelection = sports ? 'hand' : restore && isSelectedKind(restore.selected) ? restore.selected : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass;
+  const restoredSelection = sports ? 'hand' : restore && isSelectedKind(restore.selected) ? normalizePaintballGun(restore.selected) : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass;
   const selected = gameplayMode === 'survival' && restoredSelection !== 'hand'
     && (itemCounts[typeof restoredSelection === 'number' ? `block_${restoredSelection}` : restoredSelection] ?? 0) <= 0 ? 'hand' : restoredSelection;
   useGameStore.setState({

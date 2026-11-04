@@ -8,6 +8,7 @@ import { createMeatInventory } from './meats';
 import { BlockKind, HOTBAR_BLOCKS } from './voxel';
 import type { GameplayMode } from './worldMode';
 import { PIRATE_KITS } from './pirates';
+import { normalizePaintballGun } from './paintball';
 
 export type GameMode = 'menu' | 'play' | 'pause';
 export type WeatherKind = 'clear' | 'rain' | 'snow';
@@ -142,11 +143,18 @@ export const useGameStore = create<GameStore>((set) => ({
   setShopOpen: (shopOpen) => set({ shopOpen }),
   setBookOpen: (bookOpen) => set({ bookOpen, backpackItem: null }),
   selectBlock: (selected) => set((state) => {
+    selected = normalizePaintballGun(selected);
     const key = typeof selected === 'number' ? `block_${selected}` : selected;
     if (state.gameplayMode === 'survival' && selected !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: 'Récolte et fabrique cet objet avant de l’utiliser.' };
     return { selected };
   }),
   setHotbarSlot: (index, kind) => set((state) => {
+    if (kind === null) {
+      const hotbarSlots = [...state.hotbarSlots];
+      hotbarSlots[index] = null;
+      return { hotbarSlots, selected: state.selected, backpackItem: null };
+    }
+    kind = normalizePaintballGun(kind);
     const key = typeof kind === 'number' ? `block_${kind}` : kind;
     if (state.gameplayMode === 'survival' && kind !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: 'Cet objet n’a pas encore été fabriqué.' };
     const hotbarSlots = [...state.hotbarSlots];
