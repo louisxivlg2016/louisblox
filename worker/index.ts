@@ -340,6 +340,7 @@ export class GameRoom extends DurableObject<Env> {
     if (this.gameplayMode === 'pirates') return true;
     if (this.gameplayMode === 'football' || this.gameplayMode === 'maze') return false;
     const protection = this.protection;
+    if (protection?.ownerId === playerId) return true;
     if (protection?.bannedPlayerIds?.includes(playerId)) return false;
     if (!protection?.enabled || Math.hypot(x - protection.centerX, z - protection.centerZ) > protection.radius) return true;
     if (protection.allowedPlayerIds.includes(playerId)) return true;

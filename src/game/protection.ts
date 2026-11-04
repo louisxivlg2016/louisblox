@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { playerIdentity } from './playerIdentity';
 import { useGameStore } from './store';
+import { useMultiplayerStore } from './multiplayerStore';
 
 export type WorldProtection = {
   ownerId: string;
@@ -93,6 +94,8 @@ export function canEditAt(x: number, z: number, action: 'break' | 'place' | 'int
   if (mode === 'maze') return true;
   const protection = useProtectionStore.getState().protection;
   if (!protection?.enabled) return true;
+  if (protection.ownerId === playerIdentity()) return true;
+  if (!useMultiplayerStore.getState().enabled && Math.hypot(x - protection.centerX, z - protection.centerZ) <= protection.radius) return true;
   if (Math.hypot(x - protection.centerX, z - protection.centerZ) > protection.radius) return true;
   if (protection.bannedPlayerIds?.includes(playerIdentity())) {
     useGameStore.getState().setNotice('Tu as été exclu de ce monde. Le créateur peut te réadmettre.');
