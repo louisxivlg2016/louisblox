@@ -19,13 +19,15 @@ export function PixelAvatar({ character = 'boy', outfit = 'default', wig = 'auto
   return (
     <span
       className={`pixel-avatar hair-${current.hairStyle} ${periodWig ? `wig-${periodWig}` : ''} ${crowned ? 'has-crown' : ''}`}
-      style={{ '--avatar-size': `${size}px`, '--skin': current.skinColor, '--hair': hair, '--eyes': current.eyeColor } as CSSProperties}
+      style={{ '--avatar-size': `${size}px`, '--skin': current.skinColor, '--hair': hair, '--eyes': current.eyeColor, '--eyebrows': current.eyebrowColor ?? hair } as CSSProperties}
       aria-hidden="true"
     >
       <span className="avatar-crown" />
       <span className="avatar-hair-top" />
       <span className="avatar-hair-side left" />
       <span className="avatar-hair-side right" />
+      <span className="avatar-eyebrow left" />
+      <span className="avatar-eyebrow right" />
       <span className="avatar-eye left" />
       <span className="avatar-eye right" />
       <span className="avatar-nose" />

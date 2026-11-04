@@ -62,6 +62,11 @@ export function BoutiquePanel() {
           <div className="appearance-options">{SKIN_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.skinColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ skinColor: color })} aria-label={`Peau ${color}`} />)}</div>
           <h3>Couleur des cheveux</h3>
           <div className="appearance-options">{HAIR_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.hairColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ hairColor: color })} aria-label={`Cheveux ${color}`} />)}</div>
+          <h3>Couleur des sourcils</h3>
+          <div className="appearance-options">
+            <button className={appearance.eyebrowColor === null ? 'active' : ''} onClick={() => setAppearance({ eyebrowColor: null })} aria-label="Sourcils comme les cheveux">Comme les cheveux</button>
+            {HAIR_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.eyebrowColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ eyebrowColor: color })} aria-label={`Sourcils ${color}`} />)}
+          </div>
           <h3>Couleur des yeux</h3>
           <div className="appearance-options">{EYE_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.eyeColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ eyeColor: color })} aria-label={`Yeux ${color}`} />)}</div>
           <h3>Couleur des vêtements</h3>

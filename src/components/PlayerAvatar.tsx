@@ -95,6 +95,8 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
           <PixelPart position={[0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={appearance.hairColor} />
         </>
       )}
+      <PixelPart position={[-0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={appearance.eyebrowColor ?? appearance.hairColor} />
+      <PixelPart position={[0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={appearance.eyebrowColor ?? appearance.hairColor} />
       {sleeping ? (
         <>
           <PixelPart position={[-0.11, 1.74, -0.25]} size={[0.1, 0.025, 0.025]} color="#49382f" />

@@ -4,6 +4,7 @@ export type Appearance = {
   skinColor: string;
   hairColor: string;
   eyeColor: string;
+  eyebrowColor: string | null;
   clothingColor: string | null;
   hairStyle: 'short' | 'long';
 };
@@ -43,6 +44,7 @@ export function parseAppearance(value: unknown, character: 'boy' | 'girl' = 'boy
     skinColor: color(data.skinColor) ? data.skinColor as string : '#e7a0aa',
     hairColor: color(data.hairColor) ? data.hairColor as string : '#49382f',
     eyeColor: color(data.eyeColor) ? data.eyeColor as string : '#273b4b',
+    eyebrowColor: data.eyebrowColor === null || color(data.eyebrowColor) ? data.eyebrowColor as string | null : null,
     clothingColor: data.clothingColor === null || color(data.clothingColor) ? data.clothingColor as string | null : null,
     hairStyle: data.hairStyle === 'long' || data.hairStyle === 'short' ? data.hairStyle : character === 'girl' ? 'long' : 'short',
   };

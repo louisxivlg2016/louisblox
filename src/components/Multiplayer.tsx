@@ -159,6 +159,8 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
           <PixelPart position={[0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={current.hairColor} />
         </>
       )}
+      <PixelPart position={[-0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={current.eyebrowColor ?? current.hairColor} />
+      <PixelPart position={[0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={current.eyebrowColor ?? current.hairColor} />
       <PixelPart position={[-0.11, 1.74, -0.25]} size={[0.09, 0.07, 0.025]} color="#f4f4ed" />
       <PixelPart position={[0.11, 1.74, -0.25]} size={[0.09, 0.07, 0.025]} color="#f4f4ed" />
       <PixelPart position={[-0.11, 1.74, -0.27]} size={[0.035, 0.05, 0.02]} color={current.eyeColor} />

@@ -32,7 +32,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
   const current = useRef('');
   const { scene, animations } = useGLTF(models[outfit]);
   const scale = 2.05 / fullCharacterHeights[outfit];
-  const character = useMemo(() => createCharacterRig(scene, outfit, scale, appearance), [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor]);
+  const character = useMemo(() => createCharacterRig(scene, outfit, scale, appearance), [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor, appearance?.eyeColor, appearance?.eyebrowColor]);
   const { actions } = useAnimations(animations, group);
   const metadata = useMemo(() => ({ outfit, source: 'Hunyuan', whole: true }), [outfit]);
   const eating = useEatingStore((state) => remote ? null : state.eating);

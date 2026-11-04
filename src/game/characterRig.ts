@@ -9,7 +9,7 @@ import type { OutfitKind } from './outfits';
 type Part = 'body' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
 type Rig = Partial<Record<Exclude<Part, 'body'>, Group>>;
 
-function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean, bounds: Box3, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor'>, allowGrayHair = false, princessHair = false) {
+function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean, bounds: Box3, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor'>, allowGrayHair = false, princessHair = false) {
   const geometry = source.clone().applyMatrix4(matrix);
   const position = geometry.getAttribute('position');
   const index = geometry.index;
@@ -50,7 +50,7 @@ function addPrincessHair(root: Group, width: number, height: number, depth: numb
   root.add(hair);
 }
 
-export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind, 'default'>, scale: number, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor'>) {
+export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind, 'default'>, scale: number, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor'>) {
   const scene = SkeletonUtils.clone(source);
   scene.updateMatrixWorld(true);
   const bounds = new Box3().setFromObject(scene);
