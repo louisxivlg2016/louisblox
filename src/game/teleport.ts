@@ -1,6 +1,6 @@
 import type { World } from 'koota';
 import { getWorldSeed, streamChunks } from './chunks';
-import { biomeAt, heightAt } from './levels';
+import { biomeAt, safeSpawnAt } from './levels';
 import type { Biome } from './levels';
 import { nearestRuinOfType } from './ruins';
 import type { RuinType } from './ruins';
@@ -14,7 +14,8 @@ export function teleportToBiome(world: World, biome: Biome) {
   const seed = getWorldSeed(world);
   const centerX = Math.floor(position.x / 1024);
   const centerZ = Math.floor(position.z / 1024);
-  let best: { x: number; y: number; z: number } | null = null;
+  let best: ReturnType<typeof safeSpawnAt> | null = null;
+  let fallback: ReturnType<typeof safeSpawnAt> | null = null;
   let bestDistance = Infinity;
   for (let radius = 0; radius <= 8 && !best; radius += 1) {
     for (let dx = -radius; dx <= radius; dx += 1) {
@@ -23,22 +24,26 @@ export function teleportToBiome(world: World, biome: Biome) {
         const x = (centerX + dx) * 1024 + 512;
         const z = (centerZ + dz) * 1024 + 512;
         if (biomeAt(x, z, seed) !== biome) continue;
-        const distance = Math.hypot(x - position.x, z - position.z);
+        const candidate = safeSpawnAt(x, z, seed, biome);
+        if (!fallback) fallback = candidate;
+        if (!candidate.onLand) continue;
+        const distance = Math.hypot(candidate.x - position.x, candidate.z - position.z);
         if (distance < bestDistance) {
           bestDistance = distance;
-          best = { x, y: heightAt(x, z, seed) + 1.01, z };
+          best = candidate;
         }
       }
     }
   }
-  if (!best) return null;
+  const destination = best ?? fallback;
+  if (!destination) return null;
 
-  streamChunks(world, best.x, best.z);
-  position.set(best.x, best.y, best.z);
-  entity.get(PlayerBody)?.value?.setTranslation(best, true);
+  streamChunks(world, destination.x, destination.z);
+  position.set(destination.x, destination.y, destination.z);
+  entity.get(PlayerBody)?.value?.setTranslation(destination, true);
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false });
-  return best;
+  return destination;
 }
 
 export function teleportToRuin(world: World, type: RuinType) {

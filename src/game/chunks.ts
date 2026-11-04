@@ -2,7 +2,7 @@ import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
 import { DroppedItem } from './traits';
 import { useEffectStore } from './effects';
-import { CHUNK_SIZE, MAX_BUILD_Y, MIN_WORLD_Y, VIEW_DISTANCE, biomeAt, generateChunk, heightAt } from './levels';
+import { CHUNK_SIZE, MAX_BUILD_Y, MIN_WORLD_Y, VIEW_DISTANCE, biomeAt, generateChunk, safeSpawnAt } from './levels';
 import type { LevelData } from './levels';
 import { battleSpawn, generateBattleChunk } from './battleArena';
 import { generatePirateChunk, pirateSpawn } from './pirates';
@@ -637,7 +637,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   const gameplayMode = restore?.gameplayMode ?? (restore ? 'creative' : useGameStore.getState().gameplayMode);
   const spawn = restore && restorePosition
     ? { x: restore.player.x, y: restore.player.y, z: restore.player.z }
-    : gameplayMode === 'pirates' ? pirateSpawn('red') : gameplayMode === 'football' ? footballSpawn(null) : gameplayMode === 'maze' ? mazeSpawn(0) : gameplayMode === 'battle' ? battleSpawn(null) : useGameStore.getState().worldTemplate !== 'nature' ? { x: 0, y: 5.51, z: 0 } : { x: 0, y: heightAt(0, 0, seed) + 1.01, z: 0 };
+    : gameplayMode === 'pirates' ? pirateSpawn('red') : gameplayMode === 'football' ? footballSpawn(null) : gameplayMode === 'maze' ? mazeSpawn(0) : gameplayMode === 'battle' ? battleSpawn(null) : useGameStore.getState().worldTemplate !== 'nature' ? { x: 0, y: 5.51, z: 0 } : safeSpawnAt(0, 0, seed);
   world.spawn(
     Player,
     PlayerBody(),

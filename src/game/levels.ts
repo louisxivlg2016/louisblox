@@ -94,6 +94,31 @@ export function heightAt(x: number, z: number, seed: number) {
   return Math.max(1, height);
 }
 
+export function safeSpawnAt(x: number, z: number, seed: number, biome?: Biome) {
+  const centerX = Math.round(x);
+  const centerZ = Math.round(z);
+  for (let radius = 0; radius <= 16; radius += 1) {
+    let best: { x: number; y: number; z: number } | null = null;
+    let bestDistance = Infinity;
+    for (let dx = -radius; dx <= radius; dx += 1) {
+      for (let dz = -radius; dz <= radius; dz += 1) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
+        const px = centerX + dx;
+        const pz = centerZ + dz;
+        const height = heightAt(px, pz, seed);
+        if (height <= SEA_LEVEL || (biome && biomeAt(px, pz, seed) !== biome)) continue;
+        const distance = dx * dx + dz * dz;
+        if (distance < bestDistance) {
+          best = { x: px, y: height + 1.01, z: pz };
+          bestDistance = distance;
+        }
+      }
+    }
+    if (best) return { ...best, onLand: true };
+  }
+  return { x: centerX, y: Math.max(heightAt(centerX, centerZ, seed) + 1.01, SEA_LEVEL + 0.51), z: centerZ, onLand: false };
+}
+
 function stoneAt(x: number, y: number, z: number, seed: number): BlockKind {
   if (y === MIN_WORLD_Y) return BlockKind.Bedrock;
   const value = hash(x + y * 31, z - y * 17, seed + 907);
