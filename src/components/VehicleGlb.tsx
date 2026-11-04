@@ -97,14 +97,21 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'b
         material.map.needsUpdate = true;
       }
     });
-    if (modelKind === 'raceCar' || modelKind === 'train') clone.rotation.y = Math.PI / 2;
+    const quarterTurn = modelKind === 'train';
+    if (modelKind === 'raceCar') clone.rotation.y = Math.PI / 2;
     if (modelKind === 'airplane') clone.rotation.y = -Math.PI / 2;
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
     const [width, height, length] = dimensions[modelKind];
-    clone.scale.set(width / Math.max(size.x, 0.001), height / Math.max(size.y, 0.001), length / Math.max(size.z, 0.001));
-    clone.position.set(-center.x * clone.scale.x, -box.min.y * clone.scale.y, -center.z * clone.scale.z);
+    const [localWidth, localLength] = quarterTurn ? [length, width] : [width, length];
+    clone.scale.set(localWidth / Math.max(size.x, 0.001), height / Math.max(size.y, 0.001), localLength / Math.max(size.z, 0.001));
+    center.multiply(clone.scale);
+    if (quarterTurn) {
+      center.applyAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
+      clone.rotation.y = Math.PI / 2;
+    }
+    clone.position.set(-center.x, -box.min.y * clone.scale.y, -center.z);
     return clone;
   }, [scene, modelKind, interior, kind, color]);
   return <primitive object={model} />;
