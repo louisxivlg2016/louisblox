@@ -7,7 +7,7 @@ import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { isWaterBlock, voxelKey } from '../voxel';
 import type { AnimalKind } from '../animals';
-import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
+import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
 import { damagePlayer } from '../combat';
 import { canSeePlayer } from '../hostility';
 import { hasEffect } from '../effects';
@@ -163,6 +163,7 @@ export function animalSystem(world: World, dt: number) {
   world.query(Animal, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, hit, position, motion, mesh], entity) => {
     const distanceSquared = player ? position.distanceToSquared(player) : Infinity;
     if (mesh.value) mesh.value.visible = distanceSquared < (animal.kind === 'zombie' ? 32 * 32 : 40 * 40);
+    if (entity.get(CamelLeash)) return;
     if (entity.get(HorseRider)?.mounted) return;
     let stepDt = dt;
     if (distanceSquared > 25 * 25) {

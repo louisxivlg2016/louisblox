@@ -4,6 +4,7 @@ import { useSignStore } from './signs';
 import { useChatStore } from './chat';
 import { useEmoteStore } from './emotes';
 import { isPaintballGun } from './paintball';
+import { useTradeStore } from './trading';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -172,6 +173,12 @@ export function initInput() {
       return;
     }
     if (event.code === 'Escape') {
+      if (useTradeStore.getState().open) {
+        event.preventDefault();
+        useTradeStore.getState().setOpen(false);
+        void requestPlay();
+        return;
+      }
       if (useEmoteStore.getState().open) {
         event.preventDefault();
         useEmoteStore.getState().setOpen(false);

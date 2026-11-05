@@ -23,7 +23,7 @@ import {
   Animal, AnimalPosition, Fish, MeatDrop, Bomb, Explosion, Sapling, BlockTarget, Chunk, ChunkData,
   Environment, Sleep, HorseRider, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMesh, PlayerMount,
   PlayerPosition, PlayerState, PlayerVelocity, Projectile, RainMaterial, SnowMaterial, TargetMesh,
-  Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition,
+  Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition, Trader,
 } from './traits';
 import { createMeatInventory } from './meats';
 import { clearPaintSplashAt, normalizePaintballCounts, normalizePaintballGun } from './paintball';
@@ -600,6 +600,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   clearFires(world);
   for (const entity of [...world.query(Chunk)]) entity.destroy();
   for (const entity of [...world.query(Animal)]) entity.destroy();
+  for (const entity of [...world.query(Trader)]) entity.destroy();
   for (const entity of [...world.query(Fish)]) entity.destroy();
   for (const entity of [...world.query(MeatDrop)]) entity.destroy();
   for (const entity of [...world.query(DroppedItem)]) entity.destroy();

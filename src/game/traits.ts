@@ -49,6 +49,11 @@ export const AnimalPosition = trait(() => new Vector3());
 export const AnimalMotion = trait({ yaw: 0, displayYaw: 0, turnIn: 0, phase: 0, speed: 0.5, idle: 0, velocityY: 0, grounded: true, avoid: 0, climbTarget: null as number | null, hunting: false, sightIn: 0 });
 export const AnimalMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 
+export const Trader = trait({ homeX: 0, homeZ: 0, targetX: 0, targetZ: 0, phase: 0, walking: true });
+export const TraderPosition = trait(() => new Vector3());
+export const TraderMesh = trait(() => ({ value: null as import('three').Object3D | null }));
+export const CamelLeash = trait(() => ({ trader: null as import('koota').Entity | null, order: 0 }));
+
 export const Fish = trait({ kind: '' as import('./fish').FishKind });
 export const FishPosition = trait(() => new Vector3());
 export const FishMotion = trait({ yaw: 0, turnIn: 0, phase: 0, speed: 0.8, age: 0 });

@@ -71,14 +71,14 @@ export function paintballColor(kind: SelectedKind) {
   return isPaintballGun(kind) ? usePaintballStore.getState().color : null;
 }
 
-export function spawnPaintStroke(world: World, from: Vector3, to: Vector3, normal: Vector3, color: string, width = 0.08) {
+export function spawnPaintStroke(world: World, from: Vector3, to: Vector3, normal: Vector3, color: string, width = 0.1) {
   const direction = normal.clone();
   if (direction.lengthSq() === 0) direction.set(0, 1, 0);
   direction.normalize();
   const paintFrom = from.clone();
   const paintTo = to.clone();
   world.spawn(
-    Explosion({ time: Infinity, maxTime: Infinity, paintColor: color, paintNormal: direction, paintFrom, paintTo, paintWidth: width }),
+    Explosion({ time: Infinity, maxTime: Infinity, paintColor: color, paintNormal: direction, paintFrom, paintTo, paintWidth: width * (0.9 + Math.sin(from.x * 19.3 + from.y * 13.7 + from.z * 7.1) * 0.12) }),
     ExplosionPosition(paintFrom.clone().add(paintTo).multiplyScalar(0.5).addScaledVector(direction, 0.015)),
     ExplosionMesh(),
     ExplosionMaterial(),

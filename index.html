@@ -803,6 +803,20 @@
         .lobby-section { padding: 13px; }
         .recipe-grid { grid-template-columns: 1fr; }
       }
+      .trade-panel { max-width: 650px; }
+      .trade-offers { display: grid; gap: 10px; margin-top: 16px; }
+      .trade-offer { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 10px; background: rgba(89, 119, 71, .18); border: 1px solid rgba(157, 187, 130, .28); }
+      .trade-offer-items { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; font-size: 12px; }
+      .trade-offer-items > span { display: flex; align-items: center; gap: 6px; }
+      .trade-offer-items .item-icon { width: 27px; height: 29px; }
+      .trade-offer .primary-button { margin: 0; white-space: nowrap; }
+      .trade-message { margin: 14px 0 0; color: #b5df8b; font-size: 12px; }
+      .trade-inventory-note { display: block; margin-top: 12px; color: #aebdab; font-size: 10px; }
+      @media (max-width: 650px) {
+        .trade-offer { grid-template-columns: 1fr; }
+        .trade-offer .primary-button { width: 100%; }
+        .trade-offer-items { font-size: 11px; }
+      }
     </style>
   </head>
   <body>

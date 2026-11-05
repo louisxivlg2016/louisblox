@@ -1,8 +1,8 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
-import { biomeAt, heightAt, SEA_LEVEL } from './levels';
+import { biomeAt, heightAt, safeSpawnAt, SEA_LEVEL } from './levels';
 import type { Biome, WaterTile } from './levels';
-import { Animal, AnimalHealth, AnimalHit, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition } from './traits';
+import { Animal, AnimalHealth, AnimalHit, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Trader, TraderMesh, TraderPosition } from './traits';
 import { useGameStore } from './store';
 
 export type AnimalKind =
@@ -58,6 +58,21 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
   );
 }
 
+export function spawnTrader(world: World, x: number, z: number, seed: number) {
+  const site = safeSpawnAt(x, z, seed);
+  const trader = world.spawn(
+    Trader({ homeX: site.x, homeZ: site.z, targetX: site.x, targetZ: site.z }),
+    TraderPosition(new Vector3(site.x, site.y, site.z)),
+    TraderMesh(),
+  );
+  const camels = [0, 1].map((order) => {
+    const camel = spawnAnimal(world, 'camel', site.x - 1.4 - order * 1.1, site.y, site.z + 1.8 + order * 1.3, seed + order);
+    camel.add(CamelLeash({ trader, order }));
+    return camel;
+  });
+  return [trader, ...camels];
+}
+
 export function spawnChunkAnimals(world: World, cx: number, cz: number, water: WaterTile[], seed: number) {
   const entities: Entity[] = [];
 
@@ -70,6 +85,7 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
     entities.push(spawnAnimal(world, 'cow', -3, heightAt(-3, -4, seed) + 0.5, -4, seed));
     entities.push(spawnAnimal(world, 'sheep', 4, heightAt(4, -5, seed) + 0.5, -5, seed));
     entities.push(spawnAnimal(world, 'horse', 5, heightAt(5, 3, seed) + 0.5, 3, seed));
+    entities.push(...spawnTrader(world, 7, 4, seed));
   }
 
   if (useGameStore.getState().gameplayMode === 'survival' && hash(cx, cz, seed + 820) > 0.3) {

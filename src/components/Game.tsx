@@ -8,6 +8,7 @@ import { readWorldSave } from '../game/save';
 import { useGameStore } from '../game/store';
 import { BlockKind, isWaterBlock, voxelKey } from '../game/voxel';
 import { Animals } from './Animals';
+import { Traders } from './Traders';
 import { Explosions } from './Explosions';
 import { Hands } from './Hands';
 import { Level } from './Level';
@@ -117,6 +118,7 @@ export function Game() {
       <Atmosphere />
       <Weather key={`weather-${generation}`} />
       <Animals key={`animals-${generation}`} />
+      <Traders key={`traders-${generation}`} />
       <Fish key={`fish-${generation}`} />
       <Vehicles key={`vehicles-${generation}`} />
       <Fires key={`fires-${generation}`} />

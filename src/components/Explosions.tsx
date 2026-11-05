@@ -2,12 +2,39 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useQuery } from 'koota/react';
 import type { Entity } from 'koota';
-import { BoxGeometry, Color, InstancedMesh, Matrix4, MeshBasicMaterial, Quaternion, Vector3 } from 'three';
+import { BoxGeometry, CanvasTexture, Color, InstancedMesh, LinearFilter, LinearMipmapLinearFilter, Matrix4, MeshBasicMaterial, Quaternion, SRGBColorSpace, Vector3 } from 'three';
 import { Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition } from '../game/traits';
-import { animalMaterial } from '../game/animalTextures';
+
+function createBrushTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 16;
+  const context = canvas.getContext('2d')!;
+  const vertical = context.createLinearGradient(0, 0, 0, 16);
+  vertical.addColorStop(0, 'rgba(255,255,255,0)');
+  vertical.addColorStop(0.22, 'rgba(255,255,255,0.75)');
+  vertical.addColorStop(0.5, 'rgba(255,255,255,0.95)');
+  vertical.addColorStop(0.78, 'rgba(255,255,255,0.75)');
+  vertical.addColorStop(1, 'rgba(255,255,255,0)');
+  context.fillStyle = vertical;
+  context.fillRect(0, 0, 64, 16);
+  const horizontal = context.createLinearGradient(0, 0, 64, 0);
+  horizontal.addColorStop(0, 'rgba(255,255,255,0)');
+  horizontal.addColorStop(0.12, 'rgba(255,255,255,1)');
+  horizontal.addColorStop(0.88, 'rgba(255,255,255,1)');
+  horizontal.addColorStop(1, 'rgba(255,255,255,0)');
+  context.globalCompositeOperation = 'destination-in';
+  context.fillStyle = horizontal;
+  context.fillRect(0, 0, 64, 16);
+  const texture = new CanvasTexture(canvas);
+  texture.magFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
+  texture.colorSpace = SRGBColorSpace;
+  return texture;
+}
 
 const paintGeometry = new BoxGeometry(1, 1, 0.018);
-const paintMaterial = new MeshBasicMaterial({ map: animalMaterial('#ffffff').map, toneMapped: false });
+const paintMaterial = new MeshBasicMaterial({ map: createBrushTexture(), transparent: true, opacity: 0.86, depthWrite: false, toneMapped: false });
 const paintMatrix = new Matrix4();
 const pixelMatrix = new Matrix4();
 const paintRotation = new Quaternion();
@@ -30,7 +57,7 @@ function PaintStrokes({ entities }: { entities: readonly Entity[] }) {
       const explosion = entity.get(Explosion);
       const position = entity.get(ExplosionPosition);
       if (!explosion?.paintColor || !explosion.paintNormal || !position) continue;
-      const width = explosion.paintWidth ?? 0.08;
+      const width = explosion.paintWidth ?? 0.1;
       let length = 0;
       paintRotation.setFromUnitVectors(paintNormal, explosion.paintNormal);
       if (explosion.paintFrom && explosion.paintTo) {
