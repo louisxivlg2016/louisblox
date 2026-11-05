@@ -223,14 +223,16 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
             for (let oy = -1; oy <= 1; oy += 1) {
               if (Math.abs(ox) + Math.abs(oz) + Math.abs(oy) > 4) continue;
               put(x + ox, crownY + oy, z + oz, leafKind, false);
-              if (biome === 'prairie' && hash(x + ox, z + oz, seed + crownY + oy) > 0.88) {
+              if (biome === 'prairie' && !(ox === 0 && oz === 0 && oy <= 0) && hash(x + ox, z + oz, seed + crownY + oy) > 0.88) {
                 const appleX = x + ox;
                 const appleY = crownY + oy;
                 const appleZ = z + oz;
                 put(appleX, appleY, appleZ, BlockKind.Apple);
                 for (const [dx, dy, dz] of [[1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0]]) {
-                  if (!blocks.has(voxelKey(appleX + dx, appleY + dy, appleZ + dz))) put(appleX + dx, appleY + dy, appleZ + dz, leafKind, false);
+                  if (blocks.get(voxelKey(appleX + dx, appleY + dy, appleZ + dz))?.kind !== BlockKind.Apple) put(appleX + dx, appleY + dy, appleZ + dz, leafKind);
                 }
+                const below = blocks.get(voxelKey(appleX, appleY - 1, appleZ));
+                if (below && below.kind !== BlockKind.Apple) put(appleX, appleY - 1, appleZ, leafKind);
               }
             }
           }

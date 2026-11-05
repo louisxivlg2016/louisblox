@@ -228,7 +228,14 @@ const glassMaterials = new Map<BlockKind, Material>();
 function glassMaterial(kind: BlockKind) {
   let material = glassMaterials.get(kind);
   if (!material) {
-    material = new MeshLambertMaterial({ map: getVitrailTexture(kind), vertexColors: true, transparent: true, opacity: 0.94, depthWrite: true });
+    material = new MeshLambertMaterial({
+      map: kind === BlockKind.Glass ? texture(kind, 'side') : getVitrailTexture(kind),
+      vertexColors: true,
+      alphaTest: kind === BlockKind.Glass ? 0.05 : 0,
+      transparent: true,
+      opacity: kind === BlockKind.Glass ? 0.7 : 0.94,
+      depthWrite: kind !== BlockKind.Glass,
+    });
     glassMaterials.set(kind, material);
   }
   return material;

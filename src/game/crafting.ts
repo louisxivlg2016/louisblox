@@ -58,6 +58,7 @@ export function recipeFor(kind: SelectedKind): Recipe | null {
   if (kind === 'bucket') return recipe(kind, 1, [[BlockKind.IronOre, 3]]);
   if (kind === 'stick') return recipe('stick', 4, [[BlockKind.OakPlanks, 2]]);
   if (kind === 'bread') return recipe('bread', 1, [[BlockKind.Wheat, 3]]);
+  if (kind === 'cake') return recipe('cake', 1, [['bread', 2]]);
   const meta = getItemMeta(kind);
   const shape = meta.shape ?? meta.category;
   const material = materialFor(meta.name);

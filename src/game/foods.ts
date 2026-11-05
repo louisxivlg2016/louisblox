@@ -87,6 +87,10 @@ export function useFood(world: World, selected: ItemKind | GalleryItemId, origin
     }
     return true;
   }
+  if (hit) {
+    useGameStore.getState().setNotice('Vise le dessus libre d’un bloc pour poser la nourriture.');
+    return true;
+  }
   eatItem(world, selected);
   return true;
 }

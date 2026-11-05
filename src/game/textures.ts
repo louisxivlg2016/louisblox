@@ -59,16 +59,6 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
     }
   }
 
-  if (grassy && face === 'side') {
-    for (let x = 0; x < 16; x += 1) {
-      const depth = 3 + Math.floor(random(x, 2, 93) * 3);
-      for (let y = 0; y < depth; y += 1) {
-        context.fillStyle = palettes[kind][Math.floor(random(x, y, 27) * 5)];
-        context.fillRect(x, y, 1, 1);
-      }
-    }
-  }
-
   if (kind === BlockKind.Tnt) paintTnt(context, face);
 
   if (kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick) {
@@ -304,11 +294,11 @@ function material(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves;
   const glass = isGlass(kind);
   return new MeshLambertMaterial({
-    map: glass ? getVitrailTexture(kind) : texture(kind, face),
-    alphaTest: foliage || isSapling(kind) ? 0.35 : 0,
+    map: glass && kind !== BlockKind.Glass ? getVitrailTexture(kind) : texture(kind, face),
+    alphaTest: foliage || isSapling(kind) ? 0.35 : kind === BlockKind.Glass ? 0.05 : 0,
     transparent: glass || isWaterBlock(kind),
-    opacity: glass ? 0.94 : isWaterBlock(kind) ? 0.55 : 1,
-    depthWrite: !isWaterBlock(kind),
+    opacity: kind === BlockKind.Glass ? 0.7 : glass ? 0.94 : isWaterBlock(kind) ? 0.55 : 1,
+    depthWrite: kind !== BlockKind.Glass && !isWaterBlock(kind),
   });
 }
 

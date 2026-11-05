@@ -137,6 +137,16 @@ export function FoodModel({ kind }: { kind: ItemKind | GalleryItemId }) {
       {[-0.18, 0, 0.18].map((x) => <PixelPart key={x} position={[x, 0.17, -0.03]} size={[0.06, 0.03, 0.23]} color="#f3d18b" />)}
     </group>
   );
+  if (kind === 'cake') return (
+    <group>
+      <PixelPart position={[0, 0.12, 0]} size={[0.72, 0.24, 0.56]} color={color} />
+      <PixelPart position={[0, 0.28, 0]} size={[0.74, 0.09, 0.58]} color="#fff0cf" />
+      <PixelPart position={[0, 0.35, 0]} size={[0.68, 0.04, 0.52]} color={color} />
+      <PixelPart position={[-0.19, 0.43, -0.1]} size={[0.11, 0.12, 0.11]} color="#cf3d35" />
+      <PixelPart position={[0.15, 0.43, 0.12]} size={[0.11, 0.12, 0.11]} color="#cf3d35" />
+      <PixelPart position={[-0.16, 0.51, -0.1]} size={[0.035, 0.07, 0.035]} color="#548342" />
+    </group>
+  );
   if (kind === 'cooked_meat') return (
     <group rotation={[0.2, 0, -0.35]}>
       <PixelPart position={[0, 0.04, 0]} size={[0.43, 0.52, 0.26]} color={color} />

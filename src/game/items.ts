@@ -11,7 +11,7 @@ export type ItemKind =
   | 'pickaxe_wood' | 'pickaxe_stone' | 'pickaxe_iron' | 'pickaxe_gold' | 'pickaxe_diamond' | 'pickaxe_silver'
   | 'shovel_wood' | 'shovel_stone' | 'shovel_iron' | 'shovel_gold' | 'shovel_diamond' | 'shovel_silver'
   | 'armor_gold' | 'armor_diamond' | 'armor_silver'
-  | 'apple' | 'bread' | 'cooked_meat' | 'berries'
+  | 'apple' | 'bread' | 'cake' | 'cooked_meat' | 'berries'
   | 'corn' | 'wheat' | 'tomato' | 'carrot' | 'watermelon'
   | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb' | 'rifle_auto'
   | 'car_red' | 'car_blue' | 'plane' | 'train' | 'boat' | 'saddle';
@@ -61,6 +61,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   armor_silver: item('Armure de chevalier en argent', '#c4d0dc', 'armor', { armor: 'silver', protection: 0.35 }),
   apple: item('Pomme', '#d64236', 'food', { healing: 2 }),
   bread: item('Pain', '#d9a75f', 'food', { healing: 3 }),
+  cake: item('Gâteau', '#c98d52', 'food', { healing: 5, shape: 'cake' }),
   cooked_meat: item('Viande cuite', '#a96341', 'food', { healing: 4 }),
   berries: item('Baies', '#a74a82', 'food', { healing: 1 }),
   corn: item('Maïs', '#e5c442', 'food', { healing: 2 }),

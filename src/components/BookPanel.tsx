@@ -62,7 +62,8 @@ function BookEditor({ bookId, onClose }: { bookId: Extract<SelectedKind, string>
     return true;
   };
   const close = () => {
-    if (save()) onClose();
+    save();
+    onClose();
   };
 
   return (

@@ -97,7 +97,7 @@ const baseBlockInfo = {
   [BlockKind.Ice]: { name: 'Glace', color: '#a8d5e2' },
   [BlockKind.Tnt]: { name: 'Bombe TNT', color: '#c93d32' },
   [BlockKind.Candle]: { name: 'Bougie', color: '#f2d68a' },
-  [BlockKind.Water]: { name: 'Eau', color: '#3b9bd5' },
+  [BlockKind.Water]: { name: 'Eau innondation', color: '#3b9bd5' },
   [BlockKind.CalmWater]: { name: 'Eau calme (sans inondation)', color: '#3599d0' },
   [BlockKind.Food]: { name: 'Nourriture', color: '#d9a75f' },
 };

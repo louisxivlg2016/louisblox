@@ -7,6 +7,9 @@ import { teleportToBiome, teleportToRuin } from '../game/teleport';
 import type { RuinType } from '../game/ruins';
 import { requestPlayerTeleport, respondToTeleportRequest, useTeleportRequestStore } from '../game/teleportRequests';
 import { world } from '../game/world';
+import { MAX_HOMES, NO_HOMES, useHomeStore } from '../game/homes';
+import type { Home } from '../game/homes';
+import { teleportToHome } from '../game/teleport';
 
 const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'prairie', 'desert'];
 const RUINS: Array<{ type: RuinType; name: string }> = [
@@ -23,6 +26,9 @@ export function TeleportPanel() {
   const players = useMultiplayerStore((state) => state.players);
   const outgoing = useTeleportRequestStore((state) => state.outgoing);
   const notice = useTeleportRequestStore((state) => state.notice);
+  const worldId = useGameStore((state) => state.worldId);
+  const homes = useHomeStore((state) => state.homes[worldId] ?? NO_HOMES);
+  const setHomeOpen = useHomeStore((state) => state.setOpen);
   if (!open) return null;
 
   const travel = (biome: Biome) => {
@@ -35,6 +41,15 @@ export function TeleportPanel() {
     setOpen(false);
     void requestPlay();
   };
+  const travelHome = (home: Home) => {
+    teleportToHome(world, home);
+    setOpen(false);
+    void requestPlay();
+  };
+  const manageHomes = () => {
+    setOpen(false);
+    setHomeOpen(true);
+  };
 
   return (
     <div className="teleport-panel">
@@ -45,6 +60,11 @@ export function TeleportPanel() {
       {RUINS.map((ruin) => (
         <button key={ruin.type} onClick={() => travelToRuin(ruin.type)}>{ruin.name}</button>
       ))}
+      <div className="home-destinations">
+        <strong>Mes maisons ({homes.length} / {MAX_HOMES})</strong>
+        {homes.map((home) => <button key={home.id} className="home-destination" onClick={() => travelHome(home)}>{home.name}</button>)}
+        <button className="home-manage-button" onClick={manageHomes}>Créer ou gérer mes maisons · B</button>
+      </div>
       {enabled && online && (
         <div className="player-teleport">
           <strong>Demander à rejoindre un joueur</strong>

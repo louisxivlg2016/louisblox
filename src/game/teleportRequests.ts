@@ -5,6 +5,7 @@ import { useGameStore } from './store';
 import { Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from './traits';
 import { dismount } from './vehicles';
 import { world } from './world';
+import { useHomeStore } from './homes';
 
 type TeleportRequest = { id: string; playerId: string; name: string };
 type TeleportMessage = {
@@ -72,6 +73,7 @@ export function receiveTeleportRequest(data: TeleportMessage) {
   game.setBackpack(false);
   game.setBookOpen(false);
   game.setSeatChoice(null);
+  useHomeStore.getState().setOpen(false);
   if (game.container) game.closeContainer();
   game.setMode('pause');
   if (document.pointerLockElement) document.exitPointerLock();

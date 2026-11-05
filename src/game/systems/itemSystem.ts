@@ -2,7 +2,7 @@ import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Camera } from 'three';
 import { findAnimalTarget } from '../combat';
-import { addVoxel, getBlockIndex, removeVoxel } from '../chunks';
+import { addVoxel, getBlockIndex } from '../chunks';
 import { consumeActions, isDown, isMouseButtonDown } from '../input';
 import { getItemMeta } from '../items';
 import { isGalleryItem } from '../galleryCatalog';
@@ -17,6 +17,7 @@ import { BlockKind, isWaterBlock, raycastVoxel, voxelKey } from '../voxel';
 import { fireProjectile } from './projectileSystem';
 import { isPaintballGun, paintballColor } from '../paintball';
 import { drawPaintStroke, endPaintStroke } from '../paintStrokes';
+import { drainConnectedWater } from './waterSystem';
 
 export { eatItem, eatMeat } from '../foods';
 
@@ -56,16 +57,16 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
     return true;
   }
   if (hit && isWaterBlock(hit.block.kind)) {
-    removeVoxel(world, hit);
-    if (!blocks.has(voxelKey(hit.x, hit.y, hit.z))) {
+    const drained = drainConnectedWater(world, hit);
+    if (drained > 0) {
       changeHeldBucket('bucket', 'water_bucket');
-      store.setNotice('Sceau rempli d’eau. Utilise-le ailleurs pour la poser.');
+      store.setNotice(`Toute l’eau connectée a été retirée d’un coup : ${drained} blocs. Le sceau est plein.`);
       return true;
     }
     store.setNotice('Tu ne peux pas récupérer cette eau ici.');
     return true;
   }
-  store.setNotice('Vise un bloc d’eau avec le sceau vide.');
+  store.setNotice('Vise un bloc d’eau avec le sceau vide pour retirer toute l’eau connectée.');
   return true;
 }
 

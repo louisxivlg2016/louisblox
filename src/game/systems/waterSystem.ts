@@ -1,8 +1,9 @@
 import type { World } from 'koota';
-import { addVoxel, batchVoxelEdits, getBlockIndex, getWaterIndex, isChunkLoaded } from '../chunks';
+import { addVoxel, batchVoxelEdits, getBlockIndex, getWaterIndex, isChunkLoaded, removeVoxel } from '../chunks';
 import { MIN_WORLD_Y } from '../levels';
 import { Player, PlayerPosition } from '../traits';
-import { BlockKind, voxelKey } from '../voxel';
+import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
+import type { Voxel, VoxelHit } from '../voxel';
 
 const timers = new WeakMap<World, number>();
 const directions = [
@@ -14,6 +15,37 @@ const directions = [
 ] as const;
 
 type FlowCandidate = { x: number; y: number; z: number; priority: number };
+
+export function drainConnectedWater(world: World, hit: VoxelHit) {
+  const blocks = getBlockIndex(world);
+  const water: Voxel[] = [hit.block];
+  const visited = new Set([voxelKey(hit.x, hit.y, hit.z)]);
+  for (let index = 0; index < water.length; index += 1) {
+    const source = water[index];
+    for (const [dx, dy, dz] of [...directions, [0, 1, 0]] as const) {
+      const x = source.x + dx;
+      const y = source.y + dy;
+      const z = source.z + dz;
+      if (y < MIN_WORLD_Y || !isChunkLoaded(world, x, z)) continue;
+      const key = voxelKey(x, y, z);
+      if (visited.has(key)) continue;
+      const block = blocks.get(key);
+      if (!isWaterBlock(block?.kind)) continue;
+      visited.add(key);
+      water.push(block!);
+    }
+  }
+  let drained = 0;
+  batchVoxelEdits(world, () => {
+    for (const block of water) {
+      const key = voxelKey(block.x, block.y, block.z);
+      if (blocks.get(key) !== block) continue;
+      removeVoxel(world, { block, x: block.x, y: block.y, z: block.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 });
+      if (!blocks.has(key)) drained += 1;
+    }
+  });
+  return drained;
+}
 
 export function waterSystem(world: World, dt: number) {
   const timer = (timers.get(world) ?? 0) - dt;

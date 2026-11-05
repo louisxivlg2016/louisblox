@@ -4,7 +4,10 @@ import { biomeAt, safeSpawnAt } from './levels';
 import type { Biome } from './levels';
 import { nearestRuinOfType } from './ruins';
 import type { RuinType } from './ruins';
-import { Player, PlayerBody, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
+import { Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from './traits';
+import { dismount } from './vehicles';
+import { useGameStore } from './store';
+import type { Home } from './homes';
 
 export function teleportToBiome(world: World, biome: Biome) {
   const entity = world.queryFirst(Player);
@@ -58,4 +61,21 @@ export function teleportToRuin(world: World, type: RuinType) {
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false });
   return destination;
+}
+
+export function teleportToHome(world: World, destination: Pick<Home, 'x' | 'y' | 'z' | 'yaw' | 'pitch'>) {
+  const entity = world.queryFirst(Player);
+  const position = entity?.get(PlayerPosition);
+  if (!entity || !position) return null;
+  if (entity.get(PlayerMount)?.vehicle) dismount(world);
+  const sleeping = world.queryFirst(Sleep);
+  if (sleeping) sleeping.destroy();
+  useGameStore.getState().setSleepProgress(null);
+  streamChunks(world, destination.x, destination.z);
+  position.set(destination.x, destination.y, destination.z);
+  entity.get(PlayerBody)?.value?.setTranslation(destination, true);
+  entity.get(PlayerVelocity)?.set(0, 0, 0);
+  entity.set(PlayerState, { flying: false, grounded: false, yaw: destination.yaw, pitch: destination.pitch });
+  useGameStore.getState().setFlying(false);
+  return { x: destination.x, y: destination.y, z: destination.z };
 }

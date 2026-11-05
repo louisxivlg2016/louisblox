@@ -5,6 +5,7 @@ import { useChatStore } from './chat';
 import { useEmoteStore } from './emotes';
 import { isPaintballGun } from './paintball';
 import { useTradeStore } from './trading';
+import { useHomeStore } from './homes';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -144,7 +145,17 @@ export function initInput() {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return;
       event.preventDefault();
       const state = useGameStore.getState();
-      if (state.shopOpen) {
+      const homes = useHomeStore.getState();
+      if (homes.open) {
+        homes.setOpen(false);
+        void requestPlay();
+      } else if (state.mode === 'play') {
+        clearInput();
+        state.setTeleportOpen(false);
+        homes.setOpen(true);
+        state.setMode('pause');
+        if (document.pointerLockElement) document.exitPointerLock();
+      } else if (state.shopOpen) {
         state.setShopOpen(false);
         void requestPlay();
       } else {

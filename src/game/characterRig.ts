@@ -141,7 +141,7 @@ export function attachCharacterHand(avatar: Object3D | null, hand: Group | null,
   if (bounds.isEmpty()) return true;
   const center = bounds.getCenter(new Vector3());
   rig.add(hand);
-  hand.position.set(center.x, bounds.min.y + 0.08, center.z);
+  hand.position.set(center.x, bounds.min.y + 0.08, 0.24);
   hand.rotation.set(0, 0, 0);
   hand.scale.setScalar(1);
   return true;

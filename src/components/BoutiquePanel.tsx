@@ -107,7 +107,7 @@ export function BoutiquePanel() {
           </>
         ) : <p className="backpack-label">Coiffure et perruque intégrées au personnage complet.</p>}
         {battle && <p className="backpack-label">Le costume militaire est obligatoire en Bataille.</p>}
-        <p className="boutique-hint">B ouvre la boutique · P change de caméra.</p>
+        <p className="boutique-hint">B ouvre la boutique dans les menus et une maison en pleine partie · P change de caméra.</p>
         <button className="primary-button" onClick={close}>Porter et reprendre</button>
             </>}
           </div>

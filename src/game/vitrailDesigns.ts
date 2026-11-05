@@ -12,7 +12,6 @@ import doveUrl from '../../assets/vitraux/dove-lisse.webp';
 
 export type VitrailDesign = { name: string; url: string };
 const designs: Partial<Record<BlockKind, VitrailDesign>> = {
-  [BlockKind.Glass]: { name: 'Colombe', url: doveUrl },
   [BlockKind.GlassWhite]: { name: 'Roses', url: roseUrl },
   [BlockKind.GlassOrange]: { name: 'Soleil', url: sunUrl },
   [BlockKind.GlassMagenta]: { name: 'Arc-en-ciel', url: rainbowUrl },

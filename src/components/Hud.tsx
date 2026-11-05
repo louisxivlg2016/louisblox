@@ -31,6 +31,8 @@ import { MazeHud } from './MazeHud';
 import { FriendRequestDialog } from './FriendRequestDialog';
 import { TradingPanel } from './TradingPanel';
 import { useTradeStore } from '../game/trading';
+import { HomePanel } from './HomePanel';
+import { useHomeStore } from '../game/homes';
 
 export function Hud() {
   const mode = useGameStore((state) => state.mode);
@@ -48,6 +50,7 @@ export function Hud() {
   const chatOpen = useChatStore((state) => state.open);
   const emoteOpen = useEmoteStore((state) => state.open);
   const tradeOpen = useTradeStore((state) => state.open);
+  const homeOpen = useHomeStore((state) => state.open);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   const battleTeam = useBattleStore((state) => state.team);
   const multiplayerReady = useMultiplayerStore((state) => state.enabled && state.status === 'online');
@@ -98,7 +101,7 @@ export function Hud() {
       <EmotePanel />
       <PaintballPalette />
 
-      {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && !tradeOpen && (
+      {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && !tradeOpen && !homeOpen && (
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />
       )}
 
@@ -128,6 +131,7 @@ export function Hud() {
       <SignPanel />
       <SeatChoicePanel />
       <TradingPanel />
+      <HomePanel />
       <TeleportRequestDialog />
       <FriendRequestDialog />
       {sleepProgress !== null && (

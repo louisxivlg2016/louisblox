@@ -46,13 +46,14 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
     const sign = trafficSignLabels[kind];
     return <span className={`traffic-sign-icon ${sign?.className ?? ''}`} style={{ backgroundColor: info.color }}>{sign?.label}</span>;
   }
-  if (typeof kind === 'number' && isGlass(kind)) return <img className="block-swatch block-icon stained-glass-icon" src={getVitrailIcon(kind)} alt={getVitrailDesign(kind)?.name ?? ''} />;
+  if (typeof kind === 'number' && isGlass(kind) && kind !== BlockKind.Glass) return <img className="block-swatch block-icon stained-glass-icon" src={getVitrailIcon(kind)} alt={getVitrailDesign(kind)?.name ?? ''} />;
   if (typeof kind === 'number') {
     if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) return <span className="block-swatch block-concrete" style={{ backgroundColor: info.color }} />;
     const brick = kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick;
     return <img className={`block-swatch block-icon${brick ? ' block-icon-smooth' : ''}`} src={blockIcon(kind)} alt="" />;
   }
   const meta = getItemMeta(kind);
+  if (meta.shape === 'cake') return <span className="item-icon item-cake" style={{ '--item-color': info.color } as React.CSSProperties} aria-hidden="true"><i /><b /><em /></span>;
   if (meta.shape === 'bucket' || meta.shape === 'water_bucket') return <span className={`item-icon item-bucket ${meta.shape === 'water_bucket' ? 'full' : 'empty'}`} aria-hidden="true"><i /><b /><em /></span>;
   const rawShape = meta.shape ?? meta.category;
   const aliases: Record<string, string> = {
