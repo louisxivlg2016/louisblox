@@ -11,6 +11,10 @@ import explorerUrl from '../../assets/avatars/explorer.webp';
 import princessUrl from '../../assets/avatars/princess.webp';
 import knightUrl from '../../assets/avatars/knight.webp';
 import militaryUrl from '../../assets/avatars/military.webp';
+import pirateUrl from '../../assets/avatars/pirate.webp';
+import footballerUrl from '../../assets/avatars/footballer.webp';
+import firefighterUrl from '../../assets/avatars/firefighter.webp';
+import policeUrl from '../../assets/avatars/police.webp';
 
 export const PHOTO_AVATARS = {
   louis14: { name: 'Louis XIV', url: louis14Url },
@@ -20,6 +24,10 @@ export const PHOTO_AVATARS = {
   princess: { name: 'Princesse', url: princessUrl },
   knight: { name: 'Chevalier', url: knightUrl },
   military: { name: 'Militaire', url: militaryUrl },
+  pirate: { name: 'Pirate', url: pirateUrl },
+  footballer: { name: 'Joueur de foot', url: footballerUrl },
+  firefighter: { name: 'Pompier', url: firefighterUrl },
+  police: { name: 'Policier', url: policeUrl },
 } as const;
 const photoKinds = Object.keys(PHOTO_AVATARS) as Array<keyof typeof PHOTO_AVATARS>;
 

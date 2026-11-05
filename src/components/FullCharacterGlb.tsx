@@ -20,8 +20,12 @@ import explorerUrl from '../../assets/models/full-explorer.glb';
 import princessUrl from '../../assets/models/full-princess.glb';
 import louis14Url from '../../assets/models/full-louis14.glb';
 import louis15Url from '../../assets/models/full-louis15.glb';
+import pirateUrl from '../../assets/models/full-pirate.glb';
+import footballerUrl from '../../assets/models/full-footballer.glb';
+import firefighterUrl from '../../assets/models/full-firefighter.glb';
+import policeUrl from '../../assets/models/full-police.glb';
 
-const models = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url };
+const models = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, footballer: footballerUrl, firefighter: firefighterUrl, police: policeUrl };
 
 export function hasFullCharacter(outfit: OutfitKind) {
   return outfit !== 'default';

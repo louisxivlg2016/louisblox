@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export const PROFILE_AVATAR_KINDS = ['pixel', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military'] as const;
+export const PROFILE_AVATAR_KINDS = ['pixel', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police'] as const;
 export type ProfileAvatarKind = (typeof PROFILE_AVATAR_KINDS)[number];
 
 function initialAvatar(): ProfileAvatarKind {
