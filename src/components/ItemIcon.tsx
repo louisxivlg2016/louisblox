@@ -4,12 +4,23 @@ import { BlockKind } from '../game/voxel';
 import { isGlass, isTrafficSign } from '../game/extraBlocks';
 import { getVitrailDesign, getVitrailIcon } from '../game/vitrailDesigns';
 import { brickTexture, texture } from '../game/textures';
+import { isReferenceFood, referenceFoodIcons } from './ReferenceFoodModel';
 import tntUrl from '../../assets/references/tnt.png';
 import redFireUrl from '../../assets/ui/red-fire.png';
 import trafficLightUrl from '../../assets/ui/traffic-light.png';
 import streetLampUrl from '../../assets/ui/street-lamp.png';
 import parisStreetLampUrl from '../../assets/ui/paris-street-lamp.png';
+import wheatCropIcon from '../../assets/crop-icons/wheat.png';
+import carrotCropIcon from '../../assets/crop-icons/carrot.png';
+import cornCropIcon from '../../assets/crop-icons/corn.png';
+import tomatoCropIcon from '../../assets/crop-icons/tomato.png';
 
+const cropIcons: Partial<Record<BlockKind, string>> = {
+  [BlockKind.Wheat]: wheatCropIcon,
+  [BlockKind.Carrot]: carrotCropIcon,
+  [BlockKind.Corn]: cornCropIcon,
+  [BlockKind.Tomato]: tomatoCropIcon,
+};
 const iconCache = new Map<BlockKind, string>();
 const trafficSignLabels: Partial<Record<BlockKind, { label: string; className?: string }>> = {
   [BlockKind.StopSign]: { label: 'STOP', className: 'stop' },
@@ -37,6 +48,8 @@ function blockIcon(kind: BlockKind) {
 
 export function ItemIcon({ kind }: { kind: SelectedKind }) {
   const info = selectionInfo(kind);
+  if (typeof kind === 'number' && cropIcons[kind]) return <img className="item-model-icon" src={cropIcons[kind]} alt={info.name} />;
+  if (typeof kind !== 'number' && isReferenceFood(kind)) return <img className="item-model-icon" src={referenceFoodIcons[kind]} alt={info.name} />;
   if (kind === BlockKind.Tnt) return <img className="tnt-icon" src={tntUrl} alt="" />;
   if (kind === BlockKind.Wildfire) return <img className="tnt-icon red-fire-icon" src={redFireUrl} alt="" />;
   if (kind === BlockKind.TrafficLight) return <img className="tnt-icon traffic-light-icon" src={trafficLightUrl} alt="" />;

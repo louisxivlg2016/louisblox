@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { animalMaterial } from '../game/animalTextures';
 import { MEAT_COLORS } from '../game/meats';
 import type { AnimalKind } from '../game/animals';
@@ -7,6 +8,7 @@ import type { GalleryItemId, ItemKind } from '../game/items';
 import { BayonetRifleWithFallback } from './BayonetRifleGlb';
 import { WeaponWithFallback } from './WeaponGlb';
 import { isPaintballGun } from '../game/paintball';
+import { isReferenceFood, ReferenceFoodModel } from './ReferenceFoodModel';
 
 type ModelProps = { kind: ItemKind | GalleryItemId; held?: boolean; flipGuns?: boolean };
 type PartProps = { position: [number, number, number]; size: [number, number, number]; color: string; rotation?: [number, number, number] };
@@ -117,6 +119,8 @@ export function GunModel({ color, bomb, rifle }: { color: string; bomb?: boolean
 }
 
 export function FoodModel({ kind }: { kind: ItemKind | GalleryItemId }) {
+  const modelKind = kind;
+  if (isReferenceFood(modelKind)) return <Suspense fallback={null}><ReferenceFoodModel kind={modelKind} /></Suspense>;
   const color = getItemMeta(kind).color;
   if (getItemMeta(kind).shape === 'fish') return <GalleryFishModel color={color} />;
   if (kind === 'bread') return (

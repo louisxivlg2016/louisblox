@@ -1,4 +1,4 @@
-import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { memo, Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useQuery, useTrait, useWorld } from 'koota/react';
 import type { Entity } from 'koota';
 import { InstancedMesh, Matrix4 } from 'three';
@@ -10,6 +10,7 @@ import { SpecialBlocks } from './SpecialBlocks';
 import { FoodBlocks } from './FoodBlocks';
 import { DoorInstances } from './DoorInstances';
 import { CropInstances } from './CropInstances';
+import { HunyuanCropInstances } from './HunyuanCropInstances';
 import { UtilityBlocks } from './UtilityBlocks';
 import { SignBlocks } from './SignBlocks';
 import { isCrop, isDoor, isGlass, isSapling, isSign, isTrapdoor, isUtilityBlock } from '../game/extraBlocks';
@@ -137,7 +138,10 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         <SaplingInstances key={kind} kind={kind} blocks={values} />
       ))}
       <FoodBlocks blocks={data.blocks} />
-      <CropInstances blocks={cropBlocks} />
+      <Suspense fallback={<CropInstances blocks={cropBlocks} />}>
+        <HunyuanCropInstances blocks={cropBlocks} />
+        <CropInstances blocks={cropBlocks.filter((block) => block.kind === BlockKind.Watermelon)} />
+      </Suspense>
       <UtilityBlocks blocks={utilityBlocks} />
       <SignBlocks blocks={signBlocks} />
       <SpecialBlocks kind={BlockKind.Candle} blocks={candleBlocks} />

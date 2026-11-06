@@ -15,9 +15,15 @@ import pigUrl from '../../assets/models/reference-pig.glb';
 import horseUrl from '../../assets/models/reference-horse.glb';
 import camelUrl from '../../assets/models/reference-camel.glb';
 import duckUrl from '../../assets/models/reference-duck.glb';
+import wolfUrl from '../../assets/models/reference-wolf.glb';
+import snowWolfUrl from '../../assets/models/reference-snowWolf.glb';
+import bearUrl from '../../assets/models/reference-bear.glb';
+import snowBearUrl from '../../assets/models/reference-snowBear.glb';
+import deerUrl from '../../assets/models/reference-deer.glb';
+import snowDeerUrl from '../../assets/models/reference-snowDeer.glb';
 import traderUrl from '../../assets/models/full-trader.glb';
 
-const hunyuanAnimals = { cow: cowUrl, chicken: chickenUrl, sheep: sheepUrl, pig: pigUrl, horse: horseUrl, camel: camelUrl, duck: duckUrl };
+const hunyuanAnimals = { cow: cowUrl, chicken: chickenUrl, sheep: sheepUrl, pig: pigUrl, horse: horseUrl, camel: camelUrl, duck: duckUrl, wolf: wolfUrl, snowWolf: snowWolfUrl, bear: bearUrl, snowBear: snowBearUrl, deer: deerUrl, snowDeer: snowDeerUrl };
 for (const model of [...Object.values(hunyuanAnimals), traderUrl]) useGLTF.preload(model);
 
 function useAnimalLegs(entity: Entity, bird = false) {
@@ -44,6 +50,7 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
     const clone = scene.clone(true);
     clone.traverse((object) => {
       if (!(object instanceof Mesh)) return;
+      object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) {
         if (!material.map) continue;

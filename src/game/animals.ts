@@ -7,13 +7,13 @@ import { useGameStore } from './store';
 
 export type AnimalKind =
   | 'camel' | 'cow' | 'horse' | 'pig' | 'sheep' | 'chicken' | 'duck'
-  | 'bear' | 'deer' | 'wolf' | 'snowWolf' | 'snowBear' | 'zombie';
+  | 'bear' | 'deer' | 'wolf' | 'snowWolf' | 'snowBear' | 'snowDeer' | 'zombie';
 
 const species: Record<Biome, AnimalKind[]> = {
   prairie: ['cow', 'horse', 'pig', 'sheep', 'chicken'],
   desert: ['camel'],
   forest: ['bear', 'deer', 'wolf'],
-  winter: ['snowWolf', 'snowBear', 'deer'],
+  winter: ['snowWolf', 'snowBear', 'snowDeer'],
   autumn: ['cow', 'sheep', 'deer'],
 };
 
@@ -30,6 +30,7 @@ const health: Record<AnimalKind, number> = {
   wolf: 5,
   snowWolf: 5,
   snowBear: 6,
+  snowDeer: 3,
   zombie: 5,
 };
 

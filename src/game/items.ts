@@ -11,8 +11,10 @@ export type ItemKind =
   | 'pickaxe_wood' | 'pickaxe_stone' | 'pickaxe_iron' | 'pickaxe_gold' | 'pickaxe_diamond' | 'pickaxe_silver'
   | 'shovel_wood' | 'shovel_stone' | 'shovel_iron' | 'shovel_gold' | 'shovel_diamond' | 'shovel_silver'
   | 'armor_gold' | 'armor_diamond' | 'armor_silver'
-  | 'apple' | 'bread' | 'cake' | 'cooked_meat' | 'berries'
-  | 'corn' | 'wheat' | 'tomato' | 'carrot' | 'watermelon'
+  | 'apple' | 'bread' | 'cake' | 'raw_meat' | 'cooked_meat' | 'berries'
+  | 'corn' | 'cooked_corn' | 'wheat' | 'tomato' | 'carrot' | 'watermelon'
+  | 'raw_chicken' | 'cooked_chicken' | 'raw_salmon' | 'cooked_salmon'
+  | 'cheese_slice' | 'cheese_wheel' | 'milk'
   | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb' | 'rifle_auto' | 'rifle_flintlock'
   | 'car_red' | 'car_blue' | 'plane' | 'train' | 'boat' | 'jeep' | 'police_car' | 'firetruck' | 'carriage' | 'cannon' | 'saddle';
 export type SelectedKind = BlockKind | ItemKind | GalleryItemId;
@@ -62,9 +64,18 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   apple: item('Pomme', '#d64236', 'food', { healing: 2 }),
   bread: item('Pain', '#d9a75f', 'food', { healing: 3 }),
   cake: item('Gâteau', '#c98d52', 'food', { healing: 5, shape: 'cake' }),
+  raw_meat: item('Viande crue', '#c7483d', 'food', { healing: 1 }),
   cooked_meat: item('Viande cuite', '#a96341', 'food', { healing: 4 }),
+  raw_chicken: item('Poulet cru', '#e7a89a', 'food', { healing: 1 }),
+  cooked_chicken: item('Poulet cuit', '#bc7d45', 'food', { healing: 4 }),
+  raw_salmon: item('Saumon cru', '#ec866b', 'food', { healing: 1 }),
+  cooked_salmon: item('Saumon cuit', '#c7a27c', 'food', { healing: 4 }),
+  cheese_slice: item('Tranche de fromage', '#eac343', 'food', { healing: 2 }),
+  cheese_wheel: item('Fromage entier', '#dcae35', 'food', { healing: 4 }),
+  milk: item('Lait', '#e4e7e1', 'food', { healing: 2 }),
   berries: item('Baies', '#a74a82', 'food', { healing: 1 }),
   corn: item('Maïs', '#e5c442', 'food', { healing: 2 }),
+  cooked_corn: item('Maïs cuit', '#dfb834', 'food', { healing: 3 }),
   wheat: item('Blé', '#cfa853', 'food', { healing: 1 }),
   tomato: item('Tomate', '#dc4936', 'food', { healing: 2 }),
   carrot: item('Carotte', '#e78b2f', 'food', { healing: 2 }),
