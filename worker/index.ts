@@ -89,7 +89,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 const facings = new Set(['north', 'south', 'east', 'west']);
-const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier']);
+const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
 const potionEffects = new Set(['speed', 'slowness', 'jump', 'doubleJump', 'haste', 'strength', 'weakness', 'defence', 'regeneration', 'poison', 'invisibility', 'heatResistance', 'knockback']);
 

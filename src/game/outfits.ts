@@ -1,4 +1,4 @@
-export const OUTFIT_ORDER = ['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier'] as const;
+export const OUTFIT_ORDER = ['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader'] as const;
 export type OutfitKind = (typeof OUTFIT_ORDER)[number];
 
 export const OUTFITS: Record<OutfitKind, { name: string; description: string; body: string; legs: string; color: string }> = {
@@ -15,6 +15,7 @@ export const OUTFITS: Record<OutfitKind, { name: string; description: string; bo
   firefighter: { name: 'Pompier', description: 'Casque jaune et uniforme avec bandes réfléchissantes.', body: '#343d42', legs: '#293238', color: '#e4b93e' },
   police: { name: 'Policier', description: 'Casquette, chemise bleue, ceinturon et uniforme.', body: '#4777a7', legs: '#283a53', color: '#4777a7' },
   soldier: { name: 'Soldat', description: 'Uniforme bleu, bandoulières blanches, bicorne et baïonnette.', body: '#293e74', legs: '#e4e7e1', color: '#293e74' },
+  trader: { name: 'Marchand', description: 'Turban bleu, tunique et ceinture dorée du marchand voyageur.', body: '#49668b', legs: '#43352e', color: '#49668b' },
 };
 
 export function isOutfitKind(value: unknown): value is OutfitKind {

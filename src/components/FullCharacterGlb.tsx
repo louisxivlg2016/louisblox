@@ -28,9 +28,10 @@ import policeUrl from '../../assets/models/full-police.glb';
 import soldierUrl from '../../assets/models/full-soldier.glb';
 import classicGirlUrl from '../../assets/models/full-classic-girl.glb';
 import classicBoyUrl from '../../assets/models/full-classic-boy.glb';
+import traderUrl from '../../assets/models/full-trader.glb';
 
 type FullCharacterModel = Exclude<OutfitKind, 'default'> | 'classic-girl' | 'classic-boy';
-const models = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, footballer: footballerUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl };
+const models = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, footballer: footballerUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
 for (const model of Object.values(models)) useGLTF.preload(model);
 
 export function hasFullCharacter(outfit: OutfitKind, wig: WigSelection = 'auto') {
