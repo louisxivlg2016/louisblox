@@ -98,4 +98,10 @@ for (const asset of assets) {
     console.error(`${asset.name}: ${error}`);
   }
 }
-console.log(JSON.stringify(state, null, 2));
+let missing = 0;
+for (const asset of assets) {
+  if (requested && asset.name !== requested) continue;
+  if (state[asset.name]?.status !== 'DONE' || !await Bun.file(`${directory}/${asset.name}.glb`).exists()) missing += 1;
+}
+console.log(`${missing === 0 ? 'Modèles demandés prêts' : `${missing} modèle(s) non terminé(s)`}`);
+if (missing > 0) process.exitCode = 1;

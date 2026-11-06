@@ -121,7 +121,8 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'b
 
 export function VehicleGlb({ entity, kind, color, interior = false }: { entity: import('koota').Entity; kind: VehicleKind; color: string; interior?: boolean }) {
   if (kind === 'boat') return <group scale={[1.2, 1.2, 1.45]}><BoatModel color={color} /></group>;
-  if (kind === 'jeep' || kind === 'police' || kind === 'firetruck' || kind === 'carriage' || kind === 'cannon') return <VehicleAccessories entity={entity} kind={kind} interior={interior} />;
+  if (kind === 'police' || kind === 'firetruck') return <Suspense fallback={null}><VehicleAccessories entity={entity} kind={kind} interior={interior} /></Suspense>;
+  if (kind === 'jeep' || kind === 'carriage' || kind === 'cannon') return <VehicleAccessories entity={entity} kind={kind} interior={interior} />;
   return (
     <Suspense fallback={kind === 'car' ? <CarModel color={color} /> : null}>
       {!interior || kind !== 'plane' ? <Model kind={kind} color={color} interior={interior} /> : null}

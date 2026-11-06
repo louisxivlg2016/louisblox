@@ -27,7 +27,12 @@ const assets = [
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const save = () => Bun.write(statePath, JSON.stringify(state, null, 2));
 
+const only = process.argv.indexOf('--only');
+const requested = new Set((only >= 0 ? process.argv[only + 1] ?? '' : '').split(',').filter(Boolean));
+let failed = false;
+
 for (const [name, filename] of assets) {
+  if (requested.size > 0 && !requested.has(name)) continue;
   const source = `/home/louisxiv/louisblox/son/${filename}`;
   if (!await Bun.file(source).exists()) throw new Error(`Image absente : ${source}`);
   if (state[name]?.status === 'DONE' && await Bun.file(`${directory}/${name}.glb`).exists()) continue;
@@ -64,6 +69,7 @@ for (const [name, filename] of assets) {
     await save();
     console.log(`${name}: modèle Hunyuan prêt`);
   } catch (error) {
+    failed = true;
     state[name] = { ...state[name], status: 'FAIL', error: String(error) };
     await save();
     console.error(`${name}: ${error}`);
@@ -73,3 +79,4 @@ for (const [name, filename] of assets) {
     }
   }
 }
+if (failed) process.exitCode = 1;

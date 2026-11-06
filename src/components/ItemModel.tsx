@@ -4,6 +4,7 @@ import type { AnimalKind } from '../game/animals';
 import { getItemMeta } from '../game/items';
 import { isGalleryItem } from '../game/galleryCatalog';
 import type { GalleryItemId, ItemKind } from '../game/items';
+import { BayonetRifleWithFallback } from './BayonetRifleGlb';
 
 type ModelProps = { kind: ItemKind | GalleryItemId; held?: boolean };
 type PartProps = { position: [number, number, number]; size: [number, number, number]; color: string; rotation?: [number, number, number] };
@@ -105,21 +106,7 @@ export function BowModel({ crossbow = false }: { crossbow?: boolean }) {
 }
 
 export function FlintlockModel() {
-  return (
-    <group name="flintlock-rifle">
-      <PixelPart position={[0, -0.05, 0.75]} size={[0.24, 0.31, 0.82]} color="#81502c" />
-      <PixelPart position={[0, 0.08, -0.08]} size={[0.17, 0.2, 1.2]} color="#966137" />
-      <PixelPart position={[0, 0.16, -0.43]} size={[0.11, 0.11, 1.28]} color="#aab7bf" />
-      <PixelPart position={[0, 0.13, -1.25]} size={[0.045, 0.075, 0.63]} color="#d2dce0" />
-      <PixelPart position={[0, -0.09, 0.1]} size={[0.27, 0.18, 0.27]} color="#bac7cd" />
-      <PixelPart position={[0, 0.22, 0.11]} size={[0.07, 0.24, 0.07]} color="#8b9aa3" />
-      <PixelPart position={[0, -0.26, 0.04]} size={[0.06, 0.24, 0.06]} color="#bcc8ce" />
-      <PixelPart position={[0, -0.37, -0.06]} size={[0.06, 0.06, 0.25]} color="#bcc8ce" />
-      <PixelPart position={[0, -0.25, -0.18]} size={[0.06, 0.23, 0.06]} color="#bcc8ce" />
-      <PixelPart position={[0, 0.07, 1.17]} size={[0.27, 0.34, 0.09]} color="#bac6cb" />
-      {[-0.58, -0.94].map((z) => <PixelPart key={z} position={[0, 0.11, z]} size={[0.2, 0.24, 0.09]} color="#c4ced2" />)}
-    </group>
-  );
+  return <BayonetRifleWithFallback />;
 }
 
 export function GunModel({ color, bomb, rifle }: { color: string; bomb?: boolean; rifle?: boolean }) {

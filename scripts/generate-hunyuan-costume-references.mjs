@@ -18,7 +18,10 @@ const assets = [
   { name: 'pirate', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_6ub7bs6ub7bs6ub7.jpeg', prompt: 'Blocky voxel game avatar, one cube head with one front face only, black tricorn hat, red coat with gold trim, brown beard on front chin, white shirt, dark pants and boots. No faces on back, sides, shoulders or torso. Match the reference image.' },
   { name: 'police', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_5xivvo5xivvo5xiv.jpeg', prompt: 'Blocky voxel police officer, one cube head with one front face, navy cap and uniform, gold badge, black belt and boots. No face on back, sides, shoulders or torso. Match the reference image.' },
   { name: 'firefighter', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_gu5grngu5grngu5g.jpeg', prompt: 'Blocky voxel firefighter, one cube head with one front face, red and yellow helmet, black uniform with yellow reflective stripes, black gloves and boots. No face on back, sides, shoulders or torso. Match the reference image.' },
+  { name: 'soldier', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_4lgxug4lgxug4lgx.jpeg', prompt: 'Blocky voxel soldier, one cube head with one front face, blue uniform, white cross belts, black bicorne, dark boots, full body. No extra face. Match the reference image.' },
 ];
+const only = process.argv.indexOf('--only');
+const requested = new Set((only >= 0 ? process.argv[only + 1] ?? '' : '').split(',').filter(Boolean));
 if (process.argv.includes('--retry')) {
   for (const asset of assets) {
     if (state[asset.name]?.status === 'FAIL') delete state[asset.name];
@@ -108,10 +111,13 @@ async function generate(asset) {
   }
 }
 
-for (const asset of assets) await generate(asset);
+for (const asset of assets) {
+  if (requested.size === 0 || requested.has(asset.name)) await generate(asset);
+}
 const ready = [];
 for (const asset of assets) {
+  if (requested.size > 0 && !requested.has(asset.name)) continue;
   if (state[asset.name]?.status === 'DONE' && await Bun.file(`${directory}/full-${asset.name}.glb`).exists()) ready.push(asset.name);
 }
-console.log(`${ready.length}/4 costumes issus des images sont prêts`);
-if (ready.length !== assets.length) process.exitCode = 1;
+console.log(`${ready.length}/${requested.size || assets.length} costumes issus des images sont prêts`);
+if (ready.length !== (requested.size || assets.length)) process.exitCode = 1;

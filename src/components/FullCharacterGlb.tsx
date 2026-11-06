@@ -5,7 +5,7 @@ import { LoopRepeat } from 'three';
 import type { Object3D } from 'three';
 import { animateCharacterRig, createCharacterRig } from '../game/characterRig';
 import type { Ref } from 'react';
-import type { OutfitKind } from '../game/outfits';
+import { selectedWig, type OutfitKind, type WigSelection } from '../game/outfits';
 import { world } from '../game/world';
 import { useEatingStore } from '../game/eating';
 import { Player, PlayerMount, PlayerState, PlayerVelocity } from '../game/traits';
@@ -25,22 +25,26 @@ import pirateUrl from '../../assets/models/full-pirate.glb';
 import footballerUrl from '../../assets/models/full-footballer.glb';
 import firefighterUrl from '../../assets/models/full-firefighter.glb';
 import policeUrl from '../../assets/models/full-police.glb';
+import soldierUrl from '../../assets/models/full-soldier.glb';
+import classicGirlUrl from '../../assets/models/full-classic-girl.glb';
+import classicBoyUrl from '../../assets/models/full-classic-boy.glb';
 
-const models = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, footballer: footballerUrl, firefighter: firefighterUrl, police: policeUrl };
+type FullCharacterModel = Exclude<OutfitKind, 'default'> | 'classic-girl' | 'classic-boy';
+const models = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, footballer: footballerUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl };
 for (const model of Object.values(models)) useGLTF.preload(model);
 
-export function hasFullCharacter(outfit: OutfitKind) {
-  return outfit !== 'default';
+export function hasFullCharacter(outfit: OutfitKind, wig: WigSelection = 'auto') {
+  return outfit !== 'default' || selectedWig(outfit, wig) === null;
 }
 
-function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance }: { outfit: Exclude<OutfitKind, 'default' | 'soldier'>; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance }) {
+function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance }: { outfit: FullCharacterModel; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance }) {
   const group = useRef<Object3D>(null);
   const current = useRef('');
   const { scene, animations } = useGLTF(models[outfit]);
   const scale = 2.05 / fullCharacterHeights[outfit];
-  const character = useMemo(() => createCharacterRig(scene, outfit, scale, appearance), [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor, appearance?.eyeColor, appearance?.eyebrowColor]);
+  const character = useMemo(() => createCharacterRig(scene, outfit === 'classic-girl' || outfit === 'classic-boy' ? 'explorer' : outfit, scale, appearance), [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor, appearance?.eyeColor, appearance?.eyebrowColor]);
   const { actions } = useAnimations(animations, group);
-  const metadata = useMemo(() => ({ outfit, source: 'Hunyuan', whole: true }), [outfit]);
+  const metadata = useMemo(() => ({ outfit: outfit.startsWith('classic-') ? 'default' : outfit, source: 'Hunyuan', whole: true }), [outfit]);
   const eating = useEatingStore((state) => remote ? null : state.eating);
 
   useEffect(() => {

@@ -56,7 +56,7 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
     else if (moving) phase.current += delta * (5 + Math.min(speed, 4));
     const swing = moving ? Math.sin(phase.current) * 0.85 : 0;
     const amount = Math.min(1, delta * 12);
-    const fullHand = attachCharacterHand(bodyMesh.current, rightArm.current, hasFullCharacter(outfit));
+    const fullHand = attachCharacterHand(bodyMesh.current, rightArm.current, hasFullCharacter(outfit, wig));
     if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
     if (rightArm.current && !fullHand) {
       const bite = eating ? Math.sin(Math.min(1, (performance.now() - eating.startedAt) / 850) * Math.PI) : 0;
@@ -71,7 +71,7 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
       const headYaw = Math.atan2(Math.sin(state.yaw - bodyYaw), Math.cos(state.yaw - bodyYaw));
       headRef.current.rotation.order = 'YXZ';
       headRef.current.rotation.y += (headYaw - headRef.current.rotation.y) * amount;
-      const pitch = hasFullCharacter(outfit) ? -state.pitch : state.pitch;
+      const pitch = hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch;
       headRef.current.rotation.x += (pitch - headRef.current.rotation.x) * amount;
     }
   });
@@ -134,15 +134,15 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
       ref={bodyMesh}
       visible={(cameraMode !== 'first' || sleeping) && riding !== 'plane'}
     >
-      {(!hasFullCharacter(outfit) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
-      <CharacterOutfit outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding) && !walkingCabin} head={headContent} headRef={headRef} appearance={appearance} />
+      {(!hasFullCharacter(outfit, wig) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
+      <CharacterOutfit character={character} outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding) && !walkingCabin} head={headContent} headRef={headRef} appearance={appearance} />
       {classicDetails}
-      <group ref={leftArm} visible={!hasFullCharacter(outfit)} position={[-0.39, 1.4, 0]}>
+      <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
       </group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
-        {!hasFullCharacter(outfit) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
-        <group name="held-item" visible={!eating} position={hasFullCharacter(outfit) ? [0, -(typeof held === 'string' ? itemGripOffset(held) : 0) * 0.72, 0] : [0.05, -0.58 - (typeof held === 'string' ? itemGripOffset(held) : 0) * 0.72, -0.12]} scale={typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
+        {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
+        <group name="held-item" visible={!eating} position={hasFullCharacter(outfit, wig) ? [0, -(typeof held === 'string' ? itemGripOffset(held) : 0) * 0.72, 0] : [0.05, -0.58 - (typeof held === 'string' ? itemGripOffset(held) : 0) * 0.72, -0.12]} scale={typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof held === 'number'
             ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
             : <ItemModel kind={held} />}
@@ -151,14 +151,14 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
       {eating && <group name="eating-food" position={[0, 1.72, -0.42]} scale={0.65}><ItemModel kind={eating.kind} /></group>}
       {riding && !walkingCabin || emote === 'sit' ? (
         <>
-          <group name="left-leg" visible={!hasFullCharacter(outfit)} position={[-0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <group name="left-leg" visible={!hasFullCharacter(outfit, wig)} position={[-0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
             <group name="left-knee" position={[0, -0.72, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
               <PixelPart position={[0, -0.5, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
             </group>
           </group>
-          <group name="right-leg" visible={!hasFullCharacter(outfit)} position={[0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <group name="right-leg" visible={!hasFullCharacter(outfit, wig)} position={[0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
             <group name="right-knee" position={[0, -0.72, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
@@ -168,11 +168,11 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
         </>
       ) : (
         <>
-          <group ref={leftLeg} visible={!hasFullCharacter(outfit)} position={[-0.15, 0.78, 0]}>
+          <group ref={leftLeg} visible={!hasFullCharacter(outfit, wig)} position={[-0.15, 0.78, 0]}>
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
             <PixelPart position={[0, -0.71, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
           </group>
-          <group ref={rightLeg} visible={!hasFullCharacter(outfit)} position={[0.15, 0.78, 0]}>
+          <group ref={rightLeg} visible={!hasFullCharacter(outfit, wig)} position={[0.15, 0.78, 0]}>
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
             <PixelPart position={[0, -0.71, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
           </group>

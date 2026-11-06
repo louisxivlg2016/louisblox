@@ -1,12 +1,18 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { CanvasTexture, NearestFilter, SRGBColorSpace } from 'three';
+import { useGLTF } from '@react-three/drei';
+import { Box3, CanvasTexture, Mesh, NearestFilter, SRGBColorSpace } from 'three';
 import type { Group } from 'three';
 import type { Entity } from 'koota';
 import { PixelPart } from './ItemModel';
 import { VehicleMotion } from '../game/traits';
 import type { VehicleKind } from '../game/vehicleTypes';
 import { useVehicleControls } from '../game/vehicleControls';
+import policeCarUrl from '../../assets/models/police-car.glb';
+import fireTruckUrl from '../../assets/models/fire-truck.glb';
+
+const emergencyModels = { police: policeCarUrl, firetruck: fireTruckUrl };
+for (const model of Object.values(emergencyModels)) useGLTF.preload(model);
 
 function labelTexture(text: string, color = '#ffffff', background?: string) {
   const canvas = document.createElement('canvas');
@@ -57,7 +63,7 @@ function Glass({ position, size }: { position: [number, number, number]; size: [
   return <mesh position={position}><boxGeometry args={size} /><meshLambertMaterial color="#8ab7d2" transparent opacity={0.42} depthWrite={false} /></mesh>;
 }
 
-function EmergencyLights({ police }: { police: boolean }) {
+function EmergencyLights({ police, top = 2.94 }: { police: boolean; top?: number }) {
   const enabled = useVehicleControls((state) => police ? state.police : state.firetruck);
   const red = useRef<Group>(null);
   const blue = useRef<Group>(null);
@@ -67,13 +73,47 @@ function EmergencyLights({ police }: { police: boolean }) {
     if (blue.current) blue.current.visible = !enabled || !alternate;
   });
   return (
-    <group name="emergency-lights">
+    <group name="emergency-lights" position={[0, top - 2.94, 0]}>
       <PixelPart position={[0, 2.77, -1.35]} size={[1.75, 0.14, 0.48]} color="#3a444c" />
       <group ref={red} name="red-beacon"><PixelPart position={[-0.55, 2.96, -1.35]} size={[0.56, 0.27, 0.43]} color={police ? '#ef3b3b' : '#e83e35'} /></group>
       <group ref={blue} name="blue-beacon"><PixelPart position={[0.55, 2.96, -1.35]} size={[0.56, 0.27, 0.43]} color="#3875ef" /></group>
       <PixelPart position={[0, 2.94, -1.35]} size={[0.3, 0.22, 0.42]} color="#e9edf0" />
     </group>
   );
+}
+
+function HunyuanRoadVehicle({ entity, kind, interior }: { entity: Entity; kind: 'police' | 'firetruck'; interior: boolean }) {
+  const { scene } = useGLTF(emergencyModels[kind]);
+  const { model, top } = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((object) => {
+      if (!(object instanceof Mesh)) return;
+      object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        if (interior) {
+          material.transparent = true;
+          material.opacity = 0.12;
+          material.depthWrite = false;
+        }
+        if (!material.map) continue;
+        material.map.magFilter = NearestFilter;
+        material.map.minFilter = NearestFilter;
+        material.map.generateMipmaps = false;
+        material.map.needsUpdate = true;
+      }
+    });
+    const bounds = new Box3().setFromObject(clone);
+    clone.position.y -= bounds.min.y;
+    return { model: clone, top: bounds.max.y - bounds.min.y };
+  }, [scene, kind, interior]);
+  useFrame((_, delta) => {
+    const speed = entity.get(VehicleMotion)?.speed ?? 0;
+    model.traverse((object) => {
+      if (object.name.startsWith('animated-wheel')) object.rotation.x += speed * delta / 0.75;
+    });
+  });
+  return <group name={`${kind}-reference-model`} userData={{ source: 'Hunyuan' }}><primitive object={model} /><EmergencyLights police={kind === 'police'} top={top} /></group>;
 }
 
 function RoadVehicle({ kind, register }: { kind: 'jeep' | 'police' | 'firetruck'; register: (index: number) => (group: Group | null) => void }) {
@@ -195,6 +235,7 @@ export function VehicleAccessories({ entity, kind, interior = false }: { entity:
   if (kind === 'plane') return <PlaneDetails />;
   if (kind === 'carriage') return <Carriage entity={entity} interior={interior} register={register} />;
   if (kind === 'cannon') return <Cannon register={register} />;
-  if (kind === 'jeep' || kind === 'police' || kind === 'firetruck') return <RoadVehicle kind={kind} register={register} />;
+  if (kind === 'police' || kind === 'firetruck') return <HunyuanRoadVehicle entity={entity} kind={kind} interior={interior} />;
+  if (kind === 'jeep') return <RoadVehicle kind={kind} register={register} />;
   return null;
 }

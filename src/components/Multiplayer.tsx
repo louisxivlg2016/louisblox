@@ -127,7 +127,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
     if (waving) phase.current += delta * 10;
     else if (state.moving) phase.current += delta * 8;
     const swing = state.moving ? Math.sin(phase.current) * 0.85 : 0;
-    const fullHand = attachCharacterHand(group.current, rightArm.current, hasFullCharacter(outfit));
+    const fullHand = attachCharacterHand(group.current, rightArm.current, hasFullCharacter(outfit, wig));
     if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
     if (rightArm.current && !fullHand) {
       rightArm.current.rotation.x += ((waving ? Math.PI : -swing) - rightArm.current.rotation.x) * amount;
@@ -140,7 +140,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
       const headYaw = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
       headRef.current.rotation.order = 'YXZ';
       headRef.current.rotation.y += (headYaw - headRef.current.rotation.y) * amount;
-      headRef.current.rotation.x = hasFullCharacter(outfit) ? -state.pitch : state.pitch;
+      headRef.current.rotation.x = hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch;
     }
     updateBattleTargetPose(playerId, group.current.position, group.current.rotation.y, group.current.rotation.x < -Math.PI / 4);
   });
@@ -173,16 +173,16 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
 
   return (
     <group ref={group} position={[state.x, state.y, state.z]}>
-      {!hasFullCharacter(outfit) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
-      <CharacterOutfit outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} appearance={current} />
+      {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
+      <CharacterOutfit character={character} outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} appearance={current} />
       {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={battleTeamColor(team)} /></group>}
-      <group ref={leftArm} visible={!hasFullCharacter(outfit)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={current.skinColor} /></group>
+      <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={current.skinColor} /></group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
-        {!hasFullCharacter(outfit) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={current.skinColor} />}
+        {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={current.skinColor} />}
         {typeof state.selected === 'string' && (
           <group
             name="remote-held-item"
-            position={hasFullCharacter(outfit) ? [0, -itemGripOffset(state.selected) * 0.72, 0] : [0.05, -0.58 - itemGripOffset(state.selected) * 0.72, -0.12]}
+            position={hasFullCharacter(outfit, wig) ? [0, -itemGripOffset(state.selected) * 0.72, 0] : [0.05, -0.58 - itemGripOffset(state.selected) * 0.72, -0.12]}
             scale={getItemMeta(state.selected).category === 'vehicle' ? 0.2 : 0.72}
             userData={{ item: state.selected }}
           >
@@ -190,14 +190,14 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
           </group>
         )}
       </group>
-      <group ref={leftLeg} visible={!hasFullCharacter(outfit)} position={[-0.15, 0.78, 0]}>
+      <group ref={leftLeg} visible={!hasFullCharacter(outfit, wig)} position={[-0.15, 0.78, 0]}>
         <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
         <group name="left-knee" position={[0, -0.72, 0]} rotation={[state.mounted || state.emote === 'sit' ? Math.PI / 2 : 0, 0, 0]}>
           <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
           <PixelPart position={[0, -0.5, -0.04]} size={[0.25, 0.14, 0.34]} color="#302b2b" />
         </group>
       </group>
-      <group ref={rightLeg} visible={!hasFullCharacter(outfit)} position={[0.15, 0.78, 0]}>
+      <group ref={rightLeg} visible={!hasFullCharacter(outfit, wig)} position={[0.15, 0.78, 0]}>
         <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
         <group name="right-knee" position={[0, -0.72, 0]} rotation={[state.mounted || state.emote === 'sit' ? Math.PI / 2 : 0, 0, 0]}>
           <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />

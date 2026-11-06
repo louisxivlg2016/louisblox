@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useQuery } from 'koota/react';
 import type { Entity } from 'koota';
@@ -15,7 +15,7 @@ function TraderPerson({ entity }: { entity: Entity }) {
         if (holder) holder.value = group;
       }}
     >
-      <ReferenceTrader entity={entity} />
+      <Suspense fallback={null}><ReferenceTrader entity={entity} /></Suspense>
     </group>
   );
 }

@@ -1,12 +1,25 @@
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
+import { Mesh, NearestFilter } from 'three';
 import type { Entity } from 'koota';
 import type { Group } from 'three';
 import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Trader } from '../game/traits';
+import { createCharacterRig } from '../game/characterRig';
 import { PixelPart } from './ItemModel';
 import type { AnimalKind } from '../game/animals';
+import cowUrl from '../../assets/models/reference-cow.glb';
+import chickenUrl from '../../assets/models/reference-chicken.glb';
+import sheepUrl from '../../assets/models/reference-sheep.glb';
+import pigUrl from '../../assets/models/reference-pig.glb';
+import camelUrl from '../../assets/models/reference-camel.glb';
+import duckUrl from '../../assets/models/reference-duck.glb';
+import traderUrl from '../../assets/models/full-trader.glb';
 
-function Legs({ entity, bird = false }: { entity: Entity; bird?: boolean }) {
+const hunyuanAnimals = { cow: cowUrl, chicken: chickenUrl, sheep: sheepUrl, pig: pigUrl, camel: camelUrl, duck: duckUrl };
+for (const model of [...Object.values(hunyuanAnimals), traderUrl]) useGLTF.preload(model);
+
+function useAnimalLegs(entity: Entity, bird = false) {
   const last = useRef<{ x: number; z: number } | null>(null);
   const phase = useRef(0);
   useFrame((_, delta) => {
@@ -21,6 +34,10 @@ function Legs({ entity, bird = false }: { entity: Entity; bird?: boolean }) {
       if (leg) leg.rotation.x = swing * (index % 2 === 0 ? 1 : -1);
     }
   });
+}
+
+function Legs({ entity, bird = false }: { entity: Entity; bird?: boolean }) {
+  useAnimalLegs(entity, bird);
   const kind = entity.get(Animal)?.kind;
   const color = bird ? '#d5a52f' : kind === 'camel' ? '#b59458' : kind === 'pig' ? '#cb827c' : kind === 'sheep' ? '#c7b09a' : kind === 'cow' ? '#60452f' : '#76513b';
   return <>{[-1, 1].flatMap((side) => [-1, 1].map((front, index) => (
@@ -113,40 +130,49 @@ function Bird({ entity, kind }: { entity: Entity; kind: 'chicken' | 'duck' }) {
   );
 }
 
+function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hunyuanAnimals }) {
+  const { scene } = useGLTF(hunyuanAnimals[kind]);
+  const model = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((object) => {
+      if (!(object instanceof Mesh)) return;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        if (!material.map) continue;
+        material.map.magFilter = NearestFilter;
+        material.map.minFilter = NearestFilter;
+        material.map.generateMipmaps = false;
+        material.map.needsUpdate = true;
+      }
+    });
+    return clone;
+  }, [scene]);
+  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck');
+  return <group name={`reference-${kind}`} rotation={[0, Math.PI, 0]} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
+}
+
 export function ReferenceAnimal({ entity, kind }: { entity: Entity; kind: AnimalKind }) {
-  if (kind === 'chicken' || kind === 'duck') return <Bird entity={entity} kind={kind} />;
-  if (kind === 'cow' || kind === 'horse' || kind === 'pig' || kind === 'sheep' || kind === 'camel') return <Quadruped entity={entity} kind={kind} />;
+  if (kind in hunyuanAnimals) return <HunyuanAnimal entity={entity} kind={kind as keyof typeof hunyuanAnimals} />;
+  if (kind === 'horse') return <Quadruped entity={entity} kind={kind} />;
   return null;
 }
 
 export function ReferenceTrader({ entity }: { entity: Entity }) {
-  const leftLeg = useRef<Group>(null);
-  const rightLeg = useRef<Group>(null);
+  const { scene } = useGLTF(traderUrl);
+  const character = useMemo(() => {
+    const model = createCharacterRig(scene, 'explorer', 1);
+    const rig = model.userData.rig as { leftLeg?: Group; rightLeg?: Group };
+    if (rig.leftLeg) rig.leftLeg.name = 'trader-left-leg';
+    if (rig.rightLeg) rig.rightLeg.name = 'trader-right-leg';
+    return model;
+  }, [scene]);
+  const rig = character.userData.rig as { leftLeg?: Group; rightLeg?: Group };
   const phase = useRef(0);
   useFrame((_, delta) => {
     if (entity.get(Trader)?.walking) phase.current += delta * 6;
     const swing = entity.get(Trader)?.walking ? Math.sin(phase.current) * 0.42 : 0;
-    if (leftLeg.current) leftLeg.current.rotation.x = swing;
-    if (rightLeg.current) rightLeg.current.rotation.x = -swing;
+    if (rig.leftLeg) rig.leftLeg.rotation.x = swing;
+    if (rig.rightLeg) rig.rightLeg.rotation.x = -swing;
   });
-  return (
-    <group name="reference-trader" rotation={[0, Math.PI, 0]}>
-      <PixelPart position={[0, 1.04, 0]} size={[0.58, 0.78, 0.38]} color="#4e6793" />
-      <PixelPart position={[0, 0.7, 0]} size={[0.48, 0.35, 0.34]} color="#503d2e" />
-      <PixelPart position={[0, 1.55, 0]} size={[0.47, 0.47, 0.45]} color="#a26d4c" />
-      <PixelPart position={[0, 1.86, 0]} size={[0.55, 0.2, 0.52]} color="#46618b" />
-      <PixelPart position={[0, 1.72, -0.24]} size={[0.55, 0.12, 0.06]} color="#c5a14b" />
-      <PixelPart position={[0, 1.61, -0.252]} size={[0.4, 0.08, 0.03]} color="#523324" />
-      <Eyes y={1.57} z={-0.259} width={0.13} />
-      <PixelPart position={[0, 1.42, -0.3]} size={[0.14, 0.26, 0.14]} color="#986343" />
-      <PixelPart position={[0, 1.28, -0.2]} size={[0.31, 0.12, 0.22]} color="#743e28" />
-      {[-1, 1].map((side) => <group key={side}>
-        <PixelPart position={[side * 0.38, 1.07, 0.04]} size={[0.22, 0.64, 0.28]} color="#4e6793" />
-        <PixelPart position={[side * 0.3, 0.98, -0.23]} size={[0.09, 0.75, 0.06]} color="#c3a34b" />
-      </group>)}
-      <PixelPart position={[0, 1.03, -0.26]} size={[0.22, 0.33, 0.18]} color="#c18c65" />
-      <group ref={leftLeg} name="trader-left-leg" position={[-0.14, 0.59, 0]}><PixelPart position={[0, -0.29, 0]} size={[0.21, 0.58, 0.25]} color="#4a392e" /></group>
-      <group ref={rightLeg} name="trader-right-leg" position={[0.14, 0.59, 0]}><PixelPart position={[0, -0.29, 0]} size={[0.21, 0.58, 0.25]} color="#4a392e" /></group>
-    </group>
-  );
+  return <group name="reference-trader" userData={{ source: 'Hunyuan' }}><primitive object={character} rotation={[0, Math.PI, 0]} /></group>;
 }
