@@ -41,7 +41,6 @@ export function Backpack() {
   };
   const assign = (index: number) => {
     if (backpackItem !== null) setHotbarSlot(index, backpackItem);
-    close();
   };
   const resources = (Object.entries(meat) as Array<[AnimalKind, number]>).filter(([, count]) => count > 0);
   const query = gallerySearch.trim().toLowerCase();
@@ -82,7 +81,17 @@ export function Backpack() {
       <section className="backpack-panel" aria-label="Sac à dos">
         <div className="backpack-header">
           <h2>{survival ? 'Survie · récolte et fabrication' : 'Sac à dos'}</h2>
-          <button className="secondary-button" onClick={close}>Fermer et reprendre</button>
+          <button
+            className="secondary-button"
+            type="button"
+            aria-label="Fermer le sac à dos"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              close();
+            }}
+            onClick={(event) => { if (event.detail === 0) close(); }}
+          >Fermer</button>
         </div>
         <div className="gallery-controls backpack-global-search">
           <input type="search" aria-label="Rechercher dans le sac à dos" placeholder="Rechercher dans tout le sac…" value={gallerySearch} onChange={(event) => setGallerySearch(event.target.value)} />

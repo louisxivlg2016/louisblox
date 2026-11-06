@@ -3,6 +3,7 @@ import type { SelectedKind } from './items';
 import type { EmoteKind } from './emotes';
 import { isPotionEffect } from './effects';
 import { isGameplayMode } from './worldMode';
+import { isVehicleKind, type MountKind } from './vehicleTypes';
 
 export type HorseSnapshot = { id: string; x: number; y: number; z: number; yaw: number };
 
@@ -16,7 +17,7 @@ export type PlayerSnapshot = {
   moving?: boolean;
   airborne?: boolean;
   mounted?: boolean;
-  vehicleKind?: 'car' | 'horse' | 'plane' | 'train' | 'boat';
+  vehicleKind?: MountKind;
   vehicleId?: string;
   horse?: HorseSnapshot;
   emote?: EmoteKind | null;
@@ -76,7 +77,7 @@ export function isPlayerSnapshot(value: unknown): value is PlayerSnapshot {
     && (state.moving === undefined || typeof state.moving === 'boolean')
     && (state.airborne === undefined || typeof state.airborne === 'boolean')
     && (state.mounted === undefined || typeof state.mounted === 'boolean')
-    && (state.vehicleKind === undefined || state.vehicleKind === 'car' || state.vehicleKind === 'horse' || state.vehicleKind === 'plane' || state.vehicleKind === 'train' || state.vehicleKind === 'boat')
+    && (state.vehicleKind === undefined || isVehicleKind(state.vehicleKind) || state.vehicleKind === 'horse')
     && (state.vehicleId === undefined || typeof state.vehicleId === 'string' && state.vehicleId.length > 0 && state.vehicleId.length <= 80)
     && (state.horse === undefined || isHorseSnapshot(state.horse))
     && (state.emote === undefined || state.emote === null || state.emote === 'sit' || state.emote === 'lie' || state.emote === 'wave')

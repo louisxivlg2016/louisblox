@@ -1,8 +1,8 @@
-export const OUTFIT_ORDER = ['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police'] as const;
+export const OUTFIT_ORDER = ['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier'] as const;
 export type OutfitKind = (typeof OUTFIT_ORDER)[number];
 
 export const OUTFITS: Record<OutfitKind, { name: string; description: string; body: string; legs: string; color: string }> = {
-  default: { name: 'Tenue normale', description: 'Le style LouisBlox classique.', body: '', legs: '', color: '#4d83a7' },
+  default: { name: 'Tenue normale', description: 'Le style LouisBlox classique.', body: '#526b45', legs: '#38363b', color: '#526b45' },
   king: { name: 'Roi', description: 'Couronne dorée, cape royale et habit élégant.', body: '#8e303d', legs: '#3b335d', color: '#d8b33f' },
   military: { name: 'Militaire', description: 'Uniforme vert, casque et gilet.', body: '#526647', legs: '#344334', color: '#526647' },
   knight: { name: 'Chevalier', description: 'Armure argentée et casque de combat.', body: '#a8b7c3', legs: '#53626f', color: '#b7c5d0' },
@@ -14,6 +14,7 @@ export const OUTFITS: Record<OutfitKind, { name: string; description: string; bo
   footballer: { name: 'Joueur de foot', description: 'Maillot rayé, short, chaussettes et chaussures de football.', body: '#397ab5', legs: '#253a50', color: '#397ab5' },
   firefighter: { name: 'Pompier', description: 'Casque jaune et uniforme avec bandes réfléchissantes.', body: '#343d42', legs: '#293238', color: '#e4b93e' },
   police: { name: 'Policier', description: 'Casquette, chemise bleue, ceinturon et uniforme.', body: '#4777a7', legs: '#283a53', color: '#4777a7' },
+  soldier: { name: 'Soldat', description: 'Uniforme bleu, bandoulières blanches, bicorne et baïonnette.', body: '#293e74', legs: '#e4e7e1', color: '#293e74' },
 };
 
 export function isOutfitKind(value: unknown): value is OutfitKind {

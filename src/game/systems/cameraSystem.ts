@@ -1,11 +1,13 @@
 import type { World } from 'koota';
-import { Euler, Vector3 } from 'three';
+import { Euler, PerspectiveCamera, Vector3 } from 'three';
 import type { Camera } from 'three';
 import { useGameStore } from '../store';
 import { useEmoteStore } from '../emotes';
 import { turnToward } from '../rotation';
 import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 import { useMazeStore } from '../mazeClient';
+import { canWalkInVehicle, vehicleViewDistance } from '../vehicleTypes';
+import { VehiclePosition } from '../traits';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
 
@@ -59,27 +61,30 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
     camera.updateMatrixWorld();
     return;
   }
-  if (useGameStore.getState().cameraMode === 'front') {
-    const distance = mount?.kind === 'plane' ? 12 : mount?.kind === 'train' ? 14 : 6;
-    const height = Math.max(0.6, Math.min(5.5, 2.4 - Math.sin(state.pitch) * 3));
-    camera.position.set(position.x - Math.sin(state.yaw) * distance, position.y + height, position.z - Math.cos(state.yaw) * distance);
-    camera.lookAt(position.x, position.y + 1.55, position.z);
-  } else if (useGameStore.getState().cameraMode === 'third') {
-    const distance = mount?.kind === 'plane' ? 12 : mount?.kind === 'train' ? 14 : 6;
-    const height = Math.max(0.6, Math.min(5.5, 2.4 - Math.sin(state.pitch) * 3));
-    camera.position.set(position.x + Math.sin(state.yaw) * distance, position.y + height, position.z + Math.cos(state.yaw) * distance);
-    camera.lookAt(position.x, position.y + 1.1, position.z);
+  const cameraMode = useGameStore.getState().cameraMode;
+  const walkingCabin = Boolean(mount?.kind && canWalkInVehicle(mount.kind, mount.role));
+  const center = mount?.vehicle?.get(VehiclePosition) ?? position;
+  const distance = mount?.kind && mount.kind !== 'horse' ? vehicleViewDistance(mount.kind) : 6;
+  const exteriorPlane = mount?.kind === 'plane' && cameraMode !== 'first';
+  const height = exteriorPlane ? 320 : Math.max(0.6, Math.min(5.5, 2.4 - Math.sin(state.pitch) * 3));
+  const targetHeight = exteriorPlane ? 190 : 1.3;
+  if (camera instanceof PerspectiveCamera && camera.far !== (exteriorPlane ? 3500 : 130)) {
+    camera.far = exteriorPlane ? 3500 : 130;
+    if ('updateProjectionMatrix' in camera) camera.updateProjectionMatrix();
+  }
+  if (cameraMode === 'front' || cameraMode === 'third') {
+    const direction = cameraMode === 'front' ? -1 : 1;
+    camera.position.set(center.x + Math.sin(state.yaw) * distance * direction, center.y + height, center.z + Math.cos(state.yaw) * distance * direction);
+    camera.lookAt(center.x, center.y + targetHeight, center.z);
   } else {
     camera.position.copy(position);
-    if (mount?.kind === 'car' && mount.role === 'passenger') {
+    if (walkingCabin) camera.position.y += 1.62;
+    else if (mount?.kind === 'car' && mount.role === 'passenger') {
       camera.position.y += 1.2;
       camera.position.x -= Math.sin(state.yaw) * 0.65;
       camera.position.z -= Math.cos(state.yaw) * 0.65;
-    } else if (mount?.kind === 'plane') {
-      camera.position.y += 0.05;
-    } else {
-      camera.position.y += mount?.vehicle && mount.kind !== 'horse' ? mount.kind === 'car' ? 0.65 : 0.55 : 1.62;
-    }
+    } else if (mount?.kind === 'plane') camera.position.y += 0.05;
+    else camera.position.y += mount?.vehicle && mount.kind !== 'horse' ? mount.kind === 'car' ? 0.65 : 0.55 : 1.62;
     rotation.set(state.pitch, state.yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(rotation);
   }

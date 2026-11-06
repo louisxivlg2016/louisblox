@@ -9,6 +9,7 @@ import { AnimalPosition, Explosion, ExplosionMaterial, ExplosionMesh, ExplosionP
 import { MIN_WORLD_Y } from '../levels';
 import { raycastVoxel } from '../voxel';
 import { spawnPaintSplash } from '../paintball';
+import { playSound } from '../audio';
 
 const step = new Vector3();
 const next = new Vector3();
@@ -20,6 +21,7 @@ function paintImpact(world: World, color: string | undefined, position: Vector3,
 }
 
 export function fireProjectile(world: World, origin: Vector3, direction: Vector3, kind: 'arrow' | 'bullet' | 'bomb', damage = 1, color?: string | null) {
+  if (kind !== 'arrow' && !color) playSound('gunshot', 0.45);
   const velocity = direction.clone().normalize().multiplyScalar(kind === 'bullet' ? 48 : kind === 'bomb' ? 18 : 30);
   const position = origin.clone().addScaledVector(direction, 0.8);
   const entity = world.spawn(
@@ -33,6 +35,7 @@ export function fireProjectile(world: World, origin: Vector3, direction: Vector3
 }
 
 export function detonateProjectile(world: World, position: Vector3, damagePlayers = true) {
+  playSound('explosion', 0.6);
   explodeVoxels(world, position.x, position.y, position.z, 2.8);
   if (damagePlayers) damageBattlePlayersInRadius(world, position, 3.5);
   world.spawn(

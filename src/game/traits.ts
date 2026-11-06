@@ -1,6 +1,7 @@
 import { trait } from 'koota';
 import { Vector3 } from 'three';
 import type { RapierCollider, RapierRigidBody } from '@react-three/rapier';
+import type { MountKind, VehicleKind } from './vehicleTypes';
 
 export const Player = trait();
 export const PlayerPosition = trait(() => new Vector3());
@@ -64,8 +65,8 @@ export const MeatDropPosition = trait(() => new Vector3());
 export const MeatDropMotion = trait({ age: 0, baseY: 0 });
 export const MeatDropMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 
-export const PlayerMount = trait(() => ({ vehicle: null as import('koota').Entity | null, kind: null as 'car' | 'horse' | 'plane' | 'train' | 'boat' | null, role: 'driver' as 'driver' | 'passenger', seat: 0, landing: false }));
-export const Vehicle = trait({ id: '', color: '#d63935', kind: 'car' as 'car' | 'plane' | 'train' | 'boat' });
+export const PlayerMount = trait(() => ({ vehicle: null as import('koota').Entity | null, kind: null as MountKind | null, role: 'driver' as 'driver' | 'passenger', seat: 0, landing: false, cabinPosition: null as Vector3 | null }));
+export const Vehicle = trait({ id: '', color: '#d63935', kind: 'car' as VehicleKind });
 export const VehiclePosition = trait(() => new Vector3());
 export const VehicleMotion = trait({ speed: 0, yaw: 0, mounted: false, routeTime: 0, homeX: 0, homeY: 0, homeZ: 0, homeYaw: 0 });
 export const VehicleMesh = trait(() => ({ value: null as import('three').Object3D | null }));

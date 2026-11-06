@@ -17,6 +17,8 @@ import { hasEffect, jumpMultiplier, movementMultiplier } from '../effects';
 import { isPirateEliminated } from '../piratesClient';
 import { footballBounds, isFootballFrozen } from '../footballClient';
 import { isMazeFrozen, mazeBounds } from '../mazeClient';
+import { canWalkInVehicle } from '../vehicleTypes';
+import { moveCabinPlayer } from './cabinPlayerSystem';
 
 const GRAVITY = 24;
 const JUMP_SPEED = 8.4;
@@ -76,6 +78,11 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
 
   const mount = entity.get(PlayerMount);
   if (mount?.vehicle) {
+    if (mount.kind && canWalkInVehicle(mount.kind, mount.role)) {
+      moveCabinPlayer(world, entity, dt, yaw, pitch);
+      updateHud(world, position, health, false, dt);
+      return;
+    }
     if (mount.kind === 'horse') {
       const vehiclePosition = mount.vehicle.get(AnimalPosition);
       const vehicleYaw = mount.vehicle.get(AnimalMotion)?.yaw ?? state.yaw;

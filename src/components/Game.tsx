@@ -63,6 +63,7 @@ function Atmosphere() {
   const center = camera.position;
   const cameraBlock = getBlockIndex(world).get(voxelKey(Math.floor(center.x + 0.5), Math.floor(center.y + 0.5), Math.floor(center.z + 0.5)));
   const underwater = isWaterBlock(cameraBlock?.kind);
+  const exteriorPlane = useGameStore((state) => state.riding === 'plane' && state.cameraMode !== 'first');
   const waterColor = new Color('#217fac');
   const skyColor = underwater
     ? waterColor
@@ -82,7 +83,7 @@ function Atmosphere() {
   return (
     <>
       <color attach="background" args={[skyColor]} />
-      <fog attach="fog" args={[fogColor, underwater ? 0.1 : rainy ? 26 : 45, underwater ? 18 : rainy ? 90 : 130]} />
+      <fog attach="fog" args={[fogColor, underwater ? 0.1 : exteriorPlane ? 1200 : rainy ? 26 : 45, underwater ? 18 : exteriorPlane ? 3200 : rainy ? 90 : 130]} />
       <hemisphereLight args={['#d9f0ff', '#617043', 0.25 + daylight * 1.55]} />
       <directionalLight position={daylight > 0.25 ? sunPosition : moonPosition} intensity={0.08 + daylight * 2} color={daylight > 0.3 ? '#fff5d9' : '#91a9d4'} />
       <mesh position={sunPosition} visible={sunVisible}>

@@ -32,7 +32,7 @@ export const PHOTO_AVATARS = {
 const photoKinds = Object.keys(PHOTO_AVATARS) as Array<keyof typeof PHOTO_AVATARS>;
 
 export function ProfileAvatar({ kind, character, outfit, wig, appearance, size = 58 }: {
-  kind?: ProfileAvatarKind;
+  kind?: ProfileAvatarKind | OutfitKind;
   character?: CharacterKind;
   outfit?: OutfitKind;
   wig?: WigSelection;
@@ -41,9 +41,9 @@ export function ProfileAvatar({ kind, character, outfit, wig, appearance, size =
 }) {
   const selected = useAvatarStore((state) => state.kind);
   const current = kind ?? selected;
-  if (current === 'pixel') return <PixelAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={size} />;
+  if (current === 'pixel' || current === 'soldier' || current === 'default') return <PixelAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={size} />;
   const photo = PHOTO_AVATARS[current];
-  return <img className="profile-photo" src={photo.url} width={size} height={size} alt={`Photo ${photo.name}`} />;
+  return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}`} src={photo.url} width={size} height={size} alt={`Photo ${photo.name}`} />;
 }
 
 export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {

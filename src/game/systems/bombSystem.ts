@@ -9,12 +9,14 @@ import {
   ExplosionMesh,
   ExplosionPosition,
 } from '../traits';
+import { playSound } from '../audio';
 
 export function bombSystem(world: World, dt: number) {
   world.query(Bomb, BombPosition).updateEach(([bomb, position], entity) => {
     bomb.fuse -= dt;
     if (bomb.fuse > 0) return;
 
+    playSound('explosion', 0.6);
     explodeVoxels(world, position.x, position.y, position.z, 3);
     world.spawn(
       Explosion({ time: 0.45, maxTime: 0.45 }),

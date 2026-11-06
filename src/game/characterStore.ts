@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { isOutfitKind, isWigSelection } from './outfits';
 import type { OutfitKind, WigSelection } from './outfits';
-import { DEFAULT_APPEARANCE, sanitizeAppearance } from './appearance';
+import { DEFAULT_APPEARANCE, defaultAppearance, sanitizeAppearance } from './appearance';
 import type { CharacterAppearance } from './appearance';
 
 export type CharacterKind = 'boy' | 'girl';
@@ -69,7 +69,9 @@ export const useCharacterStore = create<CharacterStore>((set) => ({
     } catch {
     }
     set((state) => {
-      const appearance = { ...state.appearance, hairStyle: character === 'girl' ? 'long' as const : 'short' as const };
+      const previous = defaultAppearance(state.character);
+      const defaults = defaultAppearance(character);
+      const appearance = { ...state.appearance, hairStyle: character === 'girl' ? 'long' as const : 'short' as const, hairColor: state.appearance.hairColor === previous.hairColor ? defaults.hairColor : state.appearance.hairColor };
       saveAppearance(appearance);
       return { character, appearance };
     });

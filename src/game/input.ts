@@ -6,6 +6,7 @@ import { useEmoteStore } from './emotes';
 import { isPaintballGun } from './paintball';
 import { useTradeStore } from './trading';
 import { useHomeStore } from './homes';
+import { toggleSiren } from './vehicleControls';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -141,7 +142,7 @@ export function initInput() {
       }
       return;
     }
-    if (event.code === 'KeyB' && !event.repeat) {
+    if (event.code === 'KeyM' && !event.repeat) {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return;
       event.preventDefault();
       const state = useGameStore.getState();
@@ -150,15 +151,24 @@ export function initInput() {
         homes.setOpen(false);
         void requestPlay();
       } else if (state.mode === 'play') {
+        state.setShopOpen(false);
         clearInput();
         state.setTeleportOpen(false);
         homes.setOpen(true);
         state.setMode('pause');
         if (document.pointerLockElement) document.exitPointerLock();
-      } else if (state.shopOpen) {
+      }
+      return;
+    }
+    if (event.code === 'KeyB' && !event.repeat) {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return;
+      event.preventDefault();
+      const state = useGameStore.getState();
+      if (state.shopOpen) {
         state.setShopOpen(false);
         void requestPlay();
       } else {
+        useHomeStore.getState().setOpen(false);
         state.setShopOpen(true);
         state.setMode('pause');
         if (document.pointerLockElement) document.exitPointerLock();
@@ -231,6 +241,10 @@ export function initInput() {
     }
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code) && useGameStore.getState().mode === 'play') {
       event.preventDefault();
+    }
+    if (event.code === 'KeyL' && !event.repeat && useGameStore.getState().mode === 'play') {
+      const riding = useGameStore.getState().riding;
+      if (riding === 'police' || riding === 'firetruck') toggleSiren(riding);
     }
     if (event.code === 'KeyQ' && !event.repeat && useGameStore.getState().mode === 'play') {
       event.preventDefault();

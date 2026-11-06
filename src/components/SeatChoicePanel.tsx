@@ -3,8 +3,10 @@ import { useGameStore } from '../game/store';
 import { VehicleMotion } from '../game/traits';
 import { mountEntity } from '../game/vehicles';
 import { world } from '../game/world';
+import { canWalkInVehicle } from '../game/vehicleTypes';
+import type { VehicleKind } from '../game/vehicleTypes';
 
-const names = { car: 'Voiture', plane: 'Avion', train: 'Train', boat: 'Bateau' } as const;
+const names: Record<VehicleKind, string> = { car: 'Voiture', plane: 'Avion', train: 'Train', boat: 'Bateau', jeep: 'Jeep', police: 'Voiture de police', firetruck: 'Camion de pompier', carriage: 'Calèche', cannon: 'Canon' };
 
 export function SeatChoicePanel() {
   const choice = useGameStore((state) => state.seatChoice);
@@ -17,14 +19,15 @@ export function SeatChoicePanel() {
   const choose = (role: 'driver' | 'passenger') => {
     if (mountEntity(world, choice.vehicle, choice.kind, role)) close();
   };
+  const walkable = canWalkInVehicle(choice.kind, 'passenger');
   return (
     <div className="backpack-backdrop">
       <section className="book-panel backpack-panel seat-choice-panel" aria-label="Choisir une place">
-        <div className="backpack-header"><h2>{names[choice.kind]}</h2><button className="secondary-button" onClick={close}>Fermer</button></div>
-        <p>{choice.kind === 'boat' ? 'Le siège avant permet de conduire. Le passager s’assoit à l’arrière et ne pilote pas.' : 'Choisis ta place dans le véhicule. Le personnel et les autres passagers sont déjà à bord.'}</p>
+        <div className="backpack-header"><h2>{names[choice.kind]}</h2><button type="button" className="secondary-button" onClick={close}>Fermer</button></div>
+        <p>{choice.kind === 'cannon' ? 'Prends les commandes du canon pour viser et tirer.' : walkable ? 'Choisis ta place. En passager, tu peux marcher dans le véhicule. Rien ne démarre sans conducteur.' : 'Choisis ta place dans le véhicule. Le passager ne conduit jamais.'}</p>
         <div className="seat-choice-actions">
-          <button className="primary-button" disabled={choice.vehicle.get(VehicleMotion)?.mounted} onClick={() => choose('driver')}>{choice.kind === 'boat' ? 'Devant · Conduire' : 'Conduire'}</button>
-          <button className="primary-button" onClick={() => choose('passenger')}>{choice.kind === 'boat' ? 'Arrière · Passager' : 'Passager'}</button>
+          <button className="primary-button" disabled={choice.vehicle.get(VehicleMotion)?.mounted} onClick={() => choose('driver')}>{choice.kind === 'carriage' ? 'Cocher' : choice.kind === 'plane' ? 'Piloter' : choice.kind === 'cannon' ? 'Utiliser le canon' : 'Conduire'}</button>
+          {choice.kind !== 'cannon' && <button className="primary-button" onClick={() => choose('passenger')}>Passager{walkable ? ' · marcher à bord' : ''}</button>}
         </div>
       </section>
     </div>

@@ -13,8 +13,8 @@ export type ItemKind =
   | 'armor_gold' | 'armor_diamond' | 'armor_silver'
   | 'apple' | 'bread' | 'cake' | 'cooked_meat' | 'berries'
   | 'corn' | 'wheat' | 'tomato' | 'carrot' | 'watermelon'
-  | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb' | 'rifle_auto'
-  | 'car_red' | 'car_blue' | 'plane' | 'train' | 'boat' | 'saddle';
+  | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb' | 'rifle_auto' | 'rifle_flintlock'
+  | 'car_red' | 'car_blue' | 'plane' | 'train' | 'boat' | 'jeep' | 'police_car' | 'firetruck' | 'carriage' | 'cannon' | 'saddle';
 export type SelectedKind = BlockKind | ItemKind | GalleryItemId;
 export type ItemMeta = {
   name: string;
@@ -75,11 +75,17 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   pistol_gold: item('Pistolet en or', '#e5b934', 'gun', { cooldown: 0.32 }),
   pistol_bomb: item('Pistolet lance-bombes', '#686d79', 'gun', { cooldown: 0 }),
   rifle_auto: item('Fusil automatique', '#2f3b2c', 'gun', { cooldown: 0.09, damage: 2 }),
+  rifle_flintlock: item('Fusil à baïonnette', '#885a32', 'gun', { cooldown: 0.85, damage: 2, shape: 'flintlock' }),
   car_red: item('Voiture de course rouge', '#d63935', 'vehicle'),
   car_blue: item('Voiture bleue avec cabine', '#347cd0', 'vehicle'),
   plane: item('Avion de passagers', '#d9e4eb', 'vehicle', { shape: 'plane' }),
   train: item('Train de passagers', '#a73b38', 'vehicle', { shape: 'train' }),
   boat: item('Bateau à deux places', '#9b6b3f', 'vehicle', { shape: 'boat' }),
+  jeep: item('Jeep militaire', '#777b43', 'vehicle', { shape: 'jeep' }),
+  police_car: item('Voiture de police avec sirène', '#e2e7e7', 'vehicle', { shape: 'police' }),
+  firetruck: item('Camion de pompier avec sirène', '#d63632', 'vehicle', { shape: 'firetruck' }),
+  carriage: item('Calèche avec chevaux', '#d6ae40', 'vehicle', { shape: 'carriage' }),
+  cannon: item('Canon à roues', '#6d4829', 'vehicle', { shape: 'cannon' }),
   saddle: item('Selle pour cheval', '#80502e', 'saddle'),
 };
 

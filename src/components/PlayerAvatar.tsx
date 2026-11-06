@@ -18,6 +18,7 @@ import { CharacterOutfit } from './CharacterOutfit';
 import { hasFullCharacter } from './FullCharacterGlb';
 import { useEmoteStore } from '../game/emotes';
 import { useEatingStore } from '../game/eating';
+import { canWalkInVehicle } from '../game/vehicleTypes';
 
 export function PlayerAvatar({ entity }: { entity: Entity }) {
   const cameraMode = useGameStore((state) => state.cameraMode);
@@ -25,6 +26,8 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
   const equipped = useGameStore((state) => state.equippedArmor);
   const selected = useGameStore((state) => state.selected);
   const riding = useGameStore((state) => state.riding);
+  const ridingRole = useGameStore((state) => state.ridingRole);
+  const walkingCabin = canWalkInVehicle(riding, ridingRole ?? 'driver');
   const character = useCharacterStore((state) => state.character);
   const outfit = useCharacterStore((state) => state.outfit);
   const wig = useCharacterStore((state) => state.wig);
@@ -47,7 +50,7 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
     const state = entity.get(PlayerState);
     const mounted = entity.get(PlayerMount)?.vehicle;
     const speed = velocity ? Math.hypot(velocity.x, velocity.z) : 0;
-    const moving = !sleeping && !riding && !mounted && state?.grounded && !state.flying && speed > 0.1;
+    const moving = !sleeping && (!riding && !mounted || walkingCabin) && state?.grounded && !state.flying && speed > 0.1;
     const waving = emote === 'wave';
     if (waving) phase.current += delta * 10;
     else if (moving) phase.current += delta * (5 + Math.min(speed, 4));
@@ -76,10 +79,20 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
   if (!entity) return null;
   const armor = equipped ? getItemMeta(`armor_${equipped}`).color : null;
   const girl = character === 'girl';
-  const body = armor ?? appearance.clothingColor ?? (outfit === 'default' ? (girl ? '#9a5f9f' : '#4d83a7') : OUTFITS[outfit].body);
-  const limbs = armor ?? appearance.skinColor;
-  const legs = armor ?? appearance.clothingColor ?? (outfit === 'default' ? (girl ? '#4b405e' : '#354d6d') : OUTFITS[outfit].legs);
+  const body = armor ?? appearance.clothingColor ?? (outfit === 'default' ? (girl ? '#625887' : '#526b45') : OUTFITS[outfit].body);
+  const limbs = armor ?? (outfit === 'default' ? body : appearance.skinColor);
+  const legs = armor ?? appearance.clothingColor ?? (outfit === 'default' ? '#38363b' : OUTFITS[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
+  const classicDetails = outfit === 'default' && !armor && (
+    <group>
+      {girl ? <PixelPart position={[0, 1.14, -0.18]} size={[0.21, 0.58, 0.035]} color="#e0e1e5" /> : <>
+        <PixelPart position={[0, 1.47, -0.2]} size={[0.46, 0.17, 0.06]} color="#a83c36" />
+        <PixelPart position={[0, 1.05, -0.185]} size={[0.24, 0.52, 0.03]} color="#42494a" />
+        <PixelPart position={[0, 1.15, -0.205]} size={[0.1, 0.66, 0.035]} color="#76553b" rotation={[0, 0, -0.42]} />
+      </>}
+      <PixelPart position={[0, 0.81, 0]} size={[0.58, 0.11, 0.36]} color="#60452f" />
+    </group>
+  );
   const headContent = (
     <>
       <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color={appearance.skinColor} />
@@ -119,10 +132,11 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
   return (
     <group
       ref={bodyMesh}
-      visible={cameraMode !== 'first' || sleeping}
+      visible={(cameraMode !== 'first' || sleeping) && riding !== 'plane'}
     >
       {(!hasFullCharacter(outfit) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
-      <CharacterOutfit outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding)} head={headContent} headRef={headRef} appearance={appearance} />
+      <CharacterOutfit outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding) && !walkingCabin} head={headContent} headRef={headRef} appearance={appearance} />
+      {classicDetails}
       <group ref={leftArm} visible={!hasFullCharacter(outfit)} position={[-0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
       </group>
@@ -135,7 +149,7 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
         </group>
       </group>
       {eating && <group name="eating-food" position={[0, 1.72, -0.42]} scale={0.65}><ItemModel kind={eating.kind} /></group>}
-      {riding || emote === 'sit' ? (
+      {riding && !walkingCabin || emote === 'sit' ? (
         <>
           <group name="left-leg" visible={!hasFullCharacter(outfit)} position={[-0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />

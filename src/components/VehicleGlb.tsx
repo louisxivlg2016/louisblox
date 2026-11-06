@@ -8,6 +8,8 @@ import airplaneUrl from '../../assets/models/airplane.glb';
 import trainUrl from '../../assets/models/train.glb';
 import { BoatModel, CarModel } from './ItemModel';
 import { PLANE_SCALE } from '../game/vehicles';
+import type { VehicleKind } from '../game/vehicleTypes';
+import { VehicleAccessories } from './VehicleAccessories';
 
 const models = {
   raceCar: raceCarUrl,
@@ -117,12 +119,13 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'b
   return <primitive object={model} />;
 }
 
-export function VehicleGlb({ kind, color, interior = false }: { kind: 'car' | 'plane' | 'train' | 'boat'; color: string; interior?: boolean }) {
+export function VehicleGlb({ entity, kind, color, interior = false }: { entity: import('koota').Entity; kind: VehicleKind; color: string; interior?: boolean }) {
   if (kind === 'boat') return <group scale={[1.2, 1.2, 1.45]}><BoatModel color={color} /></group>;
-  if (interior && kind === 'plane') return null;
+  if (kind === 'jeep' || kind === 'police' || kind === 'firetruck' || kind === 'carriage' || kind === 'cannon') return <VehicleAccessories entity={entity} kind={kind} interior={interior} />;
   return (
     <Suspense fallback={kind === 'car' ? <CarModel color={color} /> : null}>
-      <Model kind={kind} color={color} interior={interior} />
+      {!interior || kind !== 'plane' ? <Model kind={kind} color={color} interior={interior} /> : null}
+      <VehicleAccessories entity={entity} kind={kind} />
     </Suspense>
   );
 }

@@ -15,7 +15,18 @@ export function MenuDialog({ title, onClose, children, className = '' }: { title
   return (
     <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className={`world-library-modal ${className}`} role="dialog" aria-modal="true" aria-label={title}>
-        <button className="world-library-close" aria-label={`Fermer ${title}`} onClick={onClose} autoFocus>×</button>
+        <button
+          className="world-library-close"
+          type="button"
+          aria-label={`Fermer ${title}`}
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onClose();
+          }}
+          onClick={(event) => { if (event.detail === 0) onClose(); }}
+          autoFocus
+        >×</button>
         {children}
       </section>
     </div>

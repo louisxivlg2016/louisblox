@@ -132,7 +132,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     const nearby = world.query(Vehicle, VehiclePosition, VehicleMotion).some((entity) => entity.get(VehiclePosition)!.distanceTo(player) < 6);
     if (nearby) return false;
     const blocks = getBlockIndex(world);
-    const kind = selected === 'plane' ? 'plane' : selected === 'train' ? 'train' : selected === 'boat' || meta.shape === 'boat' || meta.shape === 'hovercraft' ? 'boat' : 'car';
+    const kind = selected === 'plane' ? 'plane' : selected === 'train' ? 'train' : selected === 'boat' || meta.shape === 'boat' || meta.shape === 'hovercraft' ? 'boat' : selected === 'jeep' ? 'jeep' : selected === 'police_car' ? 'police' : selected === 'firetruck' ? 'firetruck' : selected === 'carriage' ? 'carriage' : selected === 'cannon' ? 'cannon' : 'car';
     if (kind === 'boat') {
       for (let distance = 1; distance <= 6; distance += 0.5) {
         const x = Math.round(origin.x + direction.x * distance);

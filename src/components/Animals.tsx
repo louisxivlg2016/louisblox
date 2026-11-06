@@ -29,7 +29,7 @@ function AnimalView({ entity }: { entity: Entity }) {
       position={[position.x, position.y, position.z]}
     >
       <Suspense fallback={null}>
-        <AnimalGlb kind={kind} />
+        <AnimalGlb entity={entity} kind={kind} />
       </Suspense>
       {kind === 'horse' && rider?.saddled && <group name="horse-saddle" position={[0, 0.98, 0.3]} scale={0.85}><SaddleModel /></group>}
     </group>

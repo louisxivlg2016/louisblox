@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { Box3, Mesh, NearestFilter, Vector3 } from 'three';
 import type { AnimalKind } from '../game/animals';
+import type { Entity } from 'koota';
+import { ReferenceAnimal } from './ReferenceAnimals';
 import camelUrl from '../../assets/models/camel.glb';
 import cowUrl from '../../assets/models/cow.glb';
 import horseUrl from '../../assets/models/horse.glb';
@@ -48,7 +50,8 @@ const heights: Record<AnimalKind, number> = {
   zombie: 1.9,
 };
 
-export function AnimalGlb({ kind }: { kind: AnimalKind }) {
+export function AnimalGlb({ entity, kind }: { entity: Entity; kind: AnimalKind }) {
+  if (['cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'camel'].includes(kind)) return <ReferenceAnimal entity={entity} kind={kind} />;
   const { scene } = useGLTF(models[kind]);
   const model = useMemo(() => {
     const clone = scene.clone(true);

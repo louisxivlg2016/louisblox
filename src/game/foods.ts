@@ -13,6 +13,7 @@ import { useGameStore } from './store';
 import { Player, PlayerHealth, PlayerPosition, PlayerState } from './traits';
 import { BlockKind, raycastVoxel, voxelKey } from './voxel';
 import type { VoxelHit } from './voxel';
+import { playSound } from './audio';
 
 export function eatItem(world: World, kind: ItemKind | GalleryItemId) {
   const meta = getItemMeta(kind);
@@ -32,6 +33,7 @@ export function eatItem(world: World, kind: ItemKind | GalleryItemId) {
     else store.setItemCount(kind, count - 1);
   }
   store.setNotice(healing > 0 ? `${meta.name} : +${healing} vie${healing > 1 ? 's' : ''}` : kind === 'apple' ? 'Pomme mangée.' : `${meta.name} mangé.`);
+  playSound('eat', 0.45);
   useEatingStore.getState().startEating(kind);
   return true;
 }
@@ -44,6 +46,7 @@ export function eatMeat(world: World, kind: AnimalKind) {
   if (healing > 0) healPlayer(world, healing);
   store.discardMeat(kind);
   store.setNotice(healing > 0 ? `Viande mangée : +${healing} vie${healing > 1 ? 's' : ''}` : 'Viande mangée.');
+  playSound('eat', 0.45);
   useEatingStore.getState().startEating('cooked_meat');
   return true;
 }

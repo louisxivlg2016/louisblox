@@ -9,24 +9,29 @@ export type CharacterAppearance = {
 };
 
 export const DEFAULT_APPEARANCE: CharacterAppearance = {
-  skinColor: '#e7a0aa',
-  hairColor: '#49382f',
-  eyeColor: '#273b4b',
+  skinColor: '#f0d0b0',
+  hairColor: '#b5944b',
+  eyeColor: '#418647',
   eyebrowColor: null,
   clothingColor: null,
   hairStyle: 'short',
 };
 
+export function defaultAppearance(character: 'boy' | 'girl'): CharacterAppearance {
+  return { ...DEFAULT_APPEARANCE, hairColor: character === 'girl' ? '#d78229' : '#b5944b', hairStyle: character === 'girl' ? 'long' : 'short' };
+}
+
 const color = (value: unknown): value is string => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
 
 export function sanitizeAppearance(value: unknown, character: 'boy' | 'girl' = 'boy'): CharacterAppearance {
   const data = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  const defaults = defaultAppearance(character);
   return {
-    skinColor: color(data.skinColor) ? data.skinColor : DEFAULT_APPEARANCE.skinColor,
-    hairColor: color(data.hairColor) ? data.hairColor : DEFAULT_APPEARANCE.hairColor,
-    eyeColor: color(data.eyeColor) ? data.eyeColor : DEFAULT_APPEARANCE.eyeColor,
+    skinColor: color(data.skinColor) ? data.skinColor : defaults.skinColor,
+    hairColor: color(data.hairColor) ? data.hairColor : defaults.hairColor,
+    eyeColor: color(data.eyeColor) ? data.eyeColor : defaults.eyeColor,
     eyebrowColor: data.eyebrowColor === null || color(data.eyebrowColor) ? data.eyebrowColor as string | null : null,
     clothingColor: data.clothingColor === null || color(data.clothingColor) ? data.clothingColor as string | null : null,
-    hairStyle: data.hairStyle === 'long' || data.hairStyle === 'short' ? data.hairStyle : character === 'girl' ? 'long' : 'short',
+    hairStyle: data.hairStyle === 'long' || data.hairStyle === 'short' ? data.hairStyle : defaults.hairStyle,
   };
 }

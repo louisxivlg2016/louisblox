@@ -21,6 +21,7 @@ import { miningMultiplier } from '../effects';
 import { fireProjectile } from './projectileSystem';
 import { isPirateObjective } from '../pirates';
 import { requestPirateObjectiveHit } from '../piratesClient';
+import { playSound } from '../audio';
 
 const direction = new Vector3();
 const origin = new Vector3();
@@ -108,6 +109,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         removeVoxel(world, hit);
         if (store.gameplayMode === 'survival') changeInventory(hit.block.kind, 1);
       }
+      playSound('breakBlock', 0.5);
       target.visible = false;
       target.miningKey = '';
       target.miningProgress = 0;
@@ -214,6 +216,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
           ? Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'south' : 'north'
           : Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
       const placed = addVoxel(world, x, y, z, kind, undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
+      if (placed) playSound('placeBlock', 0.45);
       if (placed && store.gameplayMode === 'survival') changeInventory(kind, -1);
       if (kind === BlockKind.Tnt) {
         const bomb = spawnBomb(world, x, y, z);

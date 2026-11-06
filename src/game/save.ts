@@ -40,6 +40,26 @@ export function listWorlds(): WorldMeta[] {
   return saved.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
+let storageWarningShown = false;
+
+export function writeWorldSave(worldId: string, save: WorldSave, name = worldId): WorldMeta | null {
+  const metadata: WorldMeta = { id: worldId, name: name.trim().slice(0, 80) || worldId, gameplayMode: save.gameplayMode, updatedAt: Date.now() };
+  try {
+    localStorage.setItem(worldKey(worldId), JSON.stringify({ ...save, worldId }));
+    const worlds = listWorlds().filter((world) => world.id !== worldId);
+    worlds.unshift(metadata);
+    localStorage.setItem(WORLDS_KEY, JSON.stringify(worlds));
+    storageWarningShown = false;
+    return metadata;
+  } catch {
+    if (!storageWarningShown) {
+      storageWarningShown = true;
+      useGameStore.getState().setNotice('Sauvegarde locale impossible. Va dans Mes mondes et clique sur Exporter pour conserver une copie de tes mondes.');
+    }
+    return null;
+  }
+}
+
 export function createWorldSave(world: World): WorldSave | null {
   const playerEntity = world.queryFirst(Player);
   const environment = world.queryFirst(Environment)?.get(Environment);
@@ -73,16 +93,9 @@ export function createWorldSave(world: World): WorldSave | null {
 
 export function saveWorld(world: World) {
   const save = createWorldSave(world);
-  if (!save) return;
+  if (!save) return false;
   const store = useGameStore.getState();
-  try {
-    localStorage.setItem(worldKey(store.worldId), JSON.stringify(save));
-    const worlds = listWorlds().filter((world) => world.id !== store.worldId);
-    worlds.unshift({ id: store.worldId, name: store.worldName || store.worldId, gameplayMode: store.gameplayMode, updatedAt: Date.now() });
-    localStorage.setItem(WORLDS_KEY, JSON.stringify(worlds));
-  } catch {
-    return;
-  }
+  return writeWorldSave(store.worldId, save, store.worldName || store.worldId) !== null;
 }
 
 export function initPersistence(world: World) {

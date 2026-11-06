@@ -8,7 +8,7 @@ import { useGameStore } from './store';
 import { useRemotePlayerStore } from './multiplayerStore';
 import { Player, PlayerPosition, PlayerState } from './traits';
 import { world } from './world';
-import { playWhistle } from './audio';
+import { playWhistle, playSound } from './audio';
 
 export type FootballTeam = 'red' | 'blue';
 export type FootballPhase = 'waiting' | 'countdown' | 'running' | 'restart' | 'penalty' | 'finished';
@@ -52,6 +52,7 @@ function send(message: unknown) {
 }
 
 export function kickFootball(power = false) {
+  playSound('ball', power ? 0.6 : 0.4);
   send({ type: 'football-kick', power });
 }
 

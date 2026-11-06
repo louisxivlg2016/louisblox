@@ -9,6 +9,7 @@ import type { OutfitKind } from '../game/outfits';
 import { world } from '../game/world';
 import { useEatingStore } from '../game/eating';
 import { Player, PlayerMount, PlayerState, PlayerVelocity } from '../game/traits';
+import { canWalkInVehicle } from '../game/vehicleTypes';
 import { fullCharacterHeights } from '../game/fullCharacters';
 import { applyCharacterGesture } from '../game/characterGestures';
 import type { EmoteKind } from '../game/emotes';
@@ -26,12 +27,13 @@ import firefighterUrl from '../../assets/models/full-firefighter.glb';
 import policeUrl from '../../assets/models/full-police.glb';
 
 const models = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, footballer: footballerUrl, firefighter: firefighterUrl, police: policeUrl };
+for (const model of Object.values(models)) useGLTF.preload(model);
 
 export function hasFullCharacter(outfit: OutfitKind) {
   return outfit !== 'default';
 }
 
-function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance }: { outfit: Exclude<OutfitKind, 'default'>; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance }) {
+function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance }: { outfit: Exclude<OutfitKind, 'default' | 'soldier'>; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance }) {
   const group = useRef<Object3D>(null);
   const current = useRef('');
   const { scene, animations } = useGLTF(models[outfit]);
@@ -63,8 +65,9 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
     const player = world.queryFirst(Player);
     const state = player?.get(PlayerState);
     const velocity = player?.get(PlayerVelocity);
-    const mounted = player?.get(PlayerMount)?.vehicle;
-    const walking = moving ?? Boolean(!mounted && state?.grounded && !state.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
+    const mounted = player?.get(PlayerMount);
+    const walkingCabin = Boolean(mounted?.kind && canWalkInVehicle(mounted.kind, mounted.role));
+    const walking = moving ?? Boolean((!mounted?.vehicle || walkingCabin) && state?.grounded && !state.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
     const jumping = airborne ?? Boolean(!state?.grounded || state?.flying || Math.abs(velocity?.y ?? 0) > 2);
     const name = jumping ? 'jump' : walking ? 'run' : 'idle';
     const action = actions[name];
@@ -79,7 +82,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
       current.current = name;
     }
     group.current.userData.clip = name;
-    const sitting = seated || emote === 'sit' || Boolean(mounted);
+    const sitting = seated || emote === 'sit' || Boolean(mounted?.vehicle && !walkingCabin);
     group.current.userData.gesture = sitting ? 'sit' : emote;
     if (animations.length === 0) {
       const time = performance.now() / 1000;

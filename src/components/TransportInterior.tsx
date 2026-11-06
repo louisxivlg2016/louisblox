@@ -1,5 +1,6 @@
 import { PixelPart, SteeringWheel } from './ItemModel';
-import { PLANE_SCALE } from '../game/vehicles';
+import { CABINS } from '../game/vehicleTypes';
+import type { CabinDefinition, VehicleKind } from '../game/vehicleTypes';
 
 function Seat({ position }: { position: [number, number, number] }) {
   return (
@@ -24,53 +25,56 @@ function Person({ position, color, worker = false }: { position: [number, number
   );
 }
 
-export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
-  kind: 'car' | 'plane' | 'train' | 'boat';
-  driverPresent: boolean;
-  passengerSeat: number | null;
-}) {
-  if (kind === 'car') {
-    return (
-      <group>
-        <SteeringWheel position={[-0.58, 1.05, -0.65]} />
-        <Seat position={[0.58, 0.68, -0.05]} />
-      </group>
-    );
-  }
+function CabinShell({ cabin }: { cabin: CabinDefinition }) {
+  const length = cabin.rear - cabin.front;
+  const middle = (cabin.rear + cabin.front) / 2;
+  const height = cabin.ceiling - cabin.floor;
+  return (
+    <group name="walkable-cabin">
+      <PixelPart position={[0, cabin.floor - 0.1, middle]} size={[cabin.halfWidth * 2 + 0.4, 0.2, length + 0.4]} color="#64727d" />
+      <PixelPart position={[0, cabin.floor + 0.012, middle]} size={[1.2, 0.025, length]} color="#405c76" />
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[side * (cabin.halfWidth + 0.12), cabin.floor + height / 2, middle]}>
+          <boxGeometry args={[0.2, height, length + 0.4]} />
+          <meshLambertMaterial color="#cfdae0" transparent opacity={0.2} depthWrite={false} />
+        </mesh>
+      ))}
+      <PixelPart position={[0, cabin.floor + height / 2, cabin.front - 0.1]} size={[cabin.halfWidth * 2 + 0.4, height, 0.2]} color="#a9b9c4" />
+      <PixelPart position={[0, cabin.floor + height / 2, cabin.rear + 0.1]} size={[cabin.halfWidth * 2 + 0.4, height, 0.2]} color="#a9b9c4" />
+      <mesh position={[0, cabin.ceiling + 0.1, middle]}>
+        <boxGeometry args={[cabin.halfWidth * 2 + 0.4, 0.2, length + 0.4]} />
+        <meshLambertMaterial color="#dce5e8" transparent opacity={0.24} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
 
-  if (kind === 'boat') {
-    return (
-      <group>
-        <Seat position={[0, 0.45, -0.72]} />
-        <Seat position={[0, 0.45, 0.72]} />
-        <PixelPart position={[-0.9, 0.45, 0.4]} size={[0.1, 0.1, 2.4]} color="#9a7042" rotation={[0, -0.35, 0]} />
-      </group>
-    );
-  }
+function PlaneInterior({ driverPresent }: { driverPresent: boolean }) {
+  const cabin = CABINS.plane!;
+  const rows = Array.from({ length: 12 }, (_, index) => cabin.front + 50 + index * 28);
+  return (
+    <group name="plane-cabin">
+      <CabinShell cabin={cabin} />
+      <SteeringWheel position={[-0.65, cabin.floor + 0.95, cabin.front + 0.25]} />
+      <Seat position={[-0.65, cabin.floor + 0.55, cabin.front + 1.1]} />
+      {driverPresent && <Person position={[-0.65, cabin.floor + 0.55, cabin.front + 1.1]} color="#31537b" worker />}
+      {rows.flatMap((z, row) => [-6, -2, 2, 6].map((x, column) => (
+        <group key={`${row}-${column}`}>
+          <Seat position={[x, cabin.floor + 0.55, z]} />
+          <Person position={[x, cabin.floor + 0.55, z]} color={(row + column) % 2 === 0 ? '#568b62' : '#8d5e9d'} />
+        </group>
+      )))}
+      <Person position={[0, cabin.floor, cabin.rear - 4]} color="#31537b" worker />
+    </group>
+  );
+}
 
-  if (kind === 'plane') {
-    const passengers: Array<[number, number, number]> = [[0.55, 0.56, 0.3], [-0.55, 0.56, 1.7], [-0.55, 0.56, 3.1]];
-    return (
-      <group scale={PLANE_SCALE}>
-        <PixelPart position={[0, 0.28, 0.6]} size={[1.75, 0.16, 6.8]} color="#87939a" />
-        <SteeringWheel position={[-0.5, 1.03, -2.85]} />
-        {passengers.map((position, index) => (
-          <group key={index}>
-            <Seat position={position} />
-            {passengerSeat !== index && <Person position={position} color={index === 1 ? '#8d5e9d' : '#568b62'} />}
-          </group>
-        ))}
-        <Seat position={[-0.5, 0.56, -2.85]} />
-        {driverPresent && <Person position={[-0.5, 0.56, -2.85]} color="#31537b" worker />}
-        <Person position={[0.55, 0.56, 4.2]} color="#31537b" worker />
-      </group>
-    );
-  }
-
+function TrainInterior({ driverPresent, passengerSeat }: { driverPresent: boolean; passengerSeat: number | null }) {
+  const cabin = CABINS.train!;
   const passengers: Array<[number, number, number]> = [[0.65, 0.62, -1], [-0.65, 0.62, 0.6], [0.65, 0.62, 2.2], [-0.65, 0.62, 3.8]];
   return (
-    <group>
-      <PixelPart position={[0, 0.28, 0]} size={[2.2, 0.16, 9.5]} color="#5e666c" />
+    <group name="train-cabin">
+      <CabinShell cabin={cabin} />
       <SteeringWheel position={[-0.65, 1.16, -4.1]} />
       {passengers.map((position, index) => (
         <group key={index}>
@@ -83,4 +87,33 @@ export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
       <Person position={[-0.65, 0.62, 4.7]} color="#31537b" worker />
     </group>
   );
+}
+
+function CarriageInterior({ driverPresent }: { driverPresent: boolean }) {
+  return (
+    <group name="carriage-cabin">
+      <CabinShell cabin={CABINS.carriage!} />
+      <Seat position={[0, 1.55, -2]} />
+      {driverPresent && <Person position={[0, 1.55, -2]} color="#563f31" worker />}
+      <Seat position={[-0.48, 1.5, 0.45]} />
+      <Seat position={[0.48, 1.5, 0.45]} />
+      <Seat position={[0, 1.5, 1.3]} />
+      <PixelPart position={[0, 1.04, 0.5]} size={[1.8, 0.05, 2]} color="#9b3040" />
+    </group>
+  );
+}
+
+export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
+  kind: VehicleKind;
+  driverPresent: boolean;
+  passengerSeat: number | null;
+}) {
+  if (kind === 'plane') return <PlaneInterior driverPresent={driverPresent} />;
+  if (kind === 'train') return <TrainInterior driverPresent={driverPresent} passengerSeat={passengerSeat} />;
+  if (kind === 'carriage') return <CarriageInterior driverPresent={driverPresent} />;
+  if (kind === 'boat') {
+    return <><Seat position={[0, 0.45, -0.72]} /><Seat position={[0, 0.45, 0.72]} /><PixelPart position={[-0.9, 0.45, 0.4]} size={[0.1, 0.1, 2.4]} color="#9a7042" rotation={[0, -0.35, 0]} /></>;
+  }
+  if (kind === 'cannon') return null;
+  return <><SteeringWheel position={[-0.58, 1.05, -0.65]} /><Seat position={[0.58, 0.68, -0.05]} /></>;
 }

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { MountKind, VehicleKind } from './vehicleTypes';
 import type { AnimalKind } from './animals';
 import type { ArmorKind, ItemKind, SelectedKind } from './items';
 import type { GalleryItemId } from './galleryCatalog';
@@ -23,10 +24,10 @@ type GameStore = {
   backpackItem: SelectedKind | null;
   itemCounts: Record<string, number>;
   equippedArmor: ArmorKind | null;
-  riding: 'car' | 'horse' | 'plane' | 'train' | 'boat' | null;
+  riding: MountKind | null;
   ridingRole: 'driver' | 'passenger' | null;
-  seatChoice: { vehicle: import('koota').Entity; kind: 'car' | 'plane' | 'train' | 'boat' } | null;
-  setSeatChoice: (choice: { vehicle: import('koota').Entity; kind: 'car' | 'plane' | 'train' | 'boat' } | null) => void;
+  seatChoice: { vehicle: import('koota').Entity; kind: VehicleKind } | null;
+  setSeatChoice: (choice: { vehicle: import('koota').Entity; kind: VehicleKind } | null) => void;
   notice: string;
   teleportOpen: boolean;
   container: { type: 'chest' | 'furnace'; x: number; y: number; z: number } | null;
@@ -59,7 +60,7 @@ type GameStore = {
   setBackpackItem: (kind: SelectedKind | null) => void;
   setItemCount: (kind: ItemKind | GalleryItemId, count: number) => void;
   equipArmor: (kind: ArmorKind | null) => void;
-  setRiding: (riding: 'car' | 'horse' | 'plane' | 'train' | 'boat' | null, role?: 'driver' | 'passenger') => void;
+  setRiding: (riding: MountKind | null, role?: 'driver' | 'passenger') => void;
   setNotice: (notice: string) => void;
   setTeleportOpen: (open: boolean) => void;
   setBlockCount: (count: number) => void;

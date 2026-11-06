@@ -4,6 +4,7 @@ import { queueHarvest, requestFlightToggle, setTouchKey, setTouchMovement } from
 import { useGameStore } from '../game/store';
 import { landPlane } from '../game/vehicles';
 import { world } from '../game/world';
+import { toggleSiren } from '../game/vehicleControls';
 
 function HoldButton({ code, label, onDoubleTap }: { code: string; label: string; onDoubleTap?: () => void }) {
   const lastTap = useRef(0);
@@ -36,8 +37,10 @@ export function TouchControls() {
   const joystick = useRef<HTMLDivElement>(null);
   const knob = useRef<HTMLDivElement>(null);
   const football = useGameStore((state) => state.gameplayMode === 'football');
-  const plane = useGameStore((state) => state.riding === 'plane');
+  const riding = useGameStore((state) => state.riding);
+  const plane = riding === 'plane';
   const pilot = useGameStore((state) => state.ridingRole === 'driver');
+  const emergency = riding === 'police' || riding === 'firetruck';
 
   const moveJoystick = (event: ReactPointerEvent<HTMLDivElement>) => {
     const rect = joystick.current!.getBoundingClientRect();
@@ -115,6 +118,12 @@ export function TouchControls() {
           </button>
         </>}
         {plane && <HoldButton code="KeyE" label={pilot ? 'Sortir' : 'Quitter l’avion'} />}
+        {!plane && riding && <HoldButton code="KeyE" label="Sortir du véhicule" />}
+        {emergency && <button className="touch-button touch-flight" onPointerDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (riding === 'police' || riding === 'firetruck') toggleSiren(riding);
+        }}>Sirène</button>}
         <button
           className="touch-button"
           onPointerDown={(event) => {

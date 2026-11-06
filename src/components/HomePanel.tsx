@@ -79,7 +79,20 @@ export function HomePanel() {
         <label htmlFor="home-name">Nom de la nouvelle maison</label>
         <div className="home-create-row">
           <input id="home-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nom de ta maison" maxLength={32} required autoFocus disabled={homes.length >= MAX_HOMES} />
-          <button className="primary-button" type="submit" disabled={homes.length >= MAX_HOMES}>Créer ici</button>
+          <button
+            className="primary-button"
+            type="submit"
+            disabled={homes.length >= MAX_HOMES}
+            onPointerDown={(event) => {
+              if (event.pointerType === 'mouse') return;
+              event.preventDefault();
+              event.stopPropagation();
+              event.currentTarget.form?.requestSubmit();
+            }}
+            onClick={(event) => {
+              if (event.detail > 0 && event.nativeEvent instanceof PointerEvent && event.nativeEvent.pointerType !== 'mouse') event.preventDefault();
+            }}
+          >Créer ici</button>
         </div>
       </form>
       {homes.length >= MAX_HOMES && <p className="home-limit">Tu as atteint la limite de 5 maisons. Supprimes-en une pour en créer une autre.</p>}

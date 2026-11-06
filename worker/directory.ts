@@ -35,7 +35,7 @@ export function json(value: unknown, status = 200) {
 }
 
 const color = (value: unknown) => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
-const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police']);
+const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
 
 export function parseAppearance(value: unknown, character: 'boy' | 'girl' = 'boy'): Appearance {

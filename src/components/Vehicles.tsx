@@ -14,7 +14,7 @@ function VehicleView({ entity }: { entity: Entity }) {
   const mount = player?.get(PlayerMount);
   const playerPosition = player?.get(PlayerPosition);
   const kind = vehicle?.kind ?? 'car';
-  const showInterior = mount?.vehicle === entity || (playerPosition && position.distanceTo(playerPosition) < 16);
+  const showInterior = mount?.vehicle === entity || (kind !== 'plane' && playerPosition && position.distanceTo(playerPosition) < 16);
   return (
     <group
       ref={(group) => {
@@ -23,7 +23,7 @@ function VehicleView({ entity }: { entity: Entity }) {
       }}
       position={[position.x, position.y, position.z]}
     >
-      {vehicle && <VehicleGlb kind={kind} color={vehicle.color} interior={mount?.vehicle === entity && cameraMode === 'first'} />}
+      {vehicle && <VehicleGlb entity={entity} kind={kind} color={vehicle.color} interior={mount?.vehicle === entity && cameraMode === 'first'} />}
       {showInterior && <VehicleInterior
         kind={kind}
         driverPresent={!(mount?.vehicle === entity && mount.role === 'driver' && ridingRole === 'driver')}

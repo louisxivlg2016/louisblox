@@ -5,6 +5,7 @@ import { isMouseButtonDown, stopMining } from '../input';
 import { useGameStore } from '../store';
 import { Player, PlayerMount, PlayerPosition, Vehicle, VehicleHealth, VehiclePosition } from '../traits';
 import { destroyVehicle } from '../vehicleSync';
+import type { VehicleKind } from '../vehicleTypes';
 
 const origin = new Vector3();
 const direction = new Vector3();
@@ -21,7 +22,7 @@ export function vehicleCombatSystem(world: World, camera: Camera, dt: number, to
   origin.y += 1.62;
   camera.getWorldDirection(direction);
   const mounted = playerEntity?.get(PlayerMount)?.vehicle;
-  let target: { entity: import('koota').Entity; kind: 'car' | 'plane' | 'train' | 'boat'; id: string; health: number } | null = null;
+  let target: { entity: import('koota').Entity; kind: VehicleKind; id: string; health: number } | null = null;
   let closest = 8;
 
   for (const entity of world.query(Vehicle, VehiclePosition, VehicleHealth)) {

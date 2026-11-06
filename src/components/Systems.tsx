@@ -29,6 +29,8 @@ import { footballControlSystem } from '../game/footballClient';
 import { mazeControlSystem } from '../game/mazeClient';
 import { traderSystem } from '../game/systems/traderSystem';
 import { tradeInteractionSystem } from '../game/trading';
+import { updateAmbientSounds } from '../game/audio';
+import { vehicleWeaponSystem } from '../game/systems/vehicleWeaponSystem';
 
 export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } }) {
   const world = useWorld();
@@ -46,7 +48,8 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const tradeHandled = !sleeping && !footballHandled && tradeInteractionSystem(world, camera, actions.place + actions.harvest);
       const itemHandled = !tradeHandled && !footballHandled && !sleeping && itemSystem(world, camera, dt, actions);
       const vehicleHandled = !sleeping && !footballHandled && !itemHandled && vehicleInteractionSystem(world, actions.place + actions.harvest);
-      const vehicleTarget = !sleeping && !footballHandled && vehicleCombatSystem(world, camera, dt, actions.tap);
+      const cannonHandled = !sleeping && !footballHandled && vehicleWeaponSystem(world, camera, dt, actions.tap);
+      const vehicleTarget = !sleeping && !footballHandled && (cannonHandled || vehicleCombatSystem(world, camera, dt, actions.tap));
       const animalTarget = !sleeping && !footballHandled && !vehicleTarget && animalCombatSystem(world, camera, dt, actions.tap);
       animalSystem(world, dt);
       traderSystem(world, dt);
@@ -73,6 +76,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const store = useGameStore.getState();
       if (store.miningProgress !== 0) store.setMiningProgress(0);
     }
+    updateAmbientSounds(world, useGameStore.getState().mode === 'play');
     const player = world.queryFirst(Player)?.get(PlayerPosition);
     if (player) streamChunks(world, player.x, player.z);
     environmentSystem(world, delta, camera);

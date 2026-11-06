@@ -32,9 +32,10 @@ import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
 import { canEditAt, newProtection, useProtectionStore } from './protection';
 import type { WorldProtection } from './protection';
+import type { VehicleKind } from './vehicleTypes';
 
 export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; food?: SelectedKind; meat?: import('./animals').AnimalKind } | null;
-export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: 'car' | 'plane' | 'train' | 'boat' };
+export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: VehicleKind };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
   version: 1 | 2 | 3 | 4 | 5;

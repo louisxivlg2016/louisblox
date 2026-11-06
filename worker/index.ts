@@ -4,6 +4,8 @@ import type { Appearance, PlayerDirectory } from './directory';
 import { PirateEngine } from './pirates';
 import { FootballEngine } from './football';
 import { MazeEngine } from './maze';
+import { isVehicleKind } from '../src/game/vehicleTypes';
+import type { MountKind, VehicleKind } from '../src/game/vehicleTypes';
 export { PlayerDirectory } from './directory';
 
 export type PlayerState = {
@@ -16,7 +18,7 @@ export type PlayerState = {
   moving: boolean;
   airborne?: boolean;
   mounted?: boolean;
-  vehicleKind?: 'car' | 'horse' | 'plane' | 'train' | 'boat';
+  vehicleKind?: MountKind;
   vehicleId?: string;
   horse?: { id: string; x: number; y: number; z: number; yaw: number };
   emote?: 'sit' | 'lie' | 'wave' | null;
@@ -48,7 +50,7 @@ type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radi
 type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; template?: WorldTemplate; protection?: WorldProtection; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']> };
 type SharedVehicle = {
   id: string;
-  kind: 'car' | 'plane' | 'train' | 'boat';
+  kind: VehicleKind;
   color: string;
   x: number;
   y: number;
@@ -87,7 +89,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 const facings = new Set(['north', 'south', 'east', 'west']);
-const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police']);
+const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
 const potionEffects = new Set(['speed', 'slowness', 'jump', 'doubleJump', 'haste', 'strength', 'weakness', 'defence', 'regeneration', 'poison', 'invisibility', 'heatResistance', 'knockback']);
 
@@ -113,8 +115,8 @@ function parseState(value: unknown): PlayerState | null {
     moving: state.moving === true,
     airborne: state.airborne === true,
     mounted: state.mounted === true,
-    vehicleKind: state.vehicleKind === 'car' || state.vehicleKind === 'horse' || state.vehicleKind === 'plane' || state.vehicleKind === 'train' || state.vehicleKind === 'boat' ? state.vehicleKind : undefined,
-    vehicleId: state.vehicleKind === 'car' && typeof state.vehicleId === 'string' && state.vehicleId.length > 0 && state.vehicleId.length <= 80 ? state.vehicleId : undefined,
+    vehicleKind: isVehicleKind(state.vehicleKind) || state.vehicleKind === 'horse' ? state.vehicleKind : undefined,
+    vehicleId: isVehicleKind(state.vehicleKind) && typeof state.vehicleId === 'string' && state.vehicleId.length > 0 && state.vehicleId.length <= 80 ? state.vehicleId : undefined,
     horse: state.vehicleKind === 'horse' ? parseHorse(state.horse) : undefined,
     emote: state.emote === 'sit' || state.emote === 'lie' || state.emote === 'wave' ? state.emote : null,
     selected: typeof state.selected === 'string' && state.selected.length > 0 && state.selected.length <= 96
@@ -164,7 +166,7 @@ function parseVehicle(value: unknown): SharedVehicle | null {
   if (!value || typeof value !== 'object') return null;
   const data = value as Record<string, unknown>;
   if (typeof data.id !== 'string' || data.id.length < 1 || data.id.length > 80) return null;
-  if (data.kind !== 'car' && data.kind !== 'plane' && data.kind !== 'train' && data.kind !== 'boat') return null;
+  if (!isVehicleKind(data.kind)) return null;
   if (typeof data.color !== 'string' || data.color.length < 1 || data.color.length > 32) return null;
   if (!['x', 'y', 'z', 'yaw'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]) && Math.abs(data[key] as number) <= 10000000)) return null;
   return {
@@ -1020,7 +1022,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
-    if (url.pathname === '/health') {
+    if (url.pathname === '/' || url.pathname === '/health') {
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

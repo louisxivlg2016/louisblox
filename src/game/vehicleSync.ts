@@ -2,10 +2,12 @@ import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
 import { Player, PlayerMount, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
 import { dismount } from './vehicles';
+import { isVehicleKind } from './vehicleTypes';
+import type { VehicleKind } from './vehicleTypes';
 
 export type VehicleSnapshot = {
   id: string;
-  kind: 'car' | 'plane' | 'train' | 'boat';
+  kind: VehicleKind;
   color: string;
   x: number;
   y: number;
@@ -21,7 +23,7 @@ export function isVehicleSnapshot(value: unknown): value is VehicleSnapshot {
   if (!value || typeof value !== 'object') return false;
   const data = value as Record<string, unknown>;
   return typeof data.id === 'string' && data.id.length > 0 && data.id.length <= 80
-    && (data.kind === 'car' || data.kind === 'plane' || data.kind === 'train' || data.kind === 'boat')
+    && isVehicleKind(data.kind)
     && typeof data.color === 'string' && data.color.length <= 32
     && ['x', 'y', 'z', 'yaw'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]))
     && (data.driver === undefined || typeof data.driver === 'boolean');

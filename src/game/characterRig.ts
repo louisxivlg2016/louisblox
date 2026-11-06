@@ -9,7 +9,7 @@ import type { OutfitKind } from './outfits';
 type Part = 'body' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
 type Rig = Partial<Record<Exclude<Part, 'body'>, Group>>;
 
-function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean, bounds: Box3, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor'>, allowGrayHair = false, princessHair = false) {
+function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean, bounds: Box3, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor'>, allowGrayHair = false, princessHair = false, outfit?: OutfitKind) {
   const geometry = source.clone().applyMatrix4(matrix);
   const position = geometry.getAttribute('position');
   const index = geometry.index;
@@ -28,7 +28,7 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     else if (legs && Math.abs(x) < width * 0.28 && y < floor + height * 0.48) part = `${side}Leg`;
     indices[part].push(a, b, c);
   }
-  return { geometry, indices, material: appearance ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair, princessHair) : material };
+  return { geometry, indices, material: appearance ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair, princessHair, outfit) : material };
 }
 
 function addPrincessHair(root: Group, width: number, height: number, depth: number, floor: number, offsetY: number, hairColor?: string) {
@@ -59,7 +59,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   const floor = bounds.min.y;
   const pieces: Array<ReturnType<typeof splitGeometry>> = [];
   scene.traverse((object) => {
-    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, outfit !== 'princess', bounds, appearance, outfit === 'louis15', outfit === 'princess'));
+    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, outfit !== 'princess', bounds, appearance, outfit === 'louis15', outfit === 'princess', outfit));
   });
   const root = new Group();
   const rig: Rig = {};

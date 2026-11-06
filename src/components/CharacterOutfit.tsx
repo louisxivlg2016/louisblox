@@ -9,6 +9,7 @@ import { FullCharacterGlb } from './FullCharacterGlb';
 import { useEmoteStore } from '../game/emotes';
 import type { EmoteKind } from '../game/emotes';
 import type { CharacterAppearance } from '../game/appearance';
+import { SoldierDetails } from './SoldierDetails';
 
 function PeriodWig({ large, color }: { large: boolean; color?: string }) {
   const colors = color ? [color, color, color] : large ? ['#3c2a20', '#5a4030', '#4b3528'] : ['#d7d0c3', '#eee9dd', '#c5bcaf'];
@@ -30,6 +31,7 @@ function PeriodWig({ large, color }: { large: boolean; color?: string }) {
 
 export function CharacterOutfit({ outfit, wig = 'auto', moving, airborne, remote = false, seated = false, emote, head, headRef, appearance }: { outfit: OutfitKind; wig?: WigSelection; color?: string | null; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; head?: ReactNode; headRef?: Ref<Object3D>; appearance?: CharacterAppearance }) {
   const localEmote = useEmoteStore((state) => state.current);
+  if (outfit === 'soldier') return <group><FullCharacterGlb outfit="military" moving={moving} airborne={airborne} remote={remote} seated={seated} emote={remote ? emote : localEmote} headRef={headRef} appearance={appearance} /><SoldierDetails /></group>;
   if (outfit !== 'default') return <FullCharacterGlb outfit={outfit} moving={moving} airborne={airborne} remote={remote} seated={seated} emote={remote ? emote : localEmote} headRef={headRef} appearance={appearance} />;
   return (
     <group name="character-head" ref={headRef} position={[0, 1.45, 0]}>

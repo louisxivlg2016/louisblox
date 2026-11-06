@@ -24,6 +24,7 @@ type HomeState = {
   createHome: (worldId: string, name: string, position: HomePosition) => HomeResult;
   renameHome: (worldId: string, id: string, name: string) => boolean;
   deleteHome: (worldId: string, id: string) => void;
+  importHomes: (homes: Record<string, Home[]>) => void;
 };
 
 function parseHome(value: unknown): Home | null {
@@ -94,6 +95,18 @@ export const useHomeStore = create<HomeState>((set, get) => {
     deleteHome: (worldId, id) => {
       const current = get().homes[worldId];
       if (current) update(worldId, current.filter((home) => home.id !== id));
+    },
+    importHomes: (imported) => {
+      const next = { ...get().homes };
+      for (const [worldId, entries] of Object.entries(imported).slice(0, 128)) {
+        if (!Array.isArray(entries)) continue;
+        const valid = entries.slice(0, MAX_HOMES).map(parseHome).filter((home): home is Home => home !== null);
+        if (valid.length === 0) continue;
+        const current = next[worldId] ?? NO_HOMES;
+        next[worldId] = [...current, ...valid.filter((home) => !current.some((existing) => existing.id === home.id))].slice(0, MAX_HOMES);
+      }
+      saveHomes(next);
+      set({ homes: next });
     },
   };
 });

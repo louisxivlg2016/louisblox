@@ -63,7 +63,7 @@ export function TeleportPanel() {
       <div className="home-destinations">
         <strong>Mes maisons ({homes.length} / {MAX_HOMES})</strong>
         {homes.map((home) => <button key={home.id} className="home-destination" onClick={() => travelHome(home)}>{home.name}</button>)}
-        <button className="home-manage-button" onClick={manageHomes}>Créer ou gérer mes maisons · B</button>
+        <button className="home-manage-button" onClick={manageHomes}>Créer ou gérer mes maisons · M</button>
       </div>
       {enabled && online && (
         <div className="player-teleport">
