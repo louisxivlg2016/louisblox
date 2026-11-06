@@ -3,7 +3,7 @@ import { toggleSiren, useVehicleControls } from '../game/vehicleControls';
 
 export function SirenButton() {
   const riding = useGameStore((state) => state.riding);
-  const kind = riding === 'police' || riding === 'firetruck' ? riding : null;
+  const kind = riding === 'firetruck' ? riding : null;
   const enabled = useVehicleControls((state) => kind ? state[kind] : false);
   if (!kind) return null;
 

@@ -61,7 +61,10 @@ export function BoutiquePanel() {
           <h3>Couleur de la peau</h3>
           <div className="appearance-options">{SKIN_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.skinColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ skinColor: color })} aria-label={`Peau ${color}`} />)}</div>
           <h3>Couleur des cheveux</h3>
-          <div className="appearance-options">{HAIR_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.hairColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ hairColor: color })} aria-label={`Cheveux ${color}`} />)}</div>
+          <div className="appearance-options">
+            <button className={appearance.originalHairColor ? 'active' : ''} aria-pressed={appearance.originalHairColor} onClick={() => setAppearance({ originalHairColor: !appearance.originalHairColor })}>Cheveux d’origine</button>
+            {HAIR_COLORS.map((color) => <button key={color} className={`color-swatch ${!appearance.originalHairColor && appearance.hairColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ hairColor: color, originalHairColor: false })} aria-label={`Cheveux ${color}`} />)}
+          </div>
           <h3>Couleur des sourcils</h3>
           <div className="appearance-options">
             <button className={appearance.eyebrowColor === null ? 'active' : ''} onClick={() => setAppearance({ eyebrowColor: null })} aria-label="Sourcils comme les cheveux">Comme les cheveux</button>

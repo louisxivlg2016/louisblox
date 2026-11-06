@@ -10,6 +10,8 @@ import { isDown, isMouseDown } from '../game/input';
 import { useBattleStore } from '../game/battle';
 import { useProtectionStore } from '../game/protection';
 import { useCharacterStore } from '../game/characterStore';
+import * as audio from '../game/audio';
+import { biomeAt } from '../game/levels';
 
 export function App() {
   const mode = useGameStore((state) => state.mode);
@@ -29,7 +31,7 @@ export function App() {
               louisbloxRenderer: gl,
               louisbloxDebug: async () => {
                 const [traits, chunks, vehicles, ruins, collision, effects, football, vehicleTypes, vehicleWeapon, vehicleControls] = await Promise.all([import('../game/traits'), import('../game/chunks'), import('../game/vehicles'), import('../game/ruins'), import('../game/systems/collisionSystem'), import('../game/effects'), import('../game/footballClient'), import('../game/vehicleTypes'), import('../game/systems/vehicleWeaponSystem'), import('../game/vehicleControls')]);
-                return { world, gl, camera, r3f, character: useCharacterStore, store: useGameStore, multiplayer: useMultiplayerStore, remote: useRemotePlayerStore, battle: useBattleStore, protection: useProtectionStore, football: football.useFootballStore, effects: effects.useEffectStore, effectSystem: effects.effectSystem, hasActiveEffects: effects.hasActiveEffects, sirens: vehicleControls.useVehicleControls, isDown, mining: () => isMouseDown(0), ...traits, ...chunks, ...vehicles, ...ruins, ...collision, ...vehicleTypes, ...vehicleWeapon };
+                return { audio, biomeAt, world, gl, camera, r3f, character: useCharacterStore, store: useGameStore, multiplayer: useMultiplayerStore, remote: useRemotePlayerStore, battle: useBattleStore, protection: useProtectionStore, football: football.useFootballStore, effects: effects.useEffectStore, effectSystem: effects.effectSystem, hasActiveEffects: effects.hasActiveEffects, sirens: vehicleControls.useVehicleControls, isDown, mining: () => isMouseDown(0), ...traits, ...chunks, ...vehicles, ...ruins, ...collision, ...vehicleTypes, ...vehicleWeapon };
               },
             });
           }}

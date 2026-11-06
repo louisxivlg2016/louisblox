@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { sanitizeAppearance } from '../game/appearance';
+import { appearanceHairColor, sanitizeAppearance } from '../game/appearance';
 import type { CharacterAppearance } from '../game/appearance';
 import type { CharacterKind } from '../game/characterStore';
 import { selectedWig } from '../game/outfits';
@@ -14,7 +14,7 @@ export function PixelAvatar({ character = 'boy', outfit = 'default', wig = 'auto
 }) {
   const current = sanitizeAppearance(appearance, character);
   const periodWig = selectedWig(outfit, wig);
-  const hair = current.hairColor;
+  const hair = appearanceHairColor(current, character);
   const crowned = outfit === 'king' || outfit === 'louis14' || outfit === 'princess';
   return (
     <span

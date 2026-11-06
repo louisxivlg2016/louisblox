@@ -26,7 +26,7 @@ import { isOutfitKind, isWigSelection, OUTFITS, selectedWig } from '../game/outf
 import type { OutfitKind, WigSelection } from '../game/outfits';
 import { CharacterOutfit } from './CharacterOutfit';
 import { hasFullCharacter } from './FullCharacterGlb';
-import { sanitizeAppearance } from '../game/appearance';
+import { appearanceHairColor, sanitizeAppearance } from '../game/appearance';
 import type { CharacterAppearance } from '../game/appearance';
 import { receiveFriendAcceptance, receiveFriendRequest, registerSelfProfile } from '../game/friends';
 import { playerIdentity } from '../game/playerIdentity';
@@ -99,6 +99,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
   const hue = [...playerId].reduce((value, character) => (value * 31 + character.charCodeAt(0)) % 360, 0);
   const girl = character === 'girl';
   const current = sanitizeAppearance(appearance, character);
+  const hair = appearanceHairColor(current, character);
   const body = current.clothingColor ?? (outfit === 'default' ? (girl ? '#9a5f9f' : `hsl(${hue}, 45%, 48%)`) : OUTFITS[outfit].body);
   const legs = current.clothingColor ?? (outfit === 'default' ? (girl ? '#4b405e' : '#354d6d') : OUTFITS[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
@@ -150,20 +151,20 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
       <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color={current.skinColor} />
       {!hasWig && (
         <group name="natural-hair">
-          <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={current.hairColor} />
-          <PixelPart position={[0, 1.75, 0.245]} size={[0.5, 0.35, 0.055]} color={current.hairColor} />
-          <PixelPart position={[0, 1.88, -0.245]} size={[0.5, 0.12, 0.055]} color={current.hairColor} />
+          <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={hair} />
+          <PixelPart position={[0, 1.75, 0.245]} size={[0.5, 0.35, 0.055]} color={hair} />
+          <PixelPart position={[0, 1.88, -0.245]} size={[0.5, 0.12, 0.055]} color={hair} />
         </group>
       )}
       {current.hairStyle === 'long' && !hasWig && (
         <>
-          <PixelPart position={[0, 1.58, 0.24]} size={[0.5, 0.65, 0.12]} color={current.hairColor} />
-          <PixelPart position={[-0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={current.hairColor} />
-          <PixelPart position={[0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={current.hairColor} />
+          <PixelPart position={[0, 1.58, 0.24]} size={[0.5, 0.65, 0.12]} color={hair} />
+          <PixelPart position={[-0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={hair} />
+          <PixelPart position={[0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={hair} />
         </>
       )}
-      <PixelPart position={[-0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={current.eyebrowColor ?? current.hairColor} />
-      <PixelPart position={[0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={current.eyebrowColor ?? current.hairColor} />
+      <PixelPart position={[-0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={current.eyebrowColor ?? hair} />
+      <PixelPart position={[0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={current.eyebrowColor ?? hair} />
       <PixelPart position={[-0.11, 1.74, -0.25]} size={[0.09, 0.07, 0.025]} color="#f4f4ed" />
       <PixelPart position={[0.11, 1.74, -0.25]} size={[0.09, 0.07, 0.025]} color="#f4f4ed" />
       <PixelPart position={[-0.11, 1.74, -0.27]} size={[0.035, 0.05, 0.02]} color={current.eyeColor} />
@@ -186,7 +187,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
             scale={getItemMeta(state.selected).category === 'vehicle' ? 0.2 : 0.72}
             userData={{ item: state.selected }}
           >
-            <ItemModel kind={state.selected} />
+            <ItemModel kind={state.selected} flipGuns={!hasFullCharacter(outfit, wig)} />
           </group>
         )}
       </group>

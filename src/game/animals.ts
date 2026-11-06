@@ -73,8 +73,21 @@ export function spawnTrader(world: World, x: number, z: number, seed: number) {
   return [trader, ...camels];
 }
 
-export function spawnChunkAnimals(world: World, cx: number, cz: number, water: WaterTile[], seed: number) {
+function spawnTradersAlongGrid(world: World, cx: number, cz: number, seed: number) {
   const entities: Entity[] = [];
+  for (let cellX = Math.floor(cx * 16 / 100); cellX <= Math.floor((cx * 16 + 15) / 100); cellX += 1) {
+    for (let cellZ = Math.floor(cz * 16 / 100); cellZ <= Math.floor((cz * 16 + 15) / 100); cellZ += 1) {
+      const x = cellX * 100 + 50;
+      const z = cellZ * 100 + 50;
+      if (x < cx * 16 || x >= (cx + 1) * 16 || z < cz * 16 || z >= (cz + 1) * 16) continue;
+      entities.push(...spawnTrader(world, x, z, seed + cellX * 37 + cellZ * 61));
+    }
+  }
+  return entities;
+}
+
+export function spawnChunkAnimals(world: World, cx: number, cz: number, water: WaterTile[], seed: number) {
+  const entities: Entity[] = [...spawnTradersAlongGrid(world, cx, cz, seed)];
 
   if (water.length > 0 && hash(cx, cz, seed + 800) > 0.95) {
     const tile = water[Math.floor(hash(cx, cz, seed + 801) * water.length)];

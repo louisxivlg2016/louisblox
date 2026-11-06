@@ -19,6 +19,7 @@ import { hasFullCharacter } from './FullCharacterGlb';
 import { useEmoteStore } from '../game/emotes';
 import { useEatingStore } from '../game/eating';
 import { canWalkInVehicle } from '../game/vehicleTypes';
+import { appearanceHairColor } from '../game/appearance';
 
 export function PlayerAvatar({ entity }: { entity: Entity }) {
   const cameraMode = useGameStore((state) => state.cameraMode);
@@ -32,6 +33,7 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
   const outfit = useCharacterStore((state) => state.outfit);
   const wig = useCharacterStore((state) => state.wig);
   const appearance = useCharacterStore((state) => state.appearance);
+  const hair = appearanceHairColor(appearance, character);
   const emote = useEmoteStore((state) => state.current);
   const eating = useEatingStore((state) => state.eating);
   const leftArm = useRef<Group>(null);
@@ -98,20 +100,20 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
       <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color={appearance.skinColor} />
       {!hasWig && (
         <group name="natural-hair">
-          <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={appearance.hairColor} />
-          <PixelPart position={[0, 1.75, 0.245]} size={[0.5, 0.35, 0.055]} color={appearance.hairColor} />
-          <PixelPart position={[0, 1.88, -0.245]} size={[0.5, 0.12, 0.055]} color={appearance.hairColor} />
+          <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={hair} />
+          <PixelPart position={[0, 1.75, 0.245]} size={[0.5, 0.35, 0.055]} color={hair} />
+          <PixelPart position={[0, 1.88, -0.245]} size={[0.5, 0.12, 0.055]} color={hair} />
         </group>
       )}
       {appearance.hairStyle === 'long' && !hasWig && (
         <>
-          <PixelPart position={[0, 1.58, 0.24]} size={[0.5, 0.65, 0.12]} color={appearance.hairColor} />
-          <PixelPart position={[-0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={appearance.hairColor} />
-          <PixelPart position={[0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={appearance.hairColor} />
+          <PixelPart position={[0, 1.58, 0.24]} size={[0.5, 0.65, 0.12]} color={hair} />
+          <PixelPart position={[-0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={hair} />
+          <PixelPart position={[0.24, 1.59, 0.08]} size={[0.1, 0.55, 0.28]} color={hair} />
         </>
       )}
-      <PixelPart position={[-0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={appearance.eyebrowColor ?? appearance.hairColor} />
-      <PixelPart position={[0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={appearance.eyebrowColor ?? appearance.hairColor} />
+      <PixelPart position={[-0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={appearance.eyebrowColor ?? hair} />
+      <PixelPart position={[0.11, 1.805, -0.265]} size={[0.12, 0.035, 0.025]} color={appearance.eyebrowColor ?? hair} />
       {sleeping ? (
         <>
           <PixelPart position={[-0.11, 1.74, -0.25]} size={[0.1, 0.025, 0.025]} color="#49382f" />
@@ -145,7 +147,7 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
         <group name="held-item" visible={!eating} position={hasFullCharacter(outfit, wig) ? [0, -(typeof held === 'string' ? itemGripOffset(held) : 0) * 0.72, 0] : [0.05, -0.58 - (typeof held === 'string' ? itemGripOffset(held) : 0) * 0.72, -0.12]} scale={typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof held === 'number'
             ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
-            : <ItemModel kind={held} />}
+            : <ItemModel kind={held} flipGuns={!hasFullCharacter(outfit, wig)} />}
         </group>
       </group>
       {eating && <group name="eating-food" position={[0, 1.72, -0.42]} scale={0.65}><ItemModel kind={eating.kind} /></group>}

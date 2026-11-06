@@ -1,7 +1,6 @@
 import musicUrl from '../../assets/LouisBlox_Theme.mp3';
 import battleMusicUrl from '../../assets/audio/The_Last_Move.mp3';
 import whistleUrl from '../../son/siflet.mp3';
-import policeSirenUrl from '../../son/sirene-de-police.mp3';
 import fireSirenUrl from '../../son/sirene-de-pompier.mp3';
 import breakBlockUrl from '../../son/son-de-casse-un-bloc.mp3';
 import gunshotUrl from '../../son/tire-de-fusil.mp3';
@@ -21,6 +20,31 @@ import { getBlockIndex } from './chunks';
 let music: HTMLAudioElement | null = null;
 let mode: GameplayMode = 'creative';
 let started = false;
+let listening = false;
+const pending = new Set<HTMLAudioElement>();
+const reported = new Set<string>();
+
+function attemptPlay(element: HTMLAudioElement) {
+  if (!element.paused) return;
+  void element.play().then(() => {
+    pending.delete(element);
+    if (element.dataset.effect) window.dispatchEvent(new CustomEvent('louisblox-sound', { detail: element.dataset.effect }));
+  }).catch((error: unknown) => {
+    if (error instanceof Error && error.name === 'AbortError') {
+      pending.delete(element);
+      return;
+    }
+    if (pending.size >= 24) {
+      const oldest = pending.values().next().value;
+      if (oldest) pending.delete(oldest);
+    }
+    pending.add(element);
+    if (!reported.has(element.src)) {
+      reported.add(element.src);
+      console.warn('Lecture audio différée par le navigateur', error);
+    }
+  });
+}
 
 export function setMusicMode(nextMode: GameplayMode) {
   mode = nextMode;
@@ -30,7 +54,7 @@ export function setMusicMode(nextMode: GameplayMode) {
   music.pause();
   music.src = source;
   music.dataset.track = source;
-  if (started) void music.play().catch(() => undefined);
+  if (started) attemptPlay(music);
 }
 
 export function startMusic() {
@@ -44,14 +68,32 @@ export function startMusic() {
     document.body.appendChild(music);
   }
   setMusicMode(mode);
-  if (music.paused) void music.play().catch(() => undefined);
+  attemptPlay(music);
+  for (const name of activeLoops) {
+    const element = loops.get(name);
+    if (element) attemptPlay(element);
+  }
 }
 
-export type SoundEffect = 'whistle' | 'policeSiren' | 'fireSiren' | 'breakBlock' | 'gunshot' | 'ball' | 'explosion' | 'fire' | 'eat' | 'walk' | 'placeBlock' | 'waterSplash';
+export function initAudio() {
+  if (listening) return;
+  listening = true;
+  const unlock = () => {
+    startMusic();
+    for (const element of [...pending]) attemptPlay(element);
+  };
+  window.addEventListener('pointerdown', unlock, { capture: true });
+  window.addEventListener('keydown', unlock, { capture: true });
+  window.addEventListener('touchend', unlock, { capture: true, passive: true });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) unlock();
+  });
+}
+
+export type SoundEffect = 'whistle' | 'fireSiren' | 'breakBlock' | 'gunshot' | 'ball' | 'explosion' | 'fire' | 'eat' | 'walk' | 'placeBlock' | 'waterSplash';
 
 const soundUrls: Record<SoundEffect, string> = {
   whistle: whistleUrl,
-  policeSiren: policeSirenUrl,
   fireSiren: fireSirenUrl,
   breakBlock: breakBlockUrl,
   gunshot: gunshotUrl,
@@ -66,6 +108,7 @@ const soundUrls: Record<SoundEffect, string> = {
 
 const audio = new Map<SoundEffect, HTMLAudioElement>();
 const loops = new Map<SoundEffect, HTMLAudioElement>();
+const activeLoops = new Set<SoundEffect>();
 const waterStates = new WeakMap<object, boolean>();
 
 function sound(name: SoundEffect) {
@@ -79,25 +122,29 @@ function sound(name: SoundEffect) {
 }
 
 export function playSound(name: SoundEffect, volume = 0.5) {
-  if (!started) return;
+  if (!started) startMusic();
   const element = sound(name).cloneNode(true) as HTMLAudioElement;
   element.volume = volume;
   element.dataset.effect = name;
-  void element.play().catch(() => undefined);
-  window.dispatchEvent(new CustomEvent('louisblox-sound', { detail: name }));
+  attemptPlay(element);
 }
 
-export function setLoopSound(name: Extract<SoundEffect, 'walk' | 'fire' | 'policeSiren' | 'fireSiren'>, active: boolean, volume = 0.3) {
+export function setLoopSound(name: Extract<SoundEffect, 'walk' | 'fire' | 'fireSiren'>, active: boolean, volume = 0.3) {
   const current = loops.get(name);
-  if (!active || !started) {
-    if (current) current.pause();
+  if (!active) {
+    activeLoops.delete(name);
+    if (current) {
+      current.pause();
+      pending.delete(current);
+    }
     return;
   }
+  activeLoops.add(name);
   const element = current ?? sound(name).cloneNode(true) as HTMLAudioElement;
   element.loop = true;
   element.volume = volume;
   loops.set(name, element);
-  if (element.paused) void element.play().catch(() => undefined);
+  if (started) attemptPlay(element);
 }
 
 export function updateWaterSound(world: object, inWater: boolean) {

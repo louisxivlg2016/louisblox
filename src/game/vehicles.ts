@@ -29,10 +29,11 @@ export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y
 }
 
 export function spawnVehicle(world: World, kind: VehicleKind, x: number, y: number, z: number, color = '#d63935', yaw = 0, id = crypto.randomUUID()) {
+  const spawnY = kind === 'plane' ? groundAt(world, x, z, y + 0.01) : y;
   const entity = world.spawn(
     Vehicle({ id, color, kind }),
-    VehiclePosition(new Vector3(x, y, z)),
-    VehicleMotion({ yaw, homeX: x, homeY: y, homeZ: z, homeYaw: yaw }),
+    VehiclePosition(new Vector3(x, spawnY, z)),
+    VehicleMotion({ yaw, homeX: x, homeY: spawnY, homeZ: z, homeYaw: yaw }),
     VehicleMesh(),
     VehicleHealth(),
   );
@@ -261,8 +262,11 @@ function moveMount(world: World, position: Vector3, yaw: number, speed: number, 
 function movePlane(world: World, position: Vector3, yaw: number, speed: number, dt: number, vertical: number, landing: boolean) {
   const x = position.x - Math.sin(yaw) * speed * dt;
   const z = position.z - Math.cos(yaw) * speed * dt;
-  const ground = vertical < 0 ? groundAt(world, x, z, position.y + 1.01) + 0.02 : MIN_WORLD_Y + 2;
-  const y = Math.max(ground, Math.min(MAX_BUILD_Y - 5, position.y + vertical * dt * 8));
+  const terrain = groundAt(world, x, z, position.y + 1.01);
+  const ground = terrain + 0.02;
+  const airborne = vertical > 0 || (!landing && position.y > terrain + 2.1);
+  const nextY = position.y + vertical * dt * 8;
+  const y = airborne ? Math.max(ground, Math.min(MAX_BUILD_Y - 5, nextY)) : ground;
   const blocks = getBlockIndex(world);
   for (const height of [0.6, 1.5]) {
     const block = blocks.get(voxelKey(Math.round(x), Math.round(y + height), Math.round(z)));

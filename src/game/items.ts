@@ -82,7 +82,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   train: item('Train de passagers', '#a73b38', 'vehicle', { shape: 'train' }),
   boat: item('Bateau à deux places', '#9b6b3f', 'vehicle', { shape: 'boat' }),
   jeep: item('Jeep militaire', '#777b43', 'vehicle', { shape: 'jeep' }),
-  police_car: item('Voiture de police avec sirène', '#e2e7e7', 'vehicle', { shape: 'police' }),
+  police_car: item('Voiture de police', '#e2e7e7', 'vehicle', { shape: 'police' }),
   firetruck: item('Camion de pompier avec sirène', '#d63632', 'vehicle', { shape: 'firetruck' }),
   carriage: item('Calèche avec chevaux', '#d6ae40', 'vehicle', { shape: 'carriage' }),
   cannon: item('Canon à roues', '#6d4829', 'vehicle', { shape: 'cannon' }),

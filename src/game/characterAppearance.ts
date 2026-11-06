@@ -103,7 +103,7 @@ function eyebrowPixel(red: number, green: number, blue: number) {
   return maximum > 8 && maximum < 190 && red >= blue * 0.85 && green >= blue * 0.85;
 }
 
-export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor'>, allowGrayHair = false, princessHair = false, outfit?: import('./outfits').OutfitKind) {
+export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'originalHairColor'>, allowGrayHair = false, princessHair = false, outfit?: import('./outfits').OutfitKind) {
   const material = source.clone();
   const image = material.map?.image as { width?: number; height?: number } | undefined;
   if (!material.map || !image?.width || !image.height || !geometry.getAttribute('uv')) return material;
@@ -120,7 +120,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   const eyebrowMask = maskCanvas(geometry, bounds, 'eyebrows', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
   material.userData.faceFrontSign = frontSign;
   const skin = new Color(appearance.skinColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const hair = new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const hair = appearance.originalHairColor ? null : new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const eyes = new Color(appearance.eyeColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const eyebrows = new Color(appearance.eyebrowColor ?? appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const uniform = new Color(outfit === 'pirate' ? '#b6373b' : '#397ab5').getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);

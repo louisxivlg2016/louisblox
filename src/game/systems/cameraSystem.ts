@@ -66,10 +66,10 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const center = mount?.vehicle?.get(VehiclePosition) ?? position;
   const distance = mount?.kind && mount.kind !== 'horse' ? vehicleViewDistance(mount.kind) : 6;
   const exteriorPlane = mount?.kind === 'plane' && cameraMode !== 'first';
-  const height = exteriorPlane ? 320 : Math.max(0.6, Math.min(5.5, 2.4 - Math.sin(state.pitch) * 3));
-  const targetHeight = exteriorPlane ? 190 : 1.3;
-  if (camera instanceof PerspectiveCamera && camera.far !== (exteriorPlane ? 3500 : 130)) {
-    camera.far = exteriorPlane ? 3500 : 130;
+  const height = exteriorPlane ? 22 : Math.max(0.6, Math.min(5.5, 2.4 - Math.sin(state.pitch) * 3));
+  const targetHeight = exteriorPlane ? 14 : 1.3;
+  if (camera instanceof PerspectiveCamera && camera.far !== (exteriorPlane ? 500 : 130)) {
+    camera.far = exteriorPlane ? 500 : 130;
     if ('updateProjectionMatrix' in camera) camera.updateProjectionMatrix();
   }
   if (cameraMode === 'front' || cameraMode === 'third') {

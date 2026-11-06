@@ -51,20 +51,20 @@ function CabinShell({ cabin }: { cabin: CabinDefinition }) {
 
 function PlaneInterior({ driverPresent }: { driverPresent: boolean }) {
   const cabin = CABINS.plane!;
-  const rows = Array.from({ length: 12 }, (_, index) => cabin.front + 50 + index * 28);
+  const rows = Array.from({ length: 6 }, (_, index) => cabin.front + 5 + index * 3.4);
   return (
     <group name="plane-cabin">
       <CabinShell cabin={cabin} />
       <SteeringWheel position={[-0.65, cabin.floor + 0.95, cabin.front + 0.25]} />
       <Seat position={[-0.65, cabin.floor + 0.55, cabin.front + 1.1]} />
       {driverPresent && <Person position={[-0.65, cabin.floor + 0.55, cabin.front + 1.1]} color="#31537b" worker />}
-      {rows.flatMap((z, row) => [-6, -2, 2, 6].map((x, column) => (
+      {rows.flatMap((z, row) => [-0.62, 0.62].map((x, column) => (
         <group key={`${row}-${column}`}>
           <Seat position={[x, cabin.floor + 0.55, z]} />
           <Person position={[x, cabin.floor + 0.55, z]} color={(row + column) % 2 === 0 ? '#568b62' : '#8d5e9d'} />
         </group>
       )))}
-      <Person position={[0, cabin.floor, cabin.rear - 4]} color="#31537b" worker />
+      <Person position={[0, cabin.floor, cabin.rear - 2]} color="#31537b" worker />
     </group>
   );
 }

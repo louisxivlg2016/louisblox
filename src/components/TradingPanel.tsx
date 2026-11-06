@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { canTrade, tradeWithMerchant, TRADE_OFFERS, useTradeStore } from '../game/trading';
 import { requestPlay } from '../game/input';
 import { selectionInfo } from '../game/items';
@@ -9,6 +10,7 @@ export function TradingPanel() {
   const message = useTradeStore((state) => state.message);
   const itemCounts = useGameStore((state) => state.itemCounts);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
+  const [talking, setTalking] = useState(false);
   if (!open) return null;
   const close = () => {
     useTradeStore.getState().setOpen(false);
@@ -19,6 +21,10 @@ export function TradingPanel() {
       <section className="book-panel backpack-panel trade-panel" aria-label="Échange avec le marchand">
         <div className="backpack-header"><h2>Marchand ambulant</h2><button className="secondary-button" onClick={close}>Fermer et reprendre</button></div>
         <p>{gameplayMode === 'survival' ? 'Choisis une offre : les objets sont échangés réellement.' : 'Choisis une offre : elle est gratuite en mode créatif.'}</p>
+        <div className="trade-conversation">
+          <button className="secondary-button trade-talk-button" onClick={() => setTalking(true)}>Parler</button>
+          <p role="status">{talking ? 'Je fais un voyage.' : 'Bonjour, voyageur !'}</p>
+        </div>
         <div className="trade-offers">
           {TRADE_OFFERS.map((offer) => (
             <article className="trade-offer" data-offer={offer.id} key={offer.id}>

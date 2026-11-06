@@ -1,4 +1,4 @@
-import { startMusic } from './audio';
+import { initAudio, startMusic } from './audio';
 import { useGameStore } from './store';
 import { useSignStore } from './signs';
 import { useChatStore } from './chat';
@@ -98,6 +98,7 @@ export function clearInput(preserveCaptureClick?: boolean | Event) {
 }
 
 export function initInput() {
+  initAudio();
   if (initialized) return;
   initialized = true;
 
@@ -244,7 +245,7 @@ export function initInput() {
     }
     if (event.code === 'KeyL' && !event.repeat && useGameStore.getState().mode === 'play') {
       const riding = useGameStore.getState().riding;
-      if (riding === 'police' || riding === 'firetruck') toggleSiren(riding);
+      if (riding === 'firetruck') toggleSiren(riding);
     }
     if (event.code === 'KeyQ' && !event.repeat && useGameStore.getState().mode === 'play') {
       event.preventDefault();
