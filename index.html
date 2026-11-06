@@ -435,6 +435,24 @@
         .chat-message { grid-template-columns: auto 1fr; }
         .chat-message span { grid-column: 1 / -1; }
       }
+      .siren-toggle {
+        position: absolute;
+        right: 18px;
+        bottom: 124px;
+        z-index: 14;
+        min-width: 106px;
+        min-height: 42px;
+        padding: 10px 14px;
+        pointer-events: auto;
+        touch-action: manipulation;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        background: rgba(50, 93, 140, .94);
+        border: 2px solid #a4d5ff;
+      }
+      .siren-toggle.active { background: rgba(174, 61, 46, .96); border-color: #ffd084; }
       .teleport-toggle {
         position: absolute;
         right: 18px;
@@ -517,6 +535,7 @@
         .mobile-controls { display: block; }
         .touch-gesture-hint { position: absolute; top: 62px; left: 50%; transform: translateX(-50%); width: max-content; max-width: 85vw; color: #fff; font-size: 11px; line-height: 1.5; text-align: center; text-shadow: 1px 1px 0 #000; pointer-events: none; }
         .controls-hint, .action-hint { display: none; }
+        .siren-toggle { right: 12px; bottom: 366px; min-height: 46px; }
         .teleport-toggle { right: 12px; bottom: 312px; }
         .plane-touch-actions { bottom: 144px; gap: 7px; }
         .plane-touch-actions .touch-button { min-height: 46px; padding: 7px 9px; }

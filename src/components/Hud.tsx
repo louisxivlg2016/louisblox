@@ -9,6 +9,7 @@ import { Backpack } from './Backpack';
 import { BoutiquePanel } from './BoutiquePanel';
 import { ContainerPanel } from './ContainerPanel';
 import { TouchControls } from './TouchControls';
+import { SirenButton } from './SirenButton';
 import { BookPanel } from './BookPanel';
 import { SignPanel } from './SignPanel';
 import { useSignStore } from '../game/signs';
@@ -88,6 +89,7 @@ export function Hud() {
           <div className="action-hint">{gameplayMode === 'football' ? 'Clic gauche : tir · E : tir puissant · T : tacler · G : passer' : <>Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</>}</div>
           {notice && <div className="game-notice">{notice}</div>}
           <EffectsHud />
+          <SirenButton />
           <TouchControls />
         </>
       )}
