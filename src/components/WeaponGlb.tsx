@@ -1,6 +1,6 @@
 import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { CanvasTexture, Color, Mesh, NearestFilter } from 'three';
+import { CanvasTexture, Color, Mesh, NearestFilter, SRGBColorSpace } from 'three';
 import type { Texture } from 'three';
 import { usePaintballStore } from '../game/paintball';
 import autoRifleUrl from '../../assets/models/weapon-auto-rifle.glb';
@@ -22,8 +22,8 @@ function recolorTexture(source: Texture, metalColor?: string, paintColor?: strin
   const context = canvas.getContext('2d')!;
   context.drawImage(image, 0, 0);
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-  const metal = metalColor ? new Color(metalColor).getRGB({ r: 0, g: 0, b: 0 }) : null;
-  const paint = paintColor ? new Color(paintColor).getRGB({ r: 0, g: 0, b: 0 }) : null;
+  const metal = metalColor ? new Color(metalColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace) : null;
+  const paint = paintColor ? new Color(paintColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace) : null;
   for (let index = 0; index < pixels.data.length; index += 4) {
     const red = pixels.data[index];
     const green = pixels.data[index + 1];
@@ -73,7 +73,7 @@ export function WeaponGlb({ kind, metalColor }: { kind: WeaponKind; metalColor?:
     });
     return clone;
   }, [scene, kind, metalColor, paintColor]);
-  return <primitive object={model} />;
+  return <group scale={0.65}><primitive object={model} /></group>;
 }
 
 export function WeaponWithFallback(props: Parameters<typeof WeaponGlb>[0]) {

@@ -112,7 +112,8 @@ export function FlintlockModel() {
 }
 
 export function GunModel({ color, bomb, rifle }: { color: string; bomb?: boolean; rifle?: boolean }) {
-  return <WeaponWithFallback kind={bomb ? 'bomb-launcher' : rifle ? 'auto-rifle' : 'pistol'} metalColor={color} />;
+  const metalColor = color === getItemMeta('pistol_gold').color ? color : undefined;
+  return <WeaponWithFallback kind={bomb ? 'bomb-launcher' : rifle ? 'auto-rifle' : 'pistol'} metalColor={metalColor} />;
 }
 
 export function FoodModel({ kind }: { kind: ItemKind | GalleryItemId }) {
