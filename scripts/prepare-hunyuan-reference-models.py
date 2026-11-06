@@ -11,8 +11,9 @@ TARGET_HEIGHT = 1.9000003337860107
 models = {
     'cow': (f'{LIVING}/cow.glb', 'animal', 1.35),
     'chicken': (f'{LIVING}/chicken.glb', 'bird', 0.75),
-    'sheep': (f'{LIVING}/sheep.glb', 'animal', 1.1),
+    'sheep': (f'{LIVING}/sheep.glb', 'animal', 1.4),
     'pig': (f'{LIVING}/pig.glb', 'animal', 0.85),
+    'horse': (f'{LIVING}/horse.glb', 'animal', 1.65),
     'camel': (f'{LIVING}/camel.glb', 'animal', 1.85),
     'duck': (f'{LIVING}/duck.glb', 'bird', 0.65),
     'trader': (f'{LIVING}/trader.glb', 'human', TARGET_HEIGHT),
@@ -79,7 +80,7 @@ for name in requested:
         scale = target / max(size.y, 0.0001)
     else:
         scale = min(2.65 / max(size.x, 0.0001), target / max(size.z, 0.0001), (6.2 if name == 'fire-truck' else 5.1) / max(size.y, 0.0001))
-    transform = Matrix.Translation(Vector((-center.x, -center.y, -minimum.z))) @ Matrix.Scale(scale, 4)
+    transform = Matrix.Translation(Vector((-center.x * scale, -center.y * scale, -minimum.z * scale))) @ Matrix.Scale(scale, 4)
     for obj in objects:
         obj.data.transform(transform)
     minimum, maximum = bounds(objects)
@@ -95,7 +96,7 @@ for name in requested:
                     part = point.z < minimum.z + size.z * 0.4 and abs(point.x - center.x) > size.x * 0.28
                     index = (0 if point.x < center.x else 2) + (0 if point.y < center.y else 1)
                 elif kind == 'animal':
-                    part = point.z < minimum.z + size.z * 0.45 and abs(point.x - center.x) > size.x * 0.16
+                    part = point.z < minimum.z + size.z * 0.45 and abs(point.x - center.x) > size.x * 0.16 and (name != 'horse' or point.y < center.y + size.y * 0.38)
                     index = (0 if point.x < center.x else 2) + (0 if point.y < center.y else 1)
                 else:
                     part = point.z < minimum.z + size.z * 0.4 and abs(point.x - center.x) < size.x * 0.22 and abs(point.y - center.y) < size.y * 0.35

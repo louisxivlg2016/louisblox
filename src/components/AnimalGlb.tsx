@@ -4,13 +4,6 @@ import { Box3, Mesh, NearestFilter, Vector3 } from 'three';
 import type { AnimalKind } from '../game/animals';
 import type { Entity } from 'koota';
 import { ReferenceAnimal } from './ReferenceAnimals';
-import camelUrl from '../../assets/models/camel.glb';
-import cowUrl from '../../assets/models/cow.glb';
-import horseUrl from '../../assets/models/horse.glb';
-import pigUrl from '../../assets/models/pig.glb';
-import sheepUrl from '../../assets/models/sheep.glb';
-import chickenUrl from '../../assets/models/chicken.glb';
-import duckUrl from '../../assets/models/duck.glb';
 import bearUrl from '../../assets/models/bear.glb';
 import deerUrl from '../../assets/models/deer.glb';
 import wolfUrl from '../../assets/models/wolf.glb';
@@ -18,14 +11,9 @@ import snowWolfUrl from '../../assets/models/snowWolf.glb';
 import snowBearUrl from '../../assets/models/snowBear.glb';
 import zombieUrl from '../../assets/models/zombie.glb';
 
-const models: Record<AnimalKind, string> = {
-  camel: camelUrl,
-  cow: cowUrl,
-  horse: horseUrl,
-  pig: pigUrl,
-  sheep: sheepUrl,
-  chicken: chickenUrl,
-  duck: duckUrl,
+type StandaloneAnimalKind = Exclude<AnimalKind, 'camel' | 'cow' | 'horse' | 'pig' | 'sheep' | 'chicken' | 'duck'>;
+
+const models: Record<StandaloneAnimalKind, string> = {
   bear: bearUrl,
   deer: deerUrl,
   wolf: wolfUrl,
@@ -34,14 +22,7 @@ const models: Record<AnimalKind, string> = {
   zombie: zombieUrl,
 };
 
-const heights: Record<AnimalKind, number> = {
-  camel: 1.85,
-  cow: 1.35,
-  horse: 1.65,
-  pig: 0.85,
-  sheep: 1.1,
-  chicken: 0.75,
-  duck: 0.65,
+const heights: Record<StandaloneAnimalKind, number> = {
   bear: 1.8,
   deer: 1.55,
   wolf: 1.05,
@@ -52,7 +33,8 @@ const heights: Record<AnimalKind, number> = {
 
 export function AnimalGlb({ entity, kind }: { entity: Entity; kind: AnimalKind }) {
   if (['cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'camel'].includes(kind)) return <ReferenceAnimal entity={entity} kind={kind} />;
-  const { scene } = useGLTF(models[kind]);
+  const modelKind = kind as StandaloneAnimalKind;
+  const { scene } = useGLTF(models[modelKind]);
   const model = useMemo(() => {
     const clone = scene.clone(true);
     clone.traverse((object) => {
@@ -67,15 +49,15 @@ export function AnimalGlb({ entity, kind }: { entity: Entity; kind: AnimalKind }
         }
       }
     });
-    clone.rotation.y = kind === 'zombie' ? 0 : -Math.PI / 2;
+    clone.rotation.y = modelKind === 'zombie' ? 0 : -Math.PI / 2;
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
-    const scale = heights[kind] / Math.max(size.y, 0.001);
+    const scale = heights[modelKind] / Math.max(size.y, 0.001);
     clone.scale.setScalar(scale);
     clone.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
     return clone;
-  }, [scene, kind]);
+  }, [scene, modelKind]);
 
   return <primitive object={model} />;
 }
