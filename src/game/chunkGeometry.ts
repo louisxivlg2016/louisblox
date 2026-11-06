@@ -6,6 +6,7 @@ import { getVitrailDesign, getVitrailTexture } from './vitrailDesigns';
 import type { ExtraBlockKind } from './extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
+import { isOldPirateShipBlock } from './pirateShipGeometry';
 
 const TILE_SIZE = 16;
 const ATLAS_COLUMNS = 16;
@@ -261,7 +262,7 @@ export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxe
   createAtlas();
   const groups = new Map<string, GeometryGroup>();
   for (const block of blocks) {
-    if (usesSeparateModel(block.kind)) continue;
+    if (usesSeparateModel(block.kind) || isOldPirateShipBlock(block)) continue;
     const groupName = groupFor(block.kind);
     const concrete = block.kind >= BlockKind.ConcreteWhite && block.kind <= BlockKind.ConcreteBlack;
     let color: Color | null = null;

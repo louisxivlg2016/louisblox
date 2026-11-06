@@ -14,6 +14,7 @@ import { HunyuanCropInstances } from './HunyuanCropInstances';
 import { UtilityBlocks } from './UtilityBlocks';
 import { SignBlocks } from './SignBlocks';
 import { isCrop, isDoor, isGlass, isSapling, isSign, isTrapdoor, isUtilityBlock } from '../game/extraBlocks';
+import { isPirateObjective } from '../game/pirates';
 import { BlockKind, isWaterBlock } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 
@@ -108,7 +109,7 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         continue;
       }
       if (isUtilityBlock(block.kind)) {
-        utilityBlocks.push(block);
+        if (!isPirateObjective(block.x, block.y, block.z)) utilityBlocks.push(block);
         continue;
       }
       if (isDoor(block.kind) || isTrapdoor(block.kind)) {

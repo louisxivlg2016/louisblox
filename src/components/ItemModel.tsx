@@ -9,6 +9,7 @@ import { BayonetRifleWithFallback } from './BayonetRifleGlb';
 import { WeaponWithFallback } from './WeaponGlb';
 import { isPaintballGun } from '../game/paintball';
 import { isReferenceFood, ReferenceFoodModel } from './ReferenceFoodModel';
+import { SaddleGlb } from './SaddleGlb';
 
 type ModelProps = { kind: ItemKind | GalleryItemId; held?: boolean; flipGuns?: boolean };
 type PartProps = { position: [number, number, number]; size: [number, number, number]; color: string; rotation?: [number, number, number] };
@@ -198,14 +199,7 @@ export function ArmorModel({ color }: { color: string }) {
 }
 
 export function SaddleModel() {
-  return (
-    <group>
-      <PixelPart position={[0, 0, 0]} size={[0.75, 0.12, 0.65]} color="#694027" />
-      <PixelPart position={[0, 0.14, 0]} size={[0.58, 0.2, 0.46]} color="#a06a3c" />
-      <PixelPart position={[0, 0.3, 0.19]} size={[0.58, 0.2, 0.11]} color="#714126" />
-      <PixelPart position={[0, -0.2, 0]} size={[0.12, 0.38, 0.56]} color="#d2af61" />
-    </group>
-  );
+  return <SaddleGlb />;
 }
 
 export function SteeringWheel({ position = [0, 0, 0] }: { position?: [number, number, number] }) {

@@ -28,6 +28,7 @@ import { setMusicMode } from '../game/audio';
 import { useCharacterStore } from '../game/characterStore';
 import { FootballBall } from './FootballBall';
 import { FootballReferee } from './FootballReferee';
+import { PirateWorld } from './PirateWorld';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -111,6 +112,7 @@ export function Game() {
   useEffect(() => setMusicMode(gameplayMode), [gameplayMode]);
   useEffect(() => {
     if (gameplayMode === 'battle' && outfit !== 'military') setOutfit('military');
+    if (gameplayMode === 'pirates' && outfit !== 'pirate') setOutfit('pirate');
   }, [gameplayMode, outfit, setOutfit]);
 
   return (
@@ -129,6 +131,7 @@ export function Game() {
       <Explosions key={`explosions-${generation}`} />
       <Physics gravity={[0, 0, 0]} paused={mode !== 'play'}>
         <Level key={`level-${generation}`} />
+        <PirateWorld key={`pirate-world-${generation}`} />
         <PlayerView key={`player-${generation}`} />
         <TargetHighlight key={`target-${generation}`} />
         <Systems key={`systems-${generation}`} spawn={level.spawn} />

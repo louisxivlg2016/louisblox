@@ -71,7 +71,7 @@ export function generatePirateChunk(cx: number, cz: number): GeneratedChunk {
 export function isPirateObjective(x: number, y: number, z: number) {
   return (Object.keys(PIRATE_OBJECTIVES) as Array<'red' | 'blue'>).find((team) => {
     const objective = PIRATE_OBJECTIVES[team];
-    return objective.x === x && objective.y === y && objective.z === z;
+    return objective.x === x && (objective.y === y || objective.y + 1 === y) && objective.z === z;
   });
 }
 

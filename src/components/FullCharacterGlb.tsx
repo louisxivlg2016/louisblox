@@ -21,7 +21,7 @@ import explorerUrl from '../../assets/models/full-explorer.glb';
 import princessUrl from '../../assets/models/full-princess.glb';
 import louis14Url from '../../assets/models/full-louis14.glb';
 import louis15Url from '../../assets/models/full-louis15.glb';
-import pirateUrl from '../../assets/models/full-pirate.glb';
+import pirateUrl from '../../assets/models/pirate-player.glb';
 import footballerUrl from '../../assets/models/full-footballer.glb';
 import firefighterUrl from '../../assets/models/full-firefighter.glb';
 import policeUrl from '../../assets/models/full-police.glb';
@@ -103,7 +103,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
 
   return (
     <group ref={group} name="full-character" userData={metadata}>
-      <primitive object={character} scale={scale} rotation={[0, Math.PI, 0]} />
+      <primitive object={character} scale={scale} rotation={[0, outfit === 'pirate' ? 0 : Math.PI, 0]} />
     </group>
   );
 }
