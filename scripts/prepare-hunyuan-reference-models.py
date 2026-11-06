@@ -6,7 +6,8 @@ from mathutils import Matrix, Vector
 ROOT = '/home/louisxiv/louisblox'
 LIVING = f'{ROOT}/.tmp/hunyuan-living-low-poly' if os.environ.get('USE_LOW_POLY') else f'{ROOT}/.tmp/hunyuan-living-pro' if os.environ.get('USE_PRO') else f'{ROOT}/.tmp/hunyuan-living'
 ASSETS = f'{ROOT}/.tmp/hunyuan-new-assets'
-COSTUMES = f'{ROOT}/.tmp/hunyuan-costume-v3'
+COSTUMES = f'{ROOT}/.tmp/hunyuan-costume-v5'
+FLEET = f'{ROOT}/.tmp/hunyuan-fleet-v2'
 TARGET_HEIGHT = 1.9000003337860107
 models = {
     'cow': (f'{LIVING}/cow.glb', 'animal', 1.35),
@@ -19,12 +20,71 @@ models = {
     'trader': (f'{LIVING}/trader.glb', 'human', TARGET_HEIGHT),
     'classic-girl': (f'{LIVING}/classic-girl.glb', 'human', TARGET_HEIGHT),
     'classic-boy': (f'{LIVING}/classic-boy.glb', 'human', TARGET_HEIGHT),
+    'pirate': (f'{COSTUMES}/full-pirate.glb', 'human', TARGET_HEIGHT),
+    'footballer': (f'{COSTUMES}/full-footballer.glb', 'human', TARGET_HEIGHT),
+    'firefighter': (f'{COSTUMES}/full-firefighter.glb', 'human', TARGET_HEIGHT),
+    'police': (f'{COSTUMES}/full-police.glb', 'human', TARGET_HEIGHT),
     'soldier': (f'{COSTUMES}/full-soldier.glb', 'human', TARGET_HEIGHT),
+    'blueCar': (f'{FLEET}/blueCar.glb', 'vehicle', 3.4),
+    'raceCar': (f'{FLEET}/raceCar.glb', 'vehicle', 2.6),
+    'jeep': (f'{FLEET}/jeep.glb', 'vehicle', 2.65),
+    'carriage': (f'{FLEET}/carriage.glb', 'vehicle', 3.2),
+    'cannon': (f'{FLEET}/cannon.glb', 'vehicle', 1.5),
     'rifle': (f'{ASSETS}/rifle.glb', 'rifle', 2.4),
     'police-car': (f'{ASSETS}/police-car.glb', 'vehicle', 3.1),
     'fire-truck': (f'{ASSETS}/fire-truck.glb', 'vehicle', 3.4),
 }
 requested = set(filter(None, os.environ.get('MODEL_NAMES', ','.join(models)).split(',')))
+
+COSTUME_REFERENCES = {
+    'footballer': ('Gemini_Generated_Image_zco18gzco18gzco1.jpeg', (0.45, 0.10), (0.42, 0.25), 1.01, 0.70),
+    'police': ('Gemini_Generated_Image_5xivvo5xivvo5xiv.jpeg', (0.45, 0.19), (0.42, 0.26), 0.83, 0.65),
+    'pirate': ('Gemini_Generated_Image_6ub7bs6ub7bs6ub7.jpeg', (0.45, 0.20), (0.40, 0.24), 0.83, 0.63),
+    'soldier': ('Gemini_Generated_Image_4lgxug4lgxug4lgx.jpeg', (0.54, 0.20), (0.47, 0.235), 0.84, 0.69),
+}
+
+def cover_repeated_faces(objects, name, minimum, size):
+    filename, hair, skin, hat, head_floor = COSTUME_REFERENCES[name]
+    image = bpy.data.images.load(f'/home/louisxiv/Downloads/{filename}', check_existing=True)
+    image.scale(256, 256)
+    image.pack()
+    materials = {}
+    for part, point in [('hair', hair), ('skin', skin)]:
+        material = bpy.data.materials.new(f'{name}-back-{part}')
+        material.use_nodes = True
+        shader = material.node_tree.nodes.get('Principled BSDF')
+        shader.inputs['Roughness'].default_value = 1
+        texture = material.node_tree.nodes.new('ShaderNodeTexImage')
+        texture.image = image
+        texture.interpolation = 'Closest'
+        material.node_tree.links.new(texture.outputs['Color'], shader.inputs['Base Color'])
+        materials[part] = (material, (point[0], 1 - point[1]))
+    changed = 0
+    for obj in objects:
+        obj.data.update()
+        uv = obj.data.uv_layers.active or obj.data.uv_layers.new(name='UVMap')
+        material_indices = {}
+        for polygon in obj.data.polygons:
+            point = polygon.center
+            z = (point.z - minimum.z) / size.z
+            part = None
+            if head_floor < z < hat:
+                if polygon.normal.y > 0.35:
+                    part = 'hair'
+                elif abs(polygon.normal.x) > 0.55:
+                    part = 'hair' if z > 0.82 or name == 'pirate' else 'skin'
+            if part is None:
+                continue
+            if part not in material_indices:
+                material, uv_point = materials[part]
+                material_indices[part] = (len(obj.data.materials), uv_point)
+                obj.data.materials.append(material)
+            material_index, uv_point = material_indices[part]
+            polygon.material_index = material_index
+            for loop_index in polygon.loop_indices:
+                uv.data[loop_index].uv = uv_point
+            changed += 1
+    print(f'{name}: {changed} surfaces arrière corrigées', flush=True)
 
 def bounds(objects):
     points = [vertex.co for obj in objects for vertex in obj.data.vertices]
@@ -79,23 +139,22 @@ for name in requested:
     elif kind == 'rifle':
         scale = target / max(size.y, 0.0001)
     else:
-        scale = min(2.65 / max(size.x, 0.0001), target / max(size.z, 0.0001), (6.2 if name == 'fire-truck' else 5.1) / max(size.y, 0.0001))
+        scale = min(2.65 / max(size.x, 0.0001), target / max(size.z, 0.0001), (6.2 if name == 'fire-truck' else 4.2 if name == 'cannon' else 5.1) / max(size.y, 0.0001))
     transform = Matrix.Translation(Vector((-center.x * scale, -center.y * scale, -minimum.z * scale))) @ Matrix.Scale(scale, 4)
     for obj in objects:
         obj.data.transform(transform)
     minimum, maximum = bounds(objects)
     center = (minimum + maximum) / 2
     size = maximum - minimum
-    if kind in ['animal', 'bird', 'vehicle']:
+    if kind == 'human' and name in COSTUME_REFERENCES:
+        cover_repeated_faces(objects, name, minimum, size)
+    if kind in ['animal', 'bird']:
         for source in objects:
             groups = {}
             body = set()
             for polygon in source.data.polygons:
                 point = polygon.center
-                if kind == 'vehicle':
-                    part = point.z < minimum.z + size.z * 0.4 and abs(point.x - center.x) > size.x * 0.28
-                    index = (0 if point.x < center.x else 2) + (0 if point.y < center.y else 1)
-                elif kind == 'animal':
+                if kind == 'animal':
                     part = point.z < minimum.z + size.z * 0.45 and abs(point.x - center.x) > size.x * 0.16 and (name != 'horse' or point.y < center.y + size.y * 0.38)
                     index = (0 if point.x < center.x else 2) + (0 if point.y < center.y else 1)
                 else:
@@ -111,13 +170,21 @@ for name in requested:
                 pivot = sum(points, Vector()) / len(points)
                 if kind != 'bird':
                     pivot.z = minimum.z + size.z * 0.45
-                subset(source, polygons, f'animal-leg-{index}' if kind != 'vehicle' else f'animated-wheel-{index}', pivot)
+                subset(source, polygons, f'animal-leg-{index}', pivot)
             bpy.data.objects.remove(source, do_unlink=True)
     else:
         for obj in objects:
-            obj.name = 'flintlock-rifle' if kind == 'rifle' else f'full-{name}'
+            obj.name = 'flintlock-rifle' if kind == 'rifle' else f'full-{name}' if kind == 'human' else name
             obj['source'] = 'Hunyuan'
-    output = f'{ROOT}/assets/models/{"bayonet-rifle" if kind == "rifle" else "police-car" if name == "police-car" else "fire-truck" if name == "fire-truck" else f"full-{name}" if kind == "human" else f"reference-{name}"}.glb'
+    if kind == 'rifle':
+        filename = 'bayonet-rifle'
+    elif name in ['police-car', 'fire-truck', 'blueCar', 'raceCar']:
+        filename = name
+    elif kind == 'human':
+        filename = f'full-{name}'
+    else:
+        filename = f'reference-{name}'
+    output = f'{ROOT}/assets/models/{filename}.glb'
     bpy.context.scene['source'] = 'Hunyuan'
     bpy.context.scene['reference'] = name
     bpy.ops.export_scene.gltf(filepath=output, export_format='GLB', export_animations=False, export_extras=True, export_yup=True)

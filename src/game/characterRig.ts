@@ -9,7 +9,7 @@ import type { OutfitKind } from './outfits';
 type Part = 'body' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
 type Rig = Partial<Record<Exclude<Part, 'body'>, Group>>;
 
-function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean, bounds: Box3, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor'>, allowGrayHair = false, princessHair = false, outfit?: OutfitKind) {
+function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean, bounds: Box3, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'originalHairColor'>, allowGrayHair = false, princessHair = false, outfit?: OutfitKind) {
   const geometry = source.clone().applyMatrix4(matrix);
   const position = geometry.getAttribute('position');
   const index = geometry.index;
@@ -50,7 +50,7 @@ function addPrincessHair(root: Group, width: number, height: number, depth: numb
   root.add(hair);
 }
 
-export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind, 'default'>, scale: number, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor'>) {
+export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind, 'default'>, scale: number, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'originalHairColor'>) {
   const scene = SkeletonUtils.clone(source);
   scene.updateMatrixWorld(true);
   const bounds = new Box3().setFromObject(scene);
@@ -78,13 +78,16 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
         const side = part.startsWith('left') ? -1 : 1;
         const pivotY = floor + height * (part === 'head' ? 0.68 : part.endsWith('Arm') ? 0.7 : 0.48);
         const pivotX = part === 'head' ? 0 : side * width * (part.endsWith('Arm') ? 0.27 : 0.12);
+        let pivot = rig[part];
+        if (!pivot) {
+          pivot = new Group();
+          pivot.name = names[part];
+          pivot.position.set(pivotX, pivotY, 0);
+          root.add(pivot);
+          rig[part] = pivot;
+        }
         subset.translate(-pivotX, -pivotY, 0);
-        const pivot = new Group();
-        pivot.name = names[part];
-        pivot.position.set(pivotX, pivotY, 0);
         pivot.add(mesh);
-        root.add(pivot);
-        rig[part] = pivot;
       }
     }
   }

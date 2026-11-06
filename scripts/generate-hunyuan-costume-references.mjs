@@ -9,16 +9,16 @@ const client = new CommonClient('hunyuan.intl.tencentcloudapi.com', '2023-09-01'
   profile: { httpProfile: { endpoint: 'hunyuan.intl.tencentcloudapi.com', reqTimeout: 60 } },
 });
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const statePath = '.tmp/hunyuan-costume-v3-jobs.json';
-const directory = '.tmp/hunyuan-costume-v3';
+const statePath = '.tmp/hunyuan-costume-v5-jobs.json';
+const directory = '.tmp/hunyuan-costume-v5';
 await mkdir(directory, { recursive: true });
 const state = await Bun.file(statePath).exists() ? await Bun.file(statePath).json() : {};
 const assets = [
-  { name: 'footballer', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_zco18gzco18gzco1.jpeg', prompt: 'Blocky voxel football player, one cube head with two aligned square eyes on the front face, brown hair only on top of the head, blue jersey with white number 10, white shorts, blue socks, black shoes. No other face or head. Match the reference image.' },
-  { name: 'pirate', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_6ub7bs6ub7bs6ub7.jpeg', prompt: 'Blocky voxel game avatar, one cube head with one front face only, black tricorn hat, red coat with gold trim, brown beard on front chin, white shirt, dark pants and boots. No faces on back, sides, shoulders or torso. Match the reference image.' },
-  { name: 'police', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_5xivvo5xivvo5xiv.jpeg', prompt: 'Blocky voxel police officer, one cube head with one front face, navy cap and uniform, gold badge, black belt and boots. No face on back, sides, shoulders or torso. Match the reference image.' },
-  { name: 'firefighter', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_gu5grngu5grngu5g.jpeg', prompt: 'Blocky voxel firefighter, one cube head with one front face, red and yellow helmet, black uniform with yellow reflective stripes, black gloves and boots. No face on back, sides, shoulders or torso. Match the reference image.' },
-  { name: 'soldier', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_4lgxug4lgxug4lgx.jpeg', prompt: 'Blocky voxel soldier, one cube head with one front face, blue uniform, white cross belts, black bicorne, dark boots, full body. No extra face. Match the reference image.' },
+  { name: 'footballer', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_zco18gzco18gzco1.jpeg' },
+  { name: 'pirate', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_6ub7bs6ub7bs6ub7.jpeg' },
+  { name: 'police', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_5xivvo5xivvo5xiv.jpeg' },
+  { name: 'firefighter', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_gu5grngu5grngu5g.jpeg' },
+  { name: 'soldier', image: '/home/louisxiv/Downloads/Gemini_Generated_Image_4lgxug4lgxug4lgx.jpeg' },
 ];
 const only = process.argv.indexOf('--only');
 const requested = new Set((only >= 0 ? process.argv[only + 1] ?? '' : '').split(',').filter(Boolean));
@@ -35,12 +35,9 @@ async function saveState() {
 async function submit(asset) {
   for (let attempt = 0; attempt < 30; attempt += 1) {
     try {
-      return await client.request('SubmitHunyuanTo3DProJob', {
-        Model: '3.0',
-        GenerateType: 'Sketch',
+      return await client.request('SubmitHunyuanTo3DRapidJob', {
         ImageBase64: Buffer.from(await Bun.file(asset.image).arrayBuffer()).toString('base64'),
-        Prompt: asset.prompt,
-        FaceCount: 8000,
+        ResultFormat: 'GLB',
         EnablePBR: false,
       });
     } catch (error) {
@@ -86,7 +83,7 @@ async function generate(asset) {
     const jobId = state[asset.name].jobId;
     let files;
     for (let attempt = 0; attempt < 120; attempt += 1) {
-      const result = await client.request('QueryHunyuanTo3DProJob', { JobId: jobId });
+      const result = await client.request('QueryHunyuanTo3DRapidJob', { JobId: jobId });
       if (result.Status === 'DONE') {
         files = result.ResultFile3Ds;
         break;
