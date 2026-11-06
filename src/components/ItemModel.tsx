@@ -5,6 +5,8 @@ import { getItemMeta } from '../game/items';
 import { isGalleryItem } from '../game/galleryCatalog';
 import type { GalleryItemId, ItemKind } from '../game/items';
 import { BayonetRifleWithFallback } from './BayonetRifleGlb';
+import { WeaponWithFallback } from './WeaponGlb';
+import { isPaintballGun } from '../game/paintball';
 
 type ModelProps = { kind: ItemKind | GalleryItemId; held?: boolean };
 type PartProps = { position: [number, number, number]; size: [number, number, number]; color: string; rotation?: [number, number, number] };
@@ -110,27 +112,7 @@ export function FlintlockModel() {
 }
 
 export function GunModel({ color, bomb, rifle }: { color: string; bomb?: boolean; rifle?: boolean }) {
-  if (rifle) return (
-    <group>
-      <PixelPart position={[0, -0.2, 0.12]} size={[0.16, 0.38, 0.2]} color="#3b2a20" />
-      <PixelPart position={[0, 0.04, 0.05]} size={[0.24, 0.22, 0.75]} color={color} />
-      <PixelPart position={[0, -0.18, -0.12]} size={[0.14, 0.34, 0.16]} color="#1c221b" />
-      <PixelPart position={[0, 0.06, 0.6]} size={[0.2, 0.2, 0.36]} color="#3b2a20" />
-      <PixelPart position={[0, 0.08, -0.58]} size={[0.1, 0.1, 0.55]} color="#454d56" />
-      <PixelPart position={[0, 0.08, -0.87]} size={[0.13, 0.13, 0.05]} color="#181e26" />
-      <PixelPart position={[0, 0.2, -0.05]} size={[0.07, 0.08, 0.3]} color="#181e26" />
-    </group>
-  );
-  return (
-    <group>
-      <PixelPart position={[0, -0.22, 0.07]} size={[0.18, 0.43, 0.22]} color="#4f3527" />
-      <PixelPart position={[0, 0.04, 0]} size={[0.27, 0.24, 0.55]} color={color} />
-      <PixelPart position={[0, 0.08, -0.38]} size={[bomb ? 0.29 : 0.16, bomb ? 0.29 : 0.16, 0.38]} color="#454d56" />
-      <PixelPart position={[0, 0.08, -0.59]} size={[bomb ? 0.22 : 0.1, bomb ? 0.22 : 0.1, 0.035]} color="#181e26" />
-      <PixelPart position={[0, 0.21, 0.08]} size={[0.07, 0.1, 0.07]} color={color} />
-      {bomb && <PixelPart position={[0, 0.22, -0.2]} size={[0.09, 0.08, 0.1]} color="#e7c04b" />}
-    </group>
-  );
+  return <WeaponWithFallback kind={bomb ? 'bomb-launcher' : rifle ? 'auto-rifle' : 'pistol'} metalColor={color} />;
 }
 
 export function FoodModel({ kind }: { kind: ItemKind | GalleryItemId }) {
@@ -525,7 +507,8 @@ export function ItemModel({ kind, held = false }: ModelProps) {
   const meta = getItemMeta(kind);
   if (kind === 'hand') return null;
   let model;
-  if (isGalleryItem(kind)) model = <GalleryModel kind={kind} />;
+  if (isPaintballGun(kind)) model = <WeaponWithFallback kind="paintball" />;
+  else if (isGalleryItem(kind)) model = <GalleryModel kind={kind} />;
   else if (kind === 'bucket' || kind === 'water_bucket') model = <BucketModel filled={kind === 'water_bucket'} />;
   else if (meta.category === 'sword') model = <SwordModel color={meta.color} />;
   else if (meta.category === 'bow') model = <BowModel crossbow={kind === 'crossbow'} />;
