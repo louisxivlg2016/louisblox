@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { chooseBattleTeam, useBattleStore } from '../game/battle';
-import { isFootballFrozen, refereeWhistle, useFootballStore } from '../game/footballClient';
+import { isFootballFrozen, useFootballStore } from '../game/footballClient';
 import { clearInput, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
-import { canManageProtection } from '../game/protection';
 import { MatchResultActions } from './MatchResultActions';
 
 export function FootballHud() {
@@ -61,7 +60,6 @@ export function FootballHud() {
         <small>Clic gauche : tir · E : tir puissant · T ou clic droit : tacler · G : passer</small>
       </div>}
       {winner && <div className="pirate-winner">Victoire de l’équipe {winner === 'red' ? 'rouge' : 'bleue'} !<MatchResultActions /></div>}
-      {team && canManageProtection() && <button className="football-referee" onClick={() => { refereeWhistle(); clearInput(); }}>Sifflet de l’arbitre</button>}
     </>
   );
 }

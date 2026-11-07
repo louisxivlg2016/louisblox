@@ -35,7 +35,7 @@ const models = { king: kingUrl, military: militaryUrl, knight: knightUrl, explor
 for (const model of Object.values(models)) useGLTF.preload(model);
 
 export function hasFullCharacter(outfit: OutfitKind, wig: WigSelection = 'auto') {
-  return wig !== 'none' && (outfit !== 'default' || selectedWig(outfit, wig) === null);
+  return outfit !== 'default' || selectedWig(outfit, wig) === null;
 }
 
 function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance }: { outfit: FullCharacterModel; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance }) {
