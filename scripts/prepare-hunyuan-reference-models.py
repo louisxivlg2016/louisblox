@@ -6,7 +6,7 @@ from mathutils import Matrix, Vector
 ROOT = '/home/louisxiv/louisblox'
 LIVING = f'{ROOT}/.tmp/hunyuan-living-low-poly' if os.environ.get('USE_LOW_POLY') else f'{ROOT}/.tmp/hunyuan-living-pro' if os.environ.get('USE_PRO') else f'{ROOT}/.tmp/hunyuan-living'
 ASSETS = f'{ROOT}/.tmp/hunyuan-new-assets'
-COSTUMES = f'{ROOT}/.tmp/hunyuan-costume-v5'
+COSTUMES = os.environ.get('COSTUME_DIR', f'{ROOT}/.tmp/hunyuan-costume-v5')
 FLEET = f'{ROOT}/.tmp/hunyuan-fleet-v2'
 TARGET_HEIGHT = 1.9000003337860107
 models = {
@@ -25,6 +25,7 @@ models = {
     'firefighter': (f'{COSTUMES}/full-firefighter.glb', 'human', TARGET_HEIGHT),
     'police': (f'{COSTUMES}/full-police.glb', 'human', TARGET_HEIGHT),
     'soldier': (f'{COSTUMES}/full-soldier.glb', 'human', TARGET_HEIGHT),
+    'referee': (f'{COSTUMES}/full-referee.glb', 'human', TARGET_HEIGHT),
     'blueCar': (f'{FLEET}/blueCar.glb', 'vehicle', 3.4),
     'raceCar': (f'{FLEET}/raceCar.glb', 'vehicle', 2.6),
     'jeep': (f'{FLEET}/jeep.glb', 'vehicle', 2.65),
@@ -37,15 +38,17 @@ models = {
 requested = set(filter(None, os.environ.get('MODEL_NAMES', ','.join(models)).split(',')))
 
 COSTUME_REFERENCES = {
-    'footballer': ('Gemini_Generated_Image_zco18gzco18gzco1.jpeg', (0.45, 0.10), (0.42, 0.25), 1.01, 0.70),
+    'footballer': (f'{ROOT}/image/joueur-de-foot.jpeg', (0.50, 0.08), (0.46, 0.265), 1.01, 0.70),
     'police': ('Gemini_Generated_Image_5xivvo5xivvo5xiv.jpeg', (0.45, 0.19), (0.42, 0.26), 0.83, 0.65),
-    'pirate': ('Gemini_Generated_Image_6ub7bs6ub7bs6ub7.jpeg', (0.45, 0.20), (0.40, 0.24), 0.83, 0.63),
-    'soldier': ('Gemini_Generated_Image_4lgxug4lgxug4lgx.jpeg', (0.54, 0.20), (0.47, 0.235), 0.84, 0.69),
+    'pirate': (f'{ROOT}/image/pirate-chef.jpeg', (0.535, 0.22), (0.52, 0.255), 0.83, 0.63),
+    'soldier': (f'{ROOT}/image/soldat-perfil.jpeg', (0.44, 0.25), (0.52, 0.275), 0.84, 0.69),
+    'referee': (f'{ROOT}/image/arbitre.jpg', (0.47, 0.13), (0.56, 0.27), 1.01, 0.70),
 }
 
 def cover_repeated_faces(objects, name, minimum, size):
     filename, hair, skin, hat, head_floor = COSTUME_REFERENCES[name]
-    image = bpy.data.images.load(f'/home/louisxiv/Downloads/{filename}', check_existing=True)
+    image_path = filename if os.path.isabs(filename) else os.path.join(os.environ.get('COSTUME_IMAGE_DIR', '/home/louisxiv/Downloads'), filename)
+    image = bpy.data.images.load(image_path, check_existing=True)
     image.scale(256, 256)
     image.pack()
     materials = {}
