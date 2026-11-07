@@ -4,6 +4,7 @@ import { battleTeamColor, isIndividualBattleTeam } from '../game/battleArena';
 import { clearInput, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
+import { MatchResultActions } from './MatchResultActions';
 
 export function BattleHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
@@ -19,6 +20,7 @@ export function BattleHud() {
   const localPlayerId = useBattleStore((state) => state.localPlayerId);
   const events = useBattleStore((state) => state.events);
   const deadUntil = useBattleStore((state) => state.deadUntil);
+  const winner = useBattleStore((state) => state.winner);
   useEffect(() => {
     if (mode !== 'play' || gameplayMode !== 'battle' || !enabled || status !== 'online' || team || !ready) return;
     clearInput();
@@ -80,6 +82,7 @@ export function BattleHud() {
         {events.map((event) => <p key={event.id}><strong>{event.killerName}</strong> a éliminé <strong>{event.victimName}</strong></p>)}
       </div>
       {deadUntil > 0 && <div className="battle-death">Éliminé !<span>{isIndividualBattleTeam(team) ? 'Réapparition dans l’arène…' : 'Réapparition à ta base…'}</span></div>}
+      {winner && <div className="pirate-winner">{isIndividualBattleTeam(winner) ? `Victoire de ${playerNames[winner.slice(5)] ?? 'un joueur'} !` : `Victoire de l’équipe ${winner === 'red' ? 'rouge' : 'bleue'} !`}<MatchResultActions /></div>}
     </>
   );
 }

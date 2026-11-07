@@ -15,6 +15,7 @@ import { ItemIcon } from './ItemIcon';
 import { CROP_KINDS, isCrop } from '../game/extraBlocks';
 import { inventoryCount } from '../game/inventory';
 import { CraftingPanel } from './CraftingPanel';
+import { normalizeSearch } from '../game/search';
 
 export function Backpack() {
   const open = useGameStore((state) => state.backpackOpen);
@@ -43,8 +44,8 @@ export function Backpack() {
     if (backpackItem !== null) setHotbarSlot(index, backpackItem);
   };
   const resources = (Object.entries(meat) as Array<[AnimalKind, number]>).filter(([, count]) => count > 0);
-  const query = gallerySearch.trim().toLowerCase();
-  const matchesSearch = (kind: SelectedKind) => selectionInfo(kind).name.toLowerCase().includes(query)
+  const query = normalizeSearch(gallerySearch);
+  const matchesSearch = (kind: SelectedKind) => normalizeSearch(selectionInfo(kind).name).includes(query)
     || (kind === 'gallery_tools_weapons_book' && 'livre'.includes(query));
   const visibleGalleryItems = GALLERY_ITEMS.filter((item) =>
     (query !== '' || galleryCategory === 'all' || item.category === galleryCategory) && matchesSearch(item.id)

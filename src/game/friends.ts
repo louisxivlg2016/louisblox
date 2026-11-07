@@ -7,6 +7,7 @@ import { sanitizeAppearance } from './appearance';
 import { isOutfitKind, isWigSelection } from './outfits';
 import type { OutfitKind, WigSelection } from './outfits';
 import { normalizePlayerName, playerIdentity } from './playerIdentity';
+import { PROFILE_AVATAR_KINDS, useAvatarStore } from './avatar';
 
 export type FriendPlayer = {
   playerId: string;
@@ -15,6 +16,7 @@ export type FriendPlayer = {
   character: 'boy' | 'girl';
   outfit: OutfitKind;
   wig: WigSelection;
+  avatar?: import('./avatar').ProfileAvatarKind;
   appearance: import('./appearance').CharacterAppearance;
   lastSeen?: number;
 };
@@ -44,6 +46,7 @@ function friend(value: unknown): FriendPlayer | null {
     character: data.character === 'girl' ? 'girl' : 'boy',
     outfit: isOutfitKind(data.outfit) ? data.outfit : 'default',
     wig: isWigSelection(data.wig) ? data.wig : 'auto',
+    avatar: (PROFILE_AVATAR_KINDS as readonly string[]).includes(typeof data.avatar === 'string' ? data.avatar : '') ? data.avatar as import('./avatar').ProfileAvatarKind : 'pixel',
     appearance: sanitizeAppearance(data.appearance, data.character === 'girl' ? 'girl' : 'boy'),
     lastSeen: typeof data.lastSeen === 'number' ? data.lastSeen : undefined,
   };
@@ -89,6 +92,7 @@ function selfProfile(): FriendPlayer {
     character: character.character,
     outfit: character.outfit,
     wig: character.wig,
+    avatar: useAvatarStore.getState().kind,
     appearance: character.appearance,
   };
 }

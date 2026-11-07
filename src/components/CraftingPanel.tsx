@@ -6,6 +6,7 @@ import { GALLERY_ITEMS } from '../game/galleryCatalog';
 import { HOTBAR_BLOCKS } from '../game/voxel';
 import { useGameStore } from '../game/store';
 import { ItemIcon } from './ItemIcon';
+import { matchesSearch } from '../game/search';
 
 export function CraftingPanel() {
   const itemCounts = useGameStore((state) => state.itemCounts);
@@ -15,7 +16,7 @@ export function CraftingPanel() {
   const state = { itemCounts, gameplayMode };
   const kinds = [...HOTBAR_BLOCKS, ...ITEM_ORDER, ...(showGallery ? GALLERY_ITEMS.map((item) => item.id) : [])];
   const recipes = kinds.map(recipeFor).filter((recipe) => recipe !== null)
-    .filter((recipe) => selectionInfo(recipe.output).name.toLowerCase().includes(search.trim().toLowerCase()));
+    .filter((recipe) => matchesSearch(selectionInfo(recipe.output).name, search));
 
   return (
     <section className="crafting-panel" aria-label="Fabrication">

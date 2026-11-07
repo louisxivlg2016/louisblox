@@ -1,12 +1,13 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { Box3, CanvasTexture, Mesh, NearestFilter, SRGBColorSpace } from 'three';
+import { Box3, CanvasTexture, DoubleSide, Mesh, NearestFilter, Raycaster, SRGBColorSpace, Vector3 } from 'three';
 import type { Group } from 'three';
 import type { Entity } from 'koota';
 import { PixelPart } from './ItemModel';
 import { VehicleMotion } from '../game/traits';
-import { PLANE_SCALE, type VehicleKind } from '../game/vehicleTypes';
+import { CABINS, PLANE_SCALE, type VehicleKind } from '../game/vehicleTypes';
+import airplaneUrl from '../../assets/models/airplane.glb';
 import { useVehicleControls } from '../game/vehicleControls';
 import policeCarUrl from '../../assets/models/police-car.glb';
 import fireTruckUrl from '../../assets/models/fire-truck.glb';
@@ -87,7 +88,7 @@ function HunyuanVehicle({ kind, interior }: { kind: VehicleModelKind; interior: 
         material.map.needsUpdate = true;
       }
     });
-    clone.rotation.y = Math.PI / 2;
+    clone.rotation.y = kind === 'carriage' ? -Math.PI / 2 : Math.PI / 2;
     const bounds = new Box3().setFromObject(clone);
     clone.position.y -= bounds.min.y;
     return { model: clone, top: bounds.max.y - bounds.min.y };
@@ -118,18 +119,73 @@ function HarnessHorse({ entity, x, phase }: { entity: Entity; x: number; phase: 
   );
 }
 
+function planeWindowTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 16;
+  canvas.height = 20;
+  const context = canvas.getContext('2d')!;
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      const radius = ((x - 7.5) / 7.5) ** 2 + ((y - 9.5) / 9.5) ** 2;
+      if (radius > 1) continue;
+      context.fillStyle = radius > 0.76 ? x + y < 17 ? '#c4d0d5' : '#84959f'
+        : radius > 0.57 ? '#344652'
+          : x >= 4 && x <= 5 && y >= 4 && y <= 6 || x >= 10 && x <= 11 && y >= 14 && y <= 15 ? '#b2d8e6'
+            : y < 10 ? '#567b95' : '#2a465f';
+      context.fillRect(x, y, 1, 1);
+    }
+  }
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.magFilter = NearestFilter;
+  texture.minFilter = NearestFilter;
+  texture.generateMipmaps = false;
+  return texture;
+}
+
 function PlaneDetails() {
-  const scale = PLANE_SCALE / 175;
+  const { scene } = useGLTF(airplaneUrl);
+  const surfaceAt = useMemo(() => {
+    const model = scene.clone(true);
+    model.rotation.y = -Math.PI / 2;
+    const bounds = new Box3().setFromObject(model);
+    const size = bounds.getSize(new Vector3());
+    const center = bounds.getCenter(new Vector3());
+    model.scale.set(7.2 * PLANE_SCALE / Math.max(size.x, 0.001), 2.5 * PLANE_SCALE / Math.max(size.y, 0.001), 8.2 * PLANE_SCALE / Math.max(size.z, 0.001));
+    center.multiply(model.scale);
+    model.position.set(-center.x, -bounds.min.y * model.scale.y, -center.z);
+    model.traverse((object) => {
+      if (!(object instanceof Mesh)) return;
+      object.material = Array.isArray(object.material) ? object.material.map((material) => {
+        const clone = material.clone();
+        clone.side = DoubleSide;
+        return clone;
+      }) : object.material.clone();
+    });
+    model.updateMatrixWorld(true);
+    const cabin = CABINS.plane!;
+    const raycaster = new Raycaster();
+    return (side: number, z: number) => {
+      raycaster.set(new Vector3(0, cabin.floor + 1.45, z), new Vector3(side, 0, 0));
+      const hit = raycaster.intersectObject(model, true)[0];
+      return hit ? Math.abs(hit.point.x) : cabin.halfWidth + 0.1;
+    };
+  }, [scene]);
+  const cabin = CABINS.plane!;
+  const y = cabin.floor + 1.45;
+  const windowTexture = useMemo(planeWindowTexture, []);
   return (
     <group name="plane-livery">
       {[-1, 1].map((side) => <group key={side}>
-        <Label text="louis blox" position={[side * 155 * scale, 163 * scale, -407 * scale]} rotation={[0, side * Math.PI / 2, 0]} size={[116 * scale, 26 * scale]} color="#8b60cb" />
-        {Array.from({ length: 16 }, (_, index) => <group key={index} position={[side * 155 * scale, 125 * scale, (-330 + index * 17) * scale]}>
-          <PixelPart position={[0, 0, 0]} size={[0.8 * scale, 27 * scale, 18 * scale]} color="#c6d4d8" />
-          <PixelPart position={[side * 0.44 * scale, 0, 0]} size={[0.2 * scale, 22 * scale, 14 * scale]} color="#355773" />
-          <PixelPart position={[side * 0.56 * scale, 7 * scale, -4 * scale]} size={[0.15 * scale, 4 * scale, 3 * scale]} color="#b3e4f1" />
-          <PixelPart position={[side * 0.56 * scale, -7 * scale, 4 * scale]} size={[0.15 * scale, 2 * scale, 3 * scale]} color="#82b8d3" />
-        </group>)}
+        <Label text="louis blox" position={[side * (surfaceAt(side, cabin.front + 1.5) + 0.06), y, cabin.front + 1.5]} rotation={[0, side * Math.PI / 2, 0]} size={[4.2, 0.72]} color="#8b60cb" />
+        {Array.from({ length: 14 }, (_, index) => {
+          const z = cabin.front + 2 + index * 1.7;
+          const x = surfaceAt(side, z);
+          return <mesh key={index} name="plane-window" position={[side * (x + 0.07), y, z]} rotation={[0, side * Math.PI / 2, 0]}>
+            <planeGeometry args={[1.25, 1.1]} />
+            <meshBasicMaterial map={windowTexture} transparent depthWrite={false} />
+          </mesh>;
+        })}
       </group>)}
     </group>
   );

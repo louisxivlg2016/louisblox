@@ -21,8 +21,8 @@ function hash(x: number, y: number, z: number, seed: number) {
 
 function siteFor(type: RuinType, cx: number, cz: number, seed: number): RuinSite {
   const layout = layouts[type];
-  const x = cx * 60 + layout.ox + Math.floor(hash(cx, cz, type.length, seed) * 5) - 2;
-  const z = cz * 60 + layout.oz + Math.floor(hash(cx, cz, type.length + 31, seed) * 5) - 2;
+  const x = cx * 100 + layout.ox + Math.floor(hash(cx, cz, type.length, seed) * 5) - 2;
+  const z = cz * 100 + layout.oz + Math.floor(hash(cx, cz, type.length + 31, seed) * 5) - 2;
   const hx = Math.floor(layout.width / 2);
   const hz = Math.floor(layout.depth / 2);
   const baseY = Math.max(SEA_LEVEL + 1, ...[
@@ -32,8 +32,8 @@ function siteFor(type: RuinType, cx: number, cz: number, seed: number): RuinSite
 }
 
 export function nearestRuinOfType(x: number, z: number, seed: number, type: RuinType) {
-  const cx = Math.floor(x / 60);
-  const cz = Math.floor(z / 60);
+  const cx = Math.floor(x / 100);
+  const cz = Math.floor(z / 100);
   let nearest: (RuinSite & { distance: number }) | null = null;
   for (let dx = -1; dx <= 1; dx += 1) {
     for (let dz = -1; dz <= 1; dz += 1) {
@@ -46,8 +46,8 @@ export function nearestRuinOfType(x: number, z: number, seed: number, type: Ruin
 }
 
 export function nearestRuin(x: number, z: number, seed: number) {
-  const cx = Math.floor(x / 60);
-  const cz = Math.floor(z / 60);
+  const cx = Math.floor(x / 100);
+  const cz = Math.floor(z / 100);
   let nearest: (RuinSite & { distance: number }) | null = null;
   for (let dx = -1; dx <= 1; dx += 1) {
     for (let dz = -1; dz <= 1; dz += 1) {
@@ -198,8 +198,8 @@ function buildFort(site: RuinSite, put: Put, remove: Remove) {
 }
 
 export function generateRuinsForChunk(cx: number, cz: number, seed: number, put: Put, remove: Remove) {
-  const cellX = Math.floor(cx * 16 / 60);
-  const cellZ = Math.floor(cz * 16 / 60);
+  const cellX = Math.floor(cx * 16 / 100);
+  const cellZ = Math.floor(cz * 16 / 100);
   for (let dx = -1; dx <= 1; dx += 1) {
     for (let dz = -1; dz <= 1; dz += 1) {
       for (const type of Object.keys(layouts) as RuinType[]) {

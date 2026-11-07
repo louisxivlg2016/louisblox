@@ -21,7 +21,7 @@ import { useEatingStore } from '../game/eating';
 import { canWalkInVehicle } from '../game/vehicleTypes';
 import { appearanceHairColor } from '../game/appearance';
 
-export function PlayerAvatar({ entity }: { entity: Entity }) {
+export function PlayerAvatar({ entity, preview = false }: { entity: Entity; preview?: boolean }) {
   const cameraMode = useGameStore((state) => state.cameraMode);
   const sleeping = useGameStore((state) => state.sleepProgress !== null);
   const equipped = useGameStore((state) => state.equippedArmor);
@@ -46,8 +46,10 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
 
   useFrame((_, delta) => {
     if (!entity) return;
-    const mesh = entity.get(PlayerMesh);
-    if (mesh) mesh.value = bodyMesh.current;
+    if (!preview) {
+      const mesh = entity.get(PlayerMesh);
+      if (mesh) mesh.value = bodyMesh.current;
+    }
     const velocity = entity.get(PlayerVelocity);
     const state = entity.get(PlayerState);
     const mounted = entity.get(PlayerMount)?.vehicle;
@@ -134,7 +136,7 @@ export function PlayerAvatar({ entity }: { entity: Entity }) {
   return (
     <group
       ref={bodyMesh}
-      visible={(cameraMode !== 'first' || sleeping) && riding !== 'plane'}
+      visible={preview || (cameraMode !== 'first' || sleeping) && riding !== 'plane'}
     >
       {(!hasFullCharacter(outfit, wig) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit character={character} outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding) && !walkingCabin} head={headContent} headRef={headRef} appearance={appearance} />

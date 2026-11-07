@@ -15,6 +15,7 @@ export function HomePanel() {
   const renameHome = useHomeStore((state) => state.renameHome);
   const deleteHome = useHomeStore((state) => state.deleteHome);
   const worldId = useGameStore((state) => state.worldId);
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
   const homes = useHomeStore((state) => state.homes[worldId] ?? NO_HOMES);
   const [name, setName] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
@@ -28,7 +29,7 @@ export function HomePanel() {
     setMessage('');
   }, [open, worldId]);
 
-  if (!open) return null;
+  if (!open || gameplayMode === 'pirates') return null;
 
   const close = () => {
     setOpen(false);

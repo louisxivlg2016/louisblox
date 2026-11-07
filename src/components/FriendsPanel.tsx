@@ -3,8 +3,8 @@ import { useCharacterStore } from '../game/characterStore';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { acceptFriendRequest, fetchFriendRequests, giveApple, listOnlinePlayers, registerSelfProfile, searchPlayers, sendFriendRequest, useFriendStore, validatePlayerName } from '../game/friends';
 import { playerIdentity } from '../game/playerIdentity';
+import { useAvatarStore } from '../game/avatar';
 import type { FriendPlayer, FriendRequest } from '../game/friends';
-import { PixelAvatar } from './PixelAvatar';
 import { ProfileAvatar, ProfilePhotoPicker } from './ProfileAvatar';
 import { useGameStore } from '../game/store';
 import { readWorldSave } from '../game/save';
@@ -12,7 +12,7 @@ import { readWorldSave } from '../game/save';
 function PlayerRow({ player, action, online = true }: { player: FriendPlayer; action?: React.ReactNode; online?: boolean }) {
   return (
     <div className="friend-row">
-      <PixelAvatar character={player.character} outfit={player.outfit} wig={player.wig} appearance={player.appearance} size={42} />
+      <ProfileAvatar kind={player.avatar ?? 'pixel'} character={player.character} outfit={player.outfit} wig={player.wig} appearance={player.appearance} size={42} />
       <span className="friend-info"><strong>{player.name}</strong><small>{online ? 'En ligne' : 'Hors ligne'} · {player.room}</small></span>
       {action}
     </div>
@@ -30,6 +30,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
   const outfit = useCharacterStore((state) => state.outfit);
   const wig = useCharacterStore((state) => state.wig);
   const appearance = useCharacterStore((state) => state.appearance);
+  const avatar = useAvatarStore((state) => state.kind);
   const onlinePlayers = useFriendStore((state) => state.onlinePlayers);
   const friends = useFriendStore((state) => state.friends);
   const requests = useFriendStore((state) => state.requests);
@@ -73,7 +74,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
       active = false;
       window.clearInterval(timer);
     };
-  }, [setOnlinePlayers, playerName, room, character, outfit, wig, appearance]);
+  }, [setOnlinePlayers, playerName, room, character, outfit, wig, appearance, avatar]);
 
   useEffect(() => {
     const query = search.trim();

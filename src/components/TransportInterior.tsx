@@ -92,13 +92,11 @@ function TrainInterior({ driverPresent, passengerSeat }: { driverPresent: boolea
 function CarriageInterior({ driverPresent }: { driverPresent: boolean }) {
   return (
     <group name="carriage-cabin">
-      <CabinShell cabin={CABINS.carriage!} />
       <Seat position={[0, 1.55, -2]} />
       {driverPresent && <Person position={[0, 1.55, -2]} color="#563f31" worker />}
       <Seat position={[-0.48, 1.5, 0.45]} />
       <Seat position={[0.48, 1.5, 0.45]} />
       <Seat position={[0, 1.5, 1.3]} />
-      <PixelPart position={[0, 1.04, 0.5]} size={[1.8, 0.05, 2]} color="#9b3040" />
     </group>
   );
 }

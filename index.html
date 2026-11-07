@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#17231c" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23568c3f' d='M0 0h16v16H0z'/%3E%3Cpath fill='%23efffda' d='M4 3h3v8h5v2H4z'/%3E%3C/svg%3E" />
+    <link rel="icon" type="image/jpeg" href="./assets/icons/louisblox-icon.jpeg" />
     <title>Louisblox — Explore. Casse. Construis.</title>
     <style>
       :root {
@@ -483,6 +483,14 @@
       .teleport-panel strong { margin-bottom: 5px; font-size: 13px; }
       .teleport-panel button { min-height: 42px; padding: 10px; color: #fff; text-align: left; background: #39536b; border: 1px solid #66849d; cursor: pointer; }
       .teleport-panel button:disabled { opacity: 0.6; cursor: default; }
+      .emote-toggle, .teleport-toggle { width: 132px; padding: 0; background: transparent; border: 0; }
+      .emote-toggle { width: 126px; }
+      .emote-toggle img, .teleport-toggle img { display: block; width: 100%; height: auto; image-rendering: pixelated; pointer-events: none; }
+      .boutique-avatar-3d { position: relative; flex: 0 0 190px; width: 190px; height: 210px; cursor: grab; background: radial-gradient(circle at 50% 35%, #78919b, #283e49 80%); border: 2px solid #91b3b8; touch-action: none; }
+      .boutique-preview-hint { position: absolute; right: 0; bottom: 4px; left: 0; color: #fff; font-size: 9px; text-align: center; text-shadow: 1px 1px #14212a; pointer-events: none; }
+      .boutique-avatar-3d:active { cursor: grabbing; }
+      .boutique-avatar-3d canvas { display: block; touch-action: none; }
+      @media (max-width: 650px) { .boutique-avatar-3d { flex-basis: 150px; width: 150px; height: 190px; } }
       .home-destinations { display: grid; gap: 7px; margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.2); }
       .home-destinations .home-manage-button { background: #4b613d; border-color: #7d9967; }
       .home-panel { max-width: 640px; }
@@ -877,6 +885,8 @@
         .trade-offer .primary-button { width: 100%; }
         .trade-offer-items { font-size: 11px; }
       }
+      .match-result-actions { display: flex; justify-content: center; gap: 12px; margin-top: 16px; pointer-events: auto; }
+      .match-result-actions button { min-width: 130px; margin-top: 0; }
     </style>
   </head>
   <body>

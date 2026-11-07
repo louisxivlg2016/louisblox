@@ -206,7 +206,9 @@ export class PirateEngine {
       return true;
     }
     if (data.type === 'pirates-objective') {
-      this.damageObjective(player, data.kind);
+      const position = data.position && typeof data.position === 'object' ? data.position as Record<string, unknown> : undefined;
+      const impact = position && ['x', 'y', 'z'].every((axis) => typeof position[axis] === 'number' && Number.isFinite(position[axis])) ? { x: position.x as number, y: position.y as number, z: position.z as number } : undefined;
+      this.damageObjective(player, data.kind, impact);
       return true;
     }
     if (data.type === 'pirates-buy') {

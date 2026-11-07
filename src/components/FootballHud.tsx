@@ -5,6 +5,7 @@ import { clearInput, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 import { canManageProtection } from '../game/protection';
+import { MatchResultActions } from './MatchResultActions';
 
 export function FootballHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
@@ -59,7 +60,7 @@ export function FootballHud() {
         {isFootballFrozen() && phase !== 'finished' && <span>Attends le coup de sifflet</span>}
         <small>Clic gauche : tir · E : tir puissant · T ou clic droit : tacler · G : passer</small>
       </div>}
-      {winner && <div className="pirate-winner">Victoire de l’équipe {winner === 'red' ? 'rouge' : 'bleue'} !</div>}
+      {winner && <div className="pirate-winner">Victoire de l’équipe {winner === 'red' ? 'rouge' : 'bleue'} !<MatchResultActions /></div>}
       {team && canManageProtection() && <button className="football-referee" onClick={() => { refereeWhistle(); clearInput(); }}>Sifflet de l’arbitre</button>}
     </>
   );

@@ -41,11 +41,12 @@ export function choosePirateKit(kit: PirateKit) {
   useGameStore.setState({ hotbarSlots: [...loadout], selected: loadout[0] });
   send({ type: 'pirates-kit', kit });
   respawnAtBase(world, team);
+  useGameStore.getState().setMode('play');
   return true;
 }
 
-export function requestPirateObjectiveHit(kind: 'melee' | 'cannon') {
-  send({ type: 'pirates-objective', kind });
+export function requestPirateObjectiveHit(kind: 'melee' | 'cannon', position?: { x: number; y: number; z: number }) {
+  send({ type: 'pirates-objective', kind, position });
 }
 
 export function buyPirateItem(item: string) {
@@ -101,7 +102,7 @@ export function damagePirateObjectivesInRadius(position: Vector3, radius: number
   if (useGameStore.getState().gameplayMode !== 'pirates') return;
   const team = teamObjective(useBattleStore.getState().team);
   const objective = PIRATE_OBJECTIVES[team];
-  if (Math.hypot(position.x - objective.x, position.y - objective.y, position.z - objective.z) <= radius) requestPirateObjectiveHit('cannon');
+  if (Math.hypot(position.x - objective.x, position.y - objective.y, position.z - objective.z) <= radius) requestPirateObjectiveHit('cannon', position);
 }
 
 export function isPirateEliminated() {

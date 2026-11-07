@@ -75,12 +75,14 @@ function avoidWall(world: World, kind: AnimalKind, position: Vector3, motion: Mo
   const candidates = [motion.yaw + direction * Math.PI / 2, motion.yaw - direction * Math.PI / 2, motion.yaw + direction * Math.PI * 0.75, motion.yaw - direction * Math.PI * 0.75];
   const open = candidates.find((yaw) => canAdvance(world, kind, position, yaw));
   if (open !== undefined) motion.yaw = open;
+  else motion.yaw += direction * Math.PI / 3;
   motion.avoid = 0;
   motion.turnIn = Math.max(motion.turnIn, 1.2);
 }
 
 export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0) {
   if (!isLoaded(world, position.x, position.z)) return true;
+  if (motion.speed > 0 && motion.idle <= 0 && (motion.avoid ?? 0) <= 0 && !canAdvance(world, kind, position, motion.yaw)) avoidWall(world, kind, position, motion, entity);
   motion.avoid = Math.max(0, (motion.avoid ?? 0) - dt);
   const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : motion.speed;
   const normalSpeed = motion.idle > 0 || motion.avoid > 0 ? 0 : baseSpeed;
@@ -118,6 +120,7 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
     }
 
     const ground = groundAt(world, position.x, position.z, position.y + 0.2);
+    if (motion.climbTarget !== null && motion.climbTarget !== undefined && ground < position.y - 0.2) motion.climbTarget = null;
     if (motion.climbTarget !== null && motion.climbTarget !== undefined) {
       position.y = Math.min(motion.climbTarget, position.y + dt * 4);
       motion.velocityY = 0;
@@ -148,7 +151,6 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
 }
 
 const clocks = new WeakMap<World, number>();
-const distantClocks = new WeakMap<Vector3, number>();
 
 export function animalSystem(world: World, dt: number) {
   const elapsed = (clocks.get(world) ?? 0) + dt;
@@ -172,16 +174,7 @@ export function animalSystem(world: World, dt: number) {
       hit.panic = Math.max(hit.panic, 2.4);
     }
     if (entity.get(HorseRider)?.mounted) return;
-    let stepDt = dt;
-    if (distanceSquared > 25 * 25) {
-      const remaining = (distantClocks.get(position) ?? 0) - dt;
-      if (remaining > 0) {
-        distantClocks.set(position, remaining);
-        return;
-      }
-      stepDt -= remaining;
-      distantClocks.set(position, 0.1);
-    }
+    const stepDt = dt;
     hit.time = Math.max(0, hit.time - stepDt);
     hit.panic = Math.max(0, hit.panic - stepDt);
     hit.attackIn = Math.max(0, hit.attackIn - stepDt);

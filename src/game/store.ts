@@ -176,7 +176,7 @@ export const useGameStore = create<GameStore>((set) => ({
   setRiding: (riding, role = 'driver') => set({ riding, ridingRole: riding ? role : null }),
   setSeatChoice: (seatChoice) => set({ seatChoice }),
   setNotice: (notice) => set({ notice }),
-  setTeleportOpen: (teleportOpen) => set({ teleportOpen }),
+  setTeleportOpen: (teleportOpen) => set((state) => ({ teleportOpen: teleportOpen && !['pirates', 'battle', 'maze'].includes(state.gameplayMode) })),
   openContainer: (type, position, items = []) => set({ container: { type, ...position }, chestItems: items, mode: 'pause', backpackOpen: false, teleportOpen: false, backpackItem: null }),
   closeContainer: () => set({ container: null, chestItems: [] }),
   setBlockCount: (blockCount) => set({ blockCount }),

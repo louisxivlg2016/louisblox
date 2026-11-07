@@ -3,7 +3,7 @@ import { useCharacterStore } from '../game/characterStore';
 import { requestPlay } from '../game/input';
 import { OUTFIT_ORDER, OUTFITS, WIG_ORDER, WIGS } from '../game/outfits';
 import { useGameStore } from '../game/store';
-import { PixelAvatar } from './PixelAvatar';
+import { BoutiqueAvatarPreview } from './BoutiqueAvatarPreview';
 import { SettingsPanel } from './SettingsPanel';
 import shopUrl from '../../assets/menu/shop.webp';
 import settingsButtonUrl from '../../assets/ui/settings-button.webp';
@@ -42,7 +42,7 @@ export function BoutiquePanel() {
           <div className="boutique-content" role="tabpanel">
             {tab === 'settings' ? <SettingsPanel /> : <>
         <div className="boutique-avatar-preview">
-          <PixelAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={72} />
+          <BoutiqueAvatarPreview />
           <div><p className="eyebrow">PERSONNALISATION</p><h2 id="boutique-title">Boutique</h2><p>Choisis ta tenue. Les autres joueurs la verront aussi.</p></div>
         </div>
         <div className="character-selector">
@@ -91,9 +91,8 @@ export function BoutiquePanel() {
             );
           })}
         </div>
-        {outfit === 'default' ? (
-          <>
-            <p className="backpack-label">Perruques · ta perruque reste quand tu changes de costume</p>
+        <>
+            <p className="backpack-label">Coiffure normale ou perruque · ton choix reste quand tu changes de costume</p>
             <div className="outfit-grid wig-grid">
               {WIG_ORDER.map((kind) => {
                 const item = WIGS[kind];
@@ -107,8 +106,7 @@ export function BoutiquePanel() {
                 );
               })}
             </div>
-          </>
-        ) : <p className="backpack-label">Coiffure et perruque intégrées au personnage complet.</p>}
+        </>
         {battle && <p className="backpack-label">Le costume militaire est obligatoire en Bataille.</p>}
         <p className="boutique-hint">B ouvre la boutique · M crée une maison en pleine partie · P change de caméra.</p>
         <button className="primary-button" onClick={close}>Porter et reprendre</button>

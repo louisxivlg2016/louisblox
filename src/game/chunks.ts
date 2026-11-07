@@ -272,6 +272,9 @@ function loadChunk(world: World, cx: number, cz: number) {
       }
     }
   }
+  for (const [position, block] of blockMap) {
+    if (block.kind === BlockKind.Watermelon) blockMap.delete(position);
+  }
 
   const entity = world.spawn(Chunk({ x: cx, z: cz }), ChunkData());
   const data = entity.get(ChunkData)!;

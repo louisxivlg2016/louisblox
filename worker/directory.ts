@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
+import { matchesSearch, normalizeSearch } from '../src/game/search';
 
 export type Appearance = {
   skinColor: string;
@@ -7,6 +8,7 @@ export type Appearance = {
   eyebrowColor: string | null;
   clothingColor: string | null;
   hairStyle: 'short' | 'long';
+  originalHairColor?: boolean;
 };
 
 export type SocialPlayer = {
@@ -16,6 +18,7 @@ export type SocialPlayer = {
   character: 'boy' | 'girl';
   outfit: string;
   wig: string;
+  avatar?: string;
   appearance: Appearance;
   lastSeen?: number;
 };
@@ -37,6 +40,7 @@ export function json(value: unknown, status = 200) {
 const color = (value: unknown) => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
 const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
+const avatars = new Set(['pixel', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police']);
 
 export function parseAppearance(value: unknown, character: 'boy' | 'girl' = 'boy'): Appearance {
   const data = value && typeof value === 'object' ? value as Record<string, unknown> : {};
@@ -47,6 +51,7 @@ export function parseAppearance(value: unknown, character: 'boy' | 'girl' = 'boy
     eyebrowColor: data.eyebrowColor === null || color(data.eyebrowColor) ? data.eyebrowColor as string | null : null,
     clothingColor: data.clothingColor === null || color(data.clothingColor) ? data.clothingColor as string | null : null,
     hairStyle: data.hairStyle === 'long' || data.hairStyle === 'short' ? data.hairStyle : character === 'girl' ? 'long' : 'short',
+    originalHairColor: data.originalHairColor === true,
   };
 }
 
@@ -64,6 +69,7 @@ export function parseSocialPlayer(value: unknown): SocialPlayer | null {
     character,
     outfit: typeof data.outfit === 'string' && outfits.has(data.outfit) ? data.outfit : 'default',
     wig: typeof data.wig === 'string' && wigs.has(data.wig) ? data.wig : 'auto',
+    avatar: typeof data.avatar === 'string' && avatars.has(data.avatar) ? data.avatar : 'pixel',
     appearance: parseAppearance(data.appearance, character),
   };
 }
@@ -163,9 +169,9 @@ export class PlayerDirectory extends DurableObject<Env> {
       return json({ available, error: available ? undefined : 'Ce pseudo est déjà utilisé. Choisis-en un autre.' }, available ? 200 : 409);
     }
     if (url.pathname === '/players' && request.method === 'GET') {
-      const query = (url.searchParams.get('q') ?? '').trim().toLocaleLowerCase();
+      const query = normalizeSearch(url.searchParams.get('q') ?? '');
       const players = query
-        ? [...this.knownPlayers.values()].filter((player) => player.name.toLocaleLowerCase().includes(query))
+        ? [...this.knownPlayers.values()].filter((player) => matchesSearch(player.name, query))
         : [...this.onlinePlayers.values()];
       return json({
         players: players

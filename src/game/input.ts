@@ -151,7 +151,7 @@ export function initInput() {
       if (homes.open) {
         homes.setOpen(false);
         void requestPlay();
-      } else if (state.mode === 'play') {
+      } else if (state.mode === 'play' && state.gameplayMode !== 'pirates') {
         state.setShopOpen(false);
         clearInput();
         state.setTeleportOpen(false);

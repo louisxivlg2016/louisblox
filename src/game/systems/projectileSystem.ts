@@ -11,6 +11,7 @@ import { MIN_WORLD_Y } from '../levels';
 import { raycastVoxel } from '../voxel';
 import { spawnPaintSplash } from '../paintball';
 import { playSound } from '../audio';
+import { damagePirateObjectivesInRadius } from '../piratesClient';
 
 const step = new Vector3();
 const next = new Vector3();
@@ -39,6 +40,7 @@ export function detonateProjectile(world: World, position: Vector3, damagePlayer
   playSound('explosion', 0.6);
   explodeVoxels(world, position.x, position.y, position.z, 2.8);
   damageCreaturesInRadius(world, position, 4.5);
+  damagePirateObjectivesInRadius(position, 3.5);
   if (damagePlayers) damageBattlePlayersInRadius(world, position, 3.5);
   world.spawn(
     Explosion({ time: 0.45, maxTime: 0.45 }),

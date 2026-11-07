@@ -84,7 +84,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   crossbow: item('Arbalète', '#8c8c83', 'bow', { cooldown: 0.7 }),
   pistol_iron: item('Pistolet en fer', '#9caab3', 'gun', { cooldown: 0.42 }),
   pistol_gold: item('Pistolet en or', '#e5b934', 'gun', { cooldown: 0.32 }),
-  pistol_bomb: item('Pistolet lance-bombes', '#686d79', 'gun', { cooldown: 0 }),
+  pistol_bomb: item('Pistolet lance-bombes', '#686d79', 'gun', { cooldown: 0.35 }),
   rifle_auto: item('Fusil automatique', '#2f3b2c', 'gun', { cooldown: 0.09, damage: 2 }),
   rifle_flintlock: item('Fusil à baïonnette', '#885a32', 'gun', { cooldown: 0.85, damage: 2, shape: 'flintlock' }),
   car_red: item('Voiture de course rouge', '#d63935', 'vehicle'),

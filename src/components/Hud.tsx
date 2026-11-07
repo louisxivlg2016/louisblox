@@ -5,6 +5,7 @@ import { ItemIcon } from './ItemIcon';
 import { PaintballPalette } from './PaintballPalette';
 import backpackButtonUrl from '../../assets/ui/backpack-button.webp';
 import shopButtonUrl from '../../assets/ui/shop-button.webp';
+import teleportButtonUrl from '../../assets/ui/teleport-button.webp';
 import { Backpack } from './Backpack';
 import { BoutiquePanel } from './BoutiquePanel';
 import { ContainerPanel } from './ContainerPanel';
@@ -85,7 +86,7 @@ export function Hud() {
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
           <button className="backpack-toggle" onClick={openBackpack} aria-label="Sac à dos"><img src={backpackButtonUrl} alt="" /></button>
           <button className="shop-toggle" onClick={openShop} aria-label="Boutique"><img src={shopButtonUrl} alt="" /></button>
-          {gameplayMode !== 'football' && <button className="teleport-toggle" onClick={openTeleport}>Téléportation · T</button>}
+          {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label="Téléportation · T"><img src={teleportButtonUrl} alt="Téléportation · T" /></button>}
           <div className="action-hint">{gameplayMode === 'football' ? 'Clic gauche : tir · E : tir puissant · T : tacler · G : passer' : <>Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</>}</div>
           {notice && <div className="game-notice">{notice}</div>}
           <EffectsHud />

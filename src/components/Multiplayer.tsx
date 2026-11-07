@@ -14,9 +14,11 @@ import { useMultiplayerStore, useRemotePlayerStore } from '../game/multiplayerSt
 import { createWorldSave } from '../game/save';
 import { rememberWorld, useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
+import { useAvatarStore } from '../game/avatar';
 import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Vehicle } from '../game/traits';
 import { getItemMeta } from '../game/items';
 import { ItemModel, PixelPart, itemGripOffset } from './ItemModel';
+import { PlayerNameTag } from './PlayerNameTag';
 import { attachCharacterHand } from '../game/characterRig';
 import { clearTeleportRequests, receiveTeleportRequest, receiveTeleportResponse, setTeleportSocket } from '../game/teleportRequests';
 import { dismount } from '../game/vehicles';
@@ -86,7 +88,7 @@ function sendWorldInitialization(socket: WebSocket, world: World, force: boolean
   socket.send(JSON.stringify({ type: 'world-init-complete', force }));
 }
 
-function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: { playerId: string; state: PlayerSnapshot; character: 'boy' | 'girl'; outfit: OutfitKind; wig: WigSelection; appearance?: CharacterAppearance }) {
+function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearance }: { playerId: string; name: string; state: PlayerSnapshot; character: 'boy' | 'girl'; outfit: OutfitKind; wig: WigSelection; appearance?: CharacterAppearance }) {
   const world = useWorld();
   const group = useRef<Group>(null);
   const leftArm = useRef<Group>(null);
@@ -174,6 +176,7 @@ function RemoteAvatar({ playerId, state, character, outfit, wig, appearance }: {
 
   return (
     <group ref={group} position={[state.x, state.y, state.z]}>
+      <PlayerNameTag name={name} />
       {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit character={character} outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} appearance={current} />
       {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={battleTeamColor(team)} /></group>}
@@ -215,7 +218,8 @@ export function RemoteAvatars() {
   const outfits = useRemotePlayerStore((state) => state.outfits);
   const wigs = useRemotePlayerStore((state) => state.wigs);
   const appearances = useRemotePlayerStore((state) => state.appearances);
-  return Object.entries(players).map(([playerId, state]) => <RemoteAvatar key={playerId} playerId={playerId} state={state} character={characters[playerId] ?? 'boy'} outfit={outfits[playerId] ?? 'default'} wig={wigs[playerId] ?? 'auto'} appearance={appearances[playerId]} />);
+  const roster = useMultiplayerStore((state) => state.players);
+  return Object.entries(players).map(([playerId, state]) => <RemoteAvatar key={playerId} playerId={playerId} name={roster.find((player) => player.playerId === playerId)?.name ?? 'Joueur'} state={state} character={characters[playerId] ?? 'boy'} outfit={outfits[playerId] ?? 'default'} wig={wigs[playerId] ?? 'auto'} appearance={appearances[playerId]} />);
 }
 
 export function MultiplayerConnection() {
@@ -240,6 +244,7 @@ export function MultiplayerConnection() {
   const outfit = useCharacterStore((state) => state.outfit);
   const wig = useCharacterStore((state) => state.wig);
   const appearance = useCharacterStore((state) => state.appearance);
+  const avatar = useAvatarStore((state) => state.kind);
   const generation = useGameStore((state) => state.generation);
   const lastGeneration = useRef(generation);
 
@@ -277,6 +282,7 @@ export function MultiplayerConnection() {
       url.searchParams.set('character', character);
       url.searchParams.set('outfit', outfit);
       url.searchParams.set('wig', wig);
+      url.searchParams.set('avatar', avatar);
       url.searchParams.set('appearance', JSON.stringify(appearance));
       endpoint = url.toString();
     } catch {
@@ -705,6 +711,12 @@ export function MultiplayerConnection() {
     current.send(JSON.stringify({ type: 'outfit', outfit }));
     current.send(JSON.stringify({ type: 'wig', wig }));
   }, [connected, connectionId, outfit, wig]);
+
+  useEffect(() => {
+    if (!connected) return;
+    const current = socket.current;
+    if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify({ type: 'profile-avatar', avatar }));
+  }, [connected, connectionId, avatar]);
 
   useEffect(() => {
     if (!connected) return;

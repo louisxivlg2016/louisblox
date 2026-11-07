@@ -125,10 +125,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               <span className="world-card-label"><strong>Football</strong><small>Match de 5 minutes, cartons, corners, penaltys et hors-jeu</small></span>
               <span className="world-mode-tag">Rouge contre Bleu</span>
             </button>
-            <button className="world-card battle-card maze-card" onClick={() => create('maze')} disabled={!enabled || serverEditing || pendingWorld !== null} title={serverEditing ? "Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre" : undefined}>
+            <button className="world-card battle-card maze-card" onClick={() => create('maze')} disabled={serverEditing || pendingWorld !== null} title={serverEditing ? "Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre" : undefined}>
               <img src={mazeUrl} alt="Labyrinthe du mode Course Labyrinthe" />
-              <span className="world-card-label"><strong>Course Labyrinthe</strong><small>Trouve la sortie après le coup de sifflet de l’arbitre</small></span>
-              <span className="world-mode-tag">Course chronométrée</span>
+              <span className="world-card-label"><strong>Course Labyrinthe</strong><small>{enabled ? 'Trouve la sortie après le coup de sifflet de l’arbitre' : 'Course en solo dans le labyrinthe'}</small></span>
+              <span className="world-mode-tag">{enabled ? 'Course chronométrée' : 'Solo'}</span>
             </button>
             <button className="world-card city-card" data-world-mode="city-ancient" onClick={() => create('city-ancient')} disabled={pendingWorld !== null}>
               <img src={citiesUrl} alt="Ville ancienne et ses bâtiments parisiens" />

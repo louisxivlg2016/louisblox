@@ -23,6 +23,7 @@ import { isPirateObjective } from '../pirates';
 import { requestPirateObjectiveHit } from '../piratesClient';
 import { playSound } from '../audio';
 import { isOldPirateRigging } from '../pirateShipGeometry';
+import { dropBlock } from '../droppedItems';
 
 const direction = new Vector3();
 const origin = new Vector3();
@@ -109,7 +110,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       if (kind === BlockKind.Food) pickUpFood(world, hit);
       else {
         removeVoxel(world, hit);
-        if (store.gameplayMode === 'survival') changeInventory(hit.block.kind, 1);
+        if (store.gameplayMode === 'survival') dropBlock(world, hit.block);
       }
       playSound('breakBlock', 0.5);
       target.visible = false;

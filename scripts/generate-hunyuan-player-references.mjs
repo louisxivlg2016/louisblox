@@ -37,7 +37,9 @@ const assets = [
 const only = process.argv.indexOf('--only');
 const requested = new Set((only >= 0 ? process.argv[only + 1] ?? '' : '').split(',').filter(Boolean));
 const selected = assets.filter((asset) => requested.size === 0 || requested.has(asset.name));
-if (process.argv.includes('--retry')) {
+if (process.argv.includes('--force')) {
+  for (const asset of selected) delete state[asset.name];
+} else if (process.argv.includes('--retry')) {
   for (const asset of selected) if (state[asset.name]?.status === 'FAIL') delete state[asset.name];
 }
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

@@ -4,6 +4,7 @@ import { useBattleStore } from '../game/battle';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { canManageProtection } from '../game/protection';
+import { MatchResultActions } from './MatchResultActions';
 
 export function MazeHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
@@ -24,8 +25,8 @@ export function MazeHud() {
     const timer = window.setInterval(() => refresh((value) => value + 1), 250);
     return () => window.clearInterval(timer);
   }, [gameplayMode]);
-  if (gameplayMode !== 'maze' || !enabled) return null;
-  const referee = canManageProtection();
+  if (gameplayMode !== 'maze') return null;
+  const referee = canManageProtection() || !enabled;
   const elapsed = phase === 'finished' ? finishMs : startedAt ? Date.now() - startedAt : 0;
   const seconds = Math.max(0, Math.floor(elapsed / 1000));
   return (
@@ -38,7 +39,7 @@ export function MazeHud() {
         {referee && <button onClick={requestMazeReset}>Réinitialiser la course</button>}
         {!referee && phase === 'waiting' && <span>En place dans ton couloir…</span>}
       </div>}
-      {phase === 'finished' && <div className="pirate-winner">{winner === localId ? 'Tu as gagné la course !' : `${winnerName ?? 'Un joueur'} a gagné !`}<span>{(finishMs / 1000).toFixed(1)} secondes</span></div>}
+      {phase === 'finished' && <div className="pirate-winner">{winner === 'solo' || winner === localId ? 'Tu as gagné la course !' : `${winnerName ?? 'Un joueur'} a gagné !`}<span>{(finishMs / 1000).toFixed(1)} secondes</span><MatchResultActions /></div>}
     </>
   );
 }

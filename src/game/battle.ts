@@ -21,6 +21,7 @@ type BattleStore = {
   scores: Scores;
   playerScores: Record<string, number>;
   names: Record<string, string>;
+  winner: BattleTeam | null;
   localPlayerId: string | null;
   events: BattleEvent[];
   deadUntil: number;
@@ -36,6 +37,7 @@ const initialState = {
   scores: { red: 0, blue: 0 },
   playerScores: {},
   names: {},
+  winner: null,
   localPlayerId: null,
   events: [],
   deadUntil: 0,
@@ -88,6 +90,7 @@ export function chooseBattleTeam(team: 'red' | 'blue' | 'solo' | 'auto') {
   socket.send(JSON.stringify({ type: 'battle-team', team }));
   useBattleStore.setState({ team: nextTeam });
   respawnAtBase(world, nextTeam);
+  useGameStore.getState().setMode('play');
   return true;
 }
 
@@ -130,7 +133,7 @@ export function receiveBattleState(value: unknown) {
     blue: typeof sourceScores.blue === 'number' && sourceScores.blue >= 0 ? Math.floor(sourceScores.blue) : 0,
   };
   const localPlayerId = useBattleStore.getState().localPlayerId;
-  useBattleStore.setState({ teams, health, scores, playerScores, names, team: localPlayerId ? teams[localPlayerId] ?? null : null });
+  useBattleStore.setState({ teams, health, scores, playerScores, names, winner: isBattleTeam(data.winner) ? data.winner : null, team: localPlayerId ? teams[localPlayerId] ?? null : null });
   const lives = localPlayerId ? health[localPlayerId] : undefined;
   if (lives !== undefined) {
     world.queryFirst(Player)?.set(PlayerHealth, { value: lives });

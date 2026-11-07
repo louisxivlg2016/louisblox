@@ -28,6 +28,14 @@ export function dropSelectedItem() {
   state.setNotice(`${typeof kind === 'number' ? BLOCK_INFO[kind].name : 'Objet'} jeté. Rapproche-toi pour le ramasser.`);
 }
 
+export function dropBlock(gameWorld: World, block: { x: number; y: number; z: number; kind: import('./voxel').BlockKind }) {
+  gameWorld.spawn(
+    DroppedItem({ kind: block.kind, age: 0, mined: true }),
+    DroppedItemPosition(new Vector3(block.x, block.y + 0.45, block.z)),
+    DroppedItemVelocity(new Vector3(0, 1.8, 0)),
+  );
+}
+
 export function droppedItemSystem(gameWorld: World, dt: number) {
   const player = gameWorld.queryFirst(Player)?.get(PlayerPosition);
   const blocks = getBlockIndex(gameWorld);
@@ -37,7 +45,7 @@ export function droppedItemSystem(gameWorld: World, dt: number) {
       entity.destroy();
       return;
     }
-    if (player && item.age > 0.8 && position.distanceToSquared(player) < 2.5 * 2.5) {
+    if (player && item.age > (item.mined ? 0.18 : 0.8) && position.distanceToSquared(player) < (item.mined ? 1.1 * 1.1 : 2.5 * 2.5)) {
       changeInventory(item.kind, 1);
       entity.destroy();
       return;
@@ -49,7 +57,7 @@ export function droppedItemSystem(gameWorld: World, dt: number) {
       velocity.y = Math.abs(velocity.y) * 0.3;
       velocity.x *= 0.75;
       velocity.z *= 0.75;
-      next.y = Math.round(next.y - 0.18) + 0.7;
+      next.y = Math.round(next.y - 0.18) + (item.mined ? 0.64 : 0.7);
     }
     position.copy(next);
   });

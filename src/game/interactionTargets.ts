@@ -1,5 +1,5 @@
 import type { Entity, World } from 'koota';
-import { Box3, Ray, Vector3 } from 'three';
+import { DoubleSide, Mesh, Raycaster, Vector3 } from 'three';
 import type { Camera, Object3D } from 'three';
 import { getBlockIndex } from './chunks';
 import { raycastVoxel } from './voxel';
@@ -13,22 +13,31 @@ export function findInteractionTarget(world: World, camera: Camera, interaction:
   const origin = position.clone();
   origin.y += 1.62;
   const direction = camera.getWorldDirection(new Vector3()).normalize();
-  const ray = new Ray(origin, direction);
   const obstruction = raycastVoxel(getBlockIndex(world), origin, direction, interaction === 'mount' ? 12 : 6);
-  const bounds = new Box3();
-  const point = new Vector3();
+  const raycaster = new Raycaster(origin, direction);
   let closest = Infinity;
   let result: InteractionTarget | null = null;
 
   function inspect(entity: Entity, kind: InteractionTarget['kind'], mesh: Object3D | null, reach: number) {
     if (!mesh?.visible) return;
     mesh.updateWorldMatrix(true, true);
-    bounds.setFromObject(mesh);
-    if (bounds.isEmpty() || !ray.intersectBox(bounds, point)) return;
-    const distance = point.distanceTo(origin);
-    if (distance > reach || distance >= closest || (obstruction && distance > obstruction.distance + 0.08)) return;
-    closest = distance;
-    result = { entity, kind, distance };
+    raycaster.far = Math.min(reach, closest, obstruction?.distance ?? reach);
+    const sides = new Map<import('three').Material, import('three').Side>();
+    mesh.traverse((object) => {
+      if (!(object instanceof Mesh)) return;
+      for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+        sides.set(material, material.side);
+        material.side = DoubleSide;
+      }
+    });
+    try {
+      const hit = raycaster.intersectObject(mesh, true)[0];
+      if (!hit) return;
+      closest = hit.distance;
+      result = { entity, kind, distance: hit.distance };
+    } finally {
+      for (const [material, side] of sides) material.side = side;
+    }
   }
 
   if (interaction === 'trade') {

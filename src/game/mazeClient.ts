@@ -2,9 +2,11 @@ import { create } from 'zustand';
 import type { World } from 'koota';
 import { useBattleStore, respawnAtBase } from './battle';
 import { useGameStore } from './store';
-import { Player, PlayerState } from './traits';
+import { useMultiplayerStore } from './multiplayerStore';
+import { Chunk, Player, PlayerPosition, PlayerState } from './traits';
+import { getBlockIndex, replaceVoxel } from './chunks';
 import { world } from './world';
-import { MAZE_OVERVIEW, mazeSpawn } from './maze';
+import { MAZE_BARRIERS, MAZE_OVERVIEW, mazeSpawn } from './maze';
 import { playWhistle } from './audio';
 import { stopMining } from './input';
 
@@ -24,8 +26,31 @@ export function clearMaze() {
 function send(type: string) {
   if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type }));
 }
-export function requestMazeStart() { send('maze-start'); }
-export function requestMazeReset() { send('maze-reset'); }
+function applyMazeBarriers(open: boolean) {
+  if (world.query(Chunk).length === 0) return;
+  for (const { x, y, z } of MAZE_BARRIERS) {
+    const block = getBlockIndex(world).get(`${x},${y},${z}`);
+    if (block && block.open !== open) replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, block.kind, open);
+  }
+}
+
+function startSoloMaze() {
+  if (useGameStore.getState().gameplayMode !== 'maze') return;
+  const spawn = mazeSpawn(0);
+  applyMazeBarriers(false);
+  respawnAtBase(world, null, spawn);
+  world.queryFirst(Player)?.set(PlayerState, { yaw: 0, pitch: 0 });
+  useMazeStore.setState({ phase: 'countdown', phaseUntil: Date.now() + 3000, startedAt: 0, winner: null, winnerName: null, finishMs: 0, notice: 'Prépare-toi pour le départ', barriersOpen: false, overview: false, spawn });
+}
+
+export function requestMazeStart() {
+  if (socket?.readyState === WebSocket.OPEN) send('maze-start');
+  else if (!useMultiplayerStore.getState().enabled) startSoloMaze();
+}
+export function requestMazeReset() {
+  if (socket?.readyState === WebSocket.OPEN) send('maze-reset');
+  else if (!useMultiplayerStore.getState().enabled) startSoloMaze();
+}
 
 function number(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
@@ -40,6 +65,8 @@ export function receiveMazeState(value: unknown) {
     lastWhistle = token;
   }
   const phases: MazePhase[] = ['waiting', 'ready', 'countdown', 'running', 'finished'];
+  const barriersOpen = data.barriersOpen === true;
+  if (useMazeStore.getState().barriersOpen !== barriersOpen) applyMazeBarriers(barriersOpen);
   useMazeStore.setState({
     phase: phases.includes(data.phase as MazePhase) ? data.phase as MazePhase : 'waiting',
     phaseUntil: number(data.phaseUntil, 0), startedAt: number(data.startedAt, 0),
@@ -88,6 +115,20 @@ export function mazeBounds() {
 
 export function mazeControlSystem(_world: World) {
   if (useGameStore.getState().gameplayMode !== 'maze') return false;
+  if (!socket && !useMultiplayerStore.getState().enabled) {
+    const state = useMazeStore.getState();
+    if (state.phase === 'countdown' && Date.now() >= state.phaseUntil) {
+      playWhistle('short');
+      applyMazeBarriers(true);
+      useMazeStore.setState({ phase: 'running', startedAt: Date.now(), notice: 'Trouve la ligne jaune au nord du labyrinthe.', barriersOpen: true });
+    }
+    const current = useMazeStore.getState();
+    const position = _world.queryFirst(Player)?.get(PlayerPosition);
+    if (current.phase === 'running' && position && Math.abs(position.x - 18) <= 2 && position.z >= -25 && position.z <= -22 && Math.abs(position.y - 8.51) < 4) {
+      playWhistle('goal');
+      useMazeStore.setState({ phase: 'finished', winner: 'solo', winnerName: useMultiplayerStore.getState().playerName, finishMs: Date.now() - current.startedAt, notice: 'Course terminée', whistleToken: current.whistleToken + 1 });
+    }
+  }
   stopMining();
   return true;
 }

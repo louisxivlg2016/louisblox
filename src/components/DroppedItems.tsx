@@ -17,7 +17,7 @@ function DroppedItemView({ entity }: { entity: import('koota').Entity }) {
     group.current.rotation.y = item.age * 1.8;
   });
   return (
-    <group ref={group} scale={0.45}>
+    <group ref={group} scale={entity.get(DroppedItem)?.mined ? 0.22 : 0.45}>
       {typeof kind === 'number' ? <mesh args={[blockGeometry, blockMaterials[kind]]} /> : <ItemModel kind={kind} />}
     </group>
   );

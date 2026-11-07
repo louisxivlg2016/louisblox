@@ -2,6 +2,7 @@ import { chooseEmote, resetEmote, useEmoteStore } from '../game/emotes';
 import type { EmoteKind } from '../game/emotes';
 import { clearInput, requestPlay } from '../game/input';
 import { useGameStore } from '../game/store';
+import emotesButtonUrl from '../../assets/ui/emotes-button.webp';
 
 const ACTIONS: Array<{ kind: EmoteKind; label: string }> = [
   { kind: 'sit', label: 'S’asseoir' },
@@ -44,5 +45,5 @@ export function EmotePanel() {
     );
   }
   if (mode !== 'play') return null;
-  return <button className="emote-toggle" onClick={openMenu}>Gestes · Z</button>;
+  return <button className="emote-toggle" onClick={openMenu} aria-label="Animations · Z"><img src={emotesButtonUrl} alt="Animations · Z" /></button>;
 }

@@ -91,6 +91,12 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
       }
     }
   }
+  if (rig.head) {
+    const cover = new Mesh(new BoxGeometry(width * 0.3, height * 0.035, Math.max(0.12, (bounds.max.z - bounds.min.z) * 0.42)), animalMaterial(appearance?.skinColor ?? '#c9926e'));
+    cover.name = 'head-neck-cover';
+    cover.position.y = -height * 0.025;
+    rig.head.add(cover);
+  }
   if (outfit === 'princess') addPrincessHair(rig.head ?? root, width, height, bounds.max.z - bounds.min.z, floor, rig.head ? -(floor + height * 0.68) : 0, appearance?.hairColor);
   root.userData.rig = rig;
   const center = bounds.getCenter(new Vector3());

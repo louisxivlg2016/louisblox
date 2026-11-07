@@ -120,13 +120,13 @@ export const EXTRA_BLOCKS = {
 } as const;
 
 export type ExtraBlockKind = (typeof EXTRA_BLOCKS)[keyof typeof EXTRA_BLOCKS];
-export const EXTRA_BLOCK_ORDER = Object.values(EXTRA_BLOCKS) as ExtraBlockKind[];
+export const EXTRA_BLOCK_ORDER = Object.values(EXTRA_BLOCKS).filter((kind) => kind !== EXTRA_BLOCKS.Watermelon) as ExtraBlockKind[];
 export const SAPLING_KINDS = [EXTRA_BLOCKS.OakSapling, EXTRA_BLOCKS.PineSapling, EXTRA_BLOCKS.AutumnSapling] as const;
 export const isSapling = (kind: number) => (SAPLING_KINDS as readonly number[]).includes(kind);
 export const isGlass = (kind: number) => kind === EXTRA_BLOCKS.Glass || kind >= EXTRA_BLOCKS.GlassWhite && kind <= EXTRA_BLOCKS.GlassBlack;
 export const isDoor = (kind: number) => kind >= EXTRA_BLOCKS.DoorWhite && kind <= EXTRA_BLOCKS.DoorBlack;
 export const isTrapdoor = (kind: number) => kind >= EXTRA_BLOCKS.TrapdoorWhite && kind <= EXTRA_BLOCKS.TrapdoorBlack;
-export const CROP_KINDS = [EXTRA_BLOCKS.Corn, EXTRA_BLOCKS.Wheat, EXTRA_BLOCKS.Tomato, EXTRA_BLOCKS.Carrot, EXTRA_BLOCKS.Watermelon] as const;
+export const CROP_KINDS = [EXTRA_BLOCKS.Corn, EXTRA_BLOCKS.Wheat, EXTRA_BLOCKS.Tomato, EXTRA_BLOCKS.Carrot] as const;
 export const isCrop = (kind: number) => (CROP_KINDS as readonly number[]).includes(kind);
 export const isFurnace = (kind: number) => kind === EXTRA_BLOCKS.Furnace;
 export const isChest = (kind: number) => kind === EXTRA_BLOCKS.Chest;

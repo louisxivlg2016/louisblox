@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useGameStore } from './store';
 
 export const MAX_HOMES = 5;
 export const NO_HOMES: Home[] = [];
@@ -49,7 +50,7 @@ function readHomes(): Record<string, Home[]> {
     const saved: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
     if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return {};
     const homes: Record<string, Home[]> = {};
-    for (const [worldId, entries] of Object.entries(saved).slice(0, 128)) {
+    for (const [worldId, entries] of Object.entries(saved)) {
       if (!Array.isArray(entries)) continue;
       homes[worldId] = entries.slice(0, MAX_HOMES).map(parseHome).filter((home): home is Home => home !== null);
     }
@@ -75,8 +76,9 @@ export const useHomeStore = create<HomeState>((set, get) => {
   return {
     open: false,
     homes: readHomes(),
-    setOpen: (open) => set({ open }),
+    setOpen: (open) => set({ open: open && useGameStore.getState().gameplayMode !== 'pirates' }),
     createHome: (worldId, name, position) => {
+      if (useGameStore.getState().gameplayMode === 'pirates') return { error: 'Les maisons sont désactivées en mode Pirates.' };
       const trimmed = name.trim().slice(0, 32);
       if (!trimmed) return { error: 'Donne un nom à ta maison.' };
       if (!Object.values(position).every((value) => Number.isFinite(value))) return { error: 'Cette position est invalide.' };
@@ -98,7 +100,7 @@ export const useHomeStore = create<HomeState>((set, get) => {
     },
     importHomes: (imported) => {
       const next = { ...get().homes };
-      for (const [worldId, entries] of Object.entries(imported).slice(0, 128)) {
+      for (const [worldId, entries] of Object.entries(imported)) {
         if (!Array.isArray(entries)) continue;
         const valid = entries.slice(0, MAX_HOMES).map(parseHome).filter((home): home is Home => home !== null);
         if (valid.length === 0) continue;

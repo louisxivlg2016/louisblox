@@ -14,7 +14,6 @@ export const CROP_DEFINITIONS: Record<number, CropDefinition> = {
   [BlockKind.Wheat]: { name: 'Blé', food: 'wheat', yield: 3, regrows: false, growthTime: 8 },
   [BlockKind.Tomato]: { name: 'Tomates', food: 'tomato', yield: 3, regrows: true, growthTime: 8 },
   [BlockKind.Carrot]: { name: 'Carottes', food: 'carrot', yield: 3, regrows: false, growthTime: 8 },
-  [BlockKind.Watermelon]: { name: 'Pastèque', food: 'watermelon', yield: 2, regrows: true, growthTime: 8 },
 };
 
 export function cropDefinition(kind: BlockKind) {

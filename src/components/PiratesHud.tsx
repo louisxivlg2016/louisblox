@@ -6,6 +6,7 @@ import type { PirateKit } from '../game/pirates';
 import { clearInput, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
+import { MatchResultActions } from './MatchResultActions';
 
 export function PiratesHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
@@ -63,7 +64,7 @@ export function PiratesHud() {
           <button className="primary-button" onClick={() => { setShopOpen(false); void requestPlay(); }}>Retour au navire</button>
         </div>
       )}
-      {winner && <div className="pirate-winner">Victoire de l’équipage {winner === 'red' ? 'rouge' : 'bleu'} !</div>}
+      {winner && <div className="pirate-winner">Victoire de l’équipage {winner === 'red' ? 'rouge' : 'bleu'} !<MatchResultActions /></div>}
       {isPirateEliminated() && !winner && <div className="battle-death">Élimination définitive<span>Le trésor de ton équipage est détruit.</span></div>}
     </>
   );

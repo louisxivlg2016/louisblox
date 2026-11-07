@@ -66,6 +66,7 @@ export type PlayerAttachment = {
   character: 'boy' | 'girl';
   outfit: string;
   wig: string;
+  avatar?: string;
   appearance: Appearance;
   room: string;
   presenceAt: number;
@@ -91,6 +92,7 @@ const corsHeaders = {
 const facings = new Set(['north', 'south', 'east', 'west']);
 const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
+const profileAvatars = new Set(['pixel', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police']);
 const potionEffects = new Set(['speed', 'slowness', 'jump', 'doubleJump', 'haste', 'strength', 'weakness', 'defence', 'regeneration', 'poison', 'invisibility', 'heatResistance', 'knockback']);
 
 function parseHorse(value: unknown): PlayerState['horse'] {
@@ -371,7 +373,9 @@ export class GameRoom extends DurableObject<Env> {
       playerScores[attachment.playerId] = this.playerScores.get(attachment.playerId) ?? 0;
       names[attachment.playerId] = attachment.name;
     }
-    return { type: 'battle-state', teams, health, scores: this.battleScores, playerScores, names };
+    const soloWinner = [...this.playerScores.entries()].filter(([, score]) => score >= 3).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    const winner = this.battleScores.red >= 3 ? 'red' : this.battleScores.blue >= 3 ? 'blue' : soloWinner ? `solo:${soloWinner}` : null;
+    return { type: 'battle-state', teams, health, scores: this.battleScores, playerScores, names, winner };
   }
 
   private broadcastBattleState(excludeId?: string) {
@@ -465,17 +469,19 @@ export class GameRoom extends DurableObject<Env> {
     const outfit = outfits.has(requestedOutfit) ? requestedOutfit : 'default';
     const requestedWig = params.get('wig') ?? 'auto';
     const wig = wigs.has(requestedWig) ? requestedWig : 'auto';
+    const requestedAvatar = params.get('avatar') ?? 'pixel';
+    const avatar = profileAvatars.has(requestedAvatar) ? requestedAvatar : 'pixel';
     let appearance: Appearance;
     try {
       appearance = parseAppearance(JSON.parse(params.get('appearance') ?? 'null'), character);
     } catch {
       appearance = parseAppearance(null, character);
     }
-    const attachment: PlayerAttachment = { playerId, joinedAt: Date.now(), name, character, outfit, wig, appearance, room, presenceAt: 0, state: null };
+    const attachment: PlayerAttachment = { playerId, joinedAt: Date.now(), name, character, outfit, wig, avatar, appearance, room, presenceAt: 0, state: null };
     server.serializeAttachment(attachment);
     this.ctx.acceptWebSocket(server);
     this.publishPresence(attachment);
-    server.send(JSON.stringify({ type: 'join', playerId, name, character, outfit, wig, appearance, players: this.players(playerId) }));
+    server.send(JSON.stringify({ type: 'join', playerId, name, character, outfit, wig, avatar, appearance, players: this.players(playerId) }));
     server.send(JSON.stringify(this.worldSnapshot()));
     server.send(JSON.stringify({ type: 'vehicles', vehicles: [...this.vehicles.values()] }));
     server.send(JSON.stringify(this.battleSnapshot()));
@@ -486,7 +492,7 @@ export class GameRoom extends DurableObject<Env> {
       this.maze.join(attachment);
     }
     this.publishWorld(attachment);
-    this.broadcast({ type: 'join', playerId, joinedAt: attachment.joinedAt, name, character, outfit, wig, appearance, state: null }, server);
+    this.broadcast({ type: 'join', playerId, joinedAt: attachment.joinedAt, name, character, outfit, wig, avatar, appearance, state: null }, server);
     return new Response(null, { status: 101, webSocket: client, headers: corsHeaders });
   }
 
@@ -505,6 +511,7 @@ export class GameRoom extends DurableObject<Env> {
         character: attachment.character,
         outfit: attachment.outfit,
         wig: attachment.wig,
+        avatar: attachment.avatar ?? 'pixel',
         appearance: attachment.appearance,
         lastSeen: attachment.presenceAt,
       }),
@@ -919,6 +926,16 @@ export class GameRoom extends DurableObject<Env> {
       attachment.outfit = outfit;
       ws.serializeAttachment(attachment);
       this.broadcast({ type: 'outfit', playerId: attachment.playerId, outfit }, ws);
+      this.publishPresence(attachment);
+      return;
+    }
+    if (type === 'profile-avatar') {
+      const attachment = this.attachment(ws);
+      const avatar = (data as { avatar?: unknown }).avatar;
+      if (!attachment || typeof avatar !== 'string' || !profileAvatars.has(avatar)) return;
+      attachment.avatar = avatar;
+      ws.serializeAttachment(attachment);
+      this.broadcast({ type: 'profile-avatar', playerId: attachment.playerId, avatar }, ws);
       this.publishPresence(attachment);
       return;
     }
