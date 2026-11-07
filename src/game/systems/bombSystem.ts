@@ -10,6 +10,7 @@ import {
   ExplosionPosition,
 } from '../traits';
 import { playSound } from '../audio';
+import { damageCreaturesInRadius } from '../hazards';
 
 export function bombSystem(world: World, dt: number) {
   world.query(Bomb, BombPosition).updateEach(([bomb, position], entity) => {
@@ -18,6 +19,7 @@ export function bombSystem(world: World, dt: number) {
 
     playSound('explosion', 0.6);
     explodeVoxels(world, position.x, position.y, position.z, 3);
+    damageCreaturesInRadius(world, position, 4.5);
     world.spawn(
       Explosion({ time: 0.45, maxTime: 0.45 }),
       ExplosionPosition(position.clone()),

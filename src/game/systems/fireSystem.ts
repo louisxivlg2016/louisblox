@@ -6,6 +6,7 @@ import { Fire, FirePosition, Player, PlayerPosition } from '../traits';
 import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import type { VoxelHit } from '../voxel';
 import { damagePlayer } from '../combat';
+import { fireHazardSystem } from '../hazards';
 
 const directions = [
   [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0], [0, -1, 0],
@@ -39,6 +40,7 @@ export function fireSystem(world: World, dt: number) {
     damagePlayer(world, 1, 'fire');
     fireDamageClocks.set(world, 0);
   } else fireDamageClocks.set(world, touchingFire ? damageIn : 0);
+  fireHazardSystem(world, dt);
   const fires = world.query(Fire, FirePosition);
   if (fires.length === 0) return;
 

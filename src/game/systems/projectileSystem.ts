@@ -2,6 +2,7 @@ import type { World } from 'koota';
 import { Vector3 } from 'three';
 import { getBlockIndex, explodeVoxels } from '../chunks';
 import { damageAnimal, findAnimalTarget } from '../combat';
+import { damageCreaturesInRadius } from '../hazards';
 import { damageBattlePlayersInRadius, findBattleTarget } from '../battleCombat';
 import { requestBattleHit } from '../battle';
 import { syncProjectileMotion, syncProjectileRemoval, syncProjectileSpawn } from '../projectileSync';
@@ -37,6 +38,7 @@ export function fireProjectile(world: World, origin: Vector3, direction: Vector3
 export function detonateProjectile(world: World, position: Vector3, damagePlayers = true) {
   playSound('explosion', 0.6);
   explodeVoxels(world, position.x, position.y, position.z, 2.8);
+  damageCreaturesInRadius(world, position, 4.5);
   if (damagePlayers) damageBattlePlayersInRadius(world, position, 3.5);
   world.spawn(
     Explosion({ time: 0.45, maxTime: 0.45 }),

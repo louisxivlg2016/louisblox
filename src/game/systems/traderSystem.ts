@@ -6,6 +6,7 @@ import { groundAt } from '../vehicles';
 import { isWaterBlock, voxelKey } from '../voxel';
 import { isCollidable } from './collisionSystem';
 import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, Player, PlayerPosition, Trader, TraderMesh, TraderPosition } from '../traits';
+import { getFireSources, nearestFire } from '../hazards';
 
 function walkableGround(world: World, x: number, z: number, currentY: number) {
   const ground = groundAt(world, x, z, currentY + 1.05);
@@ -26,10 +27,24 @@ function traderHeading(trader: { homeX: number; homeZ: number }) {
 export function traderSystem(world: World, dt: number) {
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return;
-  world.query(Trader, TraderPosition, TraderMesh).updateEach(([trader, position, mesh]) => {
-    if (position.distanceToSquared(player) > 70 * 70) return;
-    trader.walking = true;
+  const fires = getFireSources(world);
+  for (const entity of world.query(Trader, TraderPosition, TraderMesh)) {
+    const trader = entity.get(Trader)!;
+    const position = entity.get(TraderPosition)!;
+    const mesh = entity.get(TraderMesh)!;
+    if (position.distanceToSquared(player) > 70 * 70) continue;
+    const fire = nearestFire(fires, position);
+    trader.panic = fire ? Math.max(trader.panic, 0.5) : Math.max(0, trader.panic - dt);
     const heading = traderHeading(trader);
+    if (fire) {
+      const dx = position.x - fire.x;
+      const dz = position.z - fire.z;
+      const length = Math.hypot(dx, dz);
+      const escapeX = length > 0.001 ? dx / length : Math.sin(heading);
+      const escapeZ = length > 0.001 ? dz / length : Math.cos(heading);
+      trader.targetX = position.x + escapeX * 10;
+      trader.targetZ = position.z + escapeZ * 10;
+    }
     const dx = trader.targetX - position.x;
     const dz = trader.targetZ - position.z;
     const distance = Math.hypot(dx, dz);
@@ -39,7 +54,7 @@ export function traderSystem(world: World, dt: number) {
       trader.targetZ = trader.homeZ + Math.cos(heading) * trader.phase;
     }
     if (distance > 0.001) {
-      const step = Math.min(distance, dt * 0.75);
+      const step = Math.min(distance, dt * (trader.panic > 0 ? 1.8 : 0.75));
       const x = position.x + dx / distance * step;
       const z = position.z + dz / distance * step;
       const ground = walkableGround(world, x, z, position.y);
@@ -51,7 +66,8 @@ export function traderSystem(world: World, dt: number) {
         }
       } else {
         const side = Math.sin(trader.homeX + trader.homeZ) >= 0 ? 1 : -1;
-        const candidates = [heading, heading + side * 0.65, heading - side * 0.65, heading + side * 1.2, heading - side * 1.2];
+        const escape = fire ? Math.atan2(position.x - fire.x, position.z - fire.z) : heading;
+        const candidates = [escape, escape + side * 0.65, escape - side * 0.65, escape + side * 1.2, escape - side * 1.2];
         const nextYaw = candidates.find((yaw) => walkableGround(world, position.x + Math.sin(yaw) * 1.5, position.z + Math.cos(yaw) * 1.5, position.y) !== null);
         if (nextYaw !== undefined) {
           trader.targetX = position.x + Math.sin(nextYaw) * 4;
@@ -59,7 +75,8 @@ export function traderSystem(world: World, dt: number) {
         }
       }
     }
-  });
+    entity.set(Trader, { walking: true, panic: trader.panic, phase: trader.phase, targetX: trader.targetX, targetZ: trader.targetZ });
+  }
 
   world.query(CamelLeash, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([leash, position, motion, mesh]) => {
     const trader = leash.trader?.get(TraderPosition);

@@ -325,7 +325,7 @@ function unloadChunk(world: World, entity: Entity) {
   for (const animal of data.animals) {
     const position = animal.get(AnimalPosition);
     const nearby = playerPosition && position && position.distanceToSquared(playerPosition) < 48 * 48;
-    if (animal !== mounted && !nearby) animal.destroy();
+    if (animal !== mounted && !nearby && animal.isAlive()) animal.destroy();
   }
   for (const fish of data.fish) fish.destroy();
   for (const bomb of data.bombs) bomb.destroy();

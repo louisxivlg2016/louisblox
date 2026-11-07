@@ -11,6 +11,7 @@ import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash
 import { damagePlayer } from '../combat';
 import { canSeePlayer } from '../hostility';
 import { hasEffect } from '../effects';
+import { getFireSources, nearestFire } from '../hazards';
 
 type Motion = {
   yaw: number;
@@ -157,11 +158,19 @@ export function animalSystem(world: World, dt: number) {
   const playerEntity = world.queryFirst(Player);
   const player = playerEntity?.get(PlayerPosition);
   const health = playerEntity?.get(PlayerHealth);
+  const fires = getFireSources(world);
 
   world.query(Animal, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, hit, position, motion, mesh], entity) => {
     const distanceSquared = player ? position.distanceToSquared(player) : Infinity;
     if (mesh.value) mesh.value.visible = distanceSquared < (animal.kind === 'zombie' ? 32 * 32 : 40 * 40);
-    if (entity.get(CamelLeash)) return;
+    const fire = nearestFire(fires, position);
+    const leash = entity.get(CamelLeash);
+    if (leash && !fire) return;
+    if (leash && fire) {
+      leash.trader = null;
+      entity.remove(CamelLeash);
+      hit.panic = Math.max(hit.panic, 2.4);
+    }
     if (entity.get(HorseRider)?.mounted) return;
     let stepDt = dt;
     if (distanceSquared > 25 * 25) {
@@ -178,17 +187,24 @@ export function animalSystem(world: World, dt: number) {
     hit.attackIn = Math.max(0, hit.attackIn - stepDt);
     const aggressive = animal.kind === 'zombie' || animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf';
     motion.sightIn -= stepDt;
-    if (aggressive && player && !hasEffect('invisibility') && motion.sightIn <= 0) {
-      motion.hunting = canSeePlayer(world, position, player);
-      motion.sightIn = 0.35;
-    }
-    if (!aggressive || !player || hasEffect('invisibility')) motion.hunting = false;
-    if (motion.hunting && player) {
-      motion.idle = 0;
-      motion.yaw = Math.atan2(player.x - position.x, player.z - position.z);
+    if (fire) {
+      motion.hunting = false;
+      motion.yaw = Math.atan2(position.x - fire.x, position.z - fire.z);
       motion.turnIn = Math.max(motion.turnIn, 0.5);
+      hit.panic = Math.max(hit.panic, 0.2);
+    } else {
+      if (aggressive && player && !hasEffect('invisibility') && motion.sightIn <= 0) {
+        motion.hunting = canSeePlayer(world, position, player);
+        motion.sightIn = 0.35;
+      }
+      if (!aggressive || !player || hasEffect('invisibility')) motion.hunting = false;
+      if (motion.hunting && player) {
+        motion.idle = 0;
+        motion.yaw = Math.atan2(player.x - position.x, player.z - position.z);
+        motion.turnIn = Math.max(motion.turnIn, 0.5);
+      }
     }
-    if (aggressive && playerEntity && player && health && !hasEffect('invisibility') && hit.attackIn <= 0 && distanceSquared < 2.2 * 2.2) {
+    if (!fire && aggressive && playerEntity && player && health && !hasEffect('invisibility') && hit.attackIn <= 0 && distanceSquared < 2.2 * 2.2) {
       hit.attackIn = 1.2;
       damagePlayer(world, 1);
     }
@@ -205,17 +221,17 @@ export function animalSystem(world: World, dt: number) {
     motion.idle = 0;
     motion.turnIn -= stepDt;
     motion.phase += stepDt * 3;
-    if (hit.panic > 0 && !motion.hunting) {
+    if (!fire && hit.panic > 0 && !motion.hunting) {
       motion.idle = 0;
       motion.turnIn = Math.min(motion.turnIn, 1.2);
       motion.yaw += Math.sin(entity * 3.17 + motion.phase * 2) * stepDt * 0.65;
     }
-    if (motion.turnIn <= 0 && !motion.hunting) {
+    if (!fire && motion.turnIn <= 0 && !motion.hunting) {
       motion.yaw += Math.sin(entity * 17.31 + motion.phase) * 0.75;
       motion.turnIn = hit.panic > 0 ? 1.5 : 8 + (Math.sin(entity * 7.13 + motion.phase) + 1) * 3.5;
     }
 
-    if (moveAnimal(world, animal.kind, position, motion, stepDt, entity, motion.hunting ? 1 : hit.panic) && mesh.value) {
+    if (moveAnimal(world, animal.kind, position, motion, stepDt, entity, fire ? 1 : motion.hunting ? 1 : hit.panic) && mesh.value) {
       mesh.value.position.copy(position);
       motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, stepDt * 6);
       mesh.value.rotation.y = motion.displayYaw;
