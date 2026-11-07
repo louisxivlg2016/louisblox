@@ -3,6 +3,7 @@ import { sendChatMessage, useChatStore } from '../game/chat';
 import { clearInput, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
+import chatButtonUrl from '../../assets/ui/chat-button.png';
 
 export function ChatPanel() {
   const enabled = useMultiplayerStore((state) => state.enabled);
@@ -69,7 +70,7 @@ export function ChatPanel() {
               <p key={message.messageId}><strong>{message.name}</strong> · {message.text}</p>
             ))}
           </div>
-          <button className="chat-toggle" onClick={openChat} aria-label="Ouvrir le chat">Chat · Entrée</button>
+          <button className="chat-toggle" onClick={openChat} aria-label="Ouvrir le chat"><img src={chatButtonUrl} alt="Chat · Entrée" /></button>
         </>
       )}
       {open && (

@@ -19,7 +19,13 @@ function hash(x: number, y: number, z: number, seed: number) {
   return ((value ^ (value >>> 16)) >>> 0) / 4294967295;
 }
 
-function siteFor(type: RuinType, cx: number, cz: number, seed: number): RuinSite {
+function ruinTypeAt(cx: number, cz: number): RuinType {
+  const types: RuinType[] = ['church', 'palace', 'fort'];
+  return types[((cx - cz) % 3 + 3) % 3];
+}
+
+function siteFor(_type: RuinType, cx: number, cz: number, seed: number): RuinSite {
+  const type = ruinTypeAt(cx, cz);
   const layout = layouts[type];
   const x = cx * 100 + layout.ox + Math.floor(hash(cx, cz, type.length, seed) * 5) - 2;
   const z = cz * 100 + layout.oz + Math.floor(hash(cx, cz, type.length + 31, seed) * 5) - 2;
@@ -35,9 +41,10 @@ export function nearestRuinOfType(x: number, z: number, seed: number, type: Ruin
   const cx = Math.floor(x / 100);
   const cz = Math.floor(z / 100);
   let nearest: (RuinSite & { distance: number }) | null = null;
-  for (let dx = -1; dx <= 1; dx += 1) {
-    for (let dz = -1; dz <= 1; dz += 1) {
+  for (let dx = -2; dx <= 2; dx += 1) {
+    for (let dz = -2; dz <= 2; dz += 1) {
       const site = siteFor(type, cx + dx, cz + dz, seed);
+      if (site.type !== type) continue;
       const distance = Math.hypot(site.x - x, site.z - z);
       if (!nearest || distance < nearest.distance) nearest = { ...site, distance };
     }
@@ -51,11 +58,9 @@ export function nearestRuin(x: number, z: number, seed: number) {
   let nearest: (RuinSite & { distance: number }) | null = null;
   for (let dx = -1; dx <= 1; dx += 1) {
     for (let dz = -1; dz <= 1; dz += 1) {
-      for (const type of Object.keys(layouts) as RuinType[]) {
-        const site = siteFor(type, cx + dx, cz + dz, seed);
-        const distance = Math.hypot(site.x - x, site.z - z);
-        if (!nearest || distance < nearest.distance) nearest = { ...site, distance };
-      }
+      const site = siteFor('church', cx + dx, cz + dz, seed);
+      const distance = Math.hypot(site.x - x, site.z - z);
+      if (!nearest || distance < nearest.distance) nearest = { ...site, distance };
     }
   }
   return nearest!;
@@ -67,7 +72,7 @@ export function isInRuinFootprint(site: RuinSite, x: number, z: number, margin =
 }
 
 export function isInAnyRuinFootprint(x: number, z: number, seed: number, margin = 2) {
-  return (Object.keys(layouts) as RuinType[]).some((type) => isInRuinFootprint(nearestRuinOfType(x, z, seed, type), x, z, margin));
+  return isInRuinFootprint(nearestRuin(x, z, seed), x, z, margin);
 }
 
 function foundation(site: RuinSite, put: Put, remove: Remove, kind: BlockKind) {
@@ -202,14 +207,12 @@ export function generateRuinsForChunk(cx: number, cz: number, seed: number, put:
   const cellZ = Math.floor(cz * 16 / 100);
   for (let dx = -1; dx <= 1; dx += 1) {
     for (let dz = -1; dz <= 1; dz += 1) {
-      for (const type of Object.keys(layouts) as RuinType[]) {
-        const site = siteFor(type, cellX + dx, cellZ + dz, seed);
-        const { width, depth } = layouts[type];
-        if (site.x + width / 2 < cx * 16 || site.x - width / 2 >= (cx + 1) * 16 || site.z + depth / 2 < cz * 16 || site.z - depth / 2 >= (cz + 1) * 16) continue;
-        if (type === 'church') buildChurch(site, put, remove);
-        else if (type === 'palace') buildPalace(site, put, remove);
-        else buildFort(site, put, remove);
-      }
+      const site = siteFor('church', cellX + dx, cellZ + dz, seed);
+      const { width, depth } = layouts[site.type];
+      if (site.x + width / 2 < cx * 16 || site.x - width / 2 >= (cx + 1) * 16 || site.z + depth / 2 < cz * 16 || site.z - depth / 2 >= (cz + 1) * 16) continue;
+      if (site.type === 'church') buildChurch(site, put, remove);
+      else if (site.type === 'palace') buildPalace(site, put, remove);
+      else buildFort(site, put, remove);
     }
   }
 }

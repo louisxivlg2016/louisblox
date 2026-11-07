@@ -41,10 +41,7 @@ export function BoutiquePanel() {
           </nav>
           <div className="boutique-content" role="tabpanel">
             {tab === 'settings' ? <SettingsPanel /> : <>
-        <div className="boutique-avatar-preview">
-          <BoutiqueAvatarPreview />
-          <div><p className="eyebrow">PERSONNALISATION</p><h2 id="boutique-title">Boutique</h2><p>Choisis ta tenue. Les autres joueurs la verront aussi.</p></div>
-        </div>
+        <div className="boutique-heading"><p className="eyebrow">PERSONNALISATION</p><h2 id="boutique-title">Boutique</h2><p>Choisis ta tenue. Ton aperçu 3D reste visible en bas pendant ton choix.</p></div>
         <div className="character-selector">
           <span>Personnage</span>
           <div className="character-choice" role="group" aria-label="Choisir le personnage">
@@ -109,6 +106,10 @@ export function BoutiquePanel() {
         </>
         {battle && <p className="backpack-label">Le costume militaire est obligatoire en Bataille.</p>}
         <p className="boutique-hint">B ouvre la boutique · M crée une maison en pleine partie · P change de caméra.</p>
+        <div className="boutique-avatar-preview boutique-dressing-room">
+          <BoutiqueAvatarPreview />
+          <div><p className="eyebrow">TON PERSONNAGE</p><h2>{OUTFITS[outfit].name}</h2><p>Voici ton apparence avec ce costume. Glisse sur le modèle pour le tourner.</p></div>
+        </div>
         <button className="primary-button" onClick={close}>Porter et reprendre</button>
             </>}
           </div>

@@ -19,6 +19,7 @@ type PirateState = {
 const initial = { kit: null, kits: {}, coins: {}, objectives: { red: 6, blue: 6 }, eliminated: [], winner: null, prices: {} };
 export const usePirateStore = create<PirateState>(() => ({ ...initial, kits: {}, coins: {}, eliminated: [], prices: {} }));
 let socket: WebSocket | null = null;
+let kitRequestPending = false;
 
 export function setPirateSocket(next: WebSocket | null) {
   socket = next;
@@ -26,6 +27,7 @@ export function setPirateSocket(next: WebSocket | null) {
 
 export function clearPirates() {
   socket = null;
+  kitRequestPending = false;
   usePirateStore.setState({ ...initial, kits: {}, coins: {}, eliminated: [], prices: {} });
 }
 
@@ -39,6 +41,7 @@ export function choosePirateKit(kit: PirateKit) {
   const loadout = PIRATE_KITS[kit].hotbar;
   usePirateStore.setState({ kit });
   useGameStore.setState({ hotbarSlots: [...loadout], selected: loadout[0] });
+  kitRequestPending = true;
   send({ type: 'pirates-kit', kit });
   respawnAtBase(world, team);
   useGameStore.getState().setMode('play');
@@ -79,7 +82,8 @@ export function receivePirateState(value: unknown) {
   const prices = data.prices && typeof data.prices === 'object' ? data.prices as Record<string, number> : {};
   const localId = useBattleStore.getState().localPlayerId;
   const previousKit = usePirateStore.getState().kit;
-  const kit = localId ? kits[localId] ?? null : null;
+  const kit = localId ? kits[localId] ?? (kitRequestPending ? previousKit : null) : null;
+  if (localId && kit) kitRequestPending = false;
   if (!previousKit && kit) {
     const loadout = PIRATE_KITS[kit].hotbar;
     useGameStore.setState({ hotbarSlots: [...loadout], selected: loadout[0] });

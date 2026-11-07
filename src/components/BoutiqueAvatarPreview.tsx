@@ -1,13 +1,15 @@
-import { Suspense } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import { createWorld } from 'koota';
 import { world } from '../game/world';
-import { Player } from '../game/traits';
+import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from '../game/traits';
 import { PlayerAvatar } from './PlayerAvatar';
 
 export function BoutiqueAvatarPreview() {
-  const player = world.queryFirst(Player);
-  if (!player) return null;
+  const previewWorld = useMemo(() => createWorld(), []);
+  const player = useMemo(() => world.queryFirst(Player) ?? previewWorld.spawn(Player, PlayerMesh(), PlayerMount(), PlayerPosition(), PlayerVelocity(), PlayerState({ grounded: true })), [previewWorld]);
+  useEffect(() => () => { previewWorld.reset(); }, [previewWorld]);
   return (
     <div className="boutique-avatar-3d" aria-label="Aperçu 3D du costume. Fais glisser pour le tourner.">
       <Canvas dpr={1} camera={{ position: [0, 1.1, -4.2], fov: 34 }} gl={{ antialias: false }}>

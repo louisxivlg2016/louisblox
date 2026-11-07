@@ -25,7 +25,7 @@ export function MazeHud() {
     const timer = window.setInterval(() => refresh((value) => value + 1), 250);
     return () => window.clearInterval(timer);
   }, [gameplayMode]);
-  if (gameplayMode !== 'maze') return null;
+  if (gameplayMode !== 'maze' || mode === 'menu') return null;
   const referee = canManageProtection() || !enabled;
   const elapsed = phase === 'finished' ? finishMs : startedAt ? Date.now() - startedAt : 0;
   const seconds = Math.max(0, Math.floor(elapsed / 1000));
@@ -33,7 +33,7 @@ export function MazeHud() {
     <>
       <div className="battle-scoreboard maze-scoreboard"><strong>COURSE LABYRINTHE</strong><span>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span></div>
       {mode === 'play' && <div className="football-notice maze-notice" role="status"><strong>{notice}</strong><span>{phase === 'countdown' ? `Ouverture dans ${Math.max(0, Math.ceil((phaseUntil - Date.now()) / 1000))}` : phase === 'running' ? 'Trouve la ligne jaune au nord du labyrinthe.' : phase === 'finished' ? 'Course terminée' : 'Attends le coup de sifflet de l’arbitre.'}</span></div>}
-      {mode !== 'menu' && <div className="maze-referee-controls">
+      {mode === 'play' && <div className="maze-referee-controls">
         {referee && (phase === 'waiting' || phase === 'ready') && <button onClick={requestMazeStart}>{phase === 'waiting' ? 'Prêts ? · premier sifflet' : 'Départ · deuxième sifflet'}</button>}
         {referee && <button onClick={toggleMazeOverview}>{overview ? 'Rejoindre mon couloir' : 'Vue d’ensemble'}</button>}
         {referee && <button onClick={requestMazeReset}>Réinitialiser la course</button>}

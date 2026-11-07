@@ -30,7 +30,7 @@ const assets = [
   },
   {
     name: 'referee',
-    image: '/home/louisxiv/louisblox/image/arbitre.jpg',
+    image: '/home/louisxiv/louisblox/image/arbitre.jpeg',
     prompt: 'Voxel football referee from reference, brown hair, one head with one front face, black uniform with white stripes, whistle, black shorts and boots. No rear face or extra limbs.',
   },
 ];

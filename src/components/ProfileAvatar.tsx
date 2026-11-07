@@ -11,8 +11,8 @@ import explorerUrl from '../../assets/avatars/explorer.webp';
 import princessUrl from '../../assets/avatars/princess.webp';
 import knightUrl from '../../assets/avatars/knight.webp';
 import militaryUrl from '../../assets/avatars/military.webp';
-import pirateUrl from '../../assets/icons/pirate-mode.jpeg';
-import footballerUrl from '../../assets/icons/footballer-profile.jpeg';
+import pirateUrl from '../../assets/avatars/pirate.webp';
+import footballerUrl from '../../assets/avatars/footballer.webp';
 import firefighterUrl from '../../assets/avatars/firefighter.webp';
 import policeUrl from '../../assets/avatars/police.webp';
 

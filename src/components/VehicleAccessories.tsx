@@ -14,10 +14,12 @@ import fireTruckUrl from '../../assets/models/fire-truck.glb';
 import jeepUrl from '../../assets/models/reference-jeep.glb';
 import carriageUrl from '../../assets/models/reference-carriage.glb';
 import cannonUrl from '../../assets/models/reference-cannon.glb';
+import horseUrl from '../../assets/models/reference-horse.glb';
 
 const vehicleModels = { police: policeCarUrl, firetruck: fireTruckUrl, jeep: jeepUrl, carriage: carriageUrl, cannon: cannonUrl };
 type VehicleModelKind = keyof typeof vehicleModels;
 for (const model of Object.values(vehicleModels)) useGLTF.preload(model);
+useGLTF.preload(horseUrl);
 
 function labelTexture(text: string, color = '#ffffff', background?: string) {
   const canvas = document.createElement('canvas');
@@ -97,26 +99,38 @@ function HunyuanVehicle({ kind, interior }: { kind: VehicleModelKind; interior: 
 }
 
 function HarnessHorse({ entity, x, phase }: { entity: Entity; x: number; phase: number }) {
-  const legs = useRef<Group>(null);
+  const group = useRef<Group>(null);
+  const { scene } = useGLTF(horseUrl);
+  const model = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((object) => {
+      if (!(object instanceof Mesh)) return;
+      object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
+      for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+        if (!material.map) continue;
+        material.map.magFilter = NearestFilter;
+        material.map.minFilter = NearestFilter;
+        material.map.generateMipmaps = false;
+        material.map.needsUpdate = true;
+      }
+    });
+    const bounds = new Box3().setFromObject(clone);
+    const size = bounds.getSize(new Vector3());
+    const center = bounds.getCenter(new Vector3());
+    const scale = 2.15 / Math.max(size.y, 0.001);
+    clone.scale.setScalar(scale);
+    clone.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
+    return clone;
+  }, [scene]);
   useFrame(({ clock }) => {
     const moving = Math.abs(entity.get(VehicleMotion)?.speed ?? 0) > 0.05;
-    if (legs.current) legs.current.rotation.x = moving ? Math.sin(clock.elapsedTime * 8 + phase) * 0.3 : 0;
+    const swing = moving ? Math.sin(clock.elapsedTime * 8 + phase) * 0.4 : 0;
+    for (let index = 0; index < 4; index += 1) {
+      const leg = group.current?.getObjectByName(`animal-leg-${index}`);
+      if (leg) leg.rotation.x = swing * (index % 2 === 0 ? 1 : -1);
+    }
   });
-  return (
-    <group position={[x, 0, -4.5]} name="harness-horse">
-      <PixelPart position={[0, 1.15, 0]} size={[0.72, 0.72, 1.45]} color="#825439" />
-      <PixelPart position={[0, 1.48, -0.62]} size={[0.45, 0.82, 0.42]} color="#8d5d3f" />
-      <PixelPart position={[0, 1.85, -0.92]} size={[0.53, 0.52, 0.72]} color="#966443" />
-      <PixelPart position={[0, 1.65, -1.3]} size={[0.48, 0.3, 0.32]} color="#c49675" />
-      {[-1, 1].map((side) => <group key={side}><PixelPart position={[side * 0.2, 2.2, -0.83]} size={[0.12, 0.34, 0.13]} color="#785039" /><PixelPart position={[side * 0.28, 1.98, -1.09]} size={[0.04, 0.07, 0.07]} color="#161d21" /></group>)}
-      <PixelPart position={[0, 1.72, -0.51]} size={[0.55, 0.62, 0.1]} color="#3b2d27" />
-      <PixelPart position={[0, 1.1, 0.92]} size={[0.17, 0.68, 0.19]} color="#3d2c25" />
-      <PixelPart position={[0, 1.52, -0.94]} size={[0.58, 0.1, 0.75]} color="#272e37" />
-      <group ref={legs}>
-        {[-1, 1].flatMap((side) => [-1, 1].map((end) => <group key={`${side}-${end}`}><PixelPart position={[side * 0.24, 0.48, end * 0.47]} size={[0.18, 0.78, 0.2]} color="#805238" /><PixelPart position={[side * 0.24, 0.1, end * 0.47]} size={[0.22, 0.19, 0.25]} color="#27272a" /></group>))}
-      </group>
-    </group>
-  );
+  return <group ref={group} position={[x, 0, -4.1]} rotation={[0, Math.PI, 0]} name="harness-horse" userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
 function planeWindowTexture() {

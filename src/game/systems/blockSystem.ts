@@ -22,7 +22,6 @@ import { fireProjectile } from './projectileSystem';
 import { isPirateObjective } from '../pirates';
 import { requestPirateObjectiveHit } from '../piratesClient';
 import { playSound } from '../audio';
-import { isOldPirateRigging } from '../pirateShipGeometry';
 import { dropBlock } from '../droppedItems';
 
 const direction = new Vector3();
@@ -58,7 +57,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   camera.getWorldDirection(direction);
   const allBlocks = getBlockIndex(world);
   const store = useGameStore.getState();
-  const blocks = store.gameplayMode === 'pirates' ? new Map([...allBlocks].filter(([, block]) => !isOldPirateRigging(block))) : allBlocks;
+  const blocks = allBlocks;
   if (disabled) {
     target.visible = false;
     target.miningKey = '';

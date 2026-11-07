@@ -42,7 +42,7 @@ COSTUME_REFERENCES = {
     'police': ('Gemini_Generated_Image_5xivvo5xivvo5xiv.jpeg', (0.45, 0.19), (0.42, 0.26), 0.83, 0.65),
     'pirate': (f'{ROOT}/image/pirate-chef.jpeg', (0.535, 0.22), (0.52, 0.255), 0.83, 0.63),
     'soldier': (f'{ROOT}/image/soldat-perfil.jpeg', (0.44, 0.25), (0.52, 0.275), 0.84, 0.69),
-    'referee': (f'{ROOT}/image/arbitre.jpg', (0.47, 0.13), (0.56, 0.27), 1.01, 0.70),
+    'referee': (f'{ROOT}/image/arbitre.jpeg', (0.53, 0.18), (0.54, 0.22), 0.96, 0.62),
 }
 
 def cover_repeated_faces(objects, name, minimum, size):

@@ -89,18 +89,6 @@ function TrainInterior({ driverPresent, passengerSeat }: { driverPresent: boolea
   );
 }
 
-function CarriageInterior({ driverPresent }: { driverPresent: boolean }) {
-  return (
-    <group name="carriage-cabin">
-      <Seat position={[0, 1.55, -2]} />
-      {driverPresent && <Person position={[0, 1.55, -2]} color="#563f31" worker />}
-      <Seat position={[-0.48, 1.5, 0.45]} />
-      <Seat position={[0.48, 1.5, 0.45]} />
-      <Seat position={[0, 1.5, 1.3]} />
-    </group>
-  );
-}
-
 export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
   kind: VehicleKind;
   driverPresent: boolean;
@@ -108,7 +96,7 @@ export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
 }) {
   if (kind === 'plane') return <PlaneInterior driverPresent={driverPresent} />;
   if (kind === 'train') return <TrainInterior driverPresent={driverPresent} passengerSeat={passengerSeat} />;
-  if (kind === 'carriage') return <CarriageInterior driverPresent={driverPresent} />;
+  if (kind === 'carriage') return null;
   if (kind === 'boat') {
     return <><Seat position={[0, 0.45, -0.72]} /><Seat position={[0, 0.45, 0.72]} /><PixelPart position={[-0.9, 0.45, 0.4]} size={[0.1, 0.1, 2.4]} color="#9a7042" rotation={[0, -0.35, 0]} /></>;
   }

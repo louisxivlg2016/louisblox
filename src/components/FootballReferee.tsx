@@ -52,7 +52,7 @@ function RefereeModel() {
 
   return (
     <group ref={root} name="football-referee" position={[4, 8.51, 5]} userData={{ role: 'referee', signal: 'watching', source: 'Hunyuan' }}>
-      <primitive name="referee-model" object={character} scale={scale} rotation={[0, Math.PI, 0]} userData={{ source: 'Hunyuan' }} />
+      <primitive name="referee-model" object={character} scale={scale} rotation={[0, Math.PI, 0]} />
       {rig.leftArm && createPortal(<>
         <group ref={yellowCard} name="referee-yellow-card" visible={false}>
           <PixelPart position={[0, -0.61, 0.12]} size={[0.18, 0.24, 0.025]} color="#ffe03e" />

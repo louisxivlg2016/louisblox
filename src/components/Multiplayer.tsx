@@ -313,7 +313,12 @@ export function MultiplayerConnection() {
     };
     const applyPendingWorld = () => {
       const pending = pendingWorld.current;
-      if (!pending || world.query(Chunk).length < 9) return;
+      if (!pending) return;
+      if (world.query(Chunk).length < 9) {
+        const position = world.queryFirst(Player)?.get(PlayerPosition);
+        streamChunks(world, position?.x ?? 0, position?.z ?? 0);
+        return;
+      }
       const currentWorldId = pending.worldId ?? room;
       const wanted = requestedRoomMode;
       if (wanted) {

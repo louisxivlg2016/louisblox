@@ -1,11 +1,9 @@
 import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Color, Mesh, NearestFilter } from 'three';
+import { Mesh, NearestFilter } from 'three';
 import { useGameStore } from '../game/store';
-import shipUrl from '../../assets/models/pirate-ship.glb';
 import treasureUrl from '../../assets/models/pirate-treasure.glb';
 
-const TEAM_COLORS = { red: '#c7353d', blue: '#2e63c9' };
 const TREASURE_LAYOUT = [
   { x: 0, z: 0, scale: 1.3, objective: true },
   { x: -2.2, z: -5, scale: 0.72, objective: false },
@@ -14,7 +12,6 @@ const TREASURE_LAYOUT = [
   { x: 2.2, z: 5, scale: 0.72, objective: false },
 ] as const;
 
-useGLTF.preload(shipUrl);
 useGLTF.preload(treasureUrl);
 
 function PirateTreasure({ team, center, index, layout }: { team: 'red' | 'blue'; center: number; index: number; layout: typeof TREASURE_LAYOUT[number] }) {
@@ -38,29 +35,8 @@ function PirateTreasure({ team, center, index, layout }: { team: 'red' | 'blue';
 }
 
 function PirateShip({ team, center }: { team: 'red' | 'blue'; center: number }) {
-  const { scene } = useGLTF(shipUrl);
-  const model = useMemo(() => {
-    const clone = scene.clone(true);
-    clone.traverse((object) => {
-      if (!(object instanceof Mesh)) return;
-      object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
-      for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-        if (material.name.startsWith('ship-sail')) {
-          material.color = new Color(TEAM_COLORS[team]);
-          material.userData.team = team;
-        }
-        if (!material.map) continue;
-        material.map.magFilter = NearestFilter;
-        material.map.minFilter = NearestFilter;
-        material.map.generateMipmaps = false;
-        material.map.needsUpdate = true;
-      }
-    });
-    return clone;
-  }, [scene, team]);
   return (
-    <group name={`pirate-ship-${team}`} userData={{ source: 'Hunyuan', team }}>
-      <primitive object={model} position={[center, 4.5, 0]} scale={[1.9, 1, 1]} />
+    <group name={`pirate-ship-${team}`} userData={{ source: 'Blocs Louisblox', team }}>
       {TREASURE_LAYOUT.map((layout, index) => <PirateTreasure key={`${layout.x},${layout.z}`} team={team} center={center} index={index} layout={layout} />)}
     </group>
   );

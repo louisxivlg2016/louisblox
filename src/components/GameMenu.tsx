@@ -22,6 +22,7 @@ import creativeUrl from '../../assets/menu/creative.webp';
 import shopUrl from '../../assets/menu/shop.webp';
 import battleUrl from '../../assets/menu/battle.webp';
 import citiesUrl from '../../assets/menu/cities.webp';
+import gameIconUrl from '../../assets/icons/louisblox-icon3.jpeg';
 
 export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: () => void | Promise<void>; onShop: () => void }) {
   const regenerate = useGameStore((state) => state.regenerate);
@@ -37,17 +38,19 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
   useEffect(() => {
-    if (!libraryOpen) return;
+    if (!libraryOpen && !joinOpen) return;
     const close = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
       event.stopImmediatePropagation();
       setLibraryOpen(false);
+      setJoinOpen(false);
     };
     window.addEventListener('keydown', close, true);
     return () => window.removeEventListener('keydown', close, true);
-  }, [libraryOpen]);
+  }, [libraryOpen, joinOpen]);
   useEffect(() => {
     if (pendingWorld !== room || status !== 'online') return;
     setPendingWorld(null);
@@ -89,12 +92,12 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     <div className="menu-screen">
       <div className="menu-layout">
         <aside className="menu-sidebar">
-          <div className="menu-brand"><span className="menu-brand-cube">L</span><div><strong>LOUISBLOX</strong><small>Joue, construis, partage.</small></div></div>
+          <div className="menu-brand"><img className="menu-brand-icon" src={gameIconUrl} alt="LouisBlox" /><div><strong>LOUISBLOX</strong><small>Joue, construis, partage.</small></div></div>
           <FriendsPanel onPlay={onPlay} />
           <button className="sidebar-shop" onClick={onShop}><img src={shopUrl} alt="" /><span>Ouvrir la boutique</span></button>
         </aside>
         <main className="world-browser">
-          <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}<span className="creator-label">JEU DU CRÉATEUR</span></h1></div>{paused && <button className="primary-button resume-button" onClick={onPlay}>Reprendre</button>}</div>
+          <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}<span className="creator-label">JEU DU CRÉATEUR</span></h1></div><div className="world-entry-actions"><button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)}>Rejoindre un monde</button>{paused && <button className="primary-button resume-button" onClick={onPlay}>Reprendre</button>}</div></div>
           <div className="world-cards">
             <button className="world-card featured" aria-controls="mes-mondes" aria-expanded={libraryOpen} aria-haspopup="dialog" onClick={() => setLibraryOpen(true)}>
               <img src={myWorldsUrl} alt="Mes mondes" />
@@ -146,6 +149,15 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           <CommunityWorlds onPlay={onPlay} />
           {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(options) => { setCreateOpen(false); create(options.mode, options.multiplayer, options); }} />}
           {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
+          {joinOpen && (
+            <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setJoinOpen(false); }}>
+              <section className="world-library-modal" role="dialog" aria-modal="true" aria-label="Rejoindre un monde">
+                <button className="world-library-close" aria-label="Fermer la liste des mondes" onClick={() => setJoinOpen(false)} autoFocus>×</button>
+                <div className="lobby-heading"><h2>Rejoindre un monde</h2><p>Choisis toi-même le monde d’un autre joueur. Rien ne te fait entrer au hasard.</p></div>
+                <CommunityWorlds onPlay={() => { setJoinOpen(false); return onPlay(); }} />
+              </section>
+            </div>
+          )}
           {libraryOpen && (
             <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setLibraryOpen(false); }}>
               <section className="world-library-modal" role="dialog" aria-modal="true" aria-label="Mes mondes">
