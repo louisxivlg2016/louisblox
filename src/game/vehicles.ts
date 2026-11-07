@@ -1,17 +1,19 @@
 import type { Entity, World } from 'koota';
-import { Euler, Vector3 } from 'three';
+import { Vector3 } from 'three';
 import { addVoxel, getBlockIndex, getColumnTop } from './chunks';
 import { getTouchMovement, isDown } from './input';
 import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from './levels';
 import { useGameStore } from './store';
 import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerBody, PlayerCollider, PlayerMount, PlayerPosition, PlayerState, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
-import { BlockKind, isWaterBlock, raycastVoxel, voxelKey } from './voxel';
-import { EXTRA_BLOCKS, isCrop, isDoor, isRail, isSign, isTrapdoor, isUtilityBlock } from './extraBlocks';
+import { BlockKind, isWaterBlock, voxelKey } from './voxel';
+import { EXTRA_BLOCKS, isCrop, isRail } from './extraBlocks';
 import { turnToward } from './rotation';
 import { isCollidable } from './systems/collisionSystem';
 import { syncVehicleMotion, syncVehicleSpawn } from './vehicleSync';
 import { CABINS, canWalkInVehicle } from './vehicleTypes';
 import { stopSirens } from './vehicleControls';
+import { findInteractionTarget } from './interactionTargets';
+import type { Camera } from 'three';
 import type { MountKind, SeatRole, VehicleKind } from './vehicleTypes';
 export { PLANE_SCALE } from './vehicleTypes';
 
@@ -182,56 +184,24 @@ export function dismount(world: World) {
   return true;
 }
 
-export function vehicleInteractionSystem(world: World, interact: number) {
+export function vehicleInteractionSystem(world: World, camera: Camera, interact: number) {
   if (interact <= 0) return false;
   const player = world.queryFirst(Player);
   const mount = player?.get(PlayerMount);
-  const position = player?.get(PlayerPosition);
-  if (!player || !mount || !position) return false;
+  if (!player || !mount) return false;
   if (mount.vehicle) return dismount(world);
-  const state = player.get(PlayerState);
-  const origin = position.clone();
-  origin.y += 1.62;
-  const direction = state ? new Vector3(0, 0, -1).applyEuler(new Euler(state.pitch, state.yaw, 0, 'YXZ')) : null;
-  const hit = direction ? raycastVoxel(getBlockIndex(world), origin, direction, 6, typeof useGameStore.getState().selected === 'number') : null;
-  if (hit && (isSign(hit.block.kind) || isUtilityBlock(hit.block.kind) || isCrop(hit.block.kind) || isDoor(hit.block.kind) || isTrapdoor(hit.block.kind))) return false;
-  let nearest: Entity | undefined;
-  let horse = false;
-  let distance = 6;
-  for (const entity of world.query(Vehicle, VehiclePosition, VehicleMotion)) {
-    const interactionPosition = vehicleInteractionPosition(entity);
-    const value = interactionPosition.distanceTo(position);
-    if (entity.get(Vehicle)?.kind === 'plane' && value < 12) distance = Math.max(distance, 12);
-    if (value < distance) {
-      distance = value;
-      nearest = entity;
-      horse = false;
-    }
-  }
-  for (const entity of world.query(Animal, AnimalPosition)) {
-    if (entity.get(Animal)!.kind !== 'horse') continue;
-    const value = entity.get(AnimalPosition)!.distanceTo(position);
-    if (value < distance) {
-      distance = value;
-      nearest = entity;
-      horse = true;
-    }
-  }
-  if (!nearest) return false;
-  if (hit && typeof useGameStore.getState().selected === 'number') {
-    const targetPosition = horse ? nearest.get(AnimalPosition) : vehicleInteractionPosition(nearest);
-    if (targetPosition && targetPosition.distanceTo(origin) > hit.distance + 1.5) return false;
-  }
-  if (horse) {
-    if (!nearest.get(HorseRider)?.saddled) {
+  const target = findInteractionTarget(world, camera, 'mount');
+  if (!target) return false;
+  if (target.kind === 'horse') {
+    if (!target.entity.get(HorseRider)?.saddled) {
       if (useGameStore.getState().selected === 'saddle') return false;
       useGameStore.getState().setNotice('Choisis la selle dans le sac, vise le cheval puis appuie sur E.');
       return true;
     }
-    return mountEntity(world, nearest, 'horse');
+    return mountEntity(world, target.entity, 'horse');
   }
-  const vehicle = nearest.get(Vehicle)!;
-  useGameStore.getState().setSeatChoice({ vehicle: nearest, kind: vehicle.kind });
+  const vehicle = target.entity.get(Vehicle)!;
+  useGameStore.getState().setSeatChoice({ vehicle: target.entity, kind: vehicle.kind });
   useGameStore.getState().setMode('pause');
   if (typeof document !== 'undefined' && document.pointerLockElement) document.exitPointerLock();
   return true;

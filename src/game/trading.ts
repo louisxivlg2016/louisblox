@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import type { Camera } from 'three';
-import { Vector3 } from 'three';
 import { changeInventory, inventoryCount } from './inventory';
 import type { SelectedKind } from './items';
 import { selectionInfo } from './items';
 import { useGameStore } from './store';
-import { PlayerMount, PlayerPosition, Trader, TraderPosition } from './traits';
+import { PlayerMount, PlayerPosition } from './traits';
 import type { World } from 'koota';
 import { BlockKind } from './voxel';
+import { findInteractionTarget } from './interactionTargets';
 
 export type TradeOffer = { id: string; cost: SelectedKind; costCount: number; reward: SelectedKind; rewardCount: number };
 
@@ -45,24 +45,8 @@ export function tradeWithMerchant(offer: TradeOffer) {
 export function tradeInteractionSystem(world: World, camera: Camera, interact: number) {
   if (interact <= 0) return false;
   const playerEntity = world.queryFirst(PlayerPosition);
-  const player = playerEntity?.get(PlayerPosition);
-  if (!player || playerEntity?.get(PlayerMount)?.vehicle) return false;
-  const origin = player.clone();
-  origin.y += 1.62;
-  const direction = camera.getWorldDirection(new Vector3());
-  let nearest = 6;
-  let found = false;
-  world.query(Trader, TraderPosition).forEach((entity) => {
-    const target = entity.get(TraderPosition)!.clone();
-    target.y += 1.1;
-    target.sub(origin);
-    const distance = target.length();
-    if (distance > 0.001 && distance < nearest && target.normalize().dot(direction) > 0.65) {
-      nearest = distance;
-      found = true;
-    }
-  });
-  if (!found) return false;
+  if (playerEntity?.get(PlayerMount)?.vehicle) return false;
+  if (!findInteractionTarget(world, camera, 'trade')) return false;
   useTradeStore.setState({ open: true, message: '' });
   useGameStore.getState().setMode('pause');
   if (document.pointerLockElement) document.exitPointerLock();

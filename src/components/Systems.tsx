@@ -47,7 +47,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const footballHandled = footballControlSystem(world, camera, dt, actions.tap, actions) || mazeControlSystem(world);
       const tradeHandled = !sleeping && !footballHandled && tradeInteractionSystem(world, camera, actions.place + actions.harvest);
       const itemHandled = !tradeHandled && !footballHandled && !sleeping && itemSystem(world, camera, dt, actions);
-      const vehicleHandled = !sleeping && !footballHandled && !itemHandled && vehicleInteractionSystem(world, actions.place + actions.harvest);
+      const vehicleHandled = !sleeping && !footballHandled && !itemHandled && vehicleInteractionSystem(world, camera, actions.place + actions.harvest);
       const cannonHandled = !sleeping && !footballHandled && vehicleWeaponSystem(world, camera, dt, actions.tap);
       const vehicleTarget = !sleeping && !footballHandled && (cannonHandled || vehicleCombatSystem(world, camera, dt, actions.tap));
       const animalTarget = !sleeping && !footballHandled && !vehicleTarget && animalCombatSystem(world, camera, dt, actions.tap);
