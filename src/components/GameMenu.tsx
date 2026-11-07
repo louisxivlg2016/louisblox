@@ -23,6 +23,28 @@ import shopUrl from '../../assets/menu/shop.webp';
 import battleUrl from '../../assets/menu/battle.webp';
 import citiesUrl from '../../assets/menu/cities.webp';
 import gameIconUrl from '../../assets/icons/louisblox-icon3.jpeg';
+import { usePublicWorldJoin } from './usePublicWorldJoin';
+
+const MODE_CARDS: Array<{
+  mode: GameplayMode;
+  image: string;
+  alt: string;
+  name: string;
+  className?: string;
+  tagClass?: string;
+  multiplayer?: boolean;
+  description: (enabled: boolean) => string;
+  tag: (enabled: boolean) => string;
+}> = [
+  { mode: 'survival', image: survivalUrl, alt: 'Zombie du mode Survie', name: 'Survie', description: (enabled) => enabled ? 'Monde public avec tous les joueurs' : 'Nouveau monde solo à mains nues', tag: (enabled) => enabled ? 'Multijoueur' : 'Solo' },
+  { mode: 'creative', image: creativeUrl, alt: 'Monde du mode Créatif', name: 'Créatif', tagClass: 'creative', description: (enabled) => enabled ? 'Monde public avec tous les joueurs' : 'Nouveau monde solo avec tous les objets', tag: (enabled) => enabled ? 'Multijoueur' : 'Solo' },
+  { mode: 'battle', image: battleUrl, alt: 'Monde Combat du mode Bataille', name: 'Bataille', className: 'battle-card', multiplayer: true, description: () => 'Arène limitée · Rouge, Bleu ou chacun son équipe', tag: () => '1 joueur = 1 équipe possible' },
+  { mode: 'pirates', image: piratesUrl, alt: 'Bataille navale du mode Pirates', name: 'Pirates', className: 'battle-card pirates-card', multiplayer: true, description: () => 'Deux navires, un trésor à détruire et des abordages en équipe', tag: () => 'Combat naval' },
+  { mode: 'football', image: footballUrl, alt: 'Stade et ballon du mode Football', name: 'Football', className: 'battle-card football-card', multiplayer: true, description: () => 'Match de 5 minutes, cartons, corners, penaltys et hors-jeu', tag: () => 'Rouge contre Bleu' },
+  { mode: 'maze', image: mazeUrl, alt: 'Labyrinthe du mode Course Labyrinthe', name: 'Course Labyrinthe', className: 'battle-card maze-card', description: (enabled) => enabled ? 'Trouve la sortie après le coup de sifflet de l’arbitre' : 'Course en solo dans le labyrinthe', tag: (enabled) => enabled ? 'Course chronométrée' : 'Solo' },
+  { mode: 'city-ancient', image: citiesUrl, alt: 'Ville ancienne et ses bâtiments parisiens', name: 'Ville ancienne', className: 'city-card', description: () => 'Bâtiments parisiens · 10 km × 10 km', tag: (enabled) => enabled ? 'Multijoueur' : 'Solo' },
+  { mode: 'city-modern', image: citiesUrl, alt: 'Ville moderne, villas et immeubles de verre', name: 'Ville moderne', className: 'city-card', description: () => 'Villas et petits gratte-ciel · 10 km × 10 km', tag: (enabled) => enabled ? 'Multijoueur' : 'Solo' },
+];
 
 export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: () => void | Promise<void>; onShop: () => void }) {
   const regenerate = useGameStore((state) => state.regenerate);
@@ -39,6 +61,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const [createOpen, setCreateOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+  const currentMode = useGameStore((state) => state.gameplayMode);
+  const [browseMode, setBrowseMode] = useState<GameplayMode>(currentMode);
+  const { joinRandom, pending: joinPending, error: joinError } = usePublicWorldJoin(onPlay);
+  useEffect(() => setBrowseMode(currentMode), [currentMode]);
   useEffect(() => {
     if (!libraryOpen && !joinOpen) return;
     const close = (event: KeyboardEvent) => {
@@ -88,6 +114,12 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
       void onPlay();
     }
   };
+  const joinRandomMode = async (mode: GameplayMode) => {
+    setBrowseMode(mode);
+    if (await joinRandom(mode)) setJoinOpen(false);
+    else setJoinOpen(true);
+  };
+  const randomButton = (mode: GameplayMode) => <button type="button" className="world-card-join" onClick={() => void joinRandomMode(mode)} disabled={pendingWorld !== null || joinPending}>Rejoindre</button>;
   return (
     <div className="menu-screen">
       <div className="menu-layout">
@@ -97,64 +129,35 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           <button className="sidebar-shop" onClick={onShop}><img src={shopUrl} alt="" /><span>Ouvrir la boutique</span></button>
         </aside>
         <main className="world-browser">
-          <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}<span className="creator-label">JEU DU CRÉATEUR</span></h1></div><div className="world-entry-actions"><button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)}>Rejoindre un monde</button>{paused && <button className="primary-button resume-button" onClick={onPlay}>Reprendre</button>}</div></div>
+          <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}<span className="creator-label">JEU DU CRÉATEUR</span></h1></div><div className="world-entry-actions"><button className="secondary-button join-world-button" onClick={() => void joinRandomMode(browseMode)} disabled={pendingWorld !== null || joinPending}>Rejoindre</button><button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={joinPending}>Choisir un monde</button>{paused && <button className="primary-button resume-button" onClick={onPlay}>Reprendre</button>}</div></div>
+          {joinError && <p className="multiplayer-error join-error" role="alert">{joinError}</p>}
           <div className="world-cards">
             <button className="world-card featured" aria-controls="mes-mondes" aria-expanded={libraryOpen} aria-haspopup="dialog" onClick={() => setLibraryOpen(true)}>
               <img src={myWorldsUrl} alt="Mes mondes" />
               <span className="world-card-label"><strong>Mes mondes</strong><small>Retrouve toutes tes sauvegardes</small></span>
             </button>
-            <button className="world-card" onClick={() => create('survival')} disabled={pendingWorld !== null}>
-              <img src={survivalUrl} alt="Zombie du mode Survie" />
-              <span className="world-card-label"><strong>Survie</strong><small>{enabled ? 'Monde public avec tous les joueurs' : 'Nouveau monde solo à mains nues'}</small></span>
-              <span className="world-mode-tag">{enabled ? 'Multijoueur' : 'Solo'}</span>
-            </button>
-            <button className="world-card" onClick={() => create('creative')} disabled={pendingWorld !== null}>
-              <img src={creativeUrl} alt="Monde du mode Créatif" />
-              <span className="world-card-label"><strong>Créatif</strong><small>{enabled ? 'Monde public avec tous les joueurs' : 'Nouveau monde solo avec tous les objets'}</small></span>
-              <span className="world-mode-tag creative">{enabled ? 'Multijoueur' : 'Solo'}</span>
-            </button>
-            <button className="world-card battle-card" onClick={() => create('battle')} disabled={!enabled || serverEditing || pendingWorld !== null} title={serverEditing ? "Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre" : undefined}>
-              <img src={battleUrl} alt="Monde Combat du mode Bataille" />
-              <span className="world-card-label"><strong>Bataille</strong><small>Arène limitée · Rouge, Bleu ou chacun son équipe</small></span>
-              <span className="world-mode-tag">1 joueur = 1 équipe possible</span>
-            </button>
-            <button className="world-card battle-card pirates-card" onClick={() => create('pirates')} disabled={!enabled || serverEditing || pendingWorld !== null} title={serverEditing ? "Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre" : undefined}>
-              <img src={piratesUrl} alt="Bataille navale du mode Pirates" />
-              <span className="world-card-label"><strong>Pirates</strong><small>Deux navires, un trésor à détruire et des abordages en équipe</small></span>
-              <span className="world-mode-tag">Combat naval</span>
-            </button>
-            <button className="world-card battle-card football-card" onClick={() => create('football')} disabled={!enabled || serverEditing || pendingWorld !== null} title={serverEditing ? "Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre" : undefined}>
-              <img src={footballUrl} alt="Stade et ballon du mode Football" />
-              <span className="world-card-label"><strong>Football</strong><small>Match de 5 minutes, cartons, corners, penaltys et hors-jeu</small></span>
-              <span className="world-mode-tag">Rouge contre Bleu</span>
-            </button>
-            <button className="world-card battle-card maze-card" onClick={() => create('maze')} disabled={serverEditing || pendingWorld !== null} title={serverEditing ? "Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre" : undefined}>
-              <img src={mazeUrl} alt="Labyrinthe du mode Course Labyrinthe" />
-              <span className="world-card-label"><strong>Course Labyrinthe</strong><small>{enabled ? 'Trouve la sortie après le coup de sifflet de l’arbitre' : 'Course en solo dans le labyrinthe'}</small></span>
-              <span className="world-mode-tag">{enabled ? 'Course chronométrée' : 'Solo'}</span>
-            </button>
-            <button className="world-card city-card" data-world-mode="city-ancient" onClick={() => create('city-ancient')} disabled={pendingWorld !== null}>
-              <img src={citiesUrl} alt="Ville ancienne et ses bâtiments parisiens" />
-              <span className="world-card-label"><strong>Ville ancienne</strong><small>Bâtiments parisiens · 10 km × 10 km</small></span>
-              <span className="world-mode-tag">{enabled ? 'Multijoueur' : 'Solo'}</span>
-            </button>
-            <button className="world-card city-card" data-world-mode="city-modern" onClick={() => create('city-modern')} disabled={pendingWorld !== null}>
-              <img src={citiesUrl} alt="Ville moderne, villas et immeubles de verre" />
-              <span className="world-card-label"><strong>Ville moderne</strong><small>Villas et petits gratte-ciel · 10 km × 10 km</small></span>
-              <span className="world-mode-tag">{enabled ? 'Multijoueur' : 'Solo'}</span>
-            </button>
+            {MODE_CARDS.map((card) => (
+              <div className="world-card-shell" key={card.mode}>
+                <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode.startsWith('city-') ? card.mode : undefined} onClick={() => create(card.mode)} disabled={pendingWorld !== null || joinPending || (card.multiplayer === true && (!enabled || serverEditing))} title={serverEditing && card.multiplayer ? 'Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre' : undefined}>
+                  <img src={card.image} alt={card.alt} />
+                  <span className="world-card-label"><strong>{card.name}</strong><small>{card.description(enabled)}</small></span>
+                  <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{card.tag(enabled)}</span>
+                </button>
+                {randomButton(card.mode)}
+              </div>
+            ))}
           </div>
           <MenuActionBar multiplayer={enabled} onSolo={() => setEnabled(false)} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} />
           {enabled && <section className="lobby-section"><MultiplayerLobby onPlay={onPlay} /></section>}
-          <CommunityWorlds onPlay={onPlay} />
+          <CommunityWorlds onPlay={onPlay} mode={browseMode} onModeChange={setBrowseMode} />
           {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(options) => { setCreateOpen(false); create(options.mode, options.multiplayer, options); }} />}
           {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
           {joinOpen && (
             <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setJoinOpen(false); }}>
               <section className="world-library-modal" role="dialog" aria-modal="true" aria-label="Rejoindre un monde">
                 <button className="world-library-close" aria-label="Fermer la liste des mondes" onClick={() => setJoinOpen(false)} autoFocus>×</button>
-                <div className="lobby-heading"><h2>Rejoindre un monde</h2><p>Choisis toi-même le monde d’un autre joueur. Rien ne te fait entrer au hasard.</p></div>
-                <CommunityWorlds onPlay={() => { setJoinOpen(false); return onPlay(); }} />
+                <div className="lobby-heading"><h2>Rejoindre un monde</h2><p>Rejoins au hasard avec le bouton Rejoindre, ou choisis toi-même un monde dans les listes.</p></div>
+                <CommunityWorlds onPlay={() => { setJoinOpen(false); return onPlay(); }} mode={browseMode} onModeChange={setBrowseMode} />
               </section>
             </div>
           )}

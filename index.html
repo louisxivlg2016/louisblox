@@ -890,14 +890,40 @@
       .world-entry-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
       .join-world-button { width: auto; min-width: 190px; margin: 0; padding: 14px; }
       .menu-brand-icon { width: 52px; height: 52px; object-fit: cover; border: 2px solid #e5ad5a; image-rendering: pixelated; }
-      .boutique-dressing-room { position: sticky; bottom: 0; z-index: 3; margin: 16px -4px; padding: 12px 4px; background: #142216; border-top: 2px solid #91b3b8; }
-      .boutique-dressing-room .boutique-avatar-3d { flex-basis: 230px; width: 230px; height: 240px; }
+      .boutique-content.with-preview { padding-bottom: 250px; }
+      .boutique-dressing-room { position: fixed; right: 22px; bottom: 18px; z-index: 75; display: grid; justify-items: center; gap: 5px; margin: 0; padding: 8px; color: #fff; background: #142216; border: 2px solid #91b3b8; box-shadow: 5px 5px 0 rgba(0,0,0,.45); }
+      .boutique-dressing-room .boutique-avatar-3d { flex-basis: 190px; width: 190px; height: 200px; }
+      .boutique-dressing-room strong { font-size: 12px; }
       .chat-toggle { width: 142px; min-height: 62px; padding: 7px; color: #fff5bd; background: #263f6a; border: 3px solid #78b6ca; box-shadow: inset -4px -4px 0 #14253f, inset 4px 4px 0 #4b7895, 3px 3px 0 #0c1828; text-shadow: 2px 2px #11293b; }
       .chat-toggle img { display: block; width: 100%; max-height: 48px; object-fit: contain; image-rendering: pixelated; pointer-events: none; }
       @media (max-width: 650px) {
         .world-browser-header .world-entry-actions { width: 100%; justify-content: flex-start; }
         .boutique-dressing-room .boutique-avatar-3d { flex-basis: 160px; width: 160px; height: 200px; }
         .chat-toggle { width: 96px; min-height: 48px; }
+      }
+      .world-card-shell { position: relative; min-width: 0; }
+      .world-card-shell .world-card { width: 100%; height: 100%; }
+      .world-card-shell .world-card-label { padding-bottom: 50px; }
+      .world-card-join { position: absolute; right: 12px; bottom: 11px; left: 12px; z-index: 2; min-height: 32px; padding: 7px; color: #fff; font-size: 11px; font-weight: 700; background: #487d42; border: 1px solid #8fbf72; cursor: pointer; text-shadow: 1px 1px #23451d; }
+      .world-card-join:hover { background: #5c964f; }
+      .world-card-join:disabled, .community-random:disabled { opacity: .5; cursor: not-allowed; }
+      .community-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+      .community-heading h2 { margin: 0 0 5px; font-size: 21px; }
+      .community-heading p { margin: 0; color: #b6c1cf; font-size: 11px; }
+      .community-heading label { display: grid; flex: 0 0 190px; gap: 6px; color: #c8d5e4; font-size: 11px; }
+      .community-heading select { width: 100%; padding: 9px; color: #fff; background: #26344c; border: 1px solid #61708f; font: inherit; }
+      .community-random { min-height: 42px; margin-top: 14px; padding: 10px 18px; border: 1px solid #78a85f; cursor: pointer; font-weight: 700; }
+      .community-random-hint { margin: 8px 0 0; color: #b6c1cf; font-size: 10px; }
+      .community-section { margin-top: 22px; }
+      .community-section h3 { display: flex; align-items: center; justify-content: space-between; margin: 0; color: #e6edf5; font-size: 16px; }
+      .community-section h3 span { color: #a7b8d0; font-size: 11px; }
+      .community-section .world-library-list { max-height: 230px; margin-top: 10px; }
+      .join-error { margin: -10px 0 18px; padding: 10px; background: #533b3b; border: 1px solid #a76c60; }
+      @media (max-width: 650px) {
+        .community-heading { align-items: stretch; flex-direction: column; }
+        .community-heading label { flex-basis: auto; }
+        .boutique-dressing-room { right: 12px; bottom: 12px; padding: 5px; }
+        .boutique-dressing-room .boutique-avatar-3d { flex-basis: 150px; width: 150px; height: 180px; }
       }
     </style>
   </head>

@@ -74,9 +74,11 @@ type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; g
 
 const requestedMode = new URLSearchParams(window.location.search).get('mode');
 let requestedRoomMode: GameplayMode | null = isGameplayMode(requestedMode) ? requestedMode : null;
+let requestedRoomForce = true;
 
-export function requestRoomMode(mode: GameplayMode | null) {
+export function requestRoomMode(mode: GameplayMode | null, force = true) {
   requestedRoomMode = mode;
+  requestedRoomForce = force;
 }
 
 function sendWorldInitialization(socket: WebSocket, world: World, force: boolean) {
@@ -331,7 +333,7 @@ export function MultiplayerConnection() {
           worldInitSent.current = true;
           if (useGameStore.getState().gameplayMode === wanted) {
             requestedRoomMode = null;
-            sendWorldInitialization(current, world, true);
+            sendWorldInitialization(current, world, requestedRoomForce);
           } else {
             useGameStore.getState().regenerate(wanted, room);
           }
@@ -735,7 +737,7 @@ export function MultiplayerConnection() {
     if (!connected) return;
     const current = socket.current;
     if (current?.readyState === WebSocket.OPEN) {
-      const force = requestedRoomMode !== null && requestedRoomMode === useGameStore.getState().gameplayMode;
+      const force = requestedRoomForce && requestedRoomMode !== null && requestedRoomMode === useGameStore.getState().gameplayMode;
       if (force) requestedRoomMode = null;
       sendWorldInitialization(current, world, force);
     }

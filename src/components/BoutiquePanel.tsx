@@ -39,7 +39,7 @@ export function BoutiquePanel() {
             <button className={`boutique-tab ${tab === 'shop' ? 'active' : ''}`} role="tab" aria-selected={tab === 'shop'} onClick={() => setTab('shop')}>Boutique</button>
             <button className={`boutique-tab image-tab ${tab === 'settings' ? 'active' : ''}`} role="tab" aria-label="Réglages" aria-selected={tab === 'settings'} onClick={() => setTab('settings')}><img src={settingsButtonUrl} alt="" /></button>
           </nav>
-          <div className="boutique-content" role="tabpanel">
+          <div className={`boutique-content ${tab === 'shop' ? 'with-preview' : ''}`} role="tabpanel">
             {tab === 'settings' ? <SettingsPanel /> : <>
         <div className="boutique-heading"><p className="eyebrow">PERSONNALISATION</p><h2 id="boutique-title">Boutique</h2><p>Choisis ta tenue. Ton aperçu 3D reste visible en bas pendant ton choix.</p></div>
         <div className="character-selector">
@@ -106,14 +106,14 @@ export function BoutiquePanel() {
         </>
         {battle && <p className="backpack-label">Le costume militaire est obligatoire en Bataille.</p>}
         <p className="boutique-hint">B ouvre la boutique · M crée une maison en pleine partie · P change de caméra.</p>
-        <div className="boutique-avatar-preview boutique-dressing-room">
-          <BoutiqueAvatarPreview />
-          <div><p className="eyebrow">TON PERSONNAGE</p><h2>{OUTFITS[outfit].name}</h2><p>Voici ton apparence avec ce costume. Glisse sur le modèle pour le tourner.</p></div>
-        </div>
         <button className="primary-button" onClick={close}>Porter et reprendre</button>
             </>}
           </div>
         </div>
+        {tab === 'shop' && <aside className="boutique-avatar-preview boutique-dressing-room" aria-label="Aperçu de ton personnage">
+          <BoutiqueAvatarPreview />
+          <strong>{OUTFITS[outfit].name}</strong>
+        </aside>}
       </section>
     </div>
   );
