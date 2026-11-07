@@ -1,8 +1,8 @@
 import type { Entity, World } from 'koota';
 import { Mesh, Vector3 } from 'three';
-import { getBlockIndex, getWorldSeed, isChunkLoaded } from '../chunks';
+import { getBlockIndex, isChunkLoaded } from '../chunks';
 import { isCrop } from '../extraBlocks';
-import { biomeAt, MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
+import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { isWaterBlock, voxelKey } from '../voxel';
@@ -50,9 +50,7 @@ function bodyClear(world: World, x: number, z: number, feetY: number) {
   return true;
 }
 
-function climbRise(world: World, x: number, z: number) {
-  return biomeAt(Math.floor(x), Math.floor(z), getWorldSeed(world)) === 'winter' ? 4 : 1.05;
-}
+const MAX_CLIMB_RISE = 4;
 
 function walkableGround(world: World, x: number, z: number, ground: number) {
   return ground > MIN_WORLD_Y + 0.5 && !isWaterBlock(blockAt(world, x, ground + 1, z)?.kind);
@@ -66,17 +64,17 @@ function canAdvance(world: World, kind: AnimalKind, position: Vector3, yaw: numb
     const ground = groundAt(world, x, z, MAX_BUILD_Y);
     return ground < SEA_LEVEL + 0.5 && isWaterBlock(blockAt(world, x, SEA_LEVEL, z)?.kind);
   }
-  const rise = climbRise(world, x, z);
+  const rise = MAX_CLIMB_RISE;
   const ground = groundAt(world, x, z, position.y + rise + 0.05);
   return walkableGround(world, x, z, ground) && ground <= position.y + rise && bodyClear(world, x, z, ground);
 }
 
 function avoidWall(world: World, kind: AnimalKind, position: Vector3, motion: Motion, entity: Entity) {
   const direction = entity % 2 === 0 ? 1 : -1;
-  const candidates = [motion.yaw + direction * Math.PI / 2, motion.yaw - direction * Math.PI / 2, motion.yaw + Math.PI, motion.yaw];
+  const candidates = [motion.yaw + direction * Math.PI / 2, motion.yaw - direction * Math.PI / 2, motion.yaw + direction * Math.PI * 0.75, motion.yaw - direction * Math.PI * 0.75];
   const open = candidates.find((yaw) => canAdvance(world, kind, position, yaw));
   if (open !== undefined) motion.yaw = open;
-  motion.avoid = 0.55;
+  motion.avoid = 0;
   motion.turnIn = Math.max(motion.turnIn, 1.2);
 }
 
@@ -102,7 +100,7 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
     }
   } else {
     if (isLoaded(world, x, z)) {
-      const rise = climbRise(world, x, z);
+      const rise = MAX_CLIMB_RISE;
       const ground = groundAt(world, x, z, position.y + rise + 0.05);
       if (walkableGround(world, x, z, ground) && ground <= position.y + rise && bodyClear(world, x, z, ground)) {
         position.x = x;
@@ -204,8 +202,8 @@ export function animalSystem(world: World, dt: number) {
       }
     }
 
-    motion.idle = Math.max(0, motion.idle - stepDt);
-    motion.turnIn -= motion.idle > 0 ? 0 : stepDt;
+    motion.idle = 0;
+    motion.turnIn -= stepDt;
     motion.phase += stepDt * 3;
     if (hit.panic > 0 && !motion.hunting) {
       motion.idle = 0;
@@ -215,9 +213,6 @@ export function animalSystem(world: World, dt: number) {
     if (motion.turnIn <= 0 && !motion.hunting) {
       motion.yaw += Math.sin(entity * 17.31 + motion.phase) * 0.75;
       motion.turnIn = hit.panic > 0 ? 1.5 : 8 + (Math.sin(entity * 7.13 + motion.phase) + 1) * 3.5;
-      if (hit.panic === 0 && Math.sin(entity * 5.73 + motion.phase) > 0.72) {
-        motion.idle = 0.7 + (Math.sin(entity * 9.37 + motion.phase) + 1) * 0.65;
-      }
     }
 
     if (moveAnimal(world, animal.kind, position, motion, stepDt, entity, motion.hunting ? 1 : hit.panic) && mesh.value) {

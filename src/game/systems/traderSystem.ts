@@ -18,22 +18,27 @@ function walkableGround(world: World, x: number, z: number, currentY: number) {
   return ground;
 }
 
+function traderHeading(trader: { homeX: number; homeZ: number }) {
+  const angle = trader.homeX * 0.17 + trader.homeZ * 0.31;
+  return Math.atan2(Math.sin(angle), Math.cos(angle));
+}
+
 export function traderSystem(world: World, dt: number) {
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return;
   world.query(Trader, TraderPosition, TraderMesh).updateEach(([trader, position, mesh]) => {
     if (position.distanceToSquared(player) > 70 * 70) return;
-    const nearPlayer = position.distanceToSquared(player) < 4.5 * 4.5;
-    trader.walking = !nearPlayer;
+    trader.walking = true;
+    const heading = traderHeading(trader);
     const dx = trader.targetX - position.x;
     const dz = trader.targetZ - position.z;
     const distance = Math.hypot(dx, dz);
     if (distance < 0.7) {
-      trader.phase += dt * 0.35;
-      trader.targetX = trader.homeX + Math.sin(trader.phase) * 10;
-      trader.targetZ = trader.homeZ + Math.cos(trader.phase * 0.8) * 10;
+      trader.phase += 30;
+      trader.targetX = trader.homeX + Math.sin(heading) * trader.phase;
+      trader.targetZ = trader.homeZ + Math.cos(heading) * trader.phase;
     }
-    if (!nearPlayer && distance > 0.001) {
+    if (distance > 0.001) {
       const step = Math.min(distance, dt * 0.75);
       const x = position.x + dx / distance * step;
       const z = position.z + dz / distance * step;
@@ -45,8 +50,13 @@ export function traderSystem(world: World, dt: number) {
           mesh.value.rotation.y = turnToward(mesh.value.rotation.y, Math.atan2(dx, dz), dt * 4);
         }
       } else {
-        trader.targetX = trader.homeX + Math.sin(trader.phase + 1.7) * 10;
-        trader.targetZ = trader.homeZ + Math.cos(trader.phase * 0.8 + 1.7) * 10;
+        const side = Math.sin(trader.homeX + trader.homeZ) >= 0 ? 1 : -1;
+        const candidates = [heading, heading + side * 0.65, heading - side * 0.65, heading + side * 1.2, heading - side * 1.2];
+        const nextYaw = candidates.find((yaw) => walkableGround(world, position.x + Math.sin(yaw) * 1.5, position.z + Math.cos(yaw) * 1.5, position.y) !== null);
+        if (nextYaw !== undefined) {
+          trader.targetX = position.x + Math.sin(nextYaw) * 4;
+          trader.targetZ = position.z + Math.cos(nextYaw) * 4;
+        }
       }
     }
   });

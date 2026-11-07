@@ -1,11 +1,10 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { useTrait } from 'koota/react';
 import { Mesh, NearestFilter } from 'three';
 import type { Entity } from 'koota';
 import type { Group } from 'three';
-import { AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Trader } from '../game/traits';
+import { AnimalMesh, AnimalMotion, AnimalPosition, Trader } from '../game/traits';
 import { createCharacterRig } from '../game/characterRig';
 import type { AnimalKind } from '../game/animals';
 import cowUrl from '../../assets/models/reference-cow.glb';
@@ -45,7 +44,6 @@ function useAnimalLegs(entity: Entity, bird = false) {
 
 function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hunyuanAnimals }) {
   const { scene } = useGLTF(hunyuanAnimals[kind]);
-  const rider = useTrait(entity, HorseRider);
   const model = useMemo(() => {
     const clone = scene.clone(true);
     clone.traverse((object) => {
@@ -63,7 +61,7 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
     return clone;
   }, [scene]);
   useAnimalLegs(entity, kind === 'chicken' || kind === 'duck');
-  return <group name={`reference-${kind}`} rotation={[0, kind === 'horse' && !rider?.mounted ? 0 : Math.PI, 0]} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
+  return <group name={`reference-${kind}`} rotation={[0, kind === 'horse' ? 0 : Math.PI, 0]} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
 export function ReferenceAnimal({ entity, kind }: { entity: Entity; kind: AnimalKind }) {
@@ -88,5 +86,5 @@ export function ReferenceTrader({ entity }: { entity: Entity }) {
     if (rig.leftLeg) rig.leftLeg.rotation.x = swing;
     if (rig.rightLeg) rig.rightLeg.rotation.x = -swing;
   });
-  return <group name="reference-trader" userData={{ source: 'Hunyuan' }}><primitive object={character} rotation={[0, Math.PI, 0]} /></group>;
+  return <group name="reference-trader" userData={{ source: 'Hunyuan' }}><primitive object={character} /></group>;
 }

@@ -61,6 +61,15 @@ export function nearestRuin(x: number, z: number, seed: number) {
   return nearest!;
 }
 
+export function isInRuinFootprint(site: RuinSite, x: number, z: number, margin = 2) {
+  const layout = layouts[site.type];
+  return Math.abs(x - site.x) <= layout.width / 2 + margin && Math.abs(z - site.z) <= layout.depth / 2 + margin;
+}
+
+export function isInAnyRuinFootprint(x: number, z: number, seed: number, margin = 2) {
+  return (Object.keys(layouts) as RuinType[]).some((type) => isInRuinFootprint(nearestRuinOfType(x, z, seed, type), x, z, margin));
+}
+
 function foundation(site: RuinSite, put: Put, remove: Remove, kind: BlockKind) {
   const { width, depth } = layouts[site.type];
   const hx = Math.floor(width / 2);

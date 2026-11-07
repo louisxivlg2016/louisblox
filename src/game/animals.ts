@@ -4,6 +4,29 @@ import { biomeAt, heightAt, safeSpawnAt, SEA_LEVEL } from './levels';
 import type { Biome, WaterTile } from './levels';
 import { Animal, AnimalHealth, AnimalHit, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Trader, TraderMesh, TraderPosition } from './traits';
 import { useGameStore } from './store';
+import { isInAnyRuinFootprint } from './ruins';
+
+function safeRoamSpawn(x: number, z: number, seed: number) {
+  for (let radius = 0; radius <= 16; radius += 1) {
+    let best: { x: number; y: number; z: number } | null = null;
+    let bestDistance = Infinity;
+    for (let dx = -radius; dx <= radius; dx += 1) {
+      for (let dz = -radius; dz <= radius; dz += 1) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
+        const px = Math.round(x) + dx;
+        const pz = Math.round(z) + dz;
+        const height = heightAt(px, pz, seed);
+        if (height <= SEA_LEVEL || isInAnyRuinFootprint(px, pz, seed)) continue;
+        const distance = dx * dx + dz * dz;
+        if (distance >= bestDistance) continue;
+        best = { x: px, y: height + 1.01, z: pz };
+        bestDistance = distance;
+      }
+    }
+    if (best) return { ...best, onLand: true };
+  }
+  return safeSpawnAt(x, z, seed);
+}
 
 export type AnimalKind =
   | 'camel' | 'cow' | 'horse' | 'pig' | 'sheep' | 'chicken' | 'duck'
@@ -41,13 +64,14 @@ function hash(x: number, z: number, seed: number) {
 }
 
 export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number, z: number, seed: number) {
+  const site = kind === 'duck' ? { x, y, z } : safeRoamSpawn(x, z, seed);
   const yaw = hash(x, z, seed + 41) * Math.PI * 2;
   return world.spawn(
     Animal({ kind }),
     AnimalId(`${kind}:${x}:${z}`),
     AnimalHealth({ value: health[kind] }),
     AnimalHit(),
-    AnimalPosition(new Vector3(x, y, z)),
+    AnimalPosition(new Vector3(site.x, kind === 'duck' ? y : site.y - 0.51, site.z)),
     AnimalMotion({
       yaw,
       displayYaw: yaw,
@@ -60,7 +84,7 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
 }
 
 export function spawnTrader(world: World, x: number, z: number, seed: number) {
-  const site = safeSpawnAt(x, z, seed);
+  const site = safeRoamSpawn(x, z, seed);
   const trader = world.spawn(
     Trader({ homeX: site.x, homeZ: site.z, targetX: site.x, targetZ: site.z }),
     TraderPosition(new Vector3(site.x, site.y, site.z)),
@@ -90,8 +114,9 @@ function spawnTradersAlongGrid(world: World, cx: number, cz: number, seed: numbe
 export function spawnChunkAnimals(world: World, cx: number, cz: number, water: WaterTile[], seed: number) {
   const entities: Entity[] = [...spawnTradersAlongGrid(world, cx, cz, seed)];
 
-  if (water.length > 0 && hash(cx, cz, seed + 800) > 0.95) {
-    const tile = water[Math.floor(hash(cx, cz, seed + 801) * water.length)];
+  const openWater = water.filter((tile) => !isInAnyRuinFootprint(tile.x, tile.z, seed));
+  if (openWater.length > 0 && hash(cx, cz, seed + 800) > 0.95) {
+    const tile = openWater[Math.floor(hash(cx, cz, seed + 801) * openWater.length)];
     entities.push(spawnAnimal(world, 'duck', tile.x, SEA_LEVEL + 0.35, tile.z, seed));
   }
 
