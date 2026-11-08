@@ -79,6 +79,7 @@ export function ReferenceFoodModel({ kind }: { kind: ReferenceFoodKind }) {
   const model = useMemo(() => {
     const clone = scene.clone(true);
     clone.name = `food-${kind}`;
+    clone.scale.setScalar(kind === 'cake' ? 1.25 : 1);
     clone.userData.source = 'Hunyuan';
     clone.traverse((object) => {
       if (!(object instanceof Mesh)) return;

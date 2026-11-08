@@ -49,7 +49,7 @@ function blockIcon(kind: BlockKind) {
 export function ItemIcon({ kind }: { kind: SelectedKind }) {
   const info = selectionInfo(kind);
   if (typeof kind === 'number' && cropIcons[kind]) return <img className="item-model-icon" src={cropIcons[kind]} alt={info.name} />;
-  if (typeof kind !== 'number' && isReferenceFood(kind)) return <img className="item-model-icon" src={referenceFoodIcons[kind]} alt={info.name} />;
+  if (typeof kind !== 'number' && isReferenceFood(kind)) return <img className="item-model-icon" style={kind === 'cake' ? { transform: 'scale(1.25)' } : undefined} src={referenceFoodIcons[kind]} alt={info.name} />;
   if (kind === BlockKind.Tnt) return <img className="tnt-icon" src={tntUrl} alt="" />;
   if (kind === BlockKind.Wildfire) return <img className="tnt-icon red-fire-icon" src={redFireUrl} alt="" />;
   if (kind === BlockKind.TrafficLight) return <img className="tnt-icon traffic-light-icon" src={trafficLightUrl} alt="" />;
