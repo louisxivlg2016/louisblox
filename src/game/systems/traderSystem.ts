@@ -60,10 +60,10 @@ export function traderSystem(world: World, dt: number) {
     const trader = entity.get(Trader)!;
     const position = entity.get(TraderPosition)!;
     const mesh = entity.get(TraderMesh)!;
-    if (position.distanceToSquared(player) > 70 * 70) continue;
     const fire = nearestFire(fires, position);
     trader.panic = fire ? Math.max(trader.panic, 0.5) : Math.max(0, trader.panic - dt);
     const heading = traderHeading(trader);
+    const following = !fire && position.distanceToSquared(player) > 18 * 18;
     if (fire) {
       const dx = position.x - fire.x;
       const dz = position.z - fire.z;
@@ -81,8 +81,12 @@ export function traderSystem(world: World, dt: number) {
       trader.targetX = trader.homeX + Math.sin(heading) * trader.phase;
       trader.targetZ = trader.homeZ + Math.cos(heading) * trader.phase;
     }
+    if (following) {
+      trader.targetX = player.x - Math.sin(heading) * 2.5;
+      trader.targetZ = player.z - Math.cos(heading) * 2.5;
+    }
     if (distance > 0.001) {
-      const step = Math.min(distance, dt * (trader.panic > 0 ? 2.2 : 1.05));
+      const step = Math.min(distance, dt * (trader.panic > 0 ? 2.2 : following ? 4.8 : 1.05));
       const forward = fire ? Math.atan2(position.x - fire.x, position.z - fire.z) : Math.atan2(dx, dz);
       const forwardGround = walkableGround(world, position.x + Math.sin(forward) * 1.2, position.z + Math.cos(forward) * 1.2, position.y);
       const x = position.x + dx / distance * step;
