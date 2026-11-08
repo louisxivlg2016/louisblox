@@ -62,7 +62,7 @@ export function traderSystem(world: World, dt: number) {
       trader.targetZ = trader.homeZ + Math.cos(heading) * trader.phase;
     }
     if (distance > 0.001) {
-      const step = Math.min(distance, dt * (trader.panic > 0 ? 1.8 : 0.75));
+      const step = Math.min(distance, dt * (trader.panic > 0 ? 2.2 : 1.05));
       const forward = fire ? Math.atan2(position.x - fire.x, position.z - fire.z) : Math.atan2(dx, dz);
       const forwardGround = walkableGround(world, position.x + Math.sin(forward) * 1.2, position.z + Math.cos(forward) * 1.2, position.y);
       const x = position.x + dx / distance * step;
@@ -110,7 +110,7 @@ export function traderSystem(world: World, dt: number) {
     const previousX = position.x;
     const previousZ = position.z;
     if (distance > 0.001) {
-      const step = Math.min(distance, dt * 1.2);
+      const step = Math.min(distance, dt * 1.65);
       const x = position.x + dx / distance * step;
       const z = position.z + dz / distance * step;
       const ground = walkableGround(world, x, z, position.y);
@@ -121,7 +121,7 @@ export function traderSystem(world: World, dt: number) {
     const moving = Math.hypot(movedX, movedZ) > 0.0001;
     motion.yaw = moving ? Math.atan2(movedX, movedZ) : heading;
     motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * 5);
-    motion.speed = moving ? 0.75 : 0;
+    motion.speed = moving ? 1.05 : 0;
     if (mesh.value) {
       mesh.value.position.copy(position);
       mesh.value.rotation.y = motion.displayYaw;
