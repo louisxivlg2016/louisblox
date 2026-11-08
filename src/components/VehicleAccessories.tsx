@@ -179,22 +179,24 @@ function PlaneDetails() {
     model.updateMatrixWorld(true);
     const cabin = CABINS.plane!;
     const raycaster = new Raycaster();
-    return (side: number, z: number) => {
-      raycaster.set(new Vector3(0, cabin.floor + 1.45, z), new Vector3(side, 0, 0));
+    return (side: number, z: number, y: number) => {
+      raycaster.set(new Vector3(0, y, z), new Vector3(side, 0, 0));
       const hit = raycaster.intersectObject(model, true)[0];
       return hit ? Math.abs(hit.point.x) : cabin.halfWidth + 0.1;
     };
   }, [scene]);
   const cabin = CABINS.plane!;
-  const y = cabin.floor + 1.45;
+  const y = cabin.floor + 3.5;
+  const titleY = cabin.floor + 7.1;
+  const titleZ = cabin.front + 8;
   const windowTexture = useMemo(planeWindowTexture, []);
   return (
     <group name="plane-livery">
       {[-1, 1].map((side) => <group key={side}>
-        <Label text="louis blox" position={[side * (surfaceAt(side, cabin.front + 1.5) + 0.06), y, cabin.front + 1.5]} rotation={[0, side * Math.PI / 2, 0]} size={[4.2, 0.72]} color="#8b60cb" />
+        <Label text="louis blox" position={[side * (surfaceAt(side, titleZ, titleY) + 0.06), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[4.2, 0.72]} color="#ffffff" background="#8b60cb" />
         {Array.from({ length: 14 }, (_, index) => {
           const z = cabin.front + 2 + index * 1.7;
-          const x = surfaceAt(side, z);
+          const x = surfaceAt(side, z, y);
           return <mesh key={index} name="plane-window" position={[side * (x + 0.07), y, z]} rotation={[0, side * Math.PI / 2, 0]}>
             <planeGeometry args={[1.25, 1.1]} />
             <meshBasicMaterial map={windowTexture} transparent depthWrite={false} />
