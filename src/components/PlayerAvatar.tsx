@@ -136,7 +136,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   return (
     <group
       ref={bodyMesh}
-      visible={preview || (cameraMode !== 'first' || sleeping) && riding !== 'plane'}
+      visible={preview || cameraMode !== 'first' || (riding !== 'plane' && sleeping)}
     >
       {(!hasFullCharacter(outfit, wig) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit character={character} outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding) && !walkingCabin} head={headContent} headRef={headRef} appearance={appearance} />

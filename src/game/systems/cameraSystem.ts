@@ -83,7 +83,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
       camera.position.y += 1.2;
       camera.position.x -= Math.sin(state.yaw) * 0.65;
       camera.position.z -= Math.cos(state.yaw) * 0.65;
-    } else if (mount?.kind === 'plane') camera.position.y += 0.05;
+    } else if (mount?.kind === 'plane') camera.position.y += 1;
     else camera.position.y += mount?.vehicle && mount.kind !== 'horse' ? mount.kind === 'car' ? 0.65 : 0.55 : 1.62;
     rotation.set(state.pitch, state.yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(rotation);

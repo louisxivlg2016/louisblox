@@ -39,7 +39,13 @@ function CabinShell({ cabin }: { cabin: CabinDefinition }) {
           <meshLambertMaterial color="#cfdae0" transparent opacity={0.2} depthWrite={false} />
         </mesh>
       ))}
-      <PixelPart position={[0, cabin.floor + height / 2, cabin.front - 0.1]} size={[cabin.halfWidth * 2 + 0.4, height, 0.2]} color="#a9b9c4" />
+      {[-1, 1].map((side) => <PixelPart key={side} position={[side * (cabin.halfWidth + 0.12), cabin.floor + height / 2, cabin.front - 0.1]} size={[0.16, height, 0.2]} color="#a9b9c4" />)}
+      <PixelPart position={[0, cabin.ceiling - 0.16, cabin.front - 0.1]} size={[cabin.halfWidth * 2 + 0.4, 0.3, 0.2]} color="#a9b9c4" />
+      <PixelPart position={[0, cabin.floor + 0.22, cabin.front - 0.1]} size={[cabin.halfWidth * 2 + 0.4, 0.44, 0.2]} color="#a9b9c4" />
+      <mesh name="plane-windshield" position={[0, cabin.floor + height * 0.56, cabin.front - 0.115]}>
+        <boxGeometry args={[cabin.halfWidth * 2 + 0.2, height * 0.66, 0.035]} />
+        <meshLambertMaterial color="#9ed6ec" transparent opacity={0.1} depthWrite={false} />
+      </mesh>
       <PixelPart position={[0, cabin.floor + height / 2, cabin.rear + 0.1]} size={[cabin.halfWidth * 2 + 0.4, height, 0.2]} color="#a9b9c4" />
       <mesh position={[0, cabin.ceiling + 0.1, middle]}>
         <boxGeometry args={[cabin.halfWidth * 2 + 0.4, 0.2, length + 0.4]} />
