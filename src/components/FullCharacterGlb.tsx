@@ -1,10 +1,10 @@
 import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { useAnimations, useGLTF } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { createPortal, useFrame } from '@react-three/fiber';
 import { LoopRepeat, Mesh } from 'three';
 import type { Object3D } from 'three';
 import { animateCharacterRig, createCharacterRig } from '../game/characterRig';
-import type { Ref } from 'react';
+import type { Ref, ReactNode } from 'react';
 import { selectedWig, type OutfitKind, type WigSelection } from '../game/outfits';
 import { world } from '../game/world';
 import { useEatingStore } from '../game/eating';
@@ -38,7 +38,7 @@ export function hasFullCharacter(outfit: OutfitKind, wig: WigSelection = 'auto')
   return outfit !== 'default' || selectedWig(outfit, wig) === null;
 }
 
-function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance }: { outfit: FullCharacterModel; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance }) {
+function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance, headAccessory }: { outfit: FullCharacterModel; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance; headAccessory?: ReactNode }) {
   const group = useRef<Object3D>(null);
   const current = useRef('');
   const { scene, animations } = useGLTF(models[outfit]);
@@ -113,9 +113,11 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
     }
   });
 
+  const head = character.userData.rig?.head as Object3D | undefined;
   return (
     <group ref={group} name="full-character" userData={metadata}>
       <primitive object={character} scale={scale} rotation={[0, Math.PI, 0]} />
+      {headAccessory && head ? createPortal(<group name="costume-wig" position={[0, -head.position.y, 0]}>{headAccessory}</group>, head) : null}
     </group>
   );
 }

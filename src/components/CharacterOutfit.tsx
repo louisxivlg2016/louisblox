@@ -32,13 +32,16 @@ export function CharacterOutfit({ outfit, wig = 'auto', moving, airborne, remote
   const localEmote = useEmoteStore((state) => state.current);
   const hairColor = appearance ? appearanceHairColor(appearance, character) : undefined;
   const props = { moving, airborne, remote, seated, emote: remote ? emote : localEmote, headRef, appearance };
-  if (outfit !== 'default') return hasFullCharacter(outfit, wig) ? <FullCharacterGlb outfit={outfit} {...props} /> : <group name="character-head" ref={headRef} position={[0, 1.45, 0]}><group position={[0, -1.45, 0]}>{head}</group></group>;
+  const accessory = selectedWig(outfit, wig)
+    ? <Suspense fallback={<PeriodWig large={selectedWig(outfit, wig) === 'louis14'} color={hairColor} />}><WigGlb kind={selectedWig(outfit, wig)!} color={hairColor} /></Suspense>
+    : null;
+  if (outfit !== 'default') return hasFullCharacter(outfit, wig) ? <FullCharacterGlb outfit={outfit} {...props} headAccessory={accessory} /> : <group name="character-head" ref={headRef} position={[0, 1.45, 0]}><group position={[0, -1.45, 0]}>{head}{accessory}</group></group>;
   if (!selectedWig(outfit, wig)) return <FullCharacterGlb outfit={character === 'girl' ? 'classic-girl' : 'classic-boy'} {...props} />;
   return (
     <group name="character-head" ref={headRef} position={[0, 1.45, 0]}>
       <group position={[0, -1.45, 0]}>
         {head}
-        {selectedWig(outfit, wig) && <Suspense fallback={<PeriodWig large={selectedWig(outfit, wig) === 'louis14'} color={hairColor} />}><WigGlb kind={selectedWig(outfit, wig)!} color={hairColor} /></Suspense>}
+        <group name="costume-wig">{accessory}</group>
       </group>
     </group>
   );

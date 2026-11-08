@@ -29,6 +29,11 @@ const assets = [
     prompt: 'Voxel Napoleonic soldier from reference, black bicorne, blue and red uniform, white cross belts and trousers, one head with one front face. No rear face or extra limbs.',
   },
   {
+    name: 'police',
+    image: '/home/louisxiv/Downloads/Gemini_Generated_Image_5xivvo5xivvo5xiv.jpeg',
+    prompt: 'Voxel police officer from reference, navy cap with gold badge, blue shirt and tie, black belt, navy trousers and shoes, one head with one front face. No rear face or extra limbs.',
+  },
+  {
     name: 'referee',
     image: '/home/louisxiv/louisblox/image/arbitre.jpeg',
     prompt: 'Voxel football referee from reference, brown hair, one head with one front face, black uniform with white stripes, whistle, black shorts and boots. No rear face or extra limbs.',
