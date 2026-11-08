@@ -15,7 +15,7 @@ import { createWorldSave } from '../game/save';
 import { rememberWorld, useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
 import { useAvatarStore } from '../game/avatar';
-import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Vehicle } from '../game/traits';
+import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Vehicle } from '../game/traits';
 import { getItemMeta } from '../game/items';
 import { ItemModel, PixelPart, heldItemPosition } from './ItemModel';
 import { blockGeometry, blockMaterials } from '../game/textures';
@@ -130,7 +130,8 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
     target.set(state.x, state.y + (state.flying ? 1 : 0) + lyingHeight - seatedHeight, state.z);
     group.current.position.lerp(target, amount);
     group.current.rotation.order = 'YXZ';
-    const angle = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
+    const bodyYaw = state.bodyYaw ?? (state.mounted || state.moving ? state.yaw : group.current.rotation.y);
+    const angle = Math.atan2(Math.sin(bodyYaw - group.current.rotation.y), Math.cos(bodyYaw - group.current.rotation.y));
     group.current.rotation.y += angle * amount;
     const flightRotation = !state.mounted && state.emote === 'lie' ? -Math.PI / 2 : state.flying ? -Math.PI / 2 : 0;
     group.current.rotation.x += (flightRotation - group.current.rotation.x) * amount;
@@ -692,7 +693,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, bodyYaw: entity?.get(PlayerMesh)?.value?.rotation.y, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

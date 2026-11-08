@@ -4,7 +4,7 @@ import type { Camera } from 'three';
 import { useGameStore } from '../store';
 import { useEmoteStore } from '../emotes';
 import { turnToward } from '../rotation';
-import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, Sleep } from '../traits';
+import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 import { useMazeStore } from '../mazeClient';
 import { canWalkInVehicle, vehicleViewDistance } from '../vehicleTypes';
 import { VehiclePosition } from '../traits';
@@ -23,9 +23,10 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   if (!position || !state) return;
   const avatar = entity.get(PlayerMesh)?.value;
   const mounted = entity.get(PlayerMount)?.vehicle;
+  const velocity = entity.get(PlayerVelocity);
   if (avatar) {
     avatar.rotation.order = 'YXZ';
-    avatar.rotation.y = turnToward(avatar.rotation.y, state.yaw, dt * 6);
+    if (mounted || velocity && Math.hypot(velocity.x, velocity.z) > 0.1) avatar.rotation.y = turnToward(avatar.rotation.y, state.yaw, dt * 6);
   }
   const sleep = world.queryFirst(Sleep)?.get(Sleep);
   const previous = sleepBlends.get(world) ?? 0;

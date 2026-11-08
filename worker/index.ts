@@ -13,6 +13,7 @@ export type PlayerState = {
   y: number;
   z: number;
   yaw: number;
+  bodyYaw?: number;
   pitch: number;
   flying: boolean;
   moving: boolean;
@@ -141,6 +142,7 @@ function parseState(value: unknown): PlayerState | null {
     y: state.y as number,
     z: state.z as number,
     yaw: state.yaw as number,
+    bodyYaw: typeof state.bodyYaw === 'number' && Number.isFinite(state.bodyYaw) ? state.bodyYaw : undefined,
     pitch: state.pitch as number,
     flying: state.flying === true,
     moving: state.moving === true,

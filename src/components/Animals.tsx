@@ -5,6 +5,7 @@ import type { Entity } from 'koota';
 import { Mesh } from 'three';
 import { Animal, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerMount } from '../game/traits';
 import { useRemotePlayerStore } from '../game/multiplayerStore';
+import { spawnAnimal } from '../game/animals';
 import { AnimalGlb } from './AnimalGlb';
 import { SaddleModel } from './ItemModel';
 
@@ -42,12 +43,17 @@ function RemoteHorseSync() {
   useFrame(() => {
     const current = new Set<Entity>();
     const localMount = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
-    const horses = world.query(Animal, AnimalId, AnimalPosition, AnimalMotion, AnimalMesh);
+    const horses = [...world.query(Animal, AnimalId, AnimalPosition, AnimalMotion, AnimalMesh)];
     for (const state of Object.values(useRemotePlayerStore.getState().players)) {
       const snapshot = state.horse;
       if (!snapshot) continue;
-      const entity = horses.find((candidate) => candidate.get(AnimalId) === snapshot.id);
-      if (!entity || entity === localMount) continue;
+      let entity = horses.find((candidate) => candidate.get(AnimalId) === snapshot.id);
+      if (entity === localMount) continue;
+      if (!entity) {
+        entity = spawnAnimal(world, 'horse', snapshot.x, snapshot.y, snapshot.z, 0);
+        entity.set(AnimalId, snapshot.id);
+        horses.push(entity);
+      }
       current.add(entity);
       const rider = entity.get(HorseRider);
       if (rider) {
