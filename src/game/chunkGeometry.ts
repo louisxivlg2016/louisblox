@@ -136,8 +136,10 @@ function faceTexture(block: Voxel, direction: readonly number[]) {
   let keys = faceTextureKeys.get(block.kind);
   if (!keys) {
     const kind = block.kind;
-    keys = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass || kind === BlockKind.JungleGrass
-      ? [`${kind}:side`, `${kind}:top`, `${BlockKind.Dirt}:side`]
+    keys = kind === BlockKind.Apple
+      ? [`${BlockKind.Leaves}:side`, `${BlockKind.Leaves}:side`, `${BlockKind.Leaves}:side`]
+      : kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass || kind === BlockKind.JungleGrass
+        ? [`${kind}:side`, `${kind}:top`, `${BlockKind.Dirt}:side`]
       : kind === BlockKind.Wood || kind === BlockKind.Tnt
         ? [`${kind}:side`, `${kind}:top`, `${kind}:bottom`]
         : [`${kind}:side`, `${kind}:side`, `${kind}:side`];
@@ -185,15 +187,13 @@ export function createChunkLookup(blocks: Voxel[], blockIndex: Map<string, Voxel
 const fullFaceUV = { left: 0, right: 1, top: 1, bottom: 0 };
 
 function addFace(group: GeometryGroup, block: Voxel, face: (typeof faces)[number], uv: ReturnType<typeof tileUV>, color: Color | null) {
-  const scale = block.kind === BlockKind.Apple ? 0.35 : 1;
-  const offsetY = block.kind === BlockKind.Apple ? -0.28 : 0;
   const base = group.positions.length / 3;
   const tile = isBrick(block.kind) ? fullFaceUV : block.kind >= BlockKind.ConcreteWhite && block.kind <= BlockKind.ConcreteBlack ? tileUV(WHITE_TILE) : uv;
   const uvCorners = [[tile.left, tile.top], [tile.right, tile.top], [tile.right, tile.bottom], [tile.left, tile.bottom]];
   const [nx, ny, nz] = face.direction;
   for (let index = 0; index < 4; index += 1) {
     const corner = face.corners[index];
-    group.positions.push(block.x + corner[0] * scale, block.y + corner[1] * scale + offsetY, block.z + corner[2] * scale);
+    group.positions.push(block.x + corner[0], block.y + corner[1], block.z + corner[2]);
     group.normals.push(nx, ny, nz);
     group.uvs.push(uvCorners[index][0], uvCorners[index][1]);
     if (color) group.colors.push(color.r, color.g, color.b);
