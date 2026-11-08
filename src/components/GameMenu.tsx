@@ -23,7 +23,6 @@ import shopUrl from '../../assets/menu/shop.webp';
 import battleUrl from '../../assets/menu/battle.webp';
 import citiesUrl from '../../assets/menu/cities.webp';
 import gameIconUrl from '../../assets/icons/louisblox-icon3.jpeg';
-import { usePublicWorldJoin } from './usePublicWorldJoin';
 
 const MODE_CARDS: Array<{
   mode: GameplayMode;
@@ -55,7 +54,6 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const server = useMultiplayerStore((state) => state.server);
   const configure = useMultiplayerStore((state) => state.configure);
   const setEnabled = useMultiplayerStore((state) => state.setEnabled);
-  const serverEditing = useMultiplayerStore((state) => state.serverEditing);
   const [pendingWorld, setPendingWorld] = useState<string | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -63,7 +61,6 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const [joinOpen, setJoinOpen] = useState(false);
   const currentMode = useGameStore((state) => state.gameplayMode);
   const [browseMode, setBrowseMode] = useState<GameplayMode>(currentMode);
-  const { joinRandom, pending: joinPending, error: joinError } = usePublicWorldJoin(onPlay);
   useEffect(() => setBrowseMode(currentMode), [currentMode]);
   useEffect(() => {
     if (!libraryOpen && !joinOpen) return;
@@ -114,12 +111,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
       void onPlay();
     }
   };
-  const joinRandomMode = async (mode: GameplayMode) => {
+  const openJoinMode = (mode: GameplayMode) => {
     setBrowseMode(mode);
-    if (await joinRandom(mode)) setJoinOpen(false);
-    else setJoinOpen(true);
+    setJoinOpen(true);
   };
-  const randomButton = (mode: GameplayMode) => <button type="button" className="world-card-join" onClick={() => void joinRandomMode(mode)} disabled={pendingWorld !== null || joinPending}>Rejoindre</button>;
   return (
     <div className="menu-screen">
       <div className="menu-layout">
@@ -129,8 +124,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           <button className="sidebar-shop" onClick={onShop}><img src={shopUrl} alt="" /><span>Ouvrir la boutique</span></button>
         </aside>
         <main className="world-browser">
-          <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}<span className="creator-label">JEU DU CRÉATEUR</span></h1></div><div className="world-entry-actions"><button className="secondary-button join-world-button" onClick={() => void joinRandomMode(browseMode)} disabled={pendingWorld !== null || joinPending}>Rejoindre</button><button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={joinPending}>Choisir un monde</button>{paused && <button className="primary-button resume-button" onClick={onPlay}>Reprendre</button>}</div></div>
-          {joinError && <p className="multiplayer-error join-error" role="alert">{joinError}</p>}
+          <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}<span className="creator-label">JEU DU CRÉATEUR</span></h1></div><div className="world-entry-actions"><button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={pendingWorld !== null}>Rejoindre</button>{paused && <button className="primary-button resume-button" onClick={onPlay}>Reprendre</button>}</div></div>
           <div className="world-cards">
             <button className="world-card featured" aria-controls="mes-mondes" aria-expanded={libraryOpen} aria-haspopup="dialog" onClick={() => setLibraryOpen(true)}>
               <img src={myWorldsUrl} alt="Mes mondes" />
@@ -138,18 +132,16 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             </button>
             {MODE_CARDS.map((card) => (
               <div className="world-card-shell" key={card.mode}>
-                <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode.startsWith('city-') ? card.mode : undefined} onClick={() => create(card.mode)} disabled={pendingWorld !== null || joinPending || (card.multiplayer === true && (!enabled || serverEditing))} title={serverEditing && card.multiplayer ? 'Serveur personnalisé ouvert : choisis le mode puis clique sur Rejoindre' : undefined}>
+                <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode)} disabled={pendingWorld !== null}>
                   <img src={card.image} alt={card.alt} />
                   <span className="world-card-label"><strong>{card.name}</strong><small>{card.description(enabled)}</small></span>
                   <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{card.tag(enabled)}</span>
                 </button>
-                {randomButton(card.mode)}
               </div>
             ))}
           </div>
           <MenuActionBar multiplayer={enabled} onSolo={() => setEnabled(false)} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} />
           {enabled && <section className="lobby-section"><MultiplayerLobby onPlay={onPlay} /></section>}
-          <CommunityWorlds onPlay={onPlay} mode={browseMode} onModeChange={setBrowseMode} />
           {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(options) => { setCreateOpen(false); create(options.mode, options.multiplayer, options); }} />}
           {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
           {joinOpen && (
@@ -157,7 +149,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               <section className="world-library-modal" role="dialog" aria-modal="true" aria-label="Rejoindre un monde">
                 <button className="world-library-close" aria-label="Fermer la liste des mondes" onClick={() => setJoinOpen(false)} autoFocus>×</button>
                 <div className="lobby-heading"><h2>Rejoindre un monde</h2><p>Rejoins au hasard avec le bouton Rejoindre, ou choisis toi-même un monde dans les listes.</p></div>
-                <CommunityWorlds onPlay={() => { setJoinOpen(false); return onPlay(); }} mode={browseMode} onModeChange={setBrowseMode} />
+                <CommunityWorlds onPlay={() => { setJoinOpen(false); return onPlay(); }} mode={browseMode} onModeChange={setBrowseMode} onCreate={() => { setJoinOpen(false); create(browseMode, enabled); }} />
               </section>
             </div>
           )}

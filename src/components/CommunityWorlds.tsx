@@ -10,10 +10,11 @@ import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { usePublicWorldJoin } from './usePublicWorldJoin';
 
-export function CommunityWorlds({ onPlay, mode, onModeChange }: {
+export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
   onPlay: () => void | Promise<void>;
   mode?: GameplayMode;
   onModeChange?: (mode: GameplayMode) => void;
+  onCreate?: () => void;
 }) {
   const [worlds, setWorlds] = useState<PublicWorld[]>([]);
   const [localWorlds, setLocalWorlds] = useState<WorldMeta[]>([]);
@@ -59,7 +60,10 @@ export function CommunityWorlds({ onPlay, mode, onModeChange }: {
           </select>
         </label>
       </div>
-      <button className="multiplayer-join community-random" onClick={() => void joinRandom(selectedMode)} disabled={pending || status === 'connecting'}>Rejoindre</button>
+      <div className="community-actions">
+        <button className="multiplayer-join community-random" onClick={() => void joinRandom(selectedMode)} disabled={pending || status === 'connecting'}>Rejoindre</button>
+        {onCreate && <button className="secondary-button community-create" onClick={onCreate} disabled={pending || status === 'connecting'}>Créer ici</button>}
+      </div>
       <p className="community-random-hint">Choix au hasard parmi les mondes {GAMEPLAY_MODE_LABELS[selectedMode]} avec d’autres joueurs en ligne.</p>
       {error && <p className="multiplayer-error" role="alert">{error}</p>}
       <section className="community-section">
