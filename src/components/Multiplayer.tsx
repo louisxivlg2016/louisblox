@@ -394,6 +394,7 @@ export function MultiplayerConnection() {
         pendingSpawn.current = null;
       }
       pendingWorld.current = null;
+      store.setWorldReady(true);
       useBattleStore.setState({ ready: isMinigameMode(pending.gameplayMode ?? 'creative') });
       applyPendingVehicles();
       if (roomCreator) {
@@ -432,7 +433,8 @@ export function MultiplayerConnection() {
         await registerSelfProfile();
       } catch (error) {
         if (!disposed) {
-          store.setStatus('error', error instanceof Error ? error.message : 'Impossible de réserver ce pseudo.');
+          const message = error instanceof Error && error.message.toLowerCase().includes('pseudo') ? error.message : 'Impossible de contacter le serveur multijoueur. Vérifie ta connexion ou réessaie plus tard.';
+          store.setStatus('error', message);
         }
         return;
       }

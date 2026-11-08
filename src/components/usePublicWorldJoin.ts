@@ -18,17 +18,18 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
   const server = useMultiplayerStore((state) => state.server);
   const configure = useMultiplayerStore((state) => state.configure);
   const setEnabled = useMultiplayerStore((state) => state.setEnabled);
+  const worldReady = useMultiplayerStore((state) => state.worldReady);
 
   useEffect(() => {
     if (!pendingRoom) return;
-    if (status === 'online' && pendingRoom === room) {
+    if (status === 'online' && worldReady && pendingRoom === room) {
       setPendingRoom(null);
       void onPlay();
     } else if (status === 'error') {
       setPendingRoom(null);
       setError('Connexion impossible. Réessaie dans un instant.');
     }
-  }, [pendingRoom, room, status, onPlay]);
+  }, [pendingRoom, room, status, worldReady, onPlay]);
 
   const join = useCallback((world: PublicWorld) => {
     setError('');

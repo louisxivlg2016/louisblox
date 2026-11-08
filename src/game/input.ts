@@ -6,6 +6,7 @@ import { useEmoteStore } from './emotes';
 import { isPaintballGun } from './paintball';
 import { useTradeStore } from './trading';
 import { useHomeStore } from './homes';
+import { useMultiplayerStore } from './multiplayerStore';
 import { toggleSiren } from './vehicleControls';
 
 const keys = new Set<string>();
@@ -408,6 +409,8 @@ export function initInput() {
 }
 
 export async function requestPlay() {
+  const multiplayer = useMultiplayerStore.getState();
+  if (multiplayer.enabled && multiplayer.joined && !multiplayer.worldReady && useGameStore.getState().mode !== 'play') return;
   let canvas = document.querySelector<HTMLCanvasElement>('#game-canvas canvas, canvas#game-canvas');
   if (!canvas) {
     await new Promise<void>((resolve) => { requestAnimationFrame(() => resolve()); });

@@ -29,6 +29,7 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
   const savedRoom = useMultiplayerStore((state) => state.room);
   const savedServer = useMultiplayerStore((state) => state.server);
   const status = useMultiplayerStore((state) => state.status);
+  const worldReady = useMultiplayerStore((state) => state.worldReady);
   const error = useMultiplayerStore((state) => state.error);
   const players = useMultiplayerStore((state) => state.players);
   const pendingJoin = useRef(false);
@@ -60,10 +61,10 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
     };
   }, [enabled, room, server, showServer, status]);
   useEffect(() => {
-    if (status !== 'online' || !pendingJoin.current) return;
+    if (status !== 'online' || !worldReady || !pendingJoin.current) return;
     pendingJoin.current = false;
     void onPlay();
-  }, [status, onPlay]);
+  }, [status, worldReady, onPlay]);
 
   const join = (nextRoom = room) => {
     pendingJoin.current = true;
@@ -152,9 +153,9 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
           </div>
           <div className={`multiplayer-status ${status}`} role="status" aria-live="polite">
             <span className="multiplayer-status-dot" />
-            <span>{STATUS_NAMES[status]}{status === 'online' ? ` · ${players.length} joueur${players.length > 1 ? 's' : ''}` : ''}</span>
+            <span>{status === 'online' && !worldReady ? 'Chargement du monde…' : STATUS_NAMES[status]}{status === 'online' && worldReady ? ` · ${players.length} joueur${players.length > 1 ? 's' : ''}` : ''}</span>
           </div>
-          {error && <p className="multiplayer-error">{error}</p>}
+          {error && <p className="multiplayer-error" role="alert">{error}</p>}
           {players.length > 0 && (
             <ul className="multiplayer-roster" aria-label="Joueurs dans le salon">
               {players.map((player) => <li key={player.playerId}>{player.name}{player.self ? ' (toi)' : ''}</li>)}

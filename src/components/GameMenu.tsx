@@ -49,6 +49,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const regenerate = useGameStore((state) => state.regenerate);
   const enabled = useMultiplayerStore((state) => state.enabled);
   const status = useMultiplayerStore((state) => state.status);
+  const worldReady = useMultiplayerStore((state) => state.worldReady);
   const room = useMultiplayerStore((state) => state.room);
   const playerName = useMultiplayerStore((state) => state.playerName);
   const server = useMultiplayerStore((state) => state.server);
@@ -75,10 +76,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     return () => window.removeEventListener('keydown', close, true);
   }, [libraryOpen, joinOpen]);
   useEffect(() => {
-    if (pendingWorld !== room || status !== 'online') return;
+    if (pendingWorld !== room || status !== 'online' || !worldReady) return;
     setPendingWorld(null);
     void onPlay();
-  }, [pendingWorld, room, status, onPlay]);
+  }, [pendingWorld, room, status, worldReady, onPlay]);
   const create = (gameplayMode: GameplayMode, sharedOverride?: boolean, options?: import('./CreateWorldDialog').CreateWorldOptions) => {
     if (enabled && isMinigameMode(gameplayMode)) {
       requestRoomMode(gameplayMode);

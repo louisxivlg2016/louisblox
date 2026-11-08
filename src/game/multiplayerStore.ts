@@ -10,9 +10,11 @@ type MultiplayerStore = MultiplayerSettings & {
   joined: boolean;
   connectionId: number;
   status: MultiplayerStatus;
+  worldReady: boolean;
   error: string;
   players: LobbyPlayer[];
   setEnabled: (enabled: boolean) => void;
+  setWorldReady: (ready: boolean) => void;
   configure: (settings: MultiplayerSettings) => MultiplayerSettings;
   setStatus: (status: MultiplayerStatus, error?: string) => void;
   setPlayers: (players: LobbyPlayer[]) => void;
@@ -40,11 +42,13 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
   room: query.get('room') || 'main-room',
   server: query.get('server') || '',
   status: 'offline',
+  worldReady: false,
   error: '',
   players: [],
   serverEditing: false,
   setServerEditing: (serverEditing) => set({ serverEditing }),
-  setEnabled: (enabled) => set((state) => ({ enabled, joined: enabled && state.joined, status: enabled && state.joined ? 'connecting' : 'offline', error: '', players: [] })),
+  setWorldReady: (worldReady) => set({ worldReady }),
+  setEnabled: (enabled) => set((state) => ({ enabled, joined: enabled && state.joined, status: enabled && state.joined ? 'connecting' : 'offline', worldReady: false, error: '', players: [] })),
   configure: (settings) => {
     const playerName = settings.playerName.trim().slice(0, 24) || 'Joueur';
     const room = settings.room.trim().replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'main-room';
@@ -54,10 +58,10 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
     } catch {
     }
     rememberWorld(room);
-    set((state) => ({ playerName, room, server, enabled: true, joined: true, connectionId: state.connectionId + 1, status: 'connecting', error: '', players: [] }));
+    set((state) => ({ playerName, room, server, enabled: true, joined: true, connectionId: state.connectionId + 1, status: 'connecting', worldReady: false, error: '', players: [] }));
     return { playerName, room, server };
   },
-  setStatus: (status, error = '') => set({ status, error }),
+  setStatus: (status, error = '') => set({ status, error, ...(status === 'online' ? {} : { worldReady: false }) }),
   setPlayers: (players) => set({ players }),
   setPlayerName: (name) => {
     const playerName = name.trim().slice(0, 24) || 'Joueur';
