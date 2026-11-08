@@ -3,6 +3,7 @@ import { useCharacterStore } from '../game/characterStore';
 import { requestPlay } from '../game/input';
 import { OUTFIT_ORDER, OUTFITS, WIG_ORDER, WIGS } from '../game/outfits';
 import { useGameStore } from '../game/store';
+import { defaultAppearance } from '../game/appearance';
 import { BoutiqueAvatarPreview } from './BoutiqueAvatarPreview';
 import { SettingsPanel } from './SettingsPanel';
 import shopUrl from '../../assets/menu/shop.webp';
@@ -47,6 +48,7 @@ export function BoutiquePanel() {
           <div className="character-choice" role="group" aria-label="Choisir le personnage">
             <button type="button" className={character === 'boy' ? 'active' : ''} aria-pressed={character === 'boy'} onClick={() => setCharacter('boy')}>Garçon</button>
             <button type="button" className={character === 'girl' ? 'active' : ''} aria-pressed={character === 'girl'} onClick={() => setCharacter('girl')}>Fille</button>
+            <button type="button" className={`original-character-button ${outfit === 'default' ? 'active' : ''}`} aria-pressed={outfit === 'default'} title="Tenue, coiffure et couleurs du personnage original" onClick={() => { setOutfit('default'); setWig('auto'); setAppearance(defaultAppearance(character)); }}>Personnage original</button>
           </div>
         </div>
         <div className="appearance-section">
