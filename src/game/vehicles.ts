@@ -69,6 +69,7 @@ export function seatOffset(kind: VehicleKind, role: SeatRole, seat = 0): [number
     const cabin = CABINS[kind]!;
     return role === 'driver' ? [-0.65, cabin.floor + 0.68, cabin.front + 1.1] : [0, cabin.floor + 0.02, cabin.rear - 1.2 - seat * 2];
   }
+  if (kind === 'jeep') return role === 'driver' ? [-0.58, 1.05, -0.05] : [0.58, 1.05, -0.05];
   return role === 'driver' ? [-0.58, 0.65, -0.05] : [0.58, 1.05, -0.05];
 }
 

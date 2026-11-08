@@ -90,7 +90,7 @@ function HunyuanVehicle({ kind, interior }: { kind: VehicleModelKind; interior: 
         material.map.needsUpdate = true;
       }
     });
-    clone.rotation.y = kind === 'carriage' ? -Math.PI / 2 : Math.PI / 2;
+    clone.rotation.y = kind === 'carriage' ? -Math.PI / 2 : kind === 'jeep' ? Math.PI : Math.PI / 2;
     const bounds = new Box3().setFromObject(clone);
     clone.position.y -= bounds.min.y;
     return { model: clone, top: bounds.max.y - bounds.min.y };

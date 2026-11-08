@@ -101,5 +101,6 @@ export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
     return <><Seat position={[0, 0.45, -0.72]} /><Seat position={[0, 0.45, 0.72]} /><PixelPart position={[-0.9, 0.45, 0.4]} size={[0.1, 0.1, 2.4]} color="#9a7042" rotation={[0, -0.35, 0]} /></>;
   }
   if (kind === 'cannon') return null;
+  if (kind === 'jeep') return <SteeringWheel position={[-0.58, 1.3, -0.65]} />;
   return <><SteeringWheel position={[-0.58, 1.05, -0.65]} /><Seat position={[0.58, 0.68, -0.05]} /></>;
 }
