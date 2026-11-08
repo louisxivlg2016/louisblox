@@ -1,5 +1,6 @@
 import { requestPlay } from '../game/input';
 import { useGameStore } from '../game/store';
+import { useBombLauncherStore } from '../game/weaponAmmo';
 import { selectionInfo } from '../game/items';
 import { ItemIcon } from './ItemIcon';
 import { PaintballPalette } from './PaintballPalette';
@@ -39,6 +40,8 @@ import { useHomeStore } from '../game/homes';
 export function Hud() {
   const mode = useGameStore((state) => state.mode);
   const selected = useGameStore((state) => state.selected);
+  const bombAmmo = useBombLauncherStore((state) => state.ammo);
+  const bombReloading = useBombLauncherStore((state) => state.reloadUntil !== null);
   const hotbarSlots = useGameStore((state) => state.hotbarSlots);
   const miningProgress = useGameStore((state) => state.miningProgress);
   const notice = useGameStore((state) => state.notice);
@@ -110,7 +113,10 @@ export function Hud() {
 
       {mode !== 'menu' && (
         <div className="hotbar-wrap">
-          <div className="selected-name">{selectionInfo(selected).name}</div>
+          <div className="selected-name" role="status">
+            {selectionInfo(selected).name}
+            {selected === 'pistol_bomb' && ` · ${bombAmmo}/10${bombReloading ? ' · Recharge de 3 s…' : ''}`}
+          </div>
           <div className="hotbar">
             {hotbarSlots.map((kind, index) => (
               <button

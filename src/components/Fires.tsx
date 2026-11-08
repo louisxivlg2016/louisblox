@@ -6,23 +6,16 @@ import type { Entity } from 'koota';
 import { Box3, BoxGeometry, InstancedMesh, Matrix4, MeshBasicMaterial, Vector3 } from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { Fire, FirePosition, Player, PlayerPosition } from '../game/traits';
-import { BlockKind } from '../game/voxel';
 import redFireUrl from '../../assets/models/red-fire.glb';
 
 const geometry = new BoxGeometry(1, 1, 1);
 const matrix = new Matrix4();
-const materials = {
-  safeOuter: new MeshBasicMaterial({ color: '#ff9b28' }),
-  safeInner: new MeshBasicMaterial({ color: '#ffe890' }),
-  wildOuter: new MeshBasicMaterial({ color: '#ef4925' }),
-  wildInner: new MeshBasicMaterial({ color: '#ffb12b' }),
-};
+const outerMaterial = new MeshBasicMaterial({ color: '#ef4925' });
+const innerMaterial = new MeshBasicMaterial({ color: '#ffb12b' });
 
-function FlameInstances({ kind, fires }: { kind: BlockKind; fires: readonly Entity[] }) {
+function FlameInstances({ fires }: { fires: readonly Entity[] }) {
   const outer = useRef<InstancedMesh>(null);
   const inner = useRef<InstancedMesh>(null);
-  const outerMaterial = kind === BlockKind.Wildfire ? materials.wildOuter : materials.safeOuter;
-  const innerMaterial = kind === BlockKind.Wildfire ? materials.wildInner : materials.safeInner;
 
   useFrame(() => {
     if (!outer.current || !inner.current || fires.length === 0) return;
@@ -30,7 +23,7 @@ function FlameInstances({ kind, fires }: { kind: BlockKind; fires: readonly Enti
     let innerIndex = 0;
     for (const entity of fires) {
       const fire = entity.get(Fire);
-      if (!fire || fire.kind !== kind || outerIndex >= 512 || innerIndex >= 256) continue;
+      if (!fire || outerIndex >= 512 || innerIndex >= 256) continue;
       const position = entity.get(FirePosition)!;
       const scale = 1.2 + Math.min(fire.age / 20, 1.6);
       matrix.makeScale(0.26 * scale, 0.44 * scale, 0.26 * scale);
@@ -131,15 +124,13 @@ export function Fires() {
   };
   const nearest = [...fires].sort((a, b) => distance(a) - distance(b))[0];
   const position = nearest?.get(FirePosition);
-  const destructive = nearest?.get(Fire)?.kind === BlockKind.Wildfire;
   return (
     <>
       <SmokeInstances fires={fires} />
-      <FlameInstances kind={BlockKind.Campfire} fires={fires} />
-      <Suspense fallback={<FlameInstances kind={BlockKind.Wildfire} fires={fires} />}>
-        {fires.filter((entity) => entity.get(Fire)?.kind === BlockKind.Wildfire).map((entity) => <RedFlame key={entity} entity={entity} />)}
+      <Suspense fallback={<FlameInstances fires={fires} />}>
+        {fires.map((entity) => <RedFlame key={entity} entity={entity} />)}
       </Suspense>
-      {position && <pointLight position={[position.x, position.y, position.z]} color={destructive ? '#ff632e' : '#ff9b45'} intensity={destructive ? 2.2 : 1.4} distance={12} decay={2} />}
+      {position && <pointLight position={[position.x, position.y, position.z]} color="#ff632e" intensity={2.2} distance={12} decay={2} />}
     </>
   );
 }

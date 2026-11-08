@@ -33,6 +33,7 @@ import type { Voxel, VoxelHit } from './voxel';
 import { canEditAt, newProtection, useProtectionStore } from './protection';
 import type { WorldProtection } from './protection';
 import type { VehicleKind } from './vehicleTypes';
+import { resetBombLauncher } from './weaponAmmo';
 
 export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; food?: SelectedKind; meat?: import('./animals').AnimalKind } | null;
 export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: VehicleKind };
@@ -626,6 +627,7 @@ export function applyVoxelEdits(world: World, edits: Array<[string, ChunkEdit]>)
 }
 
 export function loadLevel(world: World, generation = 0, saved: WorldSave | null = null): LevelData {
+  resetBombLauncher();
   clearFires(world);
   for (const entity of [...world.query(Chunk)]) entity.destroy();
   for (const entity of [...world.query(Animal)]) entity.destroy();
