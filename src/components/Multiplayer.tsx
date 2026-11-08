@@ -47,6 +47,7 @@ import { useEmoteStore } from '../game/emotes';
 import { receiveAppleGift } from '../game/gifts';
 import { applyProtection, isWorldProtection, setProtectionSocket, useProtectionStore } from '../game/protection';
 import { clearMinigames, receiveMinigameMessage, setMinigameSocket } from '../game/minigameSync';
+import { applyAnimalSnapshots, applyFishSnapshots, isAnimalSnapshot, isFishSnapshot, setAnimalSocket } from '../game/animalSync';
 
 type ServerMessage = {
   type?: unknown;
@@ -74,6 +75,8 @@ type ServerMessage = {
   worldId?: unknown;
   template?: unknown;
   protection?: unknown;
+  animals?: unknown;
+  fish?: unknown;
 };
 type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string; template?: import('../game/worldMode').WorldTemplate; protection?: import('../game/protection').WorldProtection };
 
@@ -441,6 +444,7 @@ export function MultiplayerConnection() {
       setBattleSocket(next);
       setMinigameSocket(next);
       setProtectionSocket(next);
+      setAnimalSocket(next);
       next.onopen = () => store.setStatus('online');
       next.onmessage = (event) => {
         if (typeof event.data !== 'string') return;
@@ -455,6 +459,14 @@ export function MultiplayerConnection() {
           return;
         }
         if (receiveMinigameMessage(data)) return;
+        if (data.type === 'animal-state' && Array.isArray(data.animals)) {
+          applyAnimalSnapshots(world, data.animals.filter(isAnimalSnapshot));
+          return;
+        }
+        if (data.type === 'fish-state' && Array.isArray(data.fish)) {
+          applyFishSnapshots(world, data.fish.filter(isFishSnapshot));
+          return;
+        }
         if (data.type === 'battle-state') {
           receiveBattleState(data);
           return;
@@ -693,6 +705,7 @@ export function MultiplayerConnection() {
       const current = socket.current;
       socket.current = null;
       setProtectionSocket(null);
+      setAnimalSocket(null);
       clearTeleportRequests();
       clearChat();
       clearBattle();

@@ -12,6 +12,8 @@ import { damagePlayer } from '../combat';
 import { canSeePlayer } from '../hostility';
 import { hasEffect } from '../effects';
 import { getFireSources, nearestFire } from '../hazards';
+import { isAnimalAuthority, syncAnimalState } from '../animalSync';
+import { isCollidable } from './collisionSystem';
 
 type Motion = {
   yaw: number;
@@ -45,8 +47,7 @@ const isLoaded = isChunkLoaded;
 function bodyClear(world: World, x: number, z: number, feetY: number) {
   for (const height of [0.35, 1.15]) {
     const block = blockAt(world, x, feetY + height, z);
-    if (!block || isWaterBlock(block.kind) || isCrop(block.kind) || block.open) continue;
-    return false;
+    if (block && !isWaterBlock(block.kind) && isCollidable(block)) return false;
   }
   return true;
 }
@@ -82,6 +83,15 @@ function avoidWall(world: World, kind: AnimalKind, position: Vector3, motion: Mo
 
 export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0) {
   if (!isLoaded(world, position.x, position.z)) return true;
+  if (!bodyClear(world, position.x, position.z, position.y)) {
+    position.y = groundAt(world, position.x, position.z, position.y + 0.2);
+    motion.velocityY = 0;
+    motion.grounded = true;
+    if (!bodyClear(world, position.x, position.z, position.y)) {
+      avoidWall(world, kind, position, motion, entity);
+      return true;
+    }
+  }
   if (motion.speed > 0 && motion.idle <= 0 && (motion.avoid ?? 0) <= 0 && !canAdvance(world, kind, position, motion.yaw)) avoidWall(world, kind, position, motion, entity);
   motion.avoid = Math.max(0, (motion.avoid ?? 0) - dt);
   const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : motion.speed;
@@ -157,6 +167,10 @@ export function animalSystem(world: World, dt: number) {
   if (elapsed < 1 / 30) return;
   clocks.set(world, 0);
   dt = elapsed;
+  if (!isAnimalAuthority()) {
+    syncAnimalState(world, dt);
+    return;
+  }
   const playerEntity = world.queryFirst(Player);
   const player = playerEntity?.get(PlayerPosition);
   const health = playerEntity?.get(PlayerHealth);
@@ -231,4 +245,5 @@ export function animalSystem(world: World, dt: number) {
       if (animal.kind === 'zombie') mesh.value.rotation.z = Math.sin(motion.phase) * 0.035;
     }
   });
+  syncAnimalState(world, dt);
 }

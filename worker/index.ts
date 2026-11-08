@@ -103,6 +103,35 @@ function parseHorse(value: unknown): PlayerState['horse'] {
   return { id: horse.id, x: horse.x as number, y: horse.y as number, z: horse.z as number, yaw: horse.yaw as number };
 }
 
+const animalKinds = new Set(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie']);
+const fishKinds = new Set(['salmon', 'clownfish', 'blueTang']);
+
+function parseAnimalSnapshots(value: unknown) {
+  if (!Array.isArray(value) || value.length > 96) return null;
+  const snapshots = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') return null;
+    const data = entry as Record<string, unknown>;
+    if (typeof data.id !== 'string' || data.id.length === 0 || data.id.length > 80 || !animalKinds.has(data.kind as string)) return null;
+    if (!['x', 'y', 'z', 'yaw', 'health', 'speed'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]))) return null;
+    snapshots.push({ id: data.id, kind: data.kind, x: data.x, y: data.y, z: data.z, yaw: data.yaw, health: data.health, speed: data.speed });
+  }
+  return snapshots;
+}
+
+function parseFishSnapshots(value: unknown) {
+  if (!Array.isArray(value) || value.length > 96) return null;
+  const snapshots = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') return null;
+    const data = entry as Record<string, unknown>;
+    if (typeof data.id !== 'string' || data.id.length === 0 || data.id.length > 80 || !fishKinds.has(data.kind as string)) return null;
+    if (!['x', 'y', 'z', 'yaw', 'age', 'phase', 'speed'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]))) return null;
+    snapshots.push({ id: data.id, kind: data.kind, x: data.x, y: data.y, z: data.z, yaw: data.yaw, age: data.age, phase: data.phase, speed: data.speed });
+  }
+  return snapshots;
+}
+
 function parseState(value: unknown): PlayerState | null {
   if (!value || typeof value !== 'object') return null;
   const state = value as Record<string, unknown>;
@@ -956,6 +985,16 @@ export class GameRoom extends DurableObject<Env> {
       ws.serializeAttachment(attachment);
       this.broadcast({ type: 'appearance', playerId: attachment.playerId, appearance: attachment.appearance }, ws);
       this.publishPresence(attachment);
+      return;
+    }
+    if (type === 'animal-state') {
+      const animals = parseAnimalSnapshots((data as { animals?: unknown }).animals);
+      if (animals) this.broadcast({ type: 'animal-state', animals }, ws);
+      return;
+    }
+    if (type === 'fish-state') {
+      const fish = parseFishSnapshots((data as { fish?: unknown }).fish);
+      if (fish) this.broadcast({ type: 'fish-state', fish }, ws);
       return;
     }
     if (type !== 'state') return;

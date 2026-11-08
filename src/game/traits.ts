@@ -56,6 +56,7 @@ export const TraderMesh = trait(() => ({ value: null as import('three').Object3D
 export const CamelLeash = trait(() => ({ trader: null as import('koota').Entity | null, order: 0 }));
 
 export const Fish = trait({ kind: '' as import('./fish').FishKind });
+export const FishId = trait(() => '');
 export const FishPosition = trait(() => new Vector3());
 export const FishMotion = trait({ yaw: 0, turnIn: 0, phase: 0, speed: 0.8, age: 0 });
 export const FishMesh = trait(() => ({ value: null as import('three').Object3D | null }));

@@ -3,7 +3,8 @@ import { Vector3 } from 'three';
 import { getBlockIndex } from './chunks';
 import { SEA_LEVEL } from './levels';
 import type { WaterTile } from './levels';
-import { Fish, FishMesh, FishMotion, FishPosition, Player, PlayerPosition } from './traits';
+import { Fish, FishId, FishMesh, FishMotion, FishPosition, Player, PlayerPosition } from './traits';
+import { isAnimalAuthority, syncAnimalState } from './animalSync';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import { turnToward } from './rotation';
 
@@ -19,6 +20,7 @@ function hash(x: number, z: number, seed: number) {
 export function spawnFish(world: World, kind: FishKind, x: number, y: number, z: number, seed: number) {
   return world.spawn(
     Fish({ kind }),
+    FishId(`fish:${kind}:${x}:${z}`),
     FishPosition(new Vector3(x, y, z)),
     FishMotion({
       yaw: hash(x, z, seed + 1) * Math.PI * 2,
@@ -47,6 +49,10 @@ export function spawnChunkFish(world: World, cx: number, cz: number, water: Wate
 const distantClocks = new WeakMap<Vector3, number>();
 
 export function fishSystem(world: World, dt: number) {
+  if (!isAnimalAuthority()) {
+    syncAnimalState(world, dt);
+    return;
+  }
   const playerPosition = world.queryFirst(Player)?.get(PlayerPosition);
   const blocks = getBlockIndex(world);
   const isWater = (x: number, y: number, z: number) => isWaterBlock(blocks.get(voxelKey(Math.round(x), Math.round(y), Math.round(z)))?.kind);
@@ -84,4 +90,5 @@ export function fishSystem(world: World, dt: number) {
       mesh.value.rotation.z = Math.sin(motion.age * 3 + motion.phase) * 0.055;
     }
   });
+  syncAnimalState(world, dt);
 }
