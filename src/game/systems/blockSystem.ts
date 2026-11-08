@@ -4,7 +4,7 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isBed, isChest, isCrop, isDoor, isFurnace, isLadder, isRail, isSapling, isSign, isTrafficSign, isTrapdoor } from '../extraBlocks';
+import { isBed, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isRail, isSapling, isSign, isTrafficSign, isTrapdoor } from '../extraBlocks';
 import { useSignStore } from '../signs';
 import { startSleep } from './sleepSystem';
 import { openChest, openFurnace } from '../containers';
@@ -111,7 +111,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         removeVoxel(world, hit);
         if (store.gameplayMode === 'survival') dropBlock(world, hit.block);
       }
-      playSound('breakBlock', 0.5);
+      playSound(isGlass(hit.block.kind) ? 'breakGlass' : 'breakBlock', 0.5);
       target.visible = false;
       target.miningKey = '';
       target.miningProgress = 0;
