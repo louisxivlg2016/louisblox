@@ -94,14 +94,14 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
   }
 
   if (shape === 'hoe') {
-    if (hit && ([BlockKind.Grass, BlockKind.ForestGrass, BlockKind.AutumnGrass, BlockKind.Dirt] as BlockKind[]).includes(hit.block.kind)) {
+    if (hit && ([BlockKind.Grass, BlockKind.ForestGrass, BlockKind.AutumnGrass, BlockKind.JungleGrass, BlockKind.Dirt] as BlockKind[]).includes(hit.block.kind)) {
       replaceVoxel(world, hit, BlockKind.ForestGrass);
       store.setNotice('Terre labourée : tu peux maintenant planter des graines.');
     } else store.setNotice('Vise un bloc d’herbe ou de terre avec la houe.');
     return true;
   }
   if (shape === 'shears') {
-    if (hit && ([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves] as BlockKind[]).includes(hit.block.kind)) {
+    if (hit && ([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine] as BlockKind[]).includes(hit.block.kind)) {
       removeVoxel(world, hit);
       store.setNotice('Feuillage taillé avec les cisailles.');
     } else store.setNotice('Vise des feuilles avec les cisailles. Les animaux ne sont pas blessés.');

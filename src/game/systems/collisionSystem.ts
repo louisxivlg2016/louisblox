@@ -12,7 +12,7 @@ const EPSILON = 0.0001;
 const MAX_SUBSTEP = 0.18;
 
 export function isCollidable(block: Voxel | undefined) {
-  if (!block || isWaterBlock(block.kind) || block.kind === BlockKind.Food || isCrop(block.kind) || isLadder(block.kind) || isRail(block.kind)) return false;
+  if (!block || isWaterBlock(block.kind) || block.kind === BlockKind.Food || block.kind === BlockKind.JungleVine || isCrop(block.kind) || isLadder(block.kind) || isRail(block.kind)) return false;
   return !(isDoor(block.kind) || isTrapdoor(block.kind)) || !block.open;
 }
 

@@ -25,7 +25,7 @@ export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y
   const blocks = getBlockIndex(world);
   for (let y = Math.min(top ?? 80, Math.floor(fromY + 0.5)); y >= MIN_WORLD_Y; y -= 1) {
     const block = blocks.get(voxelKey(bx, y, bz));
-    if (block && !isWaterBlock(block.kind) && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
+    if (block && !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
   }
   return MIN_WORLD_Y + 0.5;
 }

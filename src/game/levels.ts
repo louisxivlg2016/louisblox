@@ -9,7 +9,7 @@ export const SEA_LEVEL = 5;
 export const MIN_WORLD_Y = -64;
 export const MAX_BUILD_Y = Number.MAX_SAFE_INTEGER;
 
-export type Biome = 'prairie' | 'forest' | 'winter' | 'desert' | 'autumn';
+export type Biome = 'prairie' | 'forest' | 'jungle' | 'winter' | 'desert' | 'autumn';
 export type WaterTile = { x: number; z: number };
 export type GeneratedChunk = { blocks: Voxel[]; water: WaterTile[] };
 export type LevelData = { spawn: { x: number; y: number; z: number } };
@@ -17,6 +17,7 @@ export type LevelData = { spawn: { x: number; y: number; z: number } };
 export const BIOME_NAMES: Record<Biome, string> = {
   prairie: 'Prairie',
   forest: 'Forêt de sapins',
+  jungle: 'Jungle',
   winter: 'Montagnes enneigées',
   desert: 'Désert',
   autumn: 'Automne',
@@ -50,7 +51,8 @@ function baseBiome(cx: number, cz: number, seed: number): Biome {
   if (cx === 0 && cz === 0) return 'prairie';
   const value = hash(cx, cz, seed + 301);
   if (value < 0.5) return 'prairie';
-  if (value < 0.75) return 'forest';
+  if (value < 0.65) return 'forest';
+  if (value < 0.75) return 'jungle';
   if (value < 0.85) return 'autumn';
   if (value < 0.94) return 'winter';
   if (cx * cx + cz * cz < 25) return 'forest';
@@ -73,7 +75,8 @@ export function biomeAt(x: number, z: number, seed: number): Biome {
 }
 
 export function heightAt(x: number, z: number, seed: number) {
-  const winterWeight = biomeAt(x, z, seed) === 'winter' ? 1 : 0;
+  const biome = biomeAt(x, z, seed);
+  const winterWeight = biome === 'winter' ? 1 : 0;
   const terrainX = winterWeight ? Math.floor(x / 2) * 2 : x;
   const terrainZ = winterWeight ? Math.floor(z / 2) * 2 : z;
   const broad = noise(terrainX / 34, terrainZ / 34, seed) * 0.66;
@@ -83,7 +86,8 @@ export function heightAt(x: number, z: number, seed: number) {
   const sharpPeak = Math.pow(ridge, 6) * 14;
   const crags = noise(terrainX / 18, terrainZ / 18, seed + 73) * 1.2 * Math.min(1, sharpPeak / 10);
   const mountain = (broadBase + sharpPeak + crags) * winterWeight;
-  let height = Math.floor(3.5 + (broad + detail) * 7 + mountain);
+  const jungleRoll = biome === 'jungle' ? noise(x / 23, z / 23, seed + 107) * 3 : 0;
+  let height = Math.floor(3.5 + (broad + detail) * 7 + mountain + jungleRoll);
 
   const riverDistance = Math.abs(noise(x / 110, z / 110, seed + 501) - 0.5);
   if (riverDistance < 0.012) {
@@ -139,7 +143,7 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
 
   const put = (x: number, y: number, z: number, kind: BlockKind, overwrite = true) => {
     if (x < minX || x >= maxX || z < minZ || z >= maxZ || y < MIN_WORLD_Y || y > MAX_BUILD_Y) return;
-    const treePart = kind === BlockKind.Wood || kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.Apple;
+    const treePart = kind === BlockKind.Wood || kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves || kind === BlockKind.JungleVine || kind === BlockKind.Apple;
     if (treePart && biomeAt(x, z, seed) === 'winter' && heightAt(x, z, seed) > 14) return;
     const key = voxelKey(x, y, z);
     if (overwrite || !blocks.has(key)) blocks.set(key, { x, y, z, kind });
@@ -158,6 +162,7 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
           else if (biome === 'winter') kind = BlockKind.Snow;
           else if (biome === 'autumn') kind = BlockKind.AutumnGrass;
           else if (biome === 'forest') kind = BlockKind.ForestGrass;
+          else if (biome === 'jungle') kind = BlockKind.JungleGrass;
           else kind = BlockKind.Grass;
         } else if (y >= height - 3) {
           if (biome === 'winter' && height > 14) kind = BlockKind.Stone;
@@ -192,8 +197,8 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
     });
   }
 
-  for (let x = minX - 3; x < maxX + 3; x += 1) {
-    for (let z = minZ - 3; z < maxZ + 3; z += 1) {
+  for (let x = minX - 5; x < maxX + 5; x += 1) {
+    for (let z = minZ - 5; z < maxZ + 5; z += 1) {
       if (Math.abs(x) < 4 && Math.abs(z) < 4) continue;
       const height = heightAt(x, z, seed);
       if (height <= SEA_LEVEL + 1) continue;
@@ -210,8 +215,47 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
       }
 
       const isPine = biome === 'forest' || biome === 'winter';
-      const threshold = biome === 'prairie' ? 0.991 : biome === 'autumn' ? 0.975 : 0.925;
+      const threshold = biome === 'prairie' ? 0.991 : biome === 'autumn' ? 0.975 : biome === 'jungle' ? 0.9 : 0.925;
+      if (biome === 'jungle' && chance < 0.035) {
+        put(x, height + 1, z, BlockKind.JungleVine, false);
+        continue;
+      }
       if (chance < threshold) continue;
+
+      if (biome === 'jungle') {
+        const trunkHeight = 12 + Math.floor(hash(x, z, seed + 37) * 6);
+        for (let y = 1; y <= trunkHeight; y += 1) put(x, height + y, z, BlockKind.Wood);
+        for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          put(x + dx, height + 1, z + dz, BlockKind.Wood, false);
+          if (hash(x + dx, z + dz, seed + 53) > 0.42) put(x + dx * 2, height + 1, z + dz * 2, BlockKind.Wood, false);
+        }
+
+        const crownY = height + trunkHeight;
+        for (let oy = -2; oy <= 1; oy += 1) {
+          const radius = oy === 0 ? 4 : oy === 1 ? 3 : oy === -1 ? 3 : 2;
+          for (let ox = -radius; ox <= radius; ox += 1) {
+            for (let oz = -radius; oz <= radius; oz += 1) {
+              if (ox * ox + oz * oz > radius * radius + 1) continue;
+              if (Math.max(Math.abs(ox), Math.abs(oz)) >= radius && hash(x + ox, z + oz, seed + oy + 163) < 0.18) continue;
+              put(x + ox, crownY + oy, z + oz, BlockKind.JungleLeaves, false);
+            }
+          }
+        }
+        for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          for (let step = 1; step <= 3; step += 1) put(x + dx * step, crownY - 3 + (step > 1 ? 1 : 0), z + dz * step, BlockKind.Wood);
+        }
+        for (let ox = -3; ox <= 3; ox += 1) {
+          for (let oz = -3; oz <= 3; oz += 1) {
+            if (Math.max(Math.abs(ox), Math.abs(oz)) !== 3 || hash(x + ox, z + oz, seed + 181) < 0.72) continue;
+            const length = 2 + Math.floor(hash(x + ox, z + oz, seed + 197) * 3);
+            for (let drop = 0; drop <= length; drop += 1) put(x + ox, crownY - 2 - drop, z + oz, BlockKind.JungleVine, false);
+          }
+        }
+        put(x, crownY + 2, z, BlockKind.JungleLeaves, false);
+        put(x + 1, crownY + 2, z, BlockKind.JungleLeaves, false);
+        put(x, crownY + 2, z + 1, BlockKind.JungleLeaves, false);
+        continue;
+      }
 
       if (!isPine) {
         const trunkHeight = 5 + Math.floor(hash(x, z, seed + 37) * 2);

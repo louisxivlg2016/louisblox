@@ -27,6 +27,9 @@ export const BlockKind = {
   Water: 47,
   CalmWater: 126,
   Food: 129,
+  JungleGrass: 142,
+  JungleLeaves: 143,
+  JungleVine: 144,
 } as const;
 
 export type BlockKind = (typeof BlockKind)[keyof typeof BlockKind];
@@ -71,6 +74,9 @@ export const HOTBAR_BLOCKS = [
   BlockKind.Tnt,
   BlockKind.Candle,
   ...EXTRA_BLOCK_ORDER,
+  BlockKind.JungleGrass,
+  BlockKind.JungleLeaves,
+  BlockKind.JungleVine,
   BlockKind.Water,
   BlockKind.CalmWater,
 ] as const;
@@ -89,6 +95,9 @@ const baseBlockInfo = {
   [BlockKind.AutumnLeaves]: { name: 'Feuilles d’automne', color: '#d8752f' },
   [BlockKind.AutumnGrass]: { name: 'Herbe dorée', color: '#c8a44e' },
   [BlockKind.ForestGrass]: { name: 'Herbe forestière', color: '#386c36' },
+  [BlockKind.JungleGrass]: { name: 'Herbe de jungle', color: '#479b36' },
+  [BlockKind.JungleLeaves]: { name: 'Feuilles tropicales', color: '#328f3e' },
+  [BlockKind.JungleVine]: { name: 'Liane de jungle', color: '#378b37' },
   [BlockKind.CoalOre]: { name: 'Charbon', color: '#424242' },
   [BlockKind.IronOre]: { name: 'Fer', color: '#b88b6a' },
   [BlockKind.GoldOre]: { name: 'Or', color: '#e3bd32' },
@@ -116,6 +125,9 @@ const baseBlockHardness = {
   [BlockKind.AutumnLeaves]: 0.35,
   [BlockKind.AutumnGrass]: 0.6,
   [BlockKind.ForestGrass]: 0.65,
+  [BlockKind.JungleGrass]: 0.65,
+  [BlockKind.JungleLeaves]: 0.35,
+  [BlockKind.JungleVine]: 0.2,
   [BlockKind.CoalOre]: 4,
   [BlockKind.IronOre]: 6,
   [BlockKind.GoldOre]: 7,

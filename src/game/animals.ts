@@ -36,6 +36,7 @@ const species: Record<Biome, AnimalKind[]> = {
   prairie: ['cow', 'horse', 'pig', 'sheep', 'chicken'],
   desert: ['camel'],
   forest: ['bear', 'deer', 'wolf'],
+  jungle: ['pig', 'chicken', 'deer'],
   winter: ['snowWolf', 'snowBear', 'snowDeer'],
   autumn: ['cow', 'sheep', 'deer'],
 };

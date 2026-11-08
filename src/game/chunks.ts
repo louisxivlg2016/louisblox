@@ -95,7 +95,7 @@ export const chunkCoordinate = (value: number) => Math.floor((value + 0.5) / CHU
 const columnKey = (x: number, z: number) => `${x},${z}`;
 
 function supportsGround(block: Voxel) {
-  return !isWaterBlock(block.kind) && !isCrop(block.kind) && !isRail(block.kind)
+  return !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind)
     && !(block.open && block.kind >= 48 && block.kind <= 79);
 }
 

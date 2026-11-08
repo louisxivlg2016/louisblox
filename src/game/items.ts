@@ -173,9 +173,9 @@ export function miningSpeed(selection: SelectedKind, block: BlockKind) {
     || block === BlockKind.GoldOre || block === BlockKind.DiamondOre || block === BlockKind.Ice
     || (block >= BlockKind.BeigeBrick && block <= BlockKind.ConcreteBlack);
   const softBlock = block === BlockKind.Grass || block === BlockKind.Dirt || block === BlockKind.Sand
-    || block === BlockKind.Snow || block === BlockKind.AutumnGrass || block === BlockKind.ForestGrass;
+    || block === BlockKind.Snow || block === BlockKind.AutumnGrass || block === BlockKind.ForestGrass || block === BlockKind.JungleGrass;
   const woodBlock = block === BlockKind.Wood || block === BlockKind.OakPlanks || block === BlockKind.PinePlanks || block === BlockKind.AutumnPlanks;
-  const foliage = block === BlockKind.Leaves || block === BlockKind.PineLeaves || block === BlockKind.AutumnLeaves;
+  const foliage = block === BlockKind.Leaves || block === BlockKind.PineLeaves || block === BlockKind.AutumnLeaves || block === BlockKind.JungleLeaves || block === BlockKind.JungleVine;
   return (meta.category === 'pickaxe' && meta.shape !== 'axe' && hardBlock) || (meta.category === 'shovel' && softBlock)
     || (meta.shape === 'axe' && woodBlock) || (meta.shape === 'shears' && foliage)
     ? meta.efficiency ?? 1

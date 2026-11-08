@@ -75,6 +75,29 @@ function SaplingInstances({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }
   );
 }
 
+function VineInstances({ blocks }: { blocks: Voxel[] }) {
+  const vertical = useRef<InstancedMesh>(null);
+  const crossed = useRef<InstancedMesh>(null);
+  useLayoutEffect(() => {
+    for (const [ref, width, depth] of [[vertical, 0.74, 0.08], [crossed, 0.08, 0.74]] as const) {
+      if (!ref.current) continue;
+      blocks.forEach((block, index) => {
+        matrix.makeScale(width, 1, depth);
+        matrix.setPosition(block.x, block.y, block.z);
+        ref.current!.setMatrixAt(index, matrix);
+      });
+      ref.current.instanceMatrix.needsUpdate = true;
+      ref.current.computeBoundingSphere();
+    }
+  }, [blocks]);
+  return (
+    <>
+      <instancedMesh ref={vertical} args={[blockGeometry, blockMaterials[BlockKind.JungleVine], blocks.length]} />
+      <instancedMesh ref={crossed} args={[blockGeometry, blockMaterials[BlockKind.JungleVine], blocks.length]} />
+    </>
+  );
+}
+
 const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
   const world = useWorld();
   const chunk = useTrait(entity, Chunk);
@@ -86,8 +109,9 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
     const cropBlocks: Voxel[] = [];
     const utilityBlocks: Voxel[] = [];
     const signBlocks: Voxel[] = [];
+    const vineBlocks: Voxel[] = [];
     const saplingGroups = new Map<BlockKind, Voxel[]>();
-    if (!data) return { geometries: [], candleBlocks, doorBlocks, cropBlocks, utilityBlocks, signBlocks, saplingGroups };
+    if (!data) return { geometries: [], candleBlocks, doorBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups };
     const lookup = createChunkLookup(data.blocks, blockIndex);
     for (const block of data.blocks) {
       const exposed = neighborOffsets.some(([x, y, z]) => {
@@ -100,6 +124,10 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         continue;
       }
       if (block.kind === BlockKind.Campfire || block.kind === BlockKind.Wildfire) continue;
+      if (block.kind === BlockKind.JungleVine) {
+        vineBlocks.push(block);
+        continue;
+      }
       if (isCrop(block.kind)) {
         cropBlocks.push(block);
         continue;
@@ -122,9 +150,9 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         saplingGroups.set(block.kind, group);
       }
     }
-    return { geometries: buildChunkGeometry(data.blocks, blockIndex, lookup), candleBlocks, doorBlocks, cropBlocks, utilityBlocks, signBlocks, saplingGroups };
+    return { geometries: buildChunkGeometry(data.blocks, blockIndex, lookup), candleBlocks, doorBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups };
   }, [data, blockIndex, chunk?.revision]);
-  const { geometries, candleBlocks, doorBlocks, cropBlocks, utilityBlocks, signBlocks, saplingGroups } = view;
+  const { geometries, candleBlocks, doorBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups } = view;
   useEffect(() => () => {
     for (const { geometry } of geometries) geometry.dispose();
   }, [geometries]);
@@ -138,6 +166,7 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
       {[...saplingGroups.entries()].map(([kind, values]) => (
         <SaplingInstances key={kind} kind={kind} blocks={values} />
       ))}
+      <VineInstances blocks={vineBlocks} />
       <FoodBlocks blocks={data.blocks} />
       <Suspense fallback={<CropInstances blocks={cropBlocks} />}>
         <HunyuanCropInstances blocks={cropBlocks} />

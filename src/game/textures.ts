@@ -30,6 +30,9 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
     [BlockKind.AutumnLeaves]: ['#bd5729', '#d8752f', '#e68c36', '#a84824', '#ef9f45'],
     [BlockKind.AutumnGrass]: ['#b69443', '#c8a44e', '#d4b65d', '#a98a3b', '#dec474'],
     [BlockKind.ForestGrass]: ['#315e30', '#386c36', '#427a3d', '#2b522a', '#4a8544'],
+    [BlockKind.JungleGrass]: ['#347f2f', '#479b36', '#54aa3f', '#2b6d28', '#65b94b'],
+    [BlockKind.JungleLeaves]: ['#287b36', '#328f3e', '#43a047', '#22652f', '#5cb74f'],
+    [BlockKind.JungleVine]: ['#276b30', '#378b37', '#499d42', '#205828', '#62b84c'],
     [BlockKind.CoalOre]: ['#7e7e7e', '#8c8c8c', '#747474', '#969696', '#696969'],
     [BlockKind.IronOre]: ['#7e7e7e', '#8c8c8c', '#747474', '#969696', '#696969'],
     [BlockKind.GoldOre]: ['#7e7e7e', '#8c8c8c', '#747474', '#969696', '#696969'],
@@ -44,8 +47,8 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   };
 
   for (const [kind, meta] of Object.entries(EXTRA_BLOCK_META)) palettes[Number(kind) as BlockKind] = meta.palette;
-  const grassy = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass;
-  const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves;
+  const grassy = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass || kind === BlockKind.JungleGrass;
+  const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves || kind === BlockKind.JungleVine;
   const sapling = isSapling(kind);
   let palette = palettes[kind];
   if (grassy && face !== 'top') palette = palettes[BlockKind.Dirt];
@@ -56,6 +59,21 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
       if ((foliage || sapling) && value < 0.09) continue;
       context.fillStyle = palette[Math.floor(value * palette.length)];
       context.fillRect(x, y, 1, 1);
+    }
+  }
+
+  if (kind === BlockKind.JungleVine) {
+    context.clearRect(0, 0, 16, 16);
+    for (let y = 0; y < 16; y += 1) {
+      const stemX = 7 + Math.round(Math.sin(y * 0.75) * 2);
+      context.fillStyle = palette[y % palette.length];
+      context.fillRect(stemX, y, 2, 1);
+      if (y % 3 !== 0) continue;
+      const direction = y % 2 === 0 ? -1 : 1;
+      for (let leaf = 1; leaf <= 4; leaf += 1) {
+        context.fillStyle = palette[(y + leaf) % palette.length];
+        context.fillRect(stemX + direction * leaf, y + (leaf > 2 ? 1 : 0), 2, 1);
+      }
     }
   }
 
@@ -291,7 +309,7 @@ function material(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) {
     return new MeshLambertMaterial({ color: EXTRA_BLOCK_META[kind as ExtraBlockKind].color });
   }
-  const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves;
+  const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves || kind === BlockKind.JungleVine;
   const glass = isGlass(kind);
   return new MeshLambertMaterial({
     map: glass && kind !== BlockKind.Glass ? getVitrailTexture(kind) : texture(kind, face),
@@ -313,6 +331,8 @@ const autumnGrassSide = material(BlockKind.AutumnGrass, 'side');
 const autumnGrassTop = material(BlockKind.AutumnGrass, 'top');
 const forestGrassSide = material(BlockKind.ForestGrass, 'side');
 const forestGrassTop = material(BlockKind.ForestGrass, 'top');
+const jungleGrassSide = material(BlockKind.JungleGrass, 'side');
+const jungleGrassTop = material(BlockKind.JungleGrass, 'top');
 const woodSide = material(BlockKind.Wood, 'side');
 const woodTop = material(BlockKind.Wood, 'top');
 
@@ -330,6 +350,9 @@ const baseBlockMaterials = {
   [BlockKind.AutumnLeaves]: repeated(material(BlockKind.AutumnLeaves, 'side')),
   [BlockKind.AutumnGrass]: [autumnGrassSide, autumnGrassSide, autumnGrassTop, dirt, autumnGrassSide, autumnGrassSide],
   [BlockKind.ForestGrass]: [forestGrassSide, forestGrassSide, forestGrassTop, dirt, forestGrassSide, forestGrassSide],
+  [BlockKind.JungleGrass]: [jungleGrassSide, jungleGrassSide, jungleGrassTop, dirt, jungleGrassSide, jungleGrassSide],
+  [BlockKind.JungleLeaves]: repeated(material(BlockKind.JungleLeaves, 'side')),
+  [BlockKind.JungleVine]: repeated(material(BlockKind.JungleVine, 'side')),
   [BlockKind.CoalOre]: repeated(material(BlockKind.CoalOre, 'side')),
   [BlockKind.IronOre]: repeated(material(BlockKind.IronOre, 'side')),
   [BlockKind.GoldOre]: repeated(material(BlockKind.GoldOre, 'side')),

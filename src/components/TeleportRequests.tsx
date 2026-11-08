@@ -11,7 +11,7 @@ import { MAX_HOMES, NO_HOMES, useHomeStore } from '../game/homes';
 import type { Home } from '../game/homes';
 import { teleportToHome } from '../game/teleport';
 
-const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'prairie', 'desert'];
+const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'jungle', 'prairie', 'desert'];
 const RUINS: Array<{ type: RuinType; name: string }> = [
   { type: 'church', name: 'Église en ruines' },
   { type: 'palace', name: 'Palais en ruines' },

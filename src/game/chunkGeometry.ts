@@ -99,7 +99,7 @@ function isBrick(kind: BlockKind) {
 function groupFor(kind: BlockKind) {
   if (isWaterBlock(kind)) return 'water';
   if (isGlass(kind)) return `glass:${glassDesignKinds.get(getVitrailDesign(kind)?.url ?? '') ?? kind}`;
-  if (kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves) return 'foliage';
+  if (kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves) return 'foliage';
   if (isBrick(kind)) return `brick:${kind}`;
   return 'opaque';
 }
@@ -116,11 +116,13 @@ function usesSeparateModel(kind: BlockKind) {
 }
 
 function computeSeparateModel(kind: BlockKind) {
-  return kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || kind === BlockKind.Food || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind) || isSign(kind);
+  return kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || kind === BlockKind.Food || kind === BlockKind.JungleVine || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind) || isSign(kind);
 }
 
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {
   if (!neighbor || neighbor.open) return true;
+  if (neighbor.kind === BlockKind.JungleVine) return true;
+  if (block.kind === BlockKind.JungleLeaves && neighbor.kind === block.kind) return false;
   if (usesSeparateModel(neighbor.kind)) return !isWaterBlock(block.kind) && !isGlass(block.kind);
   if (isGlass(block.kind)) return !isGlass(neighbor.kind);
   if (isWaterBlock(block.kind)) return neighbor.kind !== block.kind;
@@ -134,7 +136,7 @@ function faceTexture(block: Voxel, direction: readonly number[]) {
   let keys = faceTextureKeys.get(block.kind);
   if (!keys) {
     const kind = block.kind;
-    keys = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass
+    keys = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass || kind === BlockKind.JungleGrass
       ? [`${kind}:side`, `${kind}:top`, `${BlockKind.Dirt}:side`]
       : kind === BlockKind.Wood || kind === BlockKind.Tnt
         ? [`${kind}:side`, `${kind}:top`, `${kind}:bottom`]

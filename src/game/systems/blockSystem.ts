@@ -199,7 +199,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         return;
       }
       if (isCrop(kind)) {
-        const soil = hit.block.kind === BlockKind.Grass || hit.block.kind === BlockKind.Dirt || hit.block.kind === BlockKind.ForestGrass || hit.block.kind === BlockKind.AutumnGrass;
+        const soil = hit.block.kind === BlockKind.Grass || hit.block.kind === BlockKind.Dirt || hit.block.kind === BlockKind.ForestGrass || hit.block.kind === BlockKind.AutumnGrass || hit.block.kind === BlockKind.JungleGrass;
         if (hit.normal.y !== 1 || !soil) {
           store.setNotice('Les graines se plantent sur le dessus d’un bloc d’herbe ou de terre.');
           return;

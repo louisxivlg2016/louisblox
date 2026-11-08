@@ -13,8 +13,8 @@ const directions = [
 ] as const;
 
 const flammable = new Set<BlockKind>([
-  BlockKind.Grass, BlockKind.ForestGrass, BlockKind.AutumnGrass,
-  BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves,
+  BlockKind.Grass, BlockKind.ForestGrass, BlockKind.AutumnGrass, BlockKind.JungleGrass,
+  BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine,
   BlockKind.Wood, BlockKind.OakPlanks, BlockKind.PinePlanks, BlockKind.AutumnPlanks,
   BlockKind.Apple, BlockKind.Cactus,
 ]);
