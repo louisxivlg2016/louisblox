@@ -85,7 +85,7 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
   if (motion.speed > 0 && motion.idle <= 0 && (motion.avoid ?? 0) <= 0 && !canAdvance(world, kind, position, motion.yaw)) avoidWall(world, kind, position, motion, entity);
   motion.avoid = Math.max(0, (motion.avoid ?? 0) - dt);
   const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : motion.speed;
-  const normalSpeed = motion.idle > 0 || motion.avoid > 0 ? 0 : baseSpeed;
+  const normalSpeed = motion.avoid > 0 ? 0 : Math.max(baseSpeed, kind === 'duck' ? 0.2 : 0.65);
   const chaseSpeed = kind === 'zombie' ? 2.8 : kind === 'bear' || kind === 'snowBear' || kind === 'wolf' || kind === 'snowWolf' ? 2.2 : kind === 'duck' ? 0.65 : 1.4;
   const speed = motion.avoid > 0 ? 0 : panic > 0 ? chaseSpeed : normalSpeed;
   const x = position.x + Math.sin(motion.yaw) * speed * dt;

@@ -58,10 +58,11 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
         material.map.needsUpdate = true;
       }
     });
+    clone.quaternion.identity();
     return clone;
-  }, [scene]);
+  }, [scene, kind]);
   useAnimalLegs(entity, kind === 'chicken' || kind === 'duck');
-  return <group name={`reference-${kind}`} rotation={[0, kind === 'horse' ? 0 : Math.PI, 0]} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
+  return <group name={`reference-${kind}`} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
 export function ReferenceAnimal({ entity, kind }: { entity: Entity; kind: AnimalKind }) {

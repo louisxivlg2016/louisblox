@@ -77,7 +77,7 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
       displayYaw: yaw,
       turnIn: 6 + hash(x, z, seed + 42) * 7,
       phase: hash(x, z, seed + 43) * Math.PI * 2,
-      speed: 0.35 + hash(x, z, seed + 44) * 0.45,
+      speed: 0.65 + hash(x, z, seed + 44) * 0.35,
     }),
     AnimalMesh(),
   );
