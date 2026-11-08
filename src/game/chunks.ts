@@ -23,7 +23,7 @@ import {
   Animal, AnimalPosition, Fish, MeatDrop, Bomb, Explosion, Sapling, BlockTarget, Chunk, ChunkData,
   Environment, Sleep, HorseRider, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMesh, PlayerMount,
   PlayerPosition, PlayerState, PlayerVelocity, Projectile, RainMaterial, SnowMaterial, TargetMesh,
-  Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition, Trader,
+  Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition, Trader, TraderMesh, TraderPosition, CamelLeash,
 } from './traits';
 import { createMeatInventory } from './meats';
 import { clearPaintSplashAt, normalizePaintballCounts, normalizePaintballGun } from './paintball';
@@ -59,6 +59,8 @@ export type WorldSave = {
   protection?: WorldProtection;
 };
 
+type SavedTrader = { data: { homeX: number; homeZ: number; targetX: number; targetZ: number; phase: number; walking: boolean; health: number; panic: number; fireIn: number }; position: Vector3; yaw: number };
+
 type WorldChunks = {
   world: World;
   seed: number;
@@ -68,6 +70,7 @@ type WorldChunks = {
   tops: Map<string, number>;
   edits: Map<string, Map<string, ChunkEdit>>;
   saddledHorses: SavedHorse[];
+  traderSnapshots: Map<string, SavedTrader>;
   streamCenter: string | null;
   streamOrder: Array<{ x: number; z: number }>;
   batchDepth: number;
@@ -287,6 +290,19 @@ function loadChunk(world: World, cx: number, cz: number) {
     indexBlock(state, block);
   }
   data.animals = isMinigameMode(mode) || isCityMode(mode) ? [] : spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
+  for (const animal of data.animals) {
+    const trader = animal.get(Trader);
+    if (!trader) continue;
+    const snapshot = state.traderSnapshots.get(columnKey(trader.homeX, trader.homeZ));
+    if (!snapshot) continue;
+    animal.set(Trader, { ...snapshot.data });
+    animal.get(TraderPosition)!.copy(snapshot.position);
+    const mesh = animal.get(TraderMesh)?.value;
+    if (mesh) {
+      mesh.position.copy(snapshot.position);
+      mesh.rotation.y = snapshot.yaw;
+    }
+  }
   data.fish = isMinigameMode(mode) || isCityMode(mode) ? [] : spawnChunkFish(world, cx, cz, generated.water, state.seed);
   for (const savedHorse of state.saddledHorses) {
     if (chunkCoordinate(savedHorse.x) !== cx || chunkCoordinate(savedHorse.z) !== cz) continue;
@@ -326,6 +342,15 @@ function unloadChunk(world: World, entity: Entity) {
   const mounted = playerEntity?.get(PlayerMount)?.vehicle;
   const playerPosition = playerEntity?.get(PlayerPosition);
   for (const animal of data.animals) {
+    const trader = animal.get(Trader);
+    if (trader) {
+      const position = animal.get(TraderPosition);
+      if (position) state.traderSnapshots.set(columnKey(trader.homeX, trader.homeZ), { data: { ...trader }, position: position.clone(), yaw: animal.get(TraderMesh)?.value?.rotation.y ?? 0 });
+    }
+    if (trader || animal.get(CamelLeash)) {
+      if (animal.isAlive()) animal.destroy();
+      continue;
+    }
     const position = animal.get(AnimalPosition);
     const nearby = playerPosition && position && position.distanceToSquared(playerPosition) < 48 * 48;
     if (animal !== mounted && !nearby && animal.isAlive()) animal.destroy();
@@ -633,6 +658,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     tops: new Map(),
     edits,
     saddledHorses: restore?.saddledHorses ?? [],
+    traderSnapshots: new Map(),
     streamCenter: null,
     streamOrder: [],
     batchDepth: 0,

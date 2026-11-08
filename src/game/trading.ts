@@ -19,10 +19,29 @@ export const TRADE_OFFERS: TradeOffer[] = [
   { id: 'stone-coal', cost: BlockKind.Stone, costCount: 3, reward: BlockKind.CoalOre, rewardCount: 2 },
 ];
 
-export const useTradeStore = create<{ open: boolean; message: string; setOpen: (open: boolean) => void; setMessage: (message: string) => void }>((set) => ({
+const TRAVEL_STORIES = [
+  'Je traverse les prairies, les forêts et la neige avec mes deux chameaux. Nous transportons du bois, du verre et des objets rares entre les villages. Le désert était long, mais nous avons suivi les rivières jusqu’aux montagnes.',
+  'Je vais de village en village depuis les montagnes enneigées. Mes chameaux portent nos provisions et les marchandises que j’échange. Hier, nous avons contourné une forêt avant de descendre vers cette prairie.',
+  'Je parcours le monde avec mes chameaux. J’ai vu des ruines au bord des rivières, des sapins sous la neige et des pommiers en prairie. Chaque rencontre rend le voyage plus agréable.',
+] as const;
+
+type TradeState = {
+  open: boolean;
+  message: string;
+  view: 'story' | 'offers';
+  story: string;
+  setOpen: (open: boolean) => void;
+  setView: (view: TradeState['view']) => void;
+  setMessage: (message: string) => void;
+};
+
+export const useTradeStore = create<TradeState>((set) => ({
   open: false,
   message: '',
-  setOpen: (open) => set({ open }),
+  view: 'story',
+  story: TRAVEL_STORIES[0],
+  setOpen: (open) => set(open ? { open, view: 'story', story: TRAVEL_STORIES[Math.floor(Math.random() * TRAVEL_STORIES.length)], message: '' } : { open }),
+  setView: (view) => set({ view }),
   setMessage: (message) => set({ message }),
 }));
 
@@ -47,7 +66,7 @@ export function tradeInteractionSystem(world: World, camera: Camera, interact: n
   const playerEntity = world.queryFirst(PlayerPosition);
   if (playerEntity?.get(PlayerMount)?.vehicle) return false;
   if (!findInteractionTarget(world, camera, 'trade')) return false;
-  useTradeStore.setState({ open: true, message: '' });
+  useTradeStore.getState().setOpen(true);
   useGameStore.getState().setMode('pause');
   if (document.pointerLockElement) document.exitPointerLock();
   return true;

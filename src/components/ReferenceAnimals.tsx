@@ -70,18 +70,24 @@ export function ReferenceAnimal({ entity, kind }: { entity: Entity; kind: Animal
   return null;
 }
 
+type TraderRig = { leftArm?: Group; rightArm?: Group; leftLeg?: Group; rightLeg?: Group };
+
 export function ReferenceTrader({ entity }: { entity: Entity }) {
   const { scene } = useGLTF(traderUrl);
   const character = useMemo(() => {
     const model = createCharacterRig(scene, 'explorer', 1);
-    const rig = model.userData.rig as { leftLeg?: Group; rightLeg?: Group };
+    const rig = model.userData.rig as TraderRig;
     if (rig.leftLeg) rig.leftLeg.name = 'trader-left-leg';
     if (rig.rightLeg) rig.rightLeg.name = 'trader-right-leg';
+    rig.leftArm?.rotation.set(0, 0, 0);
+    rig.rightArm?.rotation.set(0, 0, 0);
     return model;
   }, [scene]);
-  const rig = character.userData.rig as { leftLeg?: Group; rightLeg?: Group };
+  const rig = character.userData.rig as TraderRig;
   const phase = useRef(0);
   useFrame((_, delta) => {
+    rig.leftArm?.rotation.set(0, 0, 0);
+    rig.rightArm?.rotation.set(0, 0, 0);
     if (entity.get(Trader)?.walking) phase.current += delta * 6;
     const swing = entity.get(Trader)?.walking ? Math.sin(phase.current) * 0.42 : 0;
     if (rig.leftLeg) rig.leftLeg.rotation.x = swing;

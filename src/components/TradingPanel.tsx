@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { canTrade, tradeWithMerchant, TRADE_OFFERS, useTradeStore } from '../game/trading';
 import { requestPlay } from '../game/input';
 import { selectionInfo } from '../game/items';
@@ -8,37 +7,53 @@ import { ItemIcon } from './ItemIcon';
 export function TradingPanel() {
   const open = useTradeStore((state) => state.open);
   const message = useTradeStore((state) => state.message);
+  const view = useTradeStore((state) => state.view);
+  const story = useTradeStore((state) => state.story);
   const itemCounts = useGameStore((state) => state.itemCounts);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
-  const [talking, setTalking] = useState(false);
   if (!open) return null;
   const close = () => {
     useTradeStore.getState().setOpen(false);
     void requestPlay();
   };
+  const accompany = () => {
+    useGameStore.getState().setNotice('Tu accompagnes le marchand. Reste près de lui pour voyager avec la caravane.');
+    close();
+  };
   return (
     <div className="backpack-backdrop">
-      <section className="book-panel backpack-panel trade-panel" aria-label="Échange avec le marchand">
+      <section className="book-panel backpack-panel trade-panel" aria-label="Discussion avec le marchand">
         <div className="backpack-header"><h2>Marchand ambulant</h2><button className="secondary-button" onClick={close}>Fermer et reprendre</button></div>
-        <p>{gameplayMode === 'survival' ? 'Choisis une offre : les objets sont échangés réellement.' : 'Choisis une offre : elle est gratuite en mode créatif.'}</p>
-        <div className="trade-conversation">
-          <button className="secondary-button trade-talk-button" onClick={() => setTalking(true)}>Parler</button>
-          <p role="status">{talking ? 'Je fais un voyage.' : 'Bonjour, voyageur !'}</p>
-        </div>
-        <div className="trade-offers">
-          {TRADE_OFFERS.map((offer) => (
-            <article className="trade-offer" data-offer={offer.id} key={offer.id}>
-              <div className="trade-offer-items">
-                <span><ItemIcon kind={offer.cost} /> {offer.costCount} {selectionInfo(offer.cost).name}</span>
-                <span>→</span>
-                <span><ItemIcon kind={offer.reward} /> {offer.rewardCount} {selectionInfo(offer.reward).name}</span>
-              </div>
-              <button className="primary-button" disabled={!canTrade(offer)} onClick={() => tradeWithMerchant(offer)}>Échanger</button>
-            </article>
-          ))}
-        </div>
-        {message && <p className="trade-message" role="status">{message}</p>}
-        <span className="trade-inventory-note">Les quantités de ton sac sont utilisées. {Object.keys(itemCounts).length} types d’objets.</span>
+        {view === 'story' ? (
+          <div className="trade-story" role="status">
+            <p>{story}</p>
+            <p>Je reprends la route avec mes chameaux. Veux-tu m’accompagner un moment, ou préfères-tu voir mes marchandises ?</p>
+            <div className="trade-story-actions">
+              <button className="primary-button" onClick={accompany}>L’accompagner</button>
+              <button className="secondary-button" onClick={() => useTradeStore.getState().setView('offers')}>Voir les marchandises</button>
+              <button className="secondary-button" onClick={close}>Plus tard</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p>{gameplayMode === 'survival' ? 'Choisis une offre : les objets sont échangés réellement.' : 'Choisis une offre : elle est gratuite en mode créatif.'}</p>
+            <div className="trade-offers">
+              {TRADE_OFFERS.map((offer) => (
+                <article className="trade-offer" data-offer={offer.id} key={offer.id}>
+                  <div className="trade-offer-items">
+                    <span><ItemIcon kind={offer.cost} /> {offer.costCount} {selectionInfo(offer.cost).name}</span>
+                    <span>→</span>
+                    <span><ItemIcon kind={offer.reward} /> {offer.rewardCount} {selectionInfo(offer.reward).name}</span>
+                  </div>
+                  <button className="primary-button" disabled={!canTrade(offer)} onClick={() => tradeWithMerchant(offer)}>Échanger</button>
+                </article>
+              ))}
+            </div>
+            {message && <p className="trade-message" role="status">{message}</p>}
+            <span className="trade-inventory-note">Les quantités de ton sac sont utilisées. {Object.keys(itemCounts).length} types d’objets.</span>
+            <button className="secondary-button trade-talk-button" onClick={() => useTradeStore.getState().setView('story')}>Parler du voyage</button>
+          </>
+        )}
       </section>
     </div>
   );
