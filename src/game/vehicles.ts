@@ -169,8 +169,11 @@ export function dismount(world: World) {
     else position.set(vehiclePosition.x + 1.6, groundAt(world, vehiclePosition.x + 1.6, vehiclePosition.z, vehiclePosition.y + 2) + 0.02, vehiclePosition.z);
     body?.setTranslation(position, true);
   }
-  if (mount.kind === 'horse') vehicle.set(HorseRider, { mounted: false, speed: 0 });
-  else if (mount.role === 'driver') {
+  if (mount.kind === 'horse') {
+    const motion = vehicle.get(AnimalMotion);
+    if (motion) vehicle.set(AnimalMotion, { yaw: motion.displayYaw });
+    vehicle.set(HorseRider, { mounted: false, speed: 0 });
+  } else if (mount.role === 'driver') {
     vehicle.set(VehicleMotion, { mounted: false, speed: 0 });
     syncVehicleMotion(world, vehicle, true);
   }
@@ -319,7 +322,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
     motion.yaw = state.yaw;
     if (input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(rider.speed || 1);
     if (!moveMount(world, position, motion.yaw, rider.speed, dt)) rider.speed = 0;
-    motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * 7);
+    motion.displayYaw = turnToward(motion.displayYaw, motion.yaw + Math.PI, dt * 7);
     if (mesh.value) {
       mesh.value.position.copy(position);
       mesh.value.rotation.y = motion.displayYaw;

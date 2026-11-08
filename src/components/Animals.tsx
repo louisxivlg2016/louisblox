@@ -57,17 +57,17 @@ function RemoteHorseSync() {
       }
       const position = entity.get(AnimalPosition)!;
       position.set(snapshot.x, snapshot.y, snapshot.z);
-      const motion = entity.get(AnimalMotion)!;
-      motion.yaw = snapshot.yaw;
-      motion.displayYaw = snapshot.yaw;
+      entity.set(AnimalMotion, { yaw: snapshot.yaw, displayYaw: snapshot.yaw + Math.PI });
       const mesh = entity.get(AnimalMesh)?.value;
       if (mesh) {
         mesh.position.copy(position);
-        mesh.rotation.y = snapshot.yaw;
+        mesh.rotation.y = snapshot.yaw + Math.PI;
       }
     }
     for (const entity of previous.current) {
       if (current.has(entity) || entity === localMount || !entity.get(HorseRider)) continue;
+      const motion = entity.get(AnimalMotion);
+      if (motion) entity.set(AnimalMotion, { yaw: motion.displayYaw });
       entity.set(HorseRider, { mounted: false, speed: 0 });
     }
     previous.current = current;
