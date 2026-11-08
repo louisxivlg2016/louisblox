@@ -10,7 +10,7 @@ import { getItemMeta } from '../game/items';
 import { useGameStore } from '../game/store';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { BlockKind } from '../game/voxel';
-import { ItemModel, itemGripOffset } from './ItemModel';
+import { ItemModel, isWeaponItem, itemGripOffset } from './ItemModel';
 import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
 import { isUtilityBlock } from '../game/extraBlocks';
@@ -86,16 +86,16 @@ export function Hands() {
       ))}
       {typeof selected === 'number' ? (
         selected === BlockKind.Tnt || selected === BlockKind.Candle || selected === BlockKind.Campfire || selected === BlockKind.Wildfire ? (
-          <group position={[0.34, -0.42, -0.86]} rotation={[0.08, 0.15, 0]} scale={0.48}>
+          <group position={[0.36, -0.3, -1.04]} rotation={[0.08, 0.15, 0]} scale={0.48}>
             {selected === BlockKind.Tnt ? <BombModel /> : selected === BlockKind.Candle ? <CandleModel /> : <CampfireModel destructive={selected === BlockKind.Wildfire} />}
           </group>
         ) : isUtilityBlock(selected) ? (
-          <group position={[0.36, -0.4, -0.78]} scale={0.48}><UtilityBlockModel kind={selected} withLight={false} held /></group>
+          <group position={[0.36, -0.3, -1]} scale={0.48}><UtilityBlockModel kind={selected} withLight={false} held /></group>
         ) : (
-          <mesh args={[blockGeometry, heldMaterials]} position={[0.36, -0.26, -0.72]} rotation={[0.2, 0.55, 0.05]} scale={0.24} renderOrder={11} frustumCulled={false} />
+          <mesh args={[blockGeometry, heldMaterials]} position={[0.36, -0.28, -0.94]} rotation={[0.2, 0.55, 0.05]} scale={0.24} renderOrder={11} frustumCulled={false} />
         )
       ) : (
-        <group name="held-item" position={[0.36, -0.58 - itemGripOffset(selected) * (getItemMeta(selected).category === 'vehicle' ? 0.1972 : 0.754), -0.78]} rotation={[0.08, 0.15, 0]} scale={getItemMeta(selected).category === 'vehicle' ? 0.34 : 1.3}>
+        <group name="held-item" position={isWeaponItem(selected) ? [0.36, -0.58 - itemGripOffset(selected) * (getItemMeta(selected).category === 'vehicle' ? 0.1972 : 0.754), -0.78] : [0.36, -0.3, -1.02]} rotation={[0.08, 0.15, 0]} scale={getItemMeta(selected).category === 'vehicle' ? 0.34 : 1.3}>
           <ItemModel kind={selected} held flipGuns />
         </group>
       )}

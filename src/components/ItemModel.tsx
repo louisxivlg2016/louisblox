@@ -493,6 +493,18 @@ function GalleryModel({ kind }: { kind: GalleryItemId }) {
   return <GalleryGenericModel shape={shape} color={meta.color} />;
 }
 
+export function isWeaponItem(kind: ItemKind | GalleryItemId | number) {
+  return typeof kind === 'string' && ['sword', 'bow', 'gun'].includes(getItemMeta(kind).category);
+}
+
+export function heldItemPosition(kind: ItemKind | GalleryItemId | number, fullCharacter: boolean): [number, number, number] {
+  if (isWeaponItem(kind)) {
+    const offset = typeof kind === 'number' ? 0 : itemGripOffset(kind) * 0.72;
+    return fullCharacter ? [0, -offset, 0] : [0.05, -0.58 - offset, -0.12];
+  }
+  return fullCharacter ? [0, -0.1, 0.56] : [0.05, -0.68, -0.48];
+}
+
 export function itemGripOffset(kind: ItemKind | GalleryItemId) {
   const meta = getItemMeta(kind);
   if (meta.category === 'sword' || meta.shape === 'sword') return 0.09;

@@ -17,7 +17,12 @@ import { useCharacterStore } from '../game/characterStore';
 import { useAvatarStore } from '../game/avatar';
 import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Vehicle } from '../game/traits';
 import { getItemMeta } from '../game/items';
-import { ItemModel, PixelPart, itemGripOffset } from './ItemModel';
+import { ItemModel, PixelPart, heldItemPosition } from './ItemModel';
+import { blockGeometry, blockMaterials } from '../game/textures';
+import { BlockKind } from '../game/voxel';
+import { isUtilityBlock } from '../game/extraBlocks';
+import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
+import { UtilityBlockModel } from './UtilityBlocks';
 import { PlayerNameTag } from './PlayerNameTag';
 import { attachCharacterHand } from '../game/characterRig';
 import { clearTeleportRequests, receiveTeleportRequest, receiveTeleportResponse, setTeleportSocket } from '../game/teleportRequests';
@@ -183,14 +188,16 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
       <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={current.skinColor} /></group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={current.skinColor} />}
-        {typeof state.selected === 'string' && (
+        {state.selected !== undefined && (
           <group
             name="remote-held-item"
-            position={hasFullCharacter(outfit, wig) ? [0, -itemGripOffset(state.selected) * 0.72, 0] : [0.05, -0.58 - itemGripOffset(state.selected) * 0.72, -0.12]}
-            scale={getItemMeta(state.selected).category === 'vehicle' ? 0.2 : 0.72}
+            position={heldItemPosition(state.selected, hasFullCharacter(outfit, wig))}
+            scale={typeof state.selected === 'string' && getItemMeta(state.selected).category === 'vehicle' ? 0.2 : 0.72}
             userData={{ item: state.selected }}
           >
-            <ItemModel kind={state.selected} flipGuns={!hasFullCharacter(outfit, wig)} />
+            {typeof state.selected === 'string'
+              ? <ItemModel kind={state.selected} flipGuns={!hasFullCharacter(outfit, wig)} />
+              : state.selected === BlockKind.Tnt ? <BombModel /> : state.selected === BlockKind.Candle ? <CandleModel /> : state.selected === BlockKind.Campfire || state.selected === BlockKind.Wildfire ? <CampfireModel destructive={state.selected === BlockKind.Wildfire} /> : isUtilityBlock(state.selected) ? <UtilityBlockModel kind={state.selected} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[state.selected]]} />}
           </group>
         )}
       </group>
