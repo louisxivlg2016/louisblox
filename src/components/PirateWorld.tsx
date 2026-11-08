@@ -5,11 +5,11 @@ import { useGameStore } from '../game/store';
 import treasureUrl from '../../assets/models/pirate-treasure.glb';
 
 const TREASURE_LAYOUT = [
-  { x: 0, z: 0, scale: 1.3, objective: true },
-  { x: -2.2, z: -5, scale: 0.72, objective: false },
-  { x: 2.2, z: -5, scale: 0.72, objective: false },
-  { x: -2.2, z: 5, scale: 0.72, objective: false },
-  { x: 2.2, z: 5, scale: 0.72, objective: false },
+  { x: 0, y: 6.5, z: 0, scale: 0.24, objective: true },
+  { x: -1, y: 5.5, z: -5, scale: 0.16, objective: false },
+  { x: 1, y: 5.5, z: -5, scale: 0.16, objective: false },
+  { x: -1, y: 5.5, z: 5, scale: 0.16, objective: false },
+  { x: 1, y: 5.5, z: 5, scale: 0.16, objective: false },
 ] as const;
 
 useGLTF.preload(treasureUrl);
@@ -31,7 +31,7 @@ function PirateTreasure({ team, center, index, layout }: { team: 'red' | 'blue';
     });
     return clone;
   }, [scene]);
-  return <group name={`pirate-treasure-${team}-${index}`} userData={{ source: 'Hunyuan', objective: layout.objective, team }} position={[center + layout.x, 8.5, layout.z]} scale={layout.scale}><primitive object={model} /></group>;
+  return <group name={`pirate-treasure-${team}-${index}`} userData={{ source: 'Hunyuan', objective: layout.objective, team }} position={[center + layout.x, layout.y, layout.z]} scale={layout.scale}><primitive object={model} /></group>;
 }
 
 function PirateShip({ team, center }: { team: 'red' | 'blue'; center: number }) {
