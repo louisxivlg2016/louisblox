@@ -1,18 +1,23 @@
-import type { World } from 'koota';
+import type { Entity, World } from 'koota';
 import { getBlockIndex, isChunkLoaded } from '../chunks';
 import { MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
-import { isWaterBlock, voxelKey } from '../voxel';
+import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import { isCollidable, moveVoxelCharacter } from './collisionSystem';
 import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, Player, PlayerPosition, Trader, TraderMesh, TraderPosition } from '../traits';
 import { getFireSources, nearestFire } from '../hazards';
+
+const foliage = new Set<BlockKind>([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple]);
+const stuckCamels = new Map<Entity, { x: number; z: number; time: number }>();
 
 function walkableGround(world: World, x: number, z: number, currentY: number) {
   if (!isChunkLoaded(world, x, z)) return null;
   const ground = groundAt(world, x, z, currentY + 1.05);
   if (ground <= MIN_WORLD_Y + 0.5 || ground < SEA_LEVEL + 0.5 || Math.abs(ground - currentY) > 1.05) return null;
   const blocks = getBlockIndex(world);
+  const groundBlock = blocks.get(voxelKey(Math.round(x), Math.round(ground), Math.round(z)));
+  if (groundBlock && foliage.has(groundBlock.kind)) return null;
   for (const height of [0.5, 1.75]) {
     const block = blocks.get(voxelKey(Math.round(x), Math.round(ground + height), Math.round(z)));
     if (block && (isCollidable(block) || isWaterBlock(block.kind))) return null;
@@ -25,6 +30,21 @@ function moveOnGround(world: World, position: import('three').Vector3, x: number
   next.y = ground;
   moveVoxelCharacter(getBlockIndex(world), next, { x: x - position.x, y: ground - position.y, z: z - position.z }, true);
   position.copy(next);
+}
+
+function rescueCamel(world: World, trader: import('three').Vector3, position: import('three').Vector3, motion: { yaw: number; displayYaw: number }, heading: number) {
+  const offsets = [[1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5], [0, 0], [2, 2], [-2, 2], [2, -2], [-2, -2]];
+  for (const [dx, dz] of offsets) {
+    const x = Math.round(trader.x + dx);
+    const z = Math.round(trader.z + dz);
+    const ground = walkableGround(world, x, z, trader.y);
+    if (ground === null) continue;
+    position.set(x, ground, z);
+    motion.yaw = heading;
+    motion.displayYaw = heading;
+    return true;
+  }
+  return false;
 }
 
 function traderHeading(trader: { homeX: number; homeZ: number }) {
@@ -99,9 +119,12 @@ export function traderSystem(world: World, dt: number) {
     entity.set(Trader, { walking: true, panic: trader.panic, phase: trader.phase, targetX: trader.targetX, targetZ: trader.targetZ });
   }
 
-  world.query(CamelLeash, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([leash, position, motion, mesh]) => {
+  world.query(CamelLeash, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([leash, position, motion, mesh], entity) => {
     const trader = leash.trader?.get(TraderPosition);
-    if (!trader) return;
+    if (!trader) {
+      stuckCamels.delete(entity);
+      return;
+    }
     const heading = leash.trader?.get(TraderMesh)?.value?.rotation.y ?? traderHeading(leash.trader?.get(Trader) ?? { homeX: trader.x, homeZ: trader.z });
     const gap = 1.65 + leash.order * 1.2;
     const dx = trader.x - Math.sin(heading) * gap - position.x;
@@ -115,10 +138,36 @@ export function traderSystem(world: World, dt: number) {
       const z = position.z + dz / distance * step;
       const ground = walkableGround(world, x, z, position.y);
       if (ground !== null) moveOnGround(world, position, x, z, ground);
+      else {
+        const side = leash.order % 2 === 0 ? 1 : -1;
+        const candidates = [heading + side * 0.65, heading - side * 0.65, heading + side * 1.3, heading - side * 1.3, heading + Math.PI];
+        for (const yaw of candidates) {
+          const sideStep = Math.min(step, 0.35);
+          const sideX = position.x + Math.sin(yaw) * sideStep;
+          const sideZ = position.z + Math.cos(yaw) * sideStep;
+          const sideGround = walkableGround(world, sideX, sideZ, position.y);
+          if (sideGround === null) continue;
+          moveOnGround(world, position, sideX, sideZ, sideGround);
+          break;
+        }
+      }
     }
     const movedX = position.x - previousX;
     const movedZ = position.z - previousZ;
     const moving = Math.hypot(movedX, movedZ) > 0.0001;
+    if (!moving && distance > 0.45) {
+      const stuck = stuckCamels.get(entity) ?? { x: previousX, z: previousZ, time: 0 };
+      if (Math.hypot(position.x - stuck.x, position.z - stuck.z) > 0.5) {
+        stuck.x = position.x;
+        stuck.z = position.z;
+        stuck.time = 0;
+      } else stuck.time += dt;
+      stuckCamels.set(entity, stuck);
+      if (stuck.time >= 2) {
+        if (rescueCamel(world, trader, position, motion, heading)) stuckCamels.delete(entity);
+        else stuck.time = 0;
+      }
+    } else stuckCamels.delete(entity);
     motion.yaw = moving ? Math.atan2(movedX, movedZ) : heading;
     motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * 5);
     motion.speed = moving ? 1.05 : 0;
