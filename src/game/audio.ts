@@ -1,5 +1,6 @@
 import musicUrl from '../../assets/LouisBlox_Theme.mp3';
 import battleMusicUrl from '../../assets/audio/The_Last_Move.mp3';
+import pirateMusicUrl from '../../assets/audio/Salt_On_The_Gunwale.m4a';
 import marchMusicUrl from '../../assets/audio/March_to_the_Final_Peak.m4a';
 import voxelMusicUrl from '../../assets/audio/Voxel_Ascent.m4a';
 import whistleUrl from '../../son/siflet.mp3';
@@ -52,7 +53,7 @@ const explorationTracks = [musicUrl, marchMusicUrl, voxelMusicUrl] as const;
 let explorationTrack = 0;
 
 function playNextTrack() {
-  if (mode === 'battle') return;
+  if (mode === 'battle' || mode === 'pirates') return;
   explorationTrack = (explorationTrack + 1) % explorationTracks.length;
   setMusicMode(mode);
 }
@@ -60,8 +61,8 @@ function playNextTrack() {
 export function setMusicMode(nextMode: GameplayMode) {
   mode = nextMode;
   if (!music) return;
-  const source = mode === 'battle' ? battleMusicUrl : explorationTracks[explorationTrack];
-  music.loop = mode === 'battle';
+  const source = mode === 'pirates' ? pirateMusicUrl : mode === 'battle' ? battleMusicUrl : explorationTracks[explorationTrack];
+  music.loop = mode === 'battle' || mode === 'pirates';
   if (music.dataset.track === source) return;
   music.pause();
   music.src = source;
