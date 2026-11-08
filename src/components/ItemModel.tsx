@@ -502,7 +502,7 @@ export function heldItemPosition(kind: ItemKind | GalleryItemId | number, fullCh
     const offset = typeof kind === 'number' ? 0 : itemGripOffset(kind) * 0.72;
     return fullCharacter ? [0, -offset, 0] : [0.05, -0.58 - offset, -0.12];
   }
-  return fullCharacter ? [0, -0.1, 0.56] : [0.05, -0.68, -0.48];
+  return fullCharacter ? [0, -0.1, 0.5] : [0.05, -0.68, -0.42];
 }
 
 export function itemGripOffset(kind: ItemKind | GalleryItemId) {

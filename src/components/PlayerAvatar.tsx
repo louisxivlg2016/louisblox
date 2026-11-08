@@ -146,7 +146,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
       </group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
-        <group name="held-item" visible={!eating && !preview} position={heldItemPosition(held, hasFullCharacter(outfit, wig))} scale={typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
+        <group name="held-item" visible={!eating && !preview} position={heldItemPosition(held, hasFullCharacter(outfit, wig))} scale={typeof held === 'number' ? 0.5 : typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof held === 'number'
             ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
             : <ItemModel kind={held} flipGuns={!hasFullCharacter(outfit, wig)} />}

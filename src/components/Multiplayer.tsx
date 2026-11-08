@@ -192,7 +192,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
           <group
             name="remote-held-item"
             position={heldItemPosition(state.selected, hasFullCharacter(outfit, wig))}
-            scale={typeof state.selected === 'string' && getItemMeta(state.selected).category === 'vehicle' ? 0.2 : 0.72}
+            scale={typeof state.selected === 'number' ? 0.5 : typeof state.selected === 'string' && getItemMeta(state.selected).category === 'vehicle' ? 0.2 : 0.72}
             userData={{ item: state.selected }}
           >
             {typeof state.selected === 'string'
