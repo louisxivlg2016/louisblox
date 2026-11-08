@@ -1,5 +1,7 @@
 import musicUrl from '../../assets/LouisBlox_Theme.mp3';
 import battleMusicUrl from '../../assets/audio/The_Last_Move.mp3';
+import marchMusicUrl from '../../assets/audio/March_to_the_Final_Peak.m4a';
+import voxelMusicUrl from '../../assets/audio/Voxel_Ascent.m4a';
 import whistleUrl from '../../son/siflet.mp3';
 import fireSirenUrl from '../../son/sirene-de-pompier.mp3';
 import breakBlockUrl from '../../son/son-de-casse-un-bloc.mp3';
@@ -46,10 +48,20 @@ function attemptPlay(element: HTMLAudioElement) {
   });
 }
 
+const explorationTracks = [musicUrl, marchMusicUrl, voxelMusicUrl] as const;
+let explorationTrack = 0;
+
+function playNextTrack() {
+  if (mode === 'battle') return;
+  explorationTrack = (explorationTrack + 1) % explorationTracks.length;
+  setMusicMode(mode);
+}
+
 export function setMusicMode(nextMode: GameplayMode) {
   mode = nextMode;
   if (!music) return;
-  const source = mode === 'battle' ? battleMusicUrl : musicUrl;
+  const source = mode === 'battle' ? battleMusicUrl : explorationTracks[explorationTrack];
+  music.loop = mode === 'battle';
   if (music.dataset.track === source) return;
   music.pause();
   music.src = source;
@@ -62,9 +74,9 @@ export function startMusic() {
   if (!music) {
     music = new Audio();
     music.id = 'background-music';
-    music.loop = true;
     music.volume = 0.28;
     music.style.display = 'none';
+    music.addEventListener('ended', playNextTrack);
     document.body.appendChild(music);
   }
   setMusicMode(mode);
