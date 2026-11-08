@@ -6,7 +6,7 @@ import { useGameStore } from './store';
 export const MAX_SIGN_LENGTH = 120;
 
 type SignPosition = { x: number; y: number; z: number };
-type SignEditor = SignPosition & { text: string };
+type SignEditor = SignPosition & { text: string; kind: number };
 
 export function cleanSignText(text: string) {
   return text.replace(/\r/g, '').slice(0, MAX_SIGN_LENGTH);
@@ -14,12 +14,12 @@ export function cleanSignText(text: string) {
 
 export const useSignStore = create<{
   editing: SignEditor | null;
-  openSign: (position: SignPosition, text: string) => void;
+  openSign: (position: SignPosition, text: string, kind: number) => void;
   closeSign: () => void;
 }>((set) => ({
   editing: null,
-  openSign: (position, text) => {
-    set({ editing: { ...position, text } });
+  openSign: (position, text, kind) => {
+    set({ editing: { ...position, text, kind } });
     useGameStore.getState().setMode('pause');
   },
   closeSign: () => set({ editing: null }),

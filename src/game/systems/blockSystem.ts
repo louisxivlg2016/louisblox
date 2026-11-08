@@ -130,7 +130,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   if (useGameStore.getState().mode !== 'play' || !hit) return;
 
   if ((actions.place > 0 || actions.harvest > 0) && isSign(hit.block.kind)) {
-    useSignStore.getState().openSign(hit, hit.block.text ?? '');
+    useSignStore.getState().openSign(hit, hit.block.text ?? '', hit.block.kind);
     if (document.pointerLockElement) document.exitPointerLock();
     return;
   }
