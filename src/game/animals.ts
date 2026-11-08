@@ -90,8 +90,11 @@ export function spawnTrader(world: World, x: number, z: number, seed: number) {
     TraderPosition(new Vector3(site.x, site.y, site.z)),
     TraderMesh(),
   );
+  const heading = site.x * 0.17 + site.z * 0.31;
   const camels = [0, 1].map((order) => {
-    const camel = spawnAnimal(world, 'camel', site.x - 1.4 - order * 1.1, site.y, site.z + 1.8 + order * 1.3, seed + order);
+    const gap = 1.65 + order * 1.2;
+    const camel = spawnAnimal(world, 'camel', site.x - Math.sin(heading) * gap, site.y, site.z - Math.cos(heading) * gap, seed + order);
+    camel.set(AnimalMotion, { yaw: heading, displayYaw: heading });
     camel.add(CamelLeash({ trader, order }));
     return camel;
   });

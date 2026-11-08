@@ -102,22 +102,25 @@ export function traderSystem(world: World, dt: number) {
   world.query(CamelLeash, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([leash, position, motion, mesh]) => {
     const trader = leash.trader?.get(TraderPosition);
     if (!trader) return;
-    const dx = trader.x - position.x;
-    const dz = trader.z - position.z;
-    const distance = Math.hypot(dx, dz);
+    const heading = leash.trader?.get(TraderMesh)?.value?.rotation.y ?? traderHeading(leash.trader?.get(Trader) ?? { homeX: trader.x, homeZ: trader.z });
     const gap = 1.65 + leash.order * 1.2;
-    const moving = distance > gap + 0.25;
-    if (moving) {
-      const step = Math.min(distance - gap, dt * 1.2);
+    const dx = trader.x - Math.sin(heading) * gap - position.x;
+    const dz = trader.z - Math.cos(heading) * gap - position.z;
+    const distance = Math.hypot(dx, dz);
+    const previousX = position.x;
+    const previousZ = position.z;
+    if (distance > 0.15) {
+      const step = Math.min(distance, dt * 1.2);
       const x = position.x + dx / distance * step;
       const z = position.z + dz / distance * step;
       const ground = walkableGround(world, x, z, position.y);
       if (ground !== null) moveOnGround(world, position, x, z, ground);
     }
-    if (distance > 0.001) {
-      motion.yaw = Math.atan2(dx, dz);
-      motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * 5);
-    }
+    const movedX = position.x - previousX;
+    const movedZ = position.z - previousZ;
+    const moving = Math.hypot(movedX, movedZ) > 0.0001;
+    motion.yaw = moving ? Math.atan2(movedX, movedZ) : heading;
+    motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * 5);
     motion.speed = moving ? 0.75 : 0;
     if (mesh.value) {
       mesh.value.position.copy(position);
