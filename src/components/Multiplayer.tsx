@@ -122,10 +122,8 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
     target.set(state.x, state.y + (state.flying ? 1 : 0) + lyingHeight - seatedHeight, state.z);
     group.current.position.lerp(target, amount);
     group.current.rotation.order = 'YXZ';
-    if (state.moving || state.flying || state.mounted) {
-      const angle = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
-      group.current.rotation.y += angle * amount;
-    }
+    const angle = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
+    group.current.rotation.y += angle * amount;
     const flightRotation = !state.mounted && state.emote === 'lie' ? -Math.PI / 2 : state.flying ? -Math.PI / 2 : 0;
     group.current.rotation.x += (flightRotation - group.current.rotation.x) * amount;
     const waving = state.emote === 'wave';
