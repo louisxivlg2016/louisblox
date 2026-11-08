@@ -55,6 +55,7 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
   if (kind === BlockKind.TrafficLight) return <img className="tnt-icon traffic-light-icon" src={trafficLightUrl} alt="" />;
   if (kind === BlockKind.StreetLamp) return <img className="tnt-icon street-lamp-icon" src={streetLampUrl} alt="" />;
   if (kind === BlockKind.ParisStreetLamp) return <img className="tnt-icon paris-street-lamp-icon" src={parisStreetLampUrl} alt="" />;
+  if (kind === BlockKind.ParisStreetSign) return <span className="paris-street-sign-icon" aria-hidden="true"><small>4e</small><strong>RUE</strong></span>;
   if (typeof kind === 'number' && isTrafficSign(kind)) {
     const sign = trafficSignLabels[kind];
     return <span className={`traffic-sign-icon ${sign?.className ?? ''}`} style={{ backgroundColor: info.color }}>{sign?.label}</span>;

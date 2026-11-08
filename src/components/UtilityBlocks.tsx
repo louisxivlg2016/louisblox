@@ -5,6 +5,7 @@ import { PixelPart } from './ItemModel';
 import { NormalStreetLampModel, ParisStreetLampModel } from './StreetLights';
 import { EXTRA_BLOCK_META, isBed, isRail, isTrafficSign } from '../game/extraBlocks';
 import { TrafficSignModel } from './TrafficSigns';
+import { ParisStreetSignModel } from './ParisStreetSign';
 
 const fire = new MeshBasicMaterial({ color: '#ff9a32' });
 
@@ -104,7 +105,7 @@ export function TrafficLightModel() {
 }
 
 export function UtilityBlockModel({ kind, withLight = true, held = false }: { kind: BlockKind; withLight?: boolean; held?: boolean }) {
-  return isTrafficSign(kind) ? <TrafficSignModel kind={kind} held={held} /> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
+  return kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel held={held} /> : isTrafficSign(kind) ? <TrafficSignModel kind={kind} held={held} /> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
 }
 
 export function UtilityBlocks({ blocks }: { blocks: Voxel[] }) {

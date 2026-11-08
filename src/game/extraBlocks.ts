@@ -117,8 +117,10 @@ export const EXTRA_BLOCKS = {
   DangerSign: 139,
   RoundaboutSign: 140,
   PrioritySign: 141,
+  ParisStreetSign: 145,
 } as const;
 
+export const PARIS_STREET_SIGN_TEXT = '4e arrondissement\nRue de la Paix';
 export type ExtraBlockKind = (typeof EXTRA_BLOCKS)[keyof typeof EXTRA_BLOCKS];
 export const EXTRA_BLOCK_ORDER = Object.values(EXTRA_BLOCKS).filter((kind) => kind !== EXTRA_BLOCKS.Watermelon) as ExtraBlockKind[];
 export const SAPLING_KINDS = [EXTRA_BLOCKS.OakSapling, EXTRA_BLOCKS.PineSapling, EXTRA_BLOCKS.AutumnSapling] as const;
@@ -134,8 +136,8 @@ export const isLadder = (kind: number) => kind === EXTRA_BLOCKS.Ladder;
 export const isBed = (kind: number) => kind >= EXTRA_BLOCKS.Bed && kind <= EXTRA_BLOCKS.BedBlack;
 export const isFireBlock = (kind: number) => kind === EXTRA_BLOCKS.Campfire || kind === EXTRA_BLOCKS.Wildfire;
 export const isRail = (kind: number) => kind === EXTRA_BLOCKS.Rail;
-export const isSign = (kind: number) => kind === EXTRA_BLOCKS.Sign;
-export const isTrafficSign = (kind: number) => kind >= EXTRA_BLOCKS.StopSign && kind <= EXTRA_BLOCKS.PrioritySign;
+export const isSign = (kind: number) => kind === EXTRA_BLOCKS.Sign || kind === EXTRA_BLOCKS.ParisStreetSign;
+export const isTrafficSign = (kind: number) => kind >= EXTRA_BLOCKS.StopSign && kind <= EXTRA_BLOCKS.PrioritySign || kind === EXTRA_BLOCKS.ParisStreetSign;
 export const isUtilityBlock = (kind: number) => isFurnace(kind) || isChest(kind) || isLadder(kind) || isBed(kind) || isRail(kind) || kind === EXTRA_BLOCKS.TrafficLight || kind === EXTRA_BLOCKS.StreetLamp || kind === EXTRA_BLOCKS.ParisStreetLamp || isTrafficSign(kind);
 
 function shade(hex: string, amount: number) {
@@ -272,4 +274,5 @@ export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.DangerSign]: block('Danger', '#e8e0d5', 0.35),
   [EXTRA_BLOCKS.RoundaboutSign]: block('Giratoire', '#397bb9', 0.35),
   [EXTRA_BLOCKS.PrioritySign]: block('Route prioritaire', '#e9c83f', 0.35),
+  [EXTRA_BLOCKS.ParisStreetSign]: block('Plaque de rue parisienne', '#164a72', 0.8),
 };

@@ -1,7 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { CanvasTexture, NearestFilter, SRGBColorSpace } from 'three';
+import { BlockKind } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { PixelPart } from './ItemModel';
+import { ParisStreetSignModel } from './ParisStreetSign';
 
 function signTexture(text: string) {
   const canvas = document.createElement('canvas');
@@ -50,6 +52,6 @@ export function SignModel({ text = '' }: { text?: string }) {
 export function SignBlocks({ blocks }: { blocks: Voxel[] }) {
   return blocks.map((block) => {
     const rotation = block.facing === 'north' ? 0 : block.facing === 'south' ? Math.PI : block.facing === 'east' ? -Math.PI / 2 : Math.PI / 2;
-    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]} rotation={[0, rotation, 0]}><SignModel text={block.text ?? ''} /></group>;
+    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]} rotation={[0, rotation, 0]}>{block.kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel text={block.text} /> : <SignModel text={block.text ?? ''} />}</group>;
   });
 }
