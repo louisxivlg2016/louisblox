@@ -3,7 +3,7 @@ import { sendChatMessage, useChatStore } from '../game/chat';
 import { clearInput, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
-import chatButtonUrl from '../../assets/ui/chat-button.png';
+import chatButtonUrl from '../../assets/ui/chat-button.webp';
 
 export function ChatPanel() {
   const enabled = useMultiplayerStore((state) => state.enabled);

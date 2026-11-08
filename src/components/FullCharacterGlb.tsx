@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { useAnimations, useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { LoopRepeat } from 'three';
+import { LoopRepeat, Mesh } from 'three';
 import type { Object3D } from 'three';
 import { animateCharacterRig, createCharacterRig } from '../game/characterRig';
 import type { Ref } from 'react';
@@ -43,7 +43,19 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
   const current = useRef('');
   const { scene, animations } = useGLTF(models[outfit]);
   const scale = 2.05 / fullCharacterHeights[outfit];
-  const character = useMemo(() => createCharacterRig(scene, outfit === 'classic-girl' || outfit === 'classic-boy' ? 'explorer' : outfit, scale, appearance), [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor, appearance?.eyeColor, appearance?.eyebrowColor, appearance?.originalHairColor]);
+  const character = useMemo(() => {
+    const source = scene.clone(true);
+    if (outfit === 'soldier') {
+      const sideHair: Object3D[] = [];
+      source.traverse((object) => {
+        if (!(object instanceof Mesh)) return;
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        if (materials.some((material) => material.name === 'soldier-back-hair')) sideHair.push(object);
+      });
+      for (const part of sideHair) part.removeFromParent();
+    }
+    return createCharacterRig(source, outfit === 'classic-girl' || outfit === 'classic-boy' ? 'explorer' : outfit, scale, appearance);
+  }, [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor, appearance?.eyeColor, appearance?.eyebrowColor, appearance?.originalHairColor]);
   const { actions } = useAnimations(animations, group);
   const metadata = useMemo(() => ({ outfit: outfit.startsWith('classic-') ? 'default' : outfit, source: 'Hunyuan', whole: true }), [outfit]);
   const eating = useEatingStore((state) => remote ? null : state.eating);
