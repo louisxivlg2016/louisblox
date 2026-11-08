@@ -19,10 +19,27 @@ export const TRADE_OFFERS: TradeOffer[] = [
   { id: 'stone-coal', cost: BlockKind.Stone, costCount: 3, reward: BlockKind.CoalOre, rewardCount: 2 },
 ];
 
-const TRAVEL_STORIES = [
-  'Je traverse les prairies, les forêts et la neige avec mes deux chameaux. Nous transportons du bois, du verre et des objets rares entre les villages. Le désert était long, mais nous avons suivi les rivières jusqu’aux montagnes.',
-  'Je vais de village en village depuis les montagnes enneigées. Mes chameaux portent nos provisions et les marchandises que j’échange. Hier, nous avons contourné une forêt avant de descendre vers cette prairie.',
-  'Je parcours le monde avec mes chameaux. J’ai vu des ruines au bord des rivières, des sapins sous la neige et des pommiers en prairie. Chaque rencontre rend le voyage plus agréable.',
+export const MERCHANT_STORIES = [
+  {
+    title: 'La cloche du vieux pont',
+    steps: [
+      'Bienvenue, voyageur. Mes chameaux et moi suivons la rivière depuis la forêt des sapins. Nous avons encore beaucoup de chemin devant nous.',
+      'Au vieux pont, j’ai entendu une cloche sous les ruines. En m’approchant, j’ai trouvé une petite cloche en or, perdue dans l’herbe.',
+      'Je la ramène maintenant au village de la prairie. Ses habitants s’en servent pour se prévenir de la nuit et de la pluie.',
+      'Le chemin est long et les chameaux sont parfois fatigués. Veux-tu marcher avec nous jusqu’au prochain village ? Tu pourras aussi voir mes marchandises.',
+    ],
+    companion: 'Merci ! Reste près de nous. Je te montrerai le vieux pont et le village de la prairie.',
+  },
+  {
+    title: 'Les graines de la montagne',
+    steps: [
+      'Ce matin, j’ai quitté les montagnes enneigées avec mes deux chameaux. Le vent était froid, mais le soleil nous guidait vers la forêt.',
+      'Un ermite m’a confié un sac de graines de sapin. Il m’a demandé de les porter aux jardins du village, de l’autre côté de la rivière.',
+      'Nous avons contourné les ruines et traversé l’automne orange. Chaque pays traversé nous donne une nouvelle histoire à raconter.',
+      'Les graines doivent arriver avant la nuit. Veux-tu nous accompagner un moment, ou regarder les objets que j’ai rapportés ?',
+    ],
+    companion: 'Ta compagnie nous fera du bien. Ensemble, nous porterons ces graines jusqu’au village.',
+  },
 ] as const;
 
 type TradeState = {
@@ -30,20 +47,54 @@ type TradeState = {
   message: string;
   view: 'story' | 'offers';
   story: string;
+  traderId: import('koota').Entity | null;
+  storyId: number;
+  step: number;
+  following: boolean;
   setOpen: (open: boolean) => void;
   setView: (view: TradeState['view']) => void;
   setMessage: (message: string) => void;
+  setFollowing: (following: boolean) => void;
 };
 
 export const useTradeStore = create<TradeState>((set) => ({
   open: false,
   message: '',
   view: 'story',
-  story: TRAVEL_STORIES[0],
-  setOpen: (open) => set(open ? { open, view: 'story', story: TRAVEL_STORIES[Math.floor(Math.random() * TRAVEL_STORIES.length)], message: '' } : { open }),
+  story: MERCHANT_STORIES[0].steps[0],
+  traderId: null,
+  storyId: 0,
+  step: 0,
+  following: false,
+  setOpen: (open) => set({ open }),
   setView: (view) => set({ view }),
   setMessage: (message) => set({ message }),
+  setFollowing: (following) => set(following ? { following, open: false } : { following }),
 }));
+
+export function beginTraderStory(traderId: import('koota').Entity) {
+  useTradeStore.setState((state) => {
+    if (state.traderId === traderId) return {};
+    const storyId = Math.abs(Number(traderId)) % MERCHANT_STORIES.length;
+    return { traderId, storyId, step: 0, story: MERCHANT_STORIES[storyId].steps[0], view: 'story', following: false };
+  });
+}
+
+export function openTrader(traderId: import('koota').Entity) {
+  beginTraderStory(traderId);
+  useTradeStore.setState({ open: true, view: 'story', message: '' });
+}
+
+export function advanceTraderStory(traderId: import('koota').Entity | null) {
+  if (traderId === null) return;
+  useTradeStore.setState((state) => {
+    if (state.traderId !== traderId || state.following) return {};
+    const story = MERCHANT_STORIES[state.storyId];
+    const step = Math.min(state.step + 1, story.steps.length - 1);
+    if (step === state.step) return {};
+    return { step, story: story.steps[step], view: 'story' };
+  });
+}
 
 export function canTrade(offer: TradeOffer) {
   const state = useGameStore.getState();
@@ -65,8 +116,9 @@ export function tradeInteractionSystem(world: World, camera: Camera, interact: n
   if (interact <= 0) return false;
   const playerEntity = world.queryFirst(PlayerPosition);
   if (playerEntity?.get(PlayerMount)?.vehicle) return false;
-  if (!findInteractionTarget(world, camera, 'trade')) return false;
-  useTradeStore.getState().setOpen(true);
+  const target = findInteractionTarget(world, camera, 'trade');
+  if (!target) return false;
+  openTrader(target.entity);
   useGameStore.getState().setMode('pause');
   if (document.pointerLockElement) document.exitPointerLock();
   return true;

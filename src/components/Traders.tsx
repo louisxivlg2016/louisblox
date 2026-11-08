@@ -5,6 +5,7 @@ import type { Entity } from 'koota';
 import { BufferGeometry, Float32BufferAttribute } from 'three';
 import { CamelLeash, AnimalPosition, Trader, TraderMesh, TraderPosition } from '../game/traits';
 import { ReferenceTrader } from './ReferenceAnimals';
+import { TraderBubble } from './TraderBubble';
 
 function TraderPerson({ entity }: { entity: Entity }) {
   return (
@@ -16,6 +17,7 @@ function TraderPerson({ entity }: { entity: Entity }) {
       }}
     >
       <Suspense fallback={null}><ReferenceTrader entity={entity} /></Suspense>
+      <TraderBubble entity={entity} />
     </group>
   );
 }

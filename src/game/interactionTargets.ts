@@ -24,6 +24,10 @@ export function findInteractionTarget(world: World, camera: Camera, interaction:
     raycaster.far = Math.min(reach, closest, obstruction?.distance ?? reach);
     const sides = new Map<import('three').Material, import('three').Side>();
     mesh.traverse((object) => {
+      if (object.type === 'Sprite') {
+        object.raycast = () => {};
+        return;
+      }
       if (!(object instanceof Mesh)) return;
       for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
         sides.set(material, material.side);
