@@ -130,7 +130,7 @@ function HarnessHorse({ entity, x, phase }: { entity: Entity; x: number; phase: 
       if (leg) leg.rotation.x = swing * (index % 2 === 0 ? 1 : -1);
     }
   });
-  return <group ref={group} position={[x, 0, -4.1]} rotation={[0, Math.PI, 0]} name="harness-horse" userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
+  return <group ref={group} position={[x, 0.12, -4.1]} rotation={[0, Math.PI, 0]} name="harness-horse" userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
 function planeWindowTexture() {

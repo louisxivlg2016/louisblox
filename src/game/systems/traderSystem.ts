@@ -109,7 +109,7 @@ export function traderSystem(world: World, dt: number) {
     const distance = Math.hypot(dx, dz);
     const previousX = position.x;
     const previousZ = position.z;
-    if (distance > 0.15) {
+    if (distance > 0.001) {
       const step = Math.min(distance, dt * 1.2);
       const x = position.x + dx / distance * step;
       const z = position.z + dz / distance * step;

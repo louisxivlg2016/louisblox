@@ -59,6 +59,7 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
       }
     });
     clone.quaternion.identity();
+    if (kind === 'camel') clone.position.y += 0.72;
     return clone;
   }, [scene, kind]);
   useAnimalLegs(entity, kind === 'chicken' || kind === 'duck');
