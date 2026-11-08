@@ -31,7 +31,7 @@ function AnimalView({ entity }: { entity: Entity }) {
       <Suspense fallback={null}>
         <AnimalGlb entity={entity} kind={kind} />
       </Suspense>
-      {kind === 'horse' && rider?.saddled && <group name="horse-saddle" position={[0, 1.05, -0.15]} scale={0.85}><SaddleModel /></group>}
+      {kind === 'horse' && rider?.saddled && <group name="horse-saddle" position={[0, 0.55, -0.15]} scale={0.85}><SaddleModel /></group>}
     </group>
   );
 }
