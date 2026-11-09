@@ -216,8 +216,9 @@ export function traderSystem(world: World, dt: number) {
       }
     } else stuckCamels.delete(entity);
     motion.yaw = moving ? Math.atan2(movedX, movedZ) : heading;
-    motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * 5);
-    motion.speed = moving ? 1.05 : 0;
+    motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * (leader?.following ? 12 : 5));
+    motion.running = moving && leader?.following === true;
+    motion.speed = moving ? leader?.following ? 6.4 : 1.65 : 0;
     if (mesh.value) {
       mesh.value.position.copy(position);
       mesh.value.rotation.y = motion.displayYaw;
