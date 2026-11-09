@@ -1,6 +1,6 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
-import { addVoxel, getBlockIndex, getColumnTop } from './chunks';
+import { addVoxel, getBlockIndex, getColumnTop, streamChunks } from './chunks';
 import { getTouchMovement, isDown } from './input';
 import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from './levels';
 import { useGameStore } from './store';
@@ -28,6 +28,13 @@ export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y
     if (block && !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
   }
   return MIN_WORLD_Y + 0.5;
+}
+
+function landingGroundAt(world: World, x: number, z: number, fromY: number) {
+  const ground = groundAt(world, x, z, fromY);
+  const solidGround = ground > MIN_WORLD_Y + 0.5 ? ground : groundAt(world, x, z, MAX_BUILD_Y);
+  const water = getBlockIndex(world).get(voxelKey(Math.round(x), SEA_LEVEL, Math.round(z)));
+  return isWaterBlock(water?.kind) ? Math.max(solidGround, SEA_LEVEL + 0.02) : solidGround;
 }
 
 export function spawnVehicle(world: World, kind: VehicleKind, x: number, y: number, z: number, color = '#d63935', yaw = 0, id = crypto.randomUUID()) {
@@ -150,6 +157,7 @@ export function dismount(world: World) {
   const vehicle = mount.vehicle;
   const vehiclePosition = mount.kind === 'horse' ? vehicle.get(AnimalPosition) : vehicle.get(VehiclePosition);
   if (vehiclePosition) {
+    for (let index = 0; index < 9; index++) streamChunks(world, vehiclePosition.x, vehiclePosition.z);
     const yaw = mount.kind === 'horse' ? vehicle.get(AnimalMotion)?.yaw ?? 0 : vehicle.get(VehicleMotion)?.yaw ?? 0;
     const cabin = mount.kind && mount.kind !== 'horse' ? CABINS[mount.kind] : undefined;
     const offsets: Array<[number, number]> = cabin ? [[cabin.entrance[0], cabin.entrance[2]], [-cabin.entrance[0], cabin.entrance[2]]] : mount.kind === 'horse' ? [[1.6, 0], [-1.6, 0], [0, -1.6], [0, 1.6]] : [[2, 0], [-2, 0], [0, -3.6], [0, 3.6]];
@@ -158,7 +166,7 @@ export function dismount(world: World) {
     for (const [side, forward] of offsets) {
       const x = vehiclePosition.x + side * Math.cos(yaw) + forward * Math.sin(yaw);
       const z = vehiclePosition.z - side * Math.sin(yaw) + forward * Math.cos(yaw);
-      const ground = groundAt(world, x, z, vehiclePosition.y + 3.5);
+      const ground = landingGroundAt(world, x, z, vehiclePosition.y + 3.5);
       if (Math.abs(ground - vehiclePosition.y) > 2.2) continue;
       const feet = Math.floor(ground + 0.5);
       if (isCollidable(blocks.get(voxelKey(Math.round(x), feet, Math.round(z)))) || isCollidable(blocks.get(voxelKey(Math.round(x), feet + 1, Math.round(z))))) continue;
@@ -166,7 +174,7 @@ export function dismount(world: World) {
       break;
     }
     if (exit) position.set(exit.x, exit.y, exit.z);
-    else position.set(vehiclePosition.x + 1.6, groundAt(world, vehiclePosition.x + 1.6, vehiclePosition.z, vehiclePosition.y + 2) + 0.02, vehiclePosition.z);
+    else position.set(vehiclePosition.x + 1.6, landingGroundAt(world, vehiclePosition.x + 1.6, vehiclePosition.z, vehiclePosition.y + 2) + 0.02, vehiclePosition.z);
     body?.setTranslation(position, true);
   }
   if (mount.kind === 'horse') {
@@ -236,7 +244,7 @@ function moveMount(world: World, position: Vector3, yaw: number, speed: number, 
 function movePlane(world: World, position: Vector3, yaw: number, speed: number, dt: number, vertical: number, landing: boolean) {
   const x = position.x - Math.sin(yaw) * speed * dt;
   const z = position.z - Math.cos(yaw) * speed * dt;
-  const terrain = groundAt(world, x, z, position.y + 1.01);
+  const terrain = landingGroundAt(world, x, z, position.y + 1.01);
   const ground = terrain + 0.02;
   const airborne = vertical > 0 || (!landing && position.y > terrain + 2.1);
   const nextY = position.y + vertical * dt * 8;
