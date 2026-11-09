@@ -60,6 +60,17 @@ export function writeWorldSave(worldId: string, save: WorldSave, name = worldId)
   }
 }
 
+export function deleteWorldSave(worldId: string) {
+  try {
+    localStorage.removeItem(worldKey(worldId));
+    if (worldId === DEFAULT_WORLD_ID) localStorage.removeItem(LEGACY_SAVE_KEY);
+    localStorage.setItem(WORLDS_KEY, JSON.stringify(listWorlds().filter((world) => world.id !== worldId)));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function createWorldSave(world: World): WorldSave | null {
   const playerEntity = world.queryFirst(Player);
   const environment = world.queryFirst(Environment)?.get(Environment);

@@ -9,6 +9,7 @@ import type { WorldMeta } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { usePublicWorldJoin } from './usePublicWorldJoin';
+import { removeWorld } from '../game/deleteWorld';
 
 export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
   onPlay: () => void | Promise<void>;
@@ -18,6 +19,8 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
 }) {
   const [worlds, setWorlds] = useState<PublicWorld[]>([]);
   const [localWorlds, setLocalWorlds] = useState<WorldMeta[]>([]);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [internalMode, setInternalMode] = useState<GameplayMode>(() => useGameStore.getState().gameplayMode);
   const selectedMode = mode ?? internalMode;
   const setMode = onModeChange ?? setInternalMode;
@@ -50,6 +53,21 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
     const gameplayMode = world.gameplayMode ?? selectedMode;
     join({ id: world.id, name: world.name, ownerId: selfId, ownerName: playerName, gameplayMode, template: gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : 'nature', players: 0, updatedAt: world.updatedAt });
   };
+  const remove = async (world: WorldMeta) => {
+    if (!window.confirm(`Supprimer « ${world.name} » ?\n\nLa sauvegarde sur cet appareil sera définitivement supprimée. Si tu es le créateur du salon en ligne, il sera supprimé pour tout le monde.`)) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const result = await removeWorld(world.id);
+      setLocalWorlds(listWorlds());
+      setWorlds(await listPublicWorlds());
+      if (result.warning) setDeleteError(result.warning);
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'Impossible de supprimer ce monde.');
+    } finally {
+      setDeleting(false);
+    }
+  };
   return (
     <section className="community-worlds">
       <div className="community-heading">
@@ -66,11 +84,12 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
       </div>
       <p className="community-random-hint">Choix au hasard parmi les mondes {GAMEPLAY_MODE_LABELS[selectedMode]} avec d’autres joueurs en ligne.</p>
       {error && <p className="multiplayer-error" role="alert">{error}</p>}
+      {deleteError && <p className="multiplayer-error" role="alert">{deleteError}</p>}
       <section className="community-section">
         <h3>Mondes des autres joueurs <span>{others.length}</span></h3>
         <div className="world-library-list">
           {others.map((world) => (
-            <button className="world-library-entry" key={world.id} data-world-id={world.id} data-owner-id={world.ownerId} data-mode={world.gameplayMode} onClick={() => join(world)} disabled={pending || status === 'connecting'}>
+            <button className="world-library-entry" key={world.id} data-world-id={world.id} data-owner-id={world.ownerId} data-mode={world.gameplayMode} onClick={() => join(world)} disabled={deleting || pending || status === 'connecting'}>
               <strong>{world.name}</strong>
               <small>{world.ownerName} · {GAMEPLAY_MODE_LABELS[world.gameplayMode]} · {world.players} joueur{world.players > 1 ? 's' : ''} en ligne</small>
             </button>
@@ -82,16 +101,22 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
         <h3>Mes mondes <span>{ownPublic.length + ownLocal.length}</span></h3>
         <div className="world-library-list">
           {ownPublic.map((world) => (
-            <button className="world-library-entry" key={world.id} data-world-id={world.id} data-owner-id={world.ownerId} data-mode={world.gameplayMode} onClick={() => join(world)} disabled={pending || status === 'connecting'}>
-              <strong>{world.name}</strong>
-              <small>Mon monde partagé · {world.players} joueur{world.players > 1 ? 's' : ''} en ligne</small>
-            </button>
+            <div className="world-library-item" key={world.id}>
+              <button className="world-library-entry" data-world-id={world.id} data-owner-id={world.ownerId} data-mode={world.gameplayMode} onClick={() => join(world)} disabled={deleting || pending || status === 'connecting'}>
+                <strong>{world.name}</strong>
+                <small>Mon monde partagé · {world.players} joueur{world.players > 1 ? 's' : ''} en ligne</small>
+              </button>
+              <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={deleting || pending || status === 'connecting'} aria-label={`Supprimer ${world.name}`}>Supprimer</button>
+            </div>
           ))}
           {ownLocal.map((world) => (
-            <button className="world-library-entry" key={world.id} data-world-id={world.id} data-mode={world.gameplayMode ?? 'creative'} onClick={() => openLocal(world)} disabled={pending || status === 'connecting'}>
-              <strong>{world.name}</strong>
-              <small>Ma sauvegarde · {GAMEPLAY_MODE_LABELS[world.gameplayMode ?? 'creative']} · {world.updatedAt ? new Date(world.updatedAt).toLocaleDateString('fr-FR') : 'Ancienne sauvegarde'}</small>
-            </button>
+            <div className="world-library-item" key={world.id}>
+              <button className="world-library-entry" data-world-id={world.id} data-mode={world.gameplayMode ?? 'creative'} onClick={() => openLocal(world)} disabled={deleting || pending || status === 'connecting'}>
+                <strong>{world.name}</strong>
+                <small>Ma sauvegarde · {GAMEPLAY_MODE_LABELS[world.gameplayMode ?? 'creative']} · {world.updatedAt ? new Date(world.updatedAt).toLocaleDateString('fr-FR') : 'Ancienne sauvegarde'}</small>
+              </button>
+              <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={deleting || pending || status === 'connecting'} aria-label={`Supprimer ${world.name}`}>Supprimer</button>
+            </div>
           ))}
           {ownPublic.length + ownLocal.length === 0 && <p>Aucune sauvegarde en {GAMEPLAY_MODE_LABELS[selectedMode]} pour le moment.</p>}
         </div>

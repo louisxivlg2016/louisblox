@@ -4,6 +4,7 @@ import type { WorldMeta } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { downloadWorldBackup, importWorldBackup } from '../game/worldBackup';
+import { removeWorld } from '../game/deleteWorld';
 
 import { GAMEPLAY_MODE_LABELS } from '../game/worldMode';
 
@@ -38,6 +39,20 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
       setPending(true);
     } else {
       window.setTimeout(onPlay, 120);
+    }
+  };
+  const remove = async (world: WorldMeta) => {
+    if (!window.confirm(`Supprimer « ${world.name} » ?\n\nLa sauvegarde sur cet appareil sera définitivement supprimée. Si tu es le créateur du salon en ligne, il sera supprimé pour tout le monde.`)) return;
+    setBusy(true);
+    setMessage('');
+    try {
+      const result = await removeWorld(world.id);
+      setWorlds(listWorlds());
+      setMessage(result.warning || `« ${world.name} » a été supprimé.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Impossible de supprimer ce monde.');
+    } finally {
+      setBusy(false);
     }
   };
   const exportBackup = () => {
@@ -84,10 +99,13 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
       {message && <p className="world-backup-message" role="status">{message}</p>}
       <div className="world-library-list">
         {worlds.map((world) => (
-          <button key={world.id} className="world-library-entry" onClick={() => open(world)} aria-label={`Ouvrir ${world.name}`}>
-            <strong>{world.name}</strong>
-            <small>{MODE_NAMES[world.gameplayMode ?? 'creative']} · {world.updatedAt ? new Date(world.updatedAt).toLocaleDateString('fr-FR') : 'Ancienne sauvegarde'}</small>
-          </button>
+          <div className="world-library-item" key={world.id}>
+            <button className="world-library-entry" onClick={() => open(world)} aria-label={`Ouvrir ${world.name}`} disabled={busy || pending}>
+              <strong>{world.name}</strong>
+              <small>{MODE_NAMES[world.gameplayMode ?? 'creative']} · {world.updatedAt ? new Date(world.updatedAt).toLocaleDateString('fr-FR') : 'Ancienne sauvegarde'}</small>
+            </button>
+            <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={busy || pending} aria-label={`Supprimer ${world.name}`}>Supprimer</button>
+          </div>
         ))}
         {worlds.length === 0 && <p>Aucune partie enregistrée pour le moment.</p>}
       </div>
