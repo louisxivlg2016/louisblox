@@ -65,11 +65,14 @@ function hash(x: number, z: number, seed: number) {
 }
 
 export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number, z: number, seed: number) {
+  const id = `${kind}:${x}:${z}`;
+  const existing = world.query(Animal, AnimalId).find((entity) => entity.get(AnimalId) === id);
+  if (existing) return existing;
   const site = kind === 'duck' ? { x, y, z } : safeRoamSpawn(x, z, seed);
   const yaw = hash(x, z, seed + 41) * Math.PI * 2;
   return world.spawn(
     Animal({ kind }),
-    AnimalId(`${kind}:${x}:${z}`),
+    AnimalId(id),
     AnimalHealth({ value: health[kind] }),
     AnimalHit(),
     AnimalPosition(new Vector3(site.x, kind === 'duck' ? y : site.y - 0.51, site.z)),
@@ -142,7 +145,7 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
     }
   }
 
-  if (hash(cx, cz, seed + 802) < 0.55) return entities;
+  if (hash(cx, cz, seed + 802) < 0.75) return entities;
   const centerX = cx * 16 + 8;
   const centerZ = cz * 16 + 8;
   const biome = biomeAt(centerX, centerZ, seed);

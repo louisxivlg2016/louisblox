@@ -84,7 +84,7 @@ function avoidWall(world: World, kind: AnimalKind, position: Vector3, motion: Mo
 export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0) {
   if (!isLoaded(world, position.x, position.z)) return true;
   if (!bodyClear(world, position.x, position.z, position.y)) {
-    position.y = groundAt(world, position.x, position.z, position.y + 0.2);
+    position.y = groundAt(world, position.x, position.z, position.y + 2.2);
     motion.velocityY = 0;
     motion.grounded = true;
     if (!bodyClear(world, position.x, position.z, position.y)) {
@@ -175,6 +175,7 @@ export function animalSystem(world: World, dt: number) {
   const player = playerEntity?.get(PlayerPosition);
   const health = playerEntity?.get(PlayerHealth);
   const fires = getFireSources(world);
+  const neighbors = world.query(Animal, AnimalPosition).map((entity) => ({ entity, position: entity.get(AnimalPosition)!, stationary: Boolean(entity.get(CamelLeash) || entity.get(HorseRider)?.mounted) }));
 
   world.query(Animal, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, hit, position, motion, mesh], entity) => {
     const distanceSquared = player ? position.distanceToSquared(player) : Infinity;
@@ -236,6 +237,19 @@ export function animalSystem(world: World, dt: number) {
     if (!fire && motion.turnIn <= 0 && !motion.hunting) {
       motion.yaw += Math.sin(entity * 17.31 + motion.phase) * 0.75;
       motion.turnIn = hit.panic > 0 ? 1.5 : 8 + (Math.sin(entity * 7.13 + motion.phase) + 1) * 3.5;
+    }
+    if (!motion.hunting) {
+      for (const neighbor of neighbors) {
+        if (neighbor.entity === entity || neighbor.stationary || !neighbor.entity.isAlive()) continue;
+        const dx = position.x - neighbor.position.x;
+        const dz = position.z - neighbor.position.z;
+        const distanceSquared = dx * dx + dz * dz;
+        if (distanceSquared >= 2.6 * 2.6 || Math.abs(position.y - neighbor.position.y) > 2.2) continue;
+        const away = distanceSquared < 0.0001 ? entity * 2.39 : Math.atan2(dx, dz);
+        motion.yaw = turnToward(motion.yaw, away + Math.sin(entity * 2.17) * 0.4, stepDt * 5);
+        motion.turnIn = Math.max(motion.turnIn, 1.4);
+        break;
+      }
     }
 
     if (moveAnimal(world, animal.kind, position, motion, stepDt, entity, fire ? 1 : motion.hunting ? 1 : hit.panic) && mesh.value) {
