@@ -1,11 +1,12 @@
 import type { Entity, World } from 'koota';
 import { Mesh, Vector3 } from 'three';
-import { getBlockIndex, isChunkLoaded } from '../chunks';
+import { getBlockIndex, getWorldSeed, isChunkLoaded } from '../chunks';
 import { isCrop } from '../extraBlocks';
-import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
+import { biomeAt, MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { isWaterBlock, voxelKey } from '../voxel';
+import { jungleAnimals } from '../animals';
 import type { AnimalKind } from '../animals';
 import { Animal, AnimalHit, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
 import { damagePlayer } from '../combat';
@@ -45,6 +46,11 @@ function blockAt(world: World, x: number, y: number, z: number) {
 
 const isLoaded = isChunkLoaded;
 
+function canInhabit(world: World, kind: AnimalKind, x: number, z: number) {
+  const jungle = biomeAt(Math.round(x), Math.round(z), getWorldSeed(world)) === 'jungle';
+  return jungle === jungleAnimals.has(kind);
+}
+
 function bodyClear(world: World, x: number, z: number, feetY: number) {
   for (const height of [0.35, 1.15]) {
     const block = blockAt(world, x, feetY + height, z);
@@ -62,7 +68,7 @@ function walkableGround(world: World, x: number, z: number, ground: number) {
 function canAdvance(world: World, kind: AnimalKind, position: Vector3, yaw: number) {
   const x = position.x + Math.sin(yaw) * 0.8;
   const z = position.z + Math.cos(yaw) * 0.8;
-  if (!isLoaded(world, x, z)) return false;
+  if (!isLoaded(world, x, z) || !canInhabit(world, kind, x, z)) return false;
   if (kind === 'duck') {
     const ground = groundAt(world, x, z, MAX_BUILD_Y);
     return ground < SEA_LEVEL + 0.5 && isWaterBlock(blockAt(world, x, SEA_LEVEL, z)?.kind);
@@ -102,6 +108,10 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
   const speed = panic > 0 ? chaseSpeed : normalSpeed;
   const x = position.x + Math.sin(motion.yaw) * speed * dt;
   const z = position.z + Math.cos(motion.yaw) * speed * dt;
+  if (!canInhabit(world, kind, x, z)) {
+    avoidWall(world, kind, position, motion, entity);
+    return true;
+  }
   let blocked = false;
 
   if (kind === 'duck') {

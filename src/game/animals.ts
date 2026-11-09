@@ -34,11 +34,13 @@ export type AnimalKind =
   | 'bear' | 'deer' | 'wolf' | 'snowWolf' | 'snowBear' | 'snowDeer' | 'zombie'
   | 'monkey' | 'ocelot' | 'giraffe' | 'elephant';
 
+export const jungleAnimals = new Set<AnimalKind>(['monkey', 'ocelot', 'giraffe', 'elephant']);
+
 const species: Record<Biome, AnimalKind[]> = {
   prairie: ['cow', 'horse', 'pig', 'sheep', 'chicken'],
   desert: ['camel'],
   forest: ['bear', 'deer', 'wolf'],
-  jungle: ['pig', 'chicken', 'deer', 'monkey', 'ocelot', 'giraffe', 'elephant'],
+  jungle: [...jungleAnimals],
   winter: ['snowWolf', 'snowBear', 'snowDeer'],
   autumn: ['cow', 'sheep', 'deer'],
 };
@@ -135,8 +137,9 @@ function spawnTradersAlongGrid(world: World, cx: number, cz: number, seed: numbe
 
 export function spawnChunkAnimals(world: World, cx: number, cz: number, water: WaterTile[], seed: number) {
   const entities: Entity[] = [...spawnTradersAlongGrid(world, cx, cz, seed), ...spawnVillageResidents(world, cx, cz, seed)];
+  const chunkBiome = biomeAt(cx * 16 + 8, cz * 16 + 8, seed);
 
-  const openWater = water.filter((tile) => !isInAnyRuinFootprint(tile.x, tile.z, seed));
+  const openWater = water.filter((tile) => biomeAt(tile.x, tile.z, seed) !== 'jungle' && !isInAnyRuinFootprint(tile.x, tile.z, seed));
   if (openWater.length > 0 && hash(cx, cz, seed + 800) > 0.95) {
     const tile = openWater[Math.floor(hash(cx, cz, seed + 801) * openWater.length)];
     entities.push(spawnAnimal(world, 'duck', tile.x, SEA_LEVEL + 0.35, tile.z, seed));
@@ -149,7 +152,7 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
     entities.push(...spawnTrader(world, 7, 4, seed));
   }
 
-  if (useGameStore.getState().gameplayMode === 'survival' && hash(cx, cz, seed + 820) > 0.3) {
+  if (chunkBiome !== 'jungle' && useGameStore.getState().gameplayMode === 'survival' && hash(cx, cz, seed + 820) > 0.3) {
     const count = hash(cx, cz, seed + 821) > 0.7 ? 3 : 2;
     for (let index = 0; index < count; index += 1) {
       const x = cx * 16 + 2 + Math.floor(hash(cx + index, cz, seed + 822) * 12);
@@ -161,9 +164,7 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
   }
 
   if (hash(cx, cz, seed + 802) < 0.75) return entities;
-  const centerX = cx * 16 + 8;
-  const centerZ = cz * 16 + 8;
-  const biome = biomeAt(centerX, centerZ, seed);
+  const biome = chunkBiome;
   const candidates = species[biome];
   const x = cx * 16 + 2 + Math.floor(hash(cx, cz, seed + 804) * 12);
   const z = cz * 16 + 2 + Math.floor(hash(cx, cz + 1, seed + 805) * 12);
