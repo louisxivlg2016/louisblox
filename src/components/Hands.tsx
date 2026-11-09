@@ -95,7 +95,7 @@ export function Hands() {
           <mesh args={[blockGeometry, heldMaterials]} position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.16} renderOrder={11} frustumCulled={false} />
         )
       ) : (
-        <group name="held-item" position={isWeaponItem(selected) ? [0.36, -0.58 - itemGripOffset(selected) * (getItemMeta(selected).category === 'vehicle' ? 0.1972 : 0.754), -0.78] : [0.46, -0.3, -1.02]} rotation={[0.08, 0.15, 0]} scale={getItemMeta(selected).category === 'vehicle' ? 0.34 : 1.3}>
+        <group name="held-item" position={isWeaponItem(selected) ? [0.36, -0.58 - itemGripOffset(selected) * (getItemMeta(selected).category === 'vehicle' ? 0.1972 : 0.754) - 0.12, -0.78] : [0.46, -0.3, -1.02]} rotation={[0.08, 0.15, 0]} scale={getItemMeta(selected).category === 'vehicle' ? 0.34 : 1.3}>
           <ItemModel kind={selected} held flipGuns />
         </group>
       )}
