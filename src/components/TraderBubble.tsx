@@ -4,7 +4,7 @@ import { useWorld } from 'koota/react';
 import type { Entity } from 'koota';
 import { CanvasTexture, NearestFilter, Sprite, SpriteMaterial, SRGBColorSpace } from 'three';
 import { MERCHANT_STORIES, useTradeStore } from '../game/trading';
-import { PlayerPosition, TraderPosition } from '../game/traits';
+import { PlayerPosition, Trader, TraderPosition } from '../game/traits';
 
 function bubbleTexture(text: string) {
   const canvas = document.createElement('canvas');
@@ -60,7 +60,7 @@ export function TraderBubble({ entity }: { entity: Entity }) {
   const step = useTradeStore((state) => state.step);
   const story = useTradeStore((state) => state.story);
   const following = useTradeStore((state) => state.following);
-  const active = traderId === entity;
+  const active = traderId === entity || following && entity.get(Trader)?.following === true;
   const lastStep = MERCHANT_STORIES[storyId].steps.length - 1;
   const text = active
     ? following

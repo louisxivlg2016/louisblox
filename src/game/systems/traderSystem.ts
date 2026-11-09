@@ -68,10 +68,11 @@ export function traderSystem(world: World, dt: number) {
       if (mesh.value) mesh.value.rotation.y = turnToward(mesh.value.rotation.y, Math.atan2(player.x - position.x, player.z - position.z), dt * 4);
       continue;
     }
+    if (conversation.traderId === entity && conversation.following !== trader.following) entity.set(Trader, { following: conversation.following });
     const fire = nearestFire(fires, position);
     trader.panic = fire ? Math.max(trader.panic, 0.5) : Math.max(0, trader.panic - dt);
     const heading = traderHeading(trader);
-    const following = !fire && position.distanceToSquared(player) > 18 * 18;
+    const following = !fire && (trader.following || position.distanceToSquared(player) > 18 * 18);
     if (fire) {
       const dx = position.x - fire.x;
       const dz = position.z - fire.z;
