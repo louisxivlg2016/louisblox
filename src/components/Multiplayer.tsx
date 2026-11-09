@@ -15,7 +15,7 @@ import { canCreateWorld, createWorldSave, listWorlds, saveWorld } from '../game/
 import { rememberWorld, useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
 import { useAvatarStore } from '../game/avatar';
-import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Vehicle } from '../game/traits';
+import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep, Vehicle } from '../game/traits';
 import { getItemMeta } from '../game/items';
 import { ItemModel, PixelPart, heldItemPosition } from './ItemModel';
 import { blockGeometry, blockMaterials } from '../game/textures';
@@ -721,7 +721,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, bodyYaw: entity?.get(PlayerMesh)?.value?.rotation.y, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, bodyYaw: entity?.get(PlayerMesh)?.value?.rotation.y, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: world.queryFirst(Sleep) ? 'lie' : useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 
