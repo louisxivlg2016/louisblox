@@ -1,7 +1,7 @@
 import type { World } from 'koota';
 import { flushPlaytime } from './profile';
 import { useProtectionStore } from './protection';
-import { getWorldSeed, snapshotSaddledHorses, snapshotVehicles, snapshotWorldEdits } from './chunks';
+import { getWorldSeed, onVoxelEdit, snapshotSaddledHorses, snapshotVehicles, snapshotWorldEdits } from './chunks';
 import type { WorldSave } from './chunks';
 import { useGameStore } from './store';
 import { Environment, Player, PlayerHealth, PlayerPosition, PlayerState } from './traits';
@@ -127,16 +127,21 @@ export function initPersistence(world: World) {
     saveWorld(world);
     flushPlaytime();
   };
-  useGameStore.subscribe((state, previous) => {
-    if (state.selected === previous.selected && state.hotbarSlots === previous.hotbarSlots && state.itemCounts === previous.itemCounts
-      && state.equippedArmor === previous.equippedArmor && state.apples === previous.apples && state.meat === previous.meat) return;
+  const schedule = () => {
     if (saveTimer !== undefined) window.clearTimeout(saveTimer);
     saveTimer = window.setTimeout(() => {
       saveTimer = undefined;
       saveWorld(world);
-    }, 200);
+    }, 100);
+  };
+  useGameStore.subscribe((state, previous) => {
+    if (state.selected === previous.selected && state.hotbarSlots === previous.hotbarSlots && state.itemCounts === previous.itemCounts
+      && state.equippedArmor === previous.equippedArmor && state.apples === previous.apples && state.meat === previous.meat) return;
+    schedule();
   });
+  onVoxelEdit(world, schedule);
   window.addEventListener('pagehide', flush);
+  window.addEventListener('beforeunload', flush);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') flush();
   });
