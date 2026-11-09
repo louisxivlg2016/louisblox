@@ -36,7 +36,7 @@ export function TradingPanel() {
   };
   const accompany = () => {
     useTradeStore.getState().setFollowing(true);
-    useGameStore.getState().setNotice('Tu accompagnes le marchand. Reste près de lui pour voyager avec la caravane.');
+    useGameStore.getState().setNotice('Suis le marchand jusqu’à la ville, à environ 1 km. Il t’attend si tu t’éloignes.');
     close();
   };
   const stopAccompanying = () => {

@@ -7,6 +7,8 @@ import { BlockKind } from './voxel';
 import type { Voxel } from './voxel';
 
 const HOUSE_OFFSETS = [[-5, -4], [5, -4], [-5, 5], [5, 5]] as const;
+const CITY_HOUSE_OFFSETS = [[-12, -12], [12, -12], [-12, 12], [12, 12], [-12, -4], [12, -4], [-12, 4], [12, 4]] as const;
+const CITY_RESIDENT_OFFSETS = [[-2, -2], [2, -2], [-2, 2], [2, 2]] as const;
 
 function hash(x: number, z: number, seed: number) {
   let value = Math.imul(x, 374761393) + Math.imul(z, 668265263) + Math.imul(seed, 1442695041);
@@ -39,18 +41,64 @@ export function villageAt(cx: number, cz: number, seed: number) {
   return site;
 }
 
+const tradeCitySites = new Map<number, { x: number; z: number }>();
+
+export function tradeCityAt(seed: number) {
+  const cached = tradeCitySites.get(seed);
+  if (cached) return cached;
+  for (let radius = 5; radius <= 32; radius += 1) {
+    let best: { x: number; z: number; score: number } | null = null;
+    for (let cellX = -radius; cellX <= radius; cellX += 1) {
+      for (let cellZ = -radius; cellZ <= radius; cellZ += 1) {
+        if (Math.max(Math.abs(cellX), Math.abs(cellZ)) !== radius) continue;
+        const x = cellX * 192 + 96;
+        const z = cellZ * 192 + 96;
+        const site = villageAt(Math.floor(x / 16), Math.floor(z / 16), seed);
+        if (!site) continue;
+        const distance = Math.hypot(site.x, site.z);
+        if (distance < 700) continue;
+        const score = Math.abs(distance - 960);
+        if (!best || score < best.score) best = { ...site, score };
+      }
+    }
+    if (best) {
+      const site = { x: best.x, z: best.z };
+      tradeCitySites.set(seed, site);
+      return site;
+    }
+  }
+  const fallback = safeSpawnAt(960, 0, seed, 'prairie');
+  const site = { x: fallback.x, z: fallback.z };
+  tradeCitySites.set(seed, site);
+  return site;
+}
+
+function isTradeCity(site: { x: number; z: number }, seed: number) {
+  const city = tradeCityAt(seed);
+  return site.x === city.x && site.z === city.z;
+}
+
+function villageSiteForChunk(cx: number, cz: number, seed: number) {
+  const natural = villageAt(cx, cz, seed);
+  if (natural) return natural;
+  const city = tradeCityAt(seed);
+  return city.x >= cx * 16 && city.x < (cx + 1) * 16 && city.z >= cz * 16 && city.z < (cz + 1) * 16 ? city : null;
+}
+
 export function generateVillageBlocks(cx: number, cz: number, seed: number): Voxel[] {
   const cacheKey = `${cx},${cz},${seed}`;
   const cached = villageBlockCache.get(cacheKey);
   if (cached) return cached;
-  const site = villageAt(cx, cz, seed);
+  const site = villageSiteForChunk(cx, cz, seed);
   if (!site) return [];
+  const city = isTradeCity(site, seed);
+  const houses = city ? [...HOUSE_OFFSETS, ...CITY_HOUSE_OFFSETS] : HOUSE_OFFSETS;
   const blocks: Voxel[] = [];
   const put = (x: number, y: number, z: number, kind: BlockKind) => {
     if (x < cx * 16 || x >= (cx + 1) * 16 || z < cz * 16 || z >= (cz + 1) * 16) return;
     blocks.push({ x, y, z, kind });
   };
-  for (const [offsetX, offsetZ] of HOUSE_OFFSETS) {
+  for (const [offsetX, offsetZ] of houses) {
     const centerX = site.x + offsetX;
     const centerZ = site.z + offsetZ;
     if (heightAt(centerX, centerZ, seed) < SEA_LEVEL) continue;
@@ -76,7 +124,8 @@ export function generateVillageBlocks(cx: number, cz: number, seed: number): Vox
     put(centerX - 1, floorY + 1, centerZ - 1, BlockKind.Bed);
     put(centerX + 1, floorY + 1, centerZ - 1, BlockKind.Chest);
   }
-  for (let offset = -8; offset <= 8; offset++) {
+  const pathRadius = city ? 15 : 8;
+  for (let offset = -pathRadius; offset <= pathRadius; offset++) {
     for (const side of [-1, 0, 1]) {
       const x = site.x + offset;
       const z = site.z + side;
@@ -92,20 +141,23 @@ export function generateVillageBlocks(cx: number, cz: number, seed: number): Vox
       put(site.x + dx, y, site.z + dz, dx === 0 && dz === 0 ? BlockKind.Water : BlockKind.Stone);
     }
   }
-  put(site.x - 7, heightAt(site.x - 7, site.z, seed) + 1, site.z, BlockKind.StreetLamp);
-  put(site.x + 7, heightAt(site.x + 7, site.z, seed) + 1, site.z, BlockKind.StreetLamp);
+  const lampOffset = city ? 14 : 7;
+  put(site.x - lampOffset, heightAt(site.x - lampOffset, site.z, seed) + 1, site.z, BlockKind.StreetLamp);
+  put(site.x + lampOffset, heightAt(site.x + lampOffset, site.z, seed) + 1, site.z, BlockKind.StreetLamp);
   if (villageBlockCache.size > 64) villageBlockCache.delete(villageBlockCache.keys().next().value!);
   villageBlockCache.set(cacheKey, blocks);
   return blocks;
 }
 
 export function spawnVillageResidents(world: World, cx: number, cz: number, seed: number) {
-  const site = villageAt(cx, cz, seed);
+  const site = villageSiteForChunk(cx, cz, seed);
   if (!site) return [];
+  const city = isTradeCity(site, seed);
+  const houses = city ? [...HOUSE_OFFSETS, ...CITY_HOUSE_OFFSETS] : HOUSE_OFFSETS;
+  const positions = houses.map(([offsetX, offsetZ]) => ({ x: site.x + offsetX, z: site.z + offsetZ + 3 }));
+  if (city) positions.push(...CITY_RESIDENT_OFFSETS.map(([offsetX, offsetZ]) => ({ x: site.x + offsetX, z: site.z + offsetZ })));
   const residents = [];
-  for (const [offsetX, offsetZ] of HOUSE_OFFSETS) {
-    const x = site.x + offsetX;
-    const z = site.z + offsetZ + 3;
+  for (const { x, z } of positions) {
     if (heightAt(x, z, seed) < SEA_LEVEL) continue;
     if (x < cx * 16 || x >= (cx + 1) * 16 || z < cz * 16 || z >= (cz + 1) * 16) continue;
     residents.push(world.spawn(

@@ -295,7 +295,7 @@ function loadChunk(world: World, cx: number, cz: number) {
   data.animals = isMinigameMode(mode) || isCityMode(mode) ? [] : spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
   for (const animal of data.animals) {
     const trader = animal.get(Trader);
-    if (!trader) continue;
+    if (!trader?.villager) continue;
     const snapshot = state.traderSnapshots.get(columnKey(trader.homeX, trader.homeZ));
     if (!snapshot) continue;
     animal.set(Trader, { ...snapshot.data });
@@ -346,11 +346,13 @@ function unloadChunk(world: World, entity: Entity) {
   const playerPosition = playerEntity?.get(PlayerPosition);
   for (const animal of data.animals) {
     const trader = animal.get(Trader);
-    if (trader) {
+    if (trader?.villager) {
       const position = animal.get(TraderPosition);
       if (position) state.traderSnapshots.set(columnKey(trader.homeX, trader.homeZ), { data: { ...trader }, position: position.clone(), yaw: animal.get(TraderMesh)?.value?.rotation.y ?? 0 });
     }
-    if (trader || animal.get(CamelLeash)) {
+    if (trader && !trader.villager) continue;
+    if (animal.get(CamelLeash)) continue;
+    if (trader) {
       if (animal.isAlive()) animal.destroy();
       continue;
     }

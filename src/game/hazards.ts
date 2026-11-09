@@ -40,6 +40,10 @@ export function damageAnimalFromHazard(world: World, target: Entity, amount: num
 export function damageTrader(world: World, target: Entity, amount: number) {
   const trader = target.get(Trader);
   if (!trader) return false;
+  if (!trader.villager) {
+    target.set(Trader, { health: Math.max(1, trader.health - amount), panic: 3 });
+    return false;
+  }
   const health = Math.max(0, trader.health - amount);
   target.set(Trader, { health, panic: 3 });
   if (health > 0) return false;

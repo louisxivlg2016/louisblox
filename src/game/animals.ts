@@ -5,7 +5,7 @@ import type { Biome, WaterTile } from './levels';
 import { Animal, AnimalHealth, AnimalHit, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Trader, TraderMesh, TraderPosition } from './traits';
 import { useGameStore } from './store';
 import { isInAnyRuinFootprint } from './ruins';
-import { spawnVillageResidents } from './villages';
+import { spawnVillageResidents, tradeCityAt } from './villages';
 
 function safeRoamSpawn(x: number, z: number, seed: number) {
   for (let radius = 0; radius <= 16; radius += 1) {
@@ -93,10 +93,19 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
   );
 }
 
-export function spawnTrader(world: World, x: number, z: number, seed: number) {
+export function spawnTrader(world: World, x: number, z: number, seed: number, destinationSeed = seed) {
   const site = safeRoamSpawn(x, z, seed);
+  const existing = world.query(Trader).find((entity) => {
+    const trader = entity.get(Trader)!;
+    return !trader.villager && trader.homeX === site.x && trader.homeZ === site.z;
+  });
+  if (existing) {
+    const camels = world.query(CamelLeash).filter((entity) => entity.get(CamelLeash)?.trader === existing).sort((a, b) => a.get(CamelLeash)!.order - b.get(CamelLeash)!.order);
+    return [existing, ...camels];
+  }
+  const destination = tradeCityAt(destinationSeed);
   const trader = world.spawn(
-    Trader({ homeX: site.x, homeZ: site.z, targetX: site.x, targetZ: site.z }),
+    Trader({ homeX: site.x, homeZ: site.z, targetX: site.x, targetZ: site.z, destinationX: destination.x, destinationZ: destination.z }),
     TraderPosition(new Vector3(site.x, site.y, site.z)),
     TraderMesh(),
   );
@@ -118,7 +127,7 @@ function spawnTradersAlongGrid(world: World, cx: number, cz: number, seed: numbe
       const x = cellX * 100 + 50;
       const z = cellZ * 100 + 50;
       if (x < cx * 16 || x >= (cx + 1) * 16 || z < cz * 16 || z >= (cz + 1) * 16) continue;
-      entities.push(...spawnTrader(world, x, z, seed + cellX * 37 + cellZ * 61));
+      entities.push(...spawnTrader(world, x, z, seed + cellX * 37 + cellZ * 61, seed));
     }
   }
   return entities;

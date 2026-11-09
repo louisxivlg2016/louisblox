@@ -55,6 +55,8 @@ function bubbleTexture(text: string) {
 export function TraderBubble({ entity }: { entity: Entity }) {
   const world = useWorld();
   const [near, setNear] = useState(false);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const [arrived, setArrived] = useState(false);
   const traderId = useTradeStore((state) => state.traderId);
   const storyId = useTradeStore((state) => state.storyId);
   const step = useTradeStore((state) => state.step);
@@ -62,21 +64,23 @@ export function TraderBubble({ entity }: { entity: Entity }) {
   const following = useTradeStore((state) => state.following);
   const active = traderId === entity || following && entity.get(Trader)?.following === true;
   const lastStep = MERCHANT_STORIES[storyId].steps.length - 1;
-  const text = active
-    ? following
-      ? MERCHANT_STORIES[storyId].companion
-      : step === lastStep ? `${story} Choisis ta réponse ici.` : `${story} E pour la suite.`
-    : 'Appuie sur moi pour écouter mon histoire.';
+  const text = arrived
+    ? 'Nous sommes arrivés en ville ! Les habitants sont heureux de te voir.'
+    : active
+      ? following
+        ? `Direction la ville : encore ${remaining ?? '…'} m. Je t’attends si tu t’éloignes.`
+        : step === lastStep ? `${story} Choisis ta réponse ici.` : `${story} E pour la suite.`
+      : 'Appuie sur moi pour écouter mon histoire.';
   const sprite = useMemo(() => {
     const material = new SpriteMaterial({ map: bubbleTexture(text), transparent: true, depthWrite: false, depthTest: false, toneMapped: false });
     const object = new Sprite(material);
     object.name = 'trader-speech-bubble';
-    object.userData = { traderId: entity, storyStep: step, following, text };
+    object.userData = { traderId: entity, storyStep: step, following, text, journeyRemaining: remaining, arrived };
     object.scale.set(4.8, 1.8, 1);
     object.center.set(0.5, 0);
     object.renderOrder = 6;
     return object;
-  }, [text, entity, step, following]);
+  }, [text, entity, step, following, remaining, arrived]);
 
   useEffect(() => () => {
     sprite.material.map?.dispose();
@@ -86,8 +90,15 @@ export function TraderBubble({ entity }: { entity: Entity }) {
   useFrame(() => {
     const player = world.queryFirst(PlayerPosition)?.get(PlayerPosition);
     const trader = entity.get(TraderPosition);
+    const data = entity.get(Trader);
     const visible = Boolean(player && trader && player.distanceToSquared(trader) < 10 * 10);
     if (visible !== near) setNear(visible);
+    const isArrived = data?.arrived === true;
+    if (isArrived !== arrived) setArrived(isArrived);
+    if (data?.following && trader && data.destinationX !== null && data.destinationZ !== null) {
+      const next = Math.ceil(Math.hypot(data.destinationX - trader.x, data.destinationZ - trader.z) / 10) * 10;
+      if (next !== remaining) setRemaining(next);
+    }
   });
 
   return <primitive object={sprite} visible={near} position={[0, 2.45, 0]} />;

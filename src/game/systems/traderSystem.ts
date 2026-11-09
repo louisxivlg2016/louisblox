@@ -1,22 +1,29 @@
 import type { Entity, World } from 'koota';
-import { getBlockIndex, isChunkLoaded } from '../chunks';
+import { getBlockIndex, getWorldSeed, isChunkLoaded } from '../chunks';
 import { MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
-import { isCollidable, moveVoxelCharacter } from './collisionSystem';
+import { isCollidable } from './collisionSystem';
 import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, Player, PlayerPosition, Trader, TraderMesh, TraderPosition } from '../traits';
 import { getFireSources, nearestFire } from '../hazards';
 import { useTradeStore } from '../trading';
+import { useGameStore } from '../store';
+import { tradeCityAt } from '../villages';
 
 const foliage = new Set<BlockKind>([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple]);
 const stuckCamels = new Map<Entity, { x: number; z: number; time: number }>();
 
 function walkableGround(world: World, x: number, z: number, currentY: number) {
   if (!isChunkLoaded(world, x, z)) return null;
-  const ground = groundAt(world, x, z, currentY + 1.05);
-  if (ground <= MIN_WORLD_Y + 0.5 || ground < SEA_LEVEL + 0.5 || Math.abs(ground - currentY) > 1.05) return null;
+  const ground = groundAt(world, x, z, currentY + 4.05);
+  if (ground <= MIN_WORLD_Y + 0.5) return null;
   const blocks = getBlockIndex(world);
+  if (ground < SEA_LEVEL + 0.5) {
+    const water = blocks.get(voxelKey(Math.round(x), SEA_LEVEL, Math.round(z)));
+    return isWaterBlock(water?.kind) ? SEA_LEVEL + 0.05 : null;
+  }
+  if (ground - currentY > 4.05 || currentY - ground > 8.05) return null;
   const groundBlock = blocks.get(voxelKey(Math.round(x), Math.round(ground), Math.round(z)));
   if (groundBlock && foliage.has(groundBlock.kind)) return null;
   for (const height of [0.5, 1.75]) {
@@ -26,11 +33,8 @@ function walkableGround(world: World, x: number, z: number, currentY: number) {
   return ground;
 }
 
-function moveOnGround(world: World, position: import('three').Vector3, x: number, z: number, ground: number) {
-  const next = position.clone();
-  next.y = ground;
-  moveVoxelCharacter(getBlockIndex(world), next, { x: x - position.x, y: ground - position.y, z: z - position.z }, true);
-  position.copy(next);
+function moveOnGround(_world: World, position: import('three').Vector3, x: number, z: number, ground: number) {
+  position.set(x, ground, z);
 }
 
 function rescueCamel(world: World, trader: import('three').Vector3, position: import('three').Vector3, motion: { yaw: number; displayYaw: number }, heading: number) {
@@ -63,14 +67,22 @@ export function traderSystem(world: World, dt: number) {
     const trader = entity.get(Trader)!;
     const position = entity.get(TraderPosition)!;
     const mesh = entity.get(TraderMesh)!;
-    if (trader.villager) {
+    if (mesh.value) mesh.value.visible = trader.following || position.distanceToSquared(player) < 64 * 64;
+    if (talkingTo === entity) {
+      if (trader.walking) entity.set(Trader, { walking: false });
+      if (mesh.value) mesh.value.rotation.y = turnToward(mesh.value.rotation.y, Math.atan2(player.x - position.x, player.z - position.z), dt * 4);
+      continue;
+    }
+    if (trader.villager || trader.arrived) {
+      const homeX = trader.arrived ? trader.destinationX ?? trader.homeX : trader.homeX;
+      const homeZ = trader.arrived ? trader.destinationZ ?? trader.homeZ : trader.homeZ;
       let dx = trader.targetX - position.x;
       let dz = trader.targetZ - position.z;
       let distance = Math.hypot(dx, dz);
       if (distance < 0.35) {
         trader.phase += 1;
-        trader.targetX = trader.homeX + Math.sin(trader.phase * 1.7 + trader.homeX) * 2.2;
-        trader.targetZ = trader.homeZ + Math.cos(trader.phase * 1.7 + trader.homeZ) * 2.2;
+        trader.targetX = homeX + Math.sin(trader.phase * 1.7 + homeX) * 2.2;
+        trader.targetZ = homeZ + Math.cos(trader.phase * 1.7 + homeZ) * 2.2;
         dx = trader.targetX - position.x;
         dz = trader.targetZ - position.z;
         distance = Math.hypot(dx, dz);
@@ -81,8 +93,8 @@ export function traderSystem(world: World, dt: number) {
         if (ground !== null) moveOnGround(world, position, position.x + dx / distance * step, position.z + dz / distance * step, ground);
         else {
           trader.phase += 0.8;
-          trader.targetX = trader.homeX + Math.sin(trader.phase * 1.7 + trader.homeX) * 2.2;
-          trader.targetZ = trader.homeZ + Math.cos(trader.phase * 1.7 + trader.homeZ) * 2.2;
+          trader.targetX = homeX + Math.sin(trader.phase * 1.7 + homeX) * 2.2;
+          trader.targetZ = homeZ + Math.cos(trader.phase * 1.7 + homeZ) * 2.2;
         }
       }
       if (mesh.value) {
@@ -90,11 +102,6 @@ export function traderSystem(world: World, dt: number) {
         mesh.value.rotation.y = turnToward(mesh.value.rotation.y, Math.atan2(dx, dz), dt * 5);
       }
       entity.set(Trader, { walking: distance > 0.03, phase: trader.phase, targetX: trader.targetX, targetZ: trader.targetZ });
-      continue;
-    }
-    if (talkingTo === entity) {
-      if (trader.walking) entity.set(Trader, { walking: false });
-      if (mesh.value) mesh.value.rotation.y = turnToward(mesh.value.rotation.y, Math.atan2(player.x - position.x, player.z - position.z), dt * 4);
       continue;
     }
     if (conversation.traderId === entity && conversation.following !== trader.following) entity.set(Trader, { following: conversation.following });
@@ -111,20 +118,49 @@ export function traderSystem(world: World, dt: number) {
       trader.targetX = position.x + escapeX * 10;
       trader.targetZ = position.z + escapeZ * 10;
     }
+    if (trader.following && !fire) {
+      if (trader.destinationX === null || trader.destinationZ === null) {
+        const destination = tradeCityAt(getWorldSeed(world));
+        trader.destinationX = destination.x;
+        trader.destinationZ = destination.z;
+      }
+      const remaining = Math.hypot(trader.destinationX - position.x, trader.destinationZ - position.z);
+      if (remaining <= 2.2) {
+        entity.set(Trader, { following: false, arrived: true, walking: false, targetX: trader.destinationX, targetZ: trader.destinationZ });
+        if (conversation.traderId === entity) useTradeStore.setState({ following: false });
+        useGameStore.getState().setNotice('La caravane est arrivée en ville ! Les habitants et les maisons sont autour de toi.');
+        continue;
+      }
+      trader.detourIn = Math.max(0, trader.detourIn - dt);
+      if (trader.detourX !== null && trader.detourZ !== null && Math.hypot(trader.detourX - position.x, trader.detourZ - position.z) < 0.5) trader.detourIn = 0;
+      if (trader.detourIn > 0 && trader.detourX !== null && trader.detourZ !== null) {
+        trader.targetX = trader.detourX;
+        trader.targetZ = trader.detourZ;
+      } else {
+        trader.detourX = null;
+        trader.detourZ = null;
+        trader.targetX = trader.destinationX;
+        trader.targetZ = trader.destinationZ;
+      }
+      if (position.distanceToSquared(player) > 20 * 20) {
+        entity.set(Trader, { walking: false, targetX: trader.targetX, targetZ: trader.targetZ });
+        if (mesh.value) mesh.value.rotation.y = turnToward(mesh.value.rotation.y, Math.atan2(player.x - position.x, player.z - position.z), dt * 4);
+        continue;
+      }
+    } else if (following) {
+      trader.targetX = player.x - Math.sin(heading) * 2.5;
+      trader.targetZ = player.z - Math.cos(heading) * 2.5;
+    }
     const dx = trader.targetX - position.x;
     const dz = trader.targetZ - position.z;
     const distance = Math.hypot(dx, dz);
-    if (distance < 0.7) {
+    if (distance < 0.7 && !trader.following) {
       trader.phase += 30;
       trader.targetX = trader.homeX + Math.sin(heading) * trader.phase;
       trader.targetZ = trader.homeZ + Math.cos(heading) * trader.phase;
     }
-    if (following) {
-      trader.targetX = player.x - Math.sin(heading) * 2.5;
-      trader.targetZ = player.z - Math.cos(heading) * 2.5;
-    }
     if (distance > 0.001) {
-      const step = Math.min(distance, dt * (trader.panic > 0 ? 3.2 : following ? trader.following ? 7.2 : 5.5 : 1.05));
+      const step = Math.min(distance, dt * (trader.panic > 0 ? 3.2 : following ? trader.following ? 5.8 : 5.5 : 1.05));
       const forward = fire ? Math.atan2(position.x - fire.x, position.z - fire.z) : Math.atan2(dx, dz);
       const forwardGround = walkableGround(world, position.x + Math.sin(forward) * 1.2, position.z + Math.cos(forward) * 1.2, position.y);
       const x = position.x + dx / distance * step;
@@ -138,9 +174,9 @@ export function traderSystem(world: World, dt: number) {
         }
       } else {
         const side = Math.sin(trader.homeX + trader.homeZ) >= 0 ? 1 : -1;
-        const escape = fire ? Math.atan2(position.x - fire.x, position.z - fire.z) : heading;
-        const candidates = [escape + side * 0.4, escape - side * 0.4, escape + side * 0.85, escape - side * 0.85, escape + side * 1.3, escape - side * 1.3];
-        const nextYaw = candidates.find((yaw) => walkableGround(world, position.x + Math.sin(yaw) * 1.5, position.z + Math.cos(yaw) * 1.5, position.y) !== null);
+        const escape = fire ? Math.atan2(position.x - fire.x, position.z - fire.z) : Math.atan2(dx, dz);
+        const candidates = [escape + side * 0.4, escape - side * 0.4, escape + side * 0.85, escape - side * 0.85, escape + side * 1.3, escape - side * 1.3, escape + side * Math.PI / 2, escape - side * Math.PI / 2, escape + Math.PI];
+        const nextYaw = candidates.find((yaw) => walkableGround(world, position.x + Math.sin(yaw) * step, position.z + Math.cos(yaw) * step, position.y) !== null);
         if (nextYaw !== undefined) {
           const escapeGround = walkableGround(world, position.x + Math.sin(nextYaw) * step, position.z + Math.cos(nextYaw) * step, position.y);
           if (escapeGround !== null) {
@@ -150,15 +186,21 @@ export function traderSystem(world: World, dt: number) {
               mesh.value.rotation.y = turnToward(mesh.value.rotation.y, nextYaw, dt * 4);
             }
           }
-          trader.targetX = position.x + Math.sin(nextYaw) * 4;
-          trader.targetZ = position.z + Math.cos(nextYaw) * 4;
+          trader.detourX = position.x + Math.sin(nextYaw) * 4;
+          trader.detourZ = position.z + Math.cos(nextYaw) * 4;
+          trader.detourIn = 1.2;
+          trader.targetX = trader.detourX;
+          trader.targetZ = trader.detourZ;
         } else if (!fire) {
-          trader.targetX = position.x + Math.sin(escape + side * 0.45) * 4;
-          trader.targetZ = position.z + Math.cos(escape + side * 0.45) * 4;
+          trader.detourX = position.x + Math.sin(escape + Math.PI) * 4;
+          trader.detourZ = position.z + Math.cos(escape + Math.PI) * 4;
+          trader.detourIn = 1.2;
+          trader.targetX = trader.detourX;
+          trader.targetZ = trader.detourZ;
         }
       }
     }
-    entity.set(Trader, { walking: true, panic: trader.panic, phase: trader.phase, targetX: trader.targetX, targetZ: trader.targetZ });
+    entity.set(Trader, { walking: distance > 0.03, panic: trader.panic, phase: trader.phase, targetX: trader.targetX, targetZ: trader.targetZ, detourX: trader.detourX, detourZ: trader.detourZ, detourIn: trader.detourIn, destinationX: trader.destinationX, destinationZ: trader.destinationZ });
   }
 
   world.query(CamelLeash, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([leash, position, motion, mesh], entity) => {
