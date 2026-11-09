@@ -48,7 +48,8 @@ function soloSpawn() {
   return { x: Math.round(Math.cos(angle) * radius * 10) / 10, y: 8.51, z: Math.round(Math.sin(angle) * radius * 10) / 10 };
 }
 type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; canBreak?: boolean; canPlace?: boolean; bannedPlayerIds?: string[]; bannedPlayerNames?: Record<string, string> };
-type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; worldName?: string; template?: WorldTemplate; protection?: WorldProtection; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']> };
+type Tribe = { id: string; name: string; ownerId: string; members: Array<{ playerId: string; name: string }> };
+type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; worldName?: string; template?: WorldTemplate; protection?: WorldProtection; tribes?: Tribe[]; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']> };
 type SharedVehicle = {
   id: string;
   kind: VehicleKind;
@@ -337,6 +338,8 @@ export class GameRoom extends DurableObject<Env> {
   private worldReady?: Promise<void>;
 
   private worldName?: string;
+  private tribes: Tribe[] = [];
+  private tribeInvitations = new Map<string, { tribeId: string; fromId: string }>();
 
   private async ensureWorld() {
     this.worldReady ??= this.ctx.blockConcurrencyWhile(async () => {
@@ -344,6 +347,7 @@ export class GameRoom extends DurableObject<Env> {
       this.worldSeed = stored?.seed ?? null;
       this.worldId = stored?.worldId;
       this.worldName = stored?.worldName;
+      this.tribes = stored?.tribes ?? [];
       this.protection = stored?.protection;
       this.worldEdits = new Map(stored?.edits ?? []);
       this.gameplayMode = stored?.gameplayMode ?? 'creative';
@@ -378,7 +382,7 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private async saveWorld(publisher?: PlayerAttachment) {
-    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName, template: this.worldTemplate, protection: this.protection, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot() } satisfies StoredWorld);
+    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName, template: this.worldTemplate, protection: this.protection, tribes: this.tribes, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot() } satisfies StoredWorld);
     this.publishWorld(publisher);
   }
 
@@ -454,6 +458,8 @@ export class GameRoom extends DurableObject<Env> {
     await this.ctx.storage.deleteAll();
     this.worldSeed = null;
     this.worldName = undefined;
+    this.tribes = [];
+    this.tribeInvitations.clear();
     this.protection = undefined;
     this.worldEdits.clear();
     this.vehicles.clear();
@@ -521,6 +527,7 @@ export class GameRoom extends DurableObject<Env> {
     server.send(JSON.stringify(this.worldSnapshot()));
     server.send(JSON.stringify({ type: 'vehicles', vehicles: [...this.vehicles.values()] }));
     server.send(JSON.stringify(this.battleSnapshot()));
+    server.send(JSON.stringify(this.tribeSnapshot()));
     if (this.gameplayMode === 'pirates') server.send(JSON.stringify(this.pirates.message()));
     if (this.gameplayMode === 'football') server.send(JSON.stringify(this.football.message()));
     if (this.gameplayMode === 'maze') {
@@ -602,6 +609,78 @@ export class GameRoom extends DurableObject<Env> {
     return sent;
   }
 
+  private tribeSnapshot() {
+    return { type: 'tribe-state', tribes: this.tribes };
+  }
+
+  private tribeWithPlayer(playerId: string) {
+    return this.tribes.find((tribe) => tribe.members.some((member) => member.playerId === playerId));
+  }
+
+  private async handleTribeMessage(ws: WebSocket, attachment: PlayerAttachment | null, type: string, data: Record<string, unknown>) {
+    if (type === 'tribe-state') {
+      ws.send(JSON.stringify(this.tribeSnapshot()));
+      return;
+    }
+    if (!attachment) return;
+    const fail = (message: string) => ws.send(JSON.stringify({ type: 'tribe-error', message }));
+    if (type === 'tribe-create') {
+      if (this.tribeWithPlayer(attachment.playerId)) return fail('Tu appartiens déjà à une tribu.');
+      const name = typeof data.name === 'string' ? data.name.trim().slice(0, 24) : '';
+      if (!name) return fail('Choisis un nom pour ta tribu.');
+      this.tribes.push({ id: crypto.randomUUID(), name, ownerId: attachment.playerId, members: [{ playerId: attachment.playerId, name: attachment.name }] });
+      await this.saveWorld();
+      this.broadcast(this.tribeSnapshot());
+      return;
+    }
+    if (type === 'tribe-invite') {
+      const tribe = this.tribeWithPlayer(attachment.playerId);
+      if (!tribe || tribe.ownerId !== attachment.playerId) return fail('Seul le chef de la tribu peut inviter.');
+      const targetId = typeof data.targetId === 'string' ? data.targetId : '';
+      if (!targetId || targetId.length > 80 || targetId === attachment.playerId) return fail('Ce joueur ne peut pas être invité.');
+      const targetSocket = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
+      const target = targetSocket ? this.attachment(targetSocket) : null;
+      if (!targetSocket || !target) return fail('Ce joueur n’est pas connecté dans ce salon.');
+      if (this.tribeWithPlayer(targetId)) return fail(`${target.name} appartient déjà à une tribu.`);
+      this.tribeInvitations.set(targetId, { tribeId: tribe.id, fromId: attachment.playerId });
+      targetSocket.send(JSON.stringify({ type: 'tribe-invite', tribe: { id: tribe.id, name: tribe.name, ownerId: tribe.ownerId, ownerName: attachment.name } }));
+      ws.send(JSON.stringify({ type: 'tribe-notice', message: `Invitation envoyée à ${target.name}.` }));
+      return;
+    }
+    if (type === 'tribe-accept') {
+      const invitation = this.tribeInvitations.get(attachment.playerId);
+      if (!invitation || invitation.tribeId !== data.tribeId) return fail('Cette invitation n’est plus disponible.');
+      const tribe = this.tribes.find((candidate) => candidate.id === invitation.tribeId);
+      this.tribeInvitations.delete(attachment.playerId);
+      if (!tribe) return fail('Cette tribu n’existe plus.');
+      if (this.tribeWithPlayer(attachment.playerId)) return fail('Tu appartiens déjà à une tribu.');
+      tribe.members.push({ playerId: attachment.playerId, name: attachment.name });
+      await this.saveWorld();
+      this.broadcast(this.tribeSnapshot());
+      ws.send(JSON.stringify({ type: 'tribe-notice', message: `Tu as rejoint la tribu ${tribe.name}.` }));
+      this.sendToPlayer(invitation.fromId, { type: 'tribe-notice', message: `${attachment.name} a rejoint ta tribu.` });
+      return;
+    }
+    if (type === 'tribe-decline') {
+      const invitation = this.tribeInvitations.get(attachment.playerId);
+      if (invitation?.tribeId === data.tribeId) this.tribeInvitations.delete(attachment.playerId);
+      ws.send(JSON.stringify({ type: 'tribe-notice', message: 'Invitation refusée.' }));
+      return;
+    }
+    if (type === 'tribe-leave') {
+      const tribe = this.tribeWithPlayer(attachment.playerId);
+      if (!tribe) return fail('Tu ne fais partie d’aucune tribu.');
+      if (tribe.ownerId === attachment.playerId) {
+        this.tribes = this.tribes.filter((candidate) => candidate.id !== tribe.id);
+        for (const [playerId, invitation] of this.tribeInvitations) if (invitation.tribeId === tribe.id) this.tribeInvitations.delete(playerId);
+      } else {
+        tribe.members = tribe.members.filter((member) => member.playerId !== attachment.playerId);
+      }
+      await this.saveWorld();
+      this.broadcast(this.tribeSnapshot());
+    }
+  }
+
   private messageQueue: Promise<void> = Promise.resolve();
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
@@ -622,6 +701,10 @@ export class GameRoom extends DurableObject<Env> {
     if (!data || typeof data !== 'object') return;
     const type = (data as { type?: unknown }).type;
     await this.ensureWorld();
+    if (typeof type === 'string' && type.startsWith('tribe-')) {
+      await this.handleTribeMessage(ws, this.attachment(ws), type, data as Record<string, unknown>);
+      return;
+    }
     if (type === 'presence') {
       const attachment = this.attachment(ws);
       if (attachment) this.publishPresence(attachment);

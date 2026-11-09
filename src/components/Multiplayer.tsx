@@ -48,6 +48,7 @@ import { receiveAppleGift } from '../game/gifts';
 import { applyProtection, isWorldProtection, setProtectionSocket, useProtectionStore } from '../game/protection';
 import { clearMinigames, receiveMinigameMessage, setMinigameSocket } from '../game/minigameSync';
 import { applyAnimalSnapshots, applyFishSnapshots, isAnimalSnapshot, isFishSnapshot, setAnimalSocket } from '../game/animalSync';
+import { clearTribes, receiveTribeMessage, setTribeSocket } from '../game/tribes';
 
 type ServerMessage = {
   type?: unknown;
@@ -187,7 +188,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
 
   return (
     <group ref={group} position={[state.x, state.y, state.z]}>
-      <PlayerNameTag name={name} />
+      <PlayerNameTag name={name} playerId={playerId} />
       {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit character={character} outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} appearance={current} />
       {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={battleTeamColor(team)} /></group>}
@@ -473,6 +474,7 @@ export function MultiplayerConnection() {
       setMinigameSocket(next);
       setProtectionSocket(next);
       setAnimalSocket(next);
+      setTribeSocket(next);
       next.onopen = () => store.setStatus('online');
       next.onmessage = (event) => {
         if (typeof event.data !== 'string') return;
@@ -487,6 +489,7 @@ export function MultiplayerConnection() {
           return;
         }
         if (receiveMinigameMessage(data)) return;
+        if (receiveTribeMessage(data)) return;
         if (data.type === 'animal-state' && Array.isArray(data.animals)) {
           applyAnimalSnapshots(world, data.animals.filter(isAnimalSnapshot));
           return;
@@ -734,6 +737,8 @@ export function MultiplayerConnection() {
       socket.current = null;
       setProtectionSocket(null);
       setAnimalSocket(null);
+      setTribeSocket(null);
+      clearTribes();
       clearTeleportRequests();
       clearChat();
       clearBattle();

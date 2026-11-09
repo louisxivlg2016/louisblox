@@ -943,6 +943,27 @@
         .boutique-dressing-room { right: 12px; bottom: 12px; padding: 5px; }
         .boutique-dressing-room .boutique-avatar-3d { flex-basis: 150px; width: 150px; height: 180px; }
       }
+      .tribe-toggle { position: absolute; left: 18px; top: 82px; z-index: 12; min-height: 44px; padding: 10px 14px; pointer-events: auto; color: #fff; font-size: 12px; font-weight: 700; background: rgba(70, 83, 45, 0.94); border: 2px solid rgba(191, 215, 125, 0.65); touch-action: manipulation; }
+      .tribe-backdrop { z-index: 55; }
+      .tribe-panel { max-width: 560px; max-height: calc(100vh - 40px); overflow-y: auto; }
+      .tribe-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+      .tribe-heading h2 { margin: 0; font-size: 24px; }
+      .tribe-close { min-width: 104px; min-height: 48px; padding: 10px 12px; color: #fff; text-align: center; background: #704c3c; border: 1px solid #b88972; touch-action: manipulation; }
+      .tribe-create-form { display: grid; gap: 14px; }
+      .tribe-create-form label { display: grid; gap: 8px; text-align: left; }
+      .tribe-create-form input { min-height: 48px; padding: 10px; color: #fff; background: #0c120e; border: 2px solid #66775c; font: inherit; }
+      .tribe-invitations, .tribe-invite-list { display: grid; gap: 8px; margin: 14px 0; }
+      .tribe-invitation { display: grid; gap: 10px; padding: 10px; background: rgba(105, 132, 73, 0.16); border: 1px solid #66775c; }
+      .tribe-invitation p { display: grid; gap: 5px; margin: 0; }
+      .tribe-invitation-actions { display: flex; gap: 10px; }
+      .tribe-invitation-actions button { flex: 1; min-height: 48px; }
+      .tribe-members { display: grid; gap: 6px; padding: 0; list-style: none; }
+      .tribe-members li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; background: rgba(255, 255, 255, 0.06); }
+      .tribe-invite-list > button { min-height: 44px; color: #fff; background: #49623d; border: 1px solid #819a6a; }
+      .tribe-invite-list > button:disabled { opacity: 0.55; }
+      .tribe-leave { margin-top: 14px; }
+      .tribe-notice { padding: 8px; color: #d8efbd; background: rgba(105, 132, 73, 0.16); }
+      @media (max-width: 650px) { .tribe-toggle { left: 12px; top: 70px; min-height: 48px; } }
     </style>
   </head>
   <body>

@@ -36,6 +36,8 @@ import { TradingPanel } from './TradingPanel';
 import { useTradeStore } from '../game/trading';
 import { HomePanel } from './HomePanel';
 import { useHomeStore } from '../game/homes';
+import { TribePanel } from './TribePanel';
+import { useTribeStore } from '../game/tribes';
 
 export function Hud() {
   const mode = useGameStore((state) => state.mode);
@@ -56,6 +58,8 @@ export function Hud() {
   const emoteOpen = useEmoteStore((state) => state.open);
   const tradeOpen = useTradeStore((state) => state.open);
   const homeOpen = useHomeStore((state) => state.open);
+  const tribeOpen = useTribeStore((state) => state.panelOpen);
+  const tribeInvitations = useTribeStore((state) => state.invitations.length);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   const battleTeam = useBattleStore((state) => state.team);
   const multiplayerReady = useMultiplayerStore((state) => state.enabled && state.status === 'online');
@@ -81,6 +85,11 @@ export function Hud() {
     useGameStore.getState().setMode('pause');
     if (document.pointerLockElement) document.exitPointerLock();
   };
+  const openTribe = () => {
+    useTribeStore.getState().setPanelOpen(true);
+    useGameStore.getState().setMode('pause');
+    if (document.pointerLockElement) document.exitPointerLock();
+  };
   return (
     <div className="hud">
       {mode === 'play' && (
@@ -90,6 +99,7 @@ export function Hud() {
           <button className="backpack-toggle" onClick={openBackpack} aria-label="Sac à dos"><img src={backpackButtonUrl} alt="" /></button>
           <button className="shop-toggle" onClick={openShop} aria-label="Boutique"><img src={shopButtonUrl} alt="" /></button>
           {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label="Téléportation · T"><img src={teleportButtonUrl} alt="Téléportation · T" /></button>}
+          {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label="Ouvrir ma tribu">TRIBU{tribeInvitations > 0 ? ` · ${tribeInvitations}` : ''}</button>}
           <div className="action-hint">{gameplayMode === 'football' ? 'Clic gauche : tir · E : tir puissant · T : tacler · G : passer' : <>Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</>}</div>
           {notice && <div className="game-notice">{notice}</div>}
           <EffectsHud />
@@ -100,6 +110,7 @@ export function Hud() {
 
       <TeleportPanel />
       <ChatPanel />
+      <TribePanel />
       <BattleHud />
       <PiratesHud />
       <FootballHud />
@@ -107,7 +118,7 @@ export function Hud() {
       <EmotePanel />
       <PaintballPalette />
 
-      {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && !tradeOpen && !homeOpen && (
+      {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && !tradeOpen && !homeOpen && !tribeOpen && (
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />
       )}
 
