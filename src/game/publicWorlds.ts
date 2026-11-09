@@ -1,5 +1,6 @@
 import { resolveMultiplayerUrl } from './multiplayer';
 import { isGameplayMode } from './worldMode';
+import type { GameplayMode } from './worldMode';
 
 export type PublicWorld = {
   id: string;
@@ -36,4 +37,18 @@ export async function listPublicWorlds(): Promise<PublicWorld[]> {
       updatedAt: typeof world.updatedAt === 'number' ? world.updatedAt : 0,
     }];
   });
+}
+
+export function busiestPublicWorld(worlds: PublicWorld[], mode: GameplayMode) {
+  return worlds
+    .filter((world) => world.gameplayMode === mode && world.players > 0)
+    .sort((a, b) => b.players - a.players || b.updatedAt - a.updatedAt)[0] ?? null;
+}
+
+export function findPublicWorldByName(worlds: PublicWorld[], name: string) {
+  const normalized = name.trim().toLocaleLowerCase('fr');
+  if (!normalized) return null;
+  return worlds
+    .filter((world) => world.id.toLocaleLowerCase('fr') === normalized || world.name.trim().toLocaleLowerCase('fr') === normalized)
+    .sort((a, b) => b.players - a.players || b.updatedAt - a.updatedAt)[0] ?? null;
 }

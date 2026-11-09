@@ -152,7 +152,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setJoinOpen(false); }}>
               <section className="world-library-modal" role="dialog" aria-modal="true" aria-label="Rejoindre un monde">
                 <button className="world-library-close" aria-label="Fermer la liste des mondes" onClick={() => setJoinOpen(false)} autoFocus>×</button>
-                <div className="lobby-heading"><h2>Rejoindre un monde</h2><p>Rejoins au hasard avec le bouton Rejoindre, ou choisis toi-même un monde dans les listes.</p></div>
+                <div className="lobby-heading"><h2>Rejoindre un monde</h2><p>Rejoins le monde le plus peuplé avec le bouton Rejoindre, ou choisis toi-même un monde dans les listes.</p></div>
                 <CommunityWorlds onPlay={() => { setJoinOpen(false); return onPlay(); }} mode={browseMode} onModeChange={setBrowseMode} onCreate={() => { setJoinOpen(false); create(browseMode, enabled); }} />
               </section>
             </div>

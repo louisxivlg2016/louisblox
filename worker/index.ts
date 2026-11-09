@@ -48,7 +48,7 @@ function soloSpawn() {
   return { x: Math.round(Math.cos(angle) * radius * 10) / 10, y: 8.51, z: Math.round(Math.sin(angle) * radius * 10) / 10 };
 }
 type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; canBreak?: boolean; canPlace?: boolean; bannedPlayerIds?: string[]; bannedPlayerNames?: Record<string, string> };
-type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; template?: WorldTemplate; protection?: WorldProtection; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']> };
+type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; worldName?: string; template?: WorldTemplate; protection?: WorldProtection; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']> };
 type SharedVehicle = {
   id: string;
   kind: VehicleKind;
@@ -336,11 +336,14 @@ export class GameRoom extends DurableObject<Env> {
   });
   private worldReady?: Promise<void>;
 
+  private worldName?: string;
+
   private async ensureWorld() {
     this.worldReady ??= this.ctx.blockConcurrencyWhile(async () => {
       const stored = await this.ctx.storage.get<StoredWorld>('world-v1');
       this.worldSeed = stored?.seed ?? null;
       this.worldId = stored?.worldId;
+      this.worldName = stored?.worldName;
       this.protection = stored?.protection;
       this.worldEdits = new Map(stored?.edits ?? []);
       this.gameplayMode = stored?.gameplayMode ?? 'creative';
@@ -353,7 +356,7 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private worldSnapshot() {
-    return { type: 'world', seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, template: this.worldTemplate, protection: this.protection };
+    return { type: 'world', seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName ?? this.worldId, template: this.worldTemplate, protection: this.protection };
   }
 
   private publisherId?: string;
@@ -370,12 +373,12 @@ export class GameRoom extends DurableObject<Env> {
     this.ctx.waitUntil(directory.fetch('https://directory/world', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: this.worldId ?? attachment?.room ?? 'main-room', name: this.worldId ?? attachment?.room ?? 'main-room', ownerId, ownerName: this.publisherName ?? 'Créateur', gameplayMode: this.gameplayMode, template: this.worldTemplate, players: this.ctx.getWebSockets().length }),
+      body: JSON.stringify({ id: this.worldId ?? attachment?.room ?? 'main-room', name: this.worldName ?? this.worldId ?? attachment?.room ?? 'main-room', ownerId, ownerName: this.publisherName ?? 'Créateur', gameplayMode: this.gameplayMode, template: this.worldTemplate, players: this.ctx.getWebSockets().length }),
     }));
   }
 
   private async saveWorld(publisher?: PlayerAttachment) {
-    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, template: this.worldTemplate, protection: this.protection, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot() } satisfies StoredWorld);
+    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName, template: this.worldTemplate, protection: this.protection, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot() } satisfies StoredWorld);
     this.publishWorld(publisher);
   }
 
@@ -450,6 +453,7 @@ export class GameRoom extends DurableObject<Env> {
     await this.ctx.storage.deleteAlarm();
     await this.ctx.storage.deleteAll();
     this.worldSeed = null;
+    this.worldName = undefined;
     this.protection = undefined;
     this.worldEdits.clear();
     this.vehicles.clear();
@@ -886,6 +890,8 @@ export class GameRoom extends DurableObject<Env> {
         const newWorld = this.worldSeed === null;
         const worldId = (data as { worldId?: unknown }).worldId;
         this.worldId = typeof worldId === 'string' && worldId.length <= 80 ? worldId : undefined;
+        const worldName = (data as { worldName?: unknown }).worldName;
+        this.worldName = typeof worldName === 'string' && worldName.trim() ? worldName.trim().slice(0, 48) : this.worldId ?? attachment.room;
         this.worldSeed = seed;
         this.worldEdits = new Map(edits);
         const mode = (data as { gameplayMode?: unknown }).gameplayMode;

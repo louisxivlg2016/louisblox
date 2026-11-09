@@ -28,7 +28,7 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
   const status = useMultiplayerStore((state) => state.status);
   const playerName = useMultiplayerStore((state) => state.playerName);
   const worldId = useGameStore((state) => state.worldId);
-  const { join, joinRandom, pending, error } = usePublicWorldJoin(onPlay);
+  const { join, joinBusiest, pending, error } = usePublicWorldJoin(onPlay);
   const selfId = playerIdentity();
   const others = worlds.filter((world) => world.ownerId !== selfId && world.gameplayMode === selectedMode);
   const localIds = new Set(localWorlds.map((world) => world.id));
@@ -80,10 +80,10 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
         </label>
       </div>
       <div className="community-actions">
-        <button className="multiplayer-join community-random" onClick={() => void joinRandom(selectedMode)} disabled={pending || status === 'connecting'}>Rejoindre</button>
+        <button className="multiplayer-join community-random" onClick={() => void joinBusiest(selectedMode)} disabled={pending || status === 'connecting'}>Rejoindre</button>
         {onCreate && <button className="secondary-button community-create" onClick={onCreate} disabled={full || pending || status === 'connecting'}>Créer ici</button>}
       </div>
-      <p className="community-random-hint">Choix au hasard parmi les mondes {GAMEPLAY_MODE_LABELS[selectedMode]} avec d’autres joueurs en ligne.</p>
+      <p className="community-random-hint">Rejoins le monde {GAMEPLAY_MODE_LABELS[selectedMode]} avec le plus de joueurs en ligne.</p>
       {full && <p className="multiplayer-error" role="alert">Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un pour en créer un autre.</p>}
       {error && <p className="multiplayer-error" role="alert">{error}</p>}
       {deleteError && <p className="multiplayer-error" role="alert">{deleteError}</p>}

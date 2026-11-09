@@ -73,12 +73,13 @@ type ServerMessage = {
   appearance?: unknown;
   gameplayMode?: unknown;
   worldId?: unknown;
+  worldName?: unknown;
   template?: unknown;
   protection?: unknown;
   animals?: unknown;
   fish?: unknown;
 };
-type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string; template?: import('../game/worldMode').WorldTemplate; protection?: import('../game/protection').WorldProtection };
+type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string; worldName?: string; template?: import('../game/worldMode').WorldTemplate; protection?: import('../game/protection').WorldProtection };
 
 const requestedMode = new URLSearchParams(window.location.search).get('mode');
 let requestedRoomMode: GameplayMode | null = isGameplayMode(requestedMode) ? requestedMode : null;
@@ -91,7 +92,7 @@ export function requestRoomMode(mode: GameplayMode | null, force = true) {
 
 function sendWorldInitialization(socket: WebSocket, world: World, force: boolean) {
   const edits = snapshotWorldEdits(world).flatMap(([, entries]) => entries);
-  socket.send(JSON.stringify({ type: 'world-init', seed: getWorldSeed(world), edits: edits.slice(0, 256), gameplayMode: useGameStore.getState().gameplayMode, worldId: useGameStore.getState().worldId, template: useGameStore.getState().worldTemplate, protection: useProtectionStore.getState().protection, force }));
+  socket.send(JSON.stringify({ type: 'world-init', seed: getWorldSeed(world), edits: edits.slice(0, 256), gameplayMode: useGameStore.getState().gameplayMode, worldId: useGameStore.getState().worldId, worldName: useGameStore.getState().worldName, template: useGameStore.getState().worldTemplate, protection: useProtectionStore.getState().protection, force }));
   for (let index = 256; index < edits.length; index += 256) {
     socket.send(JSON.stringify({ type: 'world-init-edits', edits: edits.slice(index, index + 256) }));
   }
@@ -378,9 +379,11 @@ export function MultiplayerConnection() {
           return;
         }
       }
-      if (currentWorldId !== useGameStore.getState().worldId) {
-        useGameStore.setState({ worldId: currentWorldId, worldName: currentWorldId });
-        rememberWorld(currentWorldId);
+      const currentWorldName = pending.worldName?.trim().slice(0, 48) || currentWorldId;
+      const game = useGameStore.getState();
+      if (currentWorldId !== game.worldId || currentWorldName !== game.worldName) {
+        useGameStore.setState({ worldId: currentWorldId, worldName: currentWorldName });
+        if (currentWorldId !== game.worldId) rememberWorld(currentWorldId);
       }
       const roomCreator = pendingSpawn.current === null;
       const saved = createWorldSave(world);
@@ -564,7 +567,7 @@ export function MultiplayerConnection() {
           return;
         }
         if (data.type === 'world' && (data.seed === null || typeof data.seed === 'number') && Array.isArray(data.edits)) {
-          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: isGameplayMode(data.gameplayMode) ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined, template: data.template === 'city-ancient' || data.template === 'city-modern' ? data.template : 'nature', protection: isWorldProtection(data.protection) ? data.protection : undefined };
+          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: isGameplayMode(data.gameplayMode) ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined, worldName: typeof data.worldName === 'string' ? data.worldName : undefined, template: data.template === 'city-ancient' || data.template === 'city-modern' ? data.template : 'nature', protection: isWorldProtection(data.protection) ? data.protection : undefined };
           applyPendingWorld();
           return;
         }

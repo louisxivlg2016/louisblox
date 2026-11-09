@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { listPublicWorlds } from '../game/publicWorlds';
+import { busiestPublicWorld, listPublicWorlds } from '../game/publicWorlds';
 import type { PublicWorld } from '../game/publicWorlds';
 import { GAMEPLAY_MODE_LABELS } from '../game/worldMode';
 import type { GameplayMode } from '../game/worldMode';
-import { playerIdentity } from '../game/playerIdentity';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { requestRoomMode } from './Multiplayer';
@@ -41,16 +40,16 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
     configure({ playerName, room: world.id, server });
   }, [playerName, server, configure, setEnabled]);
 
-  const joinRandom = useCallback(async (mode: GameplayMode) => {
+  const joinBusiest = useCallback(async (mode: GameplayMode) => {
     setError('');
     setLoading(true);
     try {
-      const candidates = (await listPublicWorlds()).filter((world) => world.gameplayMode === mode && world.ownerId !== playerIdentity() && world.players > 0);
-      if (candidates.length === 0) {
+      const world = busiestPublicWorld(await listPublicWorlds(), mode);
+      if (!world) {
         setError(`Aucun joueur en ligne en ${GAMEPLAY_MODE_LABELS[mode]} pour le moment. Choisis un monde dans la liste ou crée le tien.`);
         return false;
       }
-      join(candidates[Math.floor(Math.random() * candidates.length)]);
+      join(world);
       return true;
     } catch {
       setError('Impossible de récupérer les mondes en ligne. Réessaie dans un instant.');
@@ -60,5 +59,5 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
     }
   }, [join]);
 
-  return { join, joinRandom, pending: pendingRoom !== null || loading || status === 'connecting', error };
+  return { join, joinBusiest, pending: pendingRoom !== null || loading || status === 'connecting', error };
 }
