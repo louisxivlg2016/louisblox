@@ -63,6 +63,35 @@ export function traderSystem(world: World, dt: number) {
     const trader = entity.get(Trader)!;
     const position = entity.get(TraderPosition)!;
     const mesh = entity.get(TraderMesh)!;
+    if (trader.villager) {
+      let dx = trader.targetX - position.x;
+      let dz = trader.targetZ - position.z;
+      let distance = Math.hypot(dx, dz);
+      if (distance < 0.35) {
+        trader.phase += 1;
+        trader.targetX = trader.homeX + Math.sin(trader.phase * 1.7 + trader.homeX) * 2.2;
+        trader.targetZ = trader.homeZ + Math.cos(trader.phase * 1.7 + trader.homeZ) * 2.2;
+        dx = trader.targetX - position.x;
+        dz = trader.targetZ - position.z;
+        distance = Math.hypot(dx, dz);
+      }
+      if (distance > 0.001) {
+        const step = Math.min(distance, dt * 0.85);
+        const ground = walkableGround(world, position.x + dx / distance * step, position.z + dz / distance * step, position.y);
+        if (ground !== null) moveOnGround(world, position, position.x + dx / distance * step, position.z + dz / distance * step, ground);
+        else {
+          trader.phase += 0.8;
+          trader.targetX = trader.homeX + Math.sin(trader.phase * 1.7 + trader.homeX) * 2.2;
+          trader.targetZ = trader.homeZ + Math.cos(trader.phase * 1.7 + trader.homeZ) * 2.2;
+        }
+      }
+      if (mesh.value) {
+        mesh.value.position.copy(position);
+        mesh.value.rotation.y = turnToward(mesh.value.rotation.y, Math.atan2(dx, dz), dt * 5);
+      }
+      entity.set(Trader, { walking: distance > 0.03, phase: trader.phase, targetX: trader.targetX, targetZ: trader.targetZ });
+      continue;
+    }
     if (talkingTo === entity) {
       if (trader.walking) entity.set(Trader, { walking: false });
       if (mesh.value) mesh.value.rotation.y = turnToward(mesh.value.rotation.y, Math.atan2(player.x - position.x, player.z - position.z), dt * 4);
@@ -95,7 +124,7 @@ export function traderSystem(world: World, dt: number) {
       trader.targetZ = player.z - Math.cos(heading) * 2.5;
     }
     if (distance > 0.001) {
-      const step = Math.min(distance, dt * (trader.panic > 0 ? 2.2 : following ? 4.8 : 1.05));
+      const step = Math.min(distance, dt * (trader.panic > 0 ? 3.2 : following ? trader.following ? 7.2 : 5.5 : 1.05));
       const forward = fire ? Math.atan2(position.x - fire.x, position.z - fire.z) : Math.atan2(dx, dz);
       const forwardGround = walkableGround(world, position.x + Math.sin(forward) * 1.2, position.z + Math.cos(forward) * 1.2, position.y);
       const x = position.x + dx / distance * step;
@@ -142,7 +171,8 @@ export function traderSystem(world: World, dt: number) {
       motion.speed = 0;
       return;
     }
-    const heading = leash.trader?.get(TraderMesh)?.value?.rotation.y ?? traderHeading(leash.trader?.get(Trader) ?? { homeX: trader.x, homeZ: trader.z });
+    const leader = leash.trader?.get(Trader);
+    const heading = leash.trader?.get(TraderMesh)?.value?.rotation.y ?? traderHeading(leader ?? { homeX: trader.x, homeZ: trader.z });
     const gap = 1.65 + leash.order * 1.2;
     const dx = trader.x - Math.sin(heading) * gap - position.x;
     const dz = trader.z - Math.cos(heading) * gap - position.z;
@@ -150,7 +180,7 @@ export function traderSystem(world: World, dt: number) {
     const previousX = position.x;
     const previousZ = position.z;
     if (distance > 0.001) {
-      const step = Math.min(distance, dt * 1.65);
+      const step = Math.min(distance, dt * (leader?.following ? 6.4 : 1.65));
       const x = position.x + dx / distance * step;
       const z = position.z + dz / distance * step;
       const ground = walkableGround(world, x, z, position.y);

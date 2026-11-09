@@ -45,7 +45,9 @@ export function findInteractionTarget(world: World, camera: Camera, interaction:
   }
 
   if (interaction === 'trade') {
-    for (const entity of world.query(Trader, TraderMesh)) inspect(entity, 'trader', entity.get(TraderMesh)!.value, 6);
+    for (const entity of world.query(Trader, TraderMesh)) {
+      if (!entity.get(Trader)!.villager) inspect(entity, 'trader', entity.get(TraderMesh)!.value, 6);
+    }
   } else {
     for (const entity of world.query(Vehicle, VehicleMesh)) inspect(entity, 'vehicle', entity.get(VehicleMesh)!.value, entity.get(Vehicle)?.kind === 'plane' ? 12 : 6);
     for (const entity of world.query(Animal, AnimalMesh)) {

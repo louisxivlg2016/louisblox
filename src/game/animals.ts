@@ -5,6 +5,7 @@ import type { Biome, WaterTile } from './levels';
 import { Animal, AnimalHealth, AnimalHit, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Trader, TraderMesh, TraderPosition } from './traits';
 import { useGameStore } from './store';
 import { isInAnyRuinFootprint } from './ruins';
+import { spawnVillageResidents } from './villages';
 
 function safeRoamSpawn(x: number, z: number, seed: number) {
   for (let radius = 0; radius <= 16; radius += 1) {
@@ -119,7 +120,7 @@ function spawnTradersAlongGrid(world: World, cx: number, cz: number, seed: numbe
 }
 
 export function spawnChunkAnimals(world: World, cx: number, cz: number, water: WaterTile[], seed: number) {
-  const entities: Entity[] = [...spawnTradersAlongGrid(world, cx, cz, seed)];
+  const entities: Entity[] = [...spawnTradersAlongGrid(world, cx, cz, seed), ...spawnVillageResidents(world, cx, cz, seed)];
 
   const openWater = water.filter((tile) => !isInAnyRuinFootprint(tile.x, tile.z, seed));
   if (openWater.length > 0 && hash(cx, cz, seed + 800) > 0.95) {

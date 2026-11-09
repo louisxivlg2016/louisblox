@@ -17,7 +17,7 @@ function TraderPerson({ entity }: { entity: Entity }) {
       }}
     >
       <Suspense fallback={null}><ReferenceTrader entity={entity} /></Suspense>
-      <TraderBubble entity={entity} />
+      {!entity.get(Trader)?.villager && <TraderBubble entity={entity} />}
     </group>
   );
 }

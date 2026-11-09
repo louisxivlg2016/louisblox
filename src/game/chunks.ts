@@ -11,6 +11,7 @@ import { generateMazeChunk, mazeSpawn } from './maze';
 import type { GameplayMode } from './worldMode';
 import { isCityMode, isMinigameMode } from './worldMode';
 import { generateCityChunk } from './cities';
+import { generateVillageBlocks } from './villages';
 import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnChunkFish } from './fish';
 import { spawnBomb } from './bombLifecycle';
@@ -264,6 +265,7 @@ function loadChunk(world: World, cx: number, cz: number) {
   const template = useGameStore.getState().worldTemplate;
   const battle = mode === 'battle';
   const generated = mode === 'pirates' ? generatePirateChunk(cx, cz) : mode === 'football' ? generateFootballChunk(cx, cz) : mode === 'maze' ? generateMazeChunk(cx, cz) : battle ? generateBattleChunk(cx, cz) : template !== 'nature' ? generateCityChunk(cx, cz, state.seed, template === 'city-modern') : generateChunk(cx, cz, state.seed);
+  if (!isMinigameMode(mode) && !isCityMode(mode)) generated.blocks.push(...generateVillageBlocks(cx, cz, state.seed));
   const blockMap = new Map(generated.blocks.map((block) => [voxelKey(block.x, block.y, block.z), block]));
   const edits = state.edits.get(key);
   if (edits) {
