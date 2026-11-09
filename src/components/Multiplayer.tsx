@@ -11,7 +11,7 @@ import type { ChunkEdit } from '../game/chunks';
 import { isPlayerSnapshot, resolveMultiplayerUrl } from '../game/multiplayer';
 import type { PlayerSnapshot } from '../game/multiplayer';
 import { useMultiplayerStore, useRemotePlayerStore } from '../game/multiplayerStore';
-import { createWorldSave } from '../game/save';
+import { createWorldSave, listWorlds, saveWorld } from '../game/save';
 import { rememberWorld, useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
 import { useAvatarStore } from '../game/avatar';
@@ -330,6 +330,27 @@ export function MultiplayerConnection() {
         streamChunks(world, position?.x ?? 0, position?.z ?? 0);
         return;
       }
+      if (pending.seed === null) {
+        const existing = listWorlds().find((saved) => saved.id === room);
+        const game = useGameStore.getState();
+        const mode = requestedRoomMode ?? existing?.gameplayMode ?? game.gameplayMode;
+        requestedRoomMode = null;
+        if (game.worldId !== room || game.gameplayMode !== mode) {
+          if (existing?.gameplayMode === mode) {
+            game.openWorld(room, existing.name);
+            useGameStore.setState({ gameplayMode: mode });
+          } else {
+            game.regenerate(mode, room, undefined, game.worldId === room ? game.worldName : room);
+          }
+          return;
+        }
+        const current = socket.current;
+        if (current?.readyState === WebSocket.OPEN && !worldInitSent.current) {
+          sendWorldInitialization(current, world, false);
+          worldInitSent.current = true;
+        }
+        return;
+      }
       const currentWorldId = pending.worldId ?? room;
       const wanted = requestedRoomMode;
       if (wanted) {
@@ -352,14 +373,6 @@ export function MultiplayerConnection() {
       if (currentWorldId !== useGameStore.getState().worldId) {
         useGameStore.setState({ worldId: currentWorldId, worldName: currentWorldId });
         rememberWorld(currentWorldId);
-      }
-      if (pending.seed === null) {
-        const current = socket.current;
-        if (current?.readyState === WebSocket.OPEN && !worldInitSent.current) {
-          sendWorldInitialization(current, world, false);
-          worldInitSent.current = true;
-        }
-        return;
       }
       const roomCreator = pendingSpawn.current === null;
       const saved = createWorldSave(world);
@@ -395,6 +408,7 @@ export function MultiplayerConnection() {
         pendingSpawn.current = null;
       }
       pendingWorld.current = null;
+      saveWorld(world);
       store.setWorldReady(true);
       useBattleStore.setState({ ready: isMinigameMode(pending.gameplayMode ?? 'creative') });
       applyPendingVehicles();

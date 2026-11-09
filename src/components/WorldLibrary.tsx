@@ -18,17 +18,18 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
   const openWorld = useGameStore((state) => state.openWorld);
   const enabled = useMultiplayerStore((state) => state.enabled);
   const status = useMultiplayerStore((state) => state.status);
+  const worldReady = useMultiplayerStore((state) => state.worldReady);
   const playerName = useMultiplayerStore((state) => state.playerName);
   const server = useMultiplayerStore((state) => state.server);
   const configure = useMultiplayerStore((state) => state.configure);
 
   useEffect(() => setWorlds(listWorlds()), [worldId]);
   useEffect(() => {
-    if (pending && status === 'online') {
+    if (pending && status === 'online' && worldReady) {
       setPending(false);
       void onPlay();
     }
-  }, [pending, status, onPlay]);
+  }, [pending, status, worldReady, onPlay]);
 
   const open = (world: WorldMeta) => {
     openWorld(world.id, world.name);
