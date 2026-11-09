@@ -126,7 +126,9 @@ const soundUrls: Record<SoundEffect, string> = {
 const audio = new Map<SoundEffect, HTMLAudioElement>();
 const loops = new Map<SoundEffect, HTMLAudioElement>();
 const activeLoops = new Set<SoundEffect>();
-const waterStates = new WeakMap<object, boolean>();
+type WaterSoundState = { inWater: boolean; drySince: number };
+const waterStates = new WeakMap<object, WaterSoundState>();
+const WATER_EXIT_DELAY = 750;
 
 function sound(name: SoundEffect) {
   let element = audio.get(name);
@@ -165,8 +167,14 @@ export function setLoopSound(name: Extract<SoundEffect, 'walk' | 'fire' | 'fireS
 }
 
 export function updateWaterSound(world: object, inWater: boolean) {
-  if (waterStates.get(world) !== false && inWater) playSound('waterSplash', 0.55);
-  waterStates.set(world, inWater);
+  const previous = waterStates.get(world) ?? { inWater: false, drySince: 0 };
+  const now = Date.now();
+  if (inWater) {
+    if (!previous.inWater && now - previous.drySince >= WATER_EXIT_DELAY) playSound('waterSplash', 0.55);
+    waterStates.set(world, { inWater: true, drySince: now });
+  } else {
+    waterStates.set(world, { inWater: false, drySince: previous.inWater ? now : previous.drySince });
+  }
 }
 
 export function playWhistle(kind: 'short' | 'long' | 'goal' = 'short') {
@@ -188,5 +196,5 @@ export function updateAmbientSounds(world: World, playing: boolean) {
     }
   }
   setLoopSound('fire', nearestFire < 14, Math.max(0.08, 0.48 - nearestFire * 0.025));
-  if (position) updateWaterSound(world, playing && getSwimState(getBlockIndex(world), position).inWater);
+  if (position) updateWaterSound(world, getSwimState(getBlockIndex(world), position).inWater);
 }
