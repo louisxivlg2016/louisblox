@@ -50,10 +50,17 @@ export function TeleportPanel() {
     setOpen(false);
     setHomeOpen(true);
   };
+  const close = () => {
+    setOpen(false);
+    void requestPlay();
+  };
 
   return (
     <div className="teleport-panel">
-      <strong>Se téléporter</strong>
+      <div className="teleport-heading">
+        <strong>Se téléporter</strong>
+        <button type="button" className="teleport-close" onClick={close} aria-label="Fermer la téléportation">Fermer <span aria-hidden="true">×</span></button>
+      </div>
       {DESTINATIONS.map((biome) => (
         <button key={biome} onClick={() => travel(biome)}>{BIOME_NAMES[biome]}</button>
       ))}
