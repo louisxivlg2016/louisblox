@@ -7,7 +7,7 @@ import { useAvatarStore } from '../game/avatar';
 import type { FriendPlayer, FriendRequest } from '../game/friends';
 import { ProfileAvatar, ProfilePhotoPicker } from './ProfileAvatar';
 import { useGameStore } from '../game/store';
-import { readWorldSave } from '../game/save';
+import { requestRoomMode } from './Multiplayer';
 
 function PlayerRow({ player, action, online = true }: { player: FriendPlayer; action?: React.ReactNode; online?: boolean }) {
   return (
@@ -22,6 +22,7 @@ function PlayerRow({ player, action, online = true }: { player: FriendPlayer; ac
 export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> }) {
   const playerName = useMultiplayerStore((state) => state.playerName);
   const status = useMultiplayerStore((state) => state.status);
+  const worldReady = useMultiplayerStore((state) => state.worldReady);
   const room = useMultiplayerStore((state) => state.room);
   const server = useMultiplayerStore((state) => state.server);
   const configure = useMultiplayerStore((state) => state.configure);
@@ -51,10 +52,15 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
 
   useEffect(() => setName(playerName), [playerName]);
   useEffect(() => {
-    if (pendingJoin !== room || status !== 'online') return;
-    setPendingJoin(null);
-    void onPlay();
-  }, [pendingJoin, room, status, onPlay]);
+    if (pendingJoin !== room) return;
+    if (status === 'online' && worldReady) {
+      setPendingJoin(null);
+      void onPlay();
+    } else if (status === 'error') {
+      setPendingJoin(null);
+      setMessage(useMultiplayerStore.getState().error || 'Connexion au monde de ton ami impossible.');
+    }
+  }, [pendingJoin, room, status, worldReady, onPlay]);
   useEffect(() => {
     let active = true;
     const refresh = async () => {
@@ -117,9 +123,10 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
   };
   const joinFriend = (player: FriendPlayer) => {
     const game = useGameStore.getState();
-    if (readWorldSave(player.room)) game.openWorld(player.room, player.room);
-    else game.regenerate(game.gameplayMode, player.room);
+    game.openWorld(player.room, player.room);
+    requestRoomMode(null);
     setPendingJoin(player.room);
+    setMessage(`Connexion au monde de ${player.name}…`);
     configure({ playerName, room: player.room, server });
     const url = new URL(window.location.href);
     url.searchParams.set('room', player.room);
