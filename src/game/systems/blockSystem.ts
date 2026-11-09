@@ -13,7 +13,7 @@ import { pickUpFood } from '../foods';
 import { consumeActions, isMouseDown, stopMining } from '../input';
 import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
-import { getItemMeta, isSword, miningSpeed } from '../items';
+import { getItemMeta, isSword, isWoodBlock, miningSpeed } from '../items';
 import { changeInventory, hasInventory } from '../inventory';
 import { BlockTarget, Chunk, ChunkData, Player, PlayerPosition, TargetMesh } from '../traits';
 import { BLOCK_HARDNESS, BlockKind, isWaterBlock, raycastVoxel, voxelKey } from '../voxel';
@@ -111,7 +111,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         removeVoxel(world, hit);
         if (store.gameplayMode === 'survival') dropBlock(world, hit.block);
       }
-      playSound(isGlass(hit.block.kind) ? 'breakGlass' : 'breakBlock', 0.5);
+      playSound(isGlass(hit.block.kind) ? 'breakGlass' : isWoodBlock(hit.block.kind) ? 'breakWood' : 'breakBlock', 0.5);
       target.visible = false;
       target.miningKey = '';
       target.miningProgress = 0;

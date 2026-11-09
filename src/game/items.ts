@@ -1,4 +1,5 @@
 import { BLOCK_INFO, BlockKind } from './voxel';
+import { isBed, isChest, isDoor, isLadder, isSign, isTrapdoor } from './extraBlocks';
 import { GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
 import type { GalleryItemId } from './galleryCatalog';
 export type { GalleryItemId } from './galleryCatalog';
@@ -171,6 +172,11 @@ export function isSword(kind: SelectedKind) {
   return typeof kind === 'string' && getItemMeta(kind).category === 'sword';
 }
 
+export function isWoodBlock(kind: BlockKind) {
+  return kind === BlockKind.Wood || kind >= BlockKind.OakPlanks && kind <= BlockKind.AutumnPlanks
+    || isDoor(kind) || isTrapdoor(kind) || isChest(kind) || isLadder(kind) || isSign(kind) || isBed(kind);
+}
+
 export function miningSpeed(selection: SelectedKind, block: BlockKind) {
   if (typeof selection === 'number' || block === BlockKind.Bedrock) return 1;
   const meta = getItemMeta(selection);
@@ -179,7 +185,7 @@ export function miningSpeed(selection: SelectedKind, block: BlockKind) {
     || (block >= BlockKind.BeigeBrick && block <= BlockKind.ConcreteBlack);
   const softBlock = block === BlockKind.Grass || block === BlockKind.Dirt || block === BlockKind.Sand
     || block === BlockKind.Snow || block === BlockKind.AutumnGrass || block === BlockKind.ForestGrass || block === BlockKind.JungleGrass;
-  const woodBlock = block === BlockKind.Wood || block === BlockKind.OakPlanks || block === BlockKind.PinePlanks || block === BlockKind.AutumnPlanks;
+  const woodBlock = isWoodBlock(block);
   const foliage = block === BlockKind.Leaves || block === BlockKind.PineLeaves || block === BlockKind.AutumnLeaves || block === BlockKind.JungleLeaves || block === BlockKind.JungleVine;
   return (meta.category === 'pickaxe' && meta.shape !== 'axe' && hardBlock) || (meta.category === 'shovel' && softBlock)
     || (meta.shape === 'axe' && woodBlock) || (meta.shape === 'shears' && foliage)

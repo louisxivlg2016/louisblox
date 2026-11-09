@@ -7,6 +7,7 @@ import whistleUrl from '../../son/siflet.mp3';
 import fireSirenUrl from '../../son/sirene-de-pompier.mp3';
 import breakBlockUrl from '../../son/son-de-casse-un-bloc.mp3';
 import breakGlassUrl from '../../son/casse-du-verre.mp3';
+import breakWoodUrl from '../../son/casse-du-bois.mp3';
 import gunshotUrl from '../../son/tire-de-fusil.mp3';
 import ballUrl from '../../son/balon.mp3';
 import explosionUrl from '../../son/explosion.mp3';
@@ -104,13 +105,14 @@ export function initAudio() {
   });
 }
 
-export type SoundEffect = 'whistle' | 'fireSiren' | 'breakBlock' | 'breakGlass' | 'gunshot' | 'ball' | 'explosion' | 'fire' | 'eat' | 'walk' | 'placeBlock' | 'waterSplash';
+export type SoundEffect = 'whistle' | 'fireSiren' | 'breakBlock' | 'breakGlass' | 'breakWood' | 'gunshot' | 'ball' | 'explosion' | 'fire' | 'eat' | 'walk' | 'placeBlock' | 'waterSplash';
 
 const soundUrls: Record<SoundEffect, string> = {
   whistle: whistleUrl,
   fireSiren: fireSirenUrl,
   breakBlock: breakBlockUrl,
   breakGlass: breakGlassUrl,
+  breakWood: breakWoodUrl,
   gunshot: gunshotUrl,
   ball: ballUrl,
   explosion: explosionUrl,
