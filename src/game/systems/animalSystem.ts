@@ -20,6 +20,7 @@ type Motion = {
   displayYaw: number;
   turnIn: number;
   phase: number;
+  running: boolean;
   speed: number;
   idle: number;
   velocityY: number;
@@ -77,7 +78,7 @@ function avoidWall(world: World, kind: AnimalKind, position: Vector3, motion: Mo
   const open = candidates.find((yaw) => canAdvance(world, kind, position, yaw));
   if (open !== undefined) motion.yaw = open;
   else motion.yaw += direction * Math.PI / 3;
-  motion.avoid = 0;
+  motion.avoid = open !== undefined ? 0.35 : 0.1;
   motion.turnIn = Math.max(motion.turnIn, 1.2);
 }
 
@@ -94,9 +95,10 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
   }
   if (motion.speed > 0 && motion.idle <= 0 && (motion.avoid ?? 0) <= 0 && !canAdvance(world, kind, position, motion.yaw)) avoidWall(world, kind, position, motion, entity);
   motion.avoid = Math.max(0, (motion.avoid ?? 0) - dt);
+  motion.running = panic > 0 || kind !== 'duck' && Math.sin(motion.phase * 0.45 + entity * 1.37) > 0.2;
   const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : motion.speed;
-  const normalSpeed = Math.max(baseSpeed, kind === 'duck' ? 0.35 : 1.05);
-  const chaseSpeed = kind === 'zombie' ? 3.4 : kind === 'bear' || kind === 'snowBear' || kind === 'wolf' || kind === 'snowWolf' ? 2.8 : kind === 'duck' ? 0.9 : 1.9;
+  const normalSpeed = motion.running && kind !== 'duck' ? Math.max(baseSpeed * 2.2, 3.6) : Math.max(baseSpeed, kind === 'duck' ? 0.65 : 1.8);
+  const chaseSpeed = kind === 'zombie' ? 4.6 : kind === 'bear' || kind === 'snowBear' || kind === 'wolf' || kind === 'snowWolf' ? 4.2 : kind === 'duck' ? 1.4 : 4.2;
   const speed = panic > 0 ? chaseSpeed : normalSpeed;
   const x = position.x + Math.sin(motion.yaw) * speed * dt;
   const z = position.z + Math.cos(motion.yaw) * speed * dt;
@@ -228,7 +230,7 @@ export function animalSystem(world: World, dt: number) {
 
     motion.idle = 0;
     motion.turnIn -= stepDt;
-    motion.phase += stepDt * 3;
+    motion.phase += stepDt * (motion.running ? 8 : 4);
     if (!fire && hit.panic > 0 && !motion.hunting) {
       motion.idle = 0;
       motion.turnIn = Math.min(motion.turnIn, 1.2);

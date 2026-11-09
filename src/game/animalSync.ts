@@ -8,7 +8,7 @@ import type { FishKind } from './fish';
 import { useMultiplayerStore } from './multiplayerStore';
 import { playerIdentity } from './playerIdentity';
 
-export type AnimalSnapshot = { id: string; kind: AnimalKind; x: number; y: number; z: number; yaw: number; health: number; speed: number };
+export type AnimalSnapshot = { id: string; kind: AnimalKind; x: number; y: number; z: number; yaw: number; health: number; speed: number; running?: boolean };
 export type FishSnapshot = { id: string; kind: FishKind; x: number; y: number; z: number; yaw: number; age: number; phase: number; speed: number };
 
 const animalKinds = new Set<AnimalKind>(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie']);
@@ -32,7 +32,8 @@ export function isAnimalSnapshot(value: unknown): value is AnimalSnapshot {
   if (!value || typeof value !== 'object') return false;
   const data = value as Record<string, unknown>;
   return typeof data.id === 'string' && data.id.length > 0 && data.id.length <= 80 && animalKinds.has(data.kind as AnimalKind)
-    && ['x', 'y', 'z', 'yaw', 'health', 'speed'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]));
+    && ['x', 'y', 'z', 'yaw', 'health', 'speed'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]))
+    && (data.running === undefined || typeof data.running === 'boolean');
 }
 
 export function isFishSnapshot(value: unknown): value is FishSnapshot {
@@ -54,7 +55,7 @@ export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[]) 
     if (!entity) entity = spawnAnimal(world, snapshot.kind, snapshot.x, snapshot.y, snapshot.z, 0);
     entity.set(AnimalId, snapshot.id);
     entity.get(AnimalPosition)!.set(snapshot.x, snapshot.y, snapshot.z);
-    entity.set(AnimalMotion, { yaw: snapshot.yaw, displayYaw: snapshot.yaw, speed: snapshot.speed });
+    entity.set(AnimalMotion, { yaw: snapshot.yaw, displayYaw: snapshot.yaw, speed: snapshot.speed, running: snapshot.running ?? false });
     if (snapshot.health <= 0) {
       entity.destroy();
       continue;
@@ -109,7 +110,7 @@ export function syncAnimalState(world: World, dt: number) {
     if (entity.get(CamelLeash) || entity.get(HorseRider)?.mounted) return [];
     const position = entity.get(AnimalPosition)!;
     const motion = entity.get(AnimalMotion)!;
-    return [{ id: entity.get(AnimalId), kind: entity.get(Animal)!.kind, x: position.x, y: position.y, z: position.z, yaw: motion.displayYaw, health: entity.get(AnimalHealth)!.value, speed: motion.speed }];
+    return [{ id: entity.get(AnimalId), kind: entity.get(Animal)!.kind, x: position.x, y: position.y, z: position.z, yaw: motion.displayYaw, health: entity.get(AnimalHealth)!.value, speed: motion.speed, running: motion.running }];
   });
   const fish = world.query(Fish, FishId, FishPosition, FishMotion).map((entity) => {
     const position = entity.get(FishPosition)!;

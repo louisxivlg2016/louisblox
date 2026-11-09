@@ -33,7 +33,7 @@ function useAnimalLegs(entity: Entity, bird = false) {
     const motion = entity.get(AnimalMotion);
     const moving = Boolean(position && last.current && Math.hypot(position.x - last.current.x, position.z - last.current.z) > 0.0002 && (motion?.idle ?? 0) <= 0);
     if (position) last.current = { x: position.x, z: position.z };
-    if (moving) phase.current += delta * (bird ? 10 : 8);
+    if (moving) phase.current += delta * (bird ? 10 : 8) * (motion?.running ? 1.5 : 1);
     const swing = moving ? Math.sin(phase.current) * (bird ? 0.35 : 0.44) : 0;
     for (let index = 0; index < 4; index += 1) {
       const leg = entity.get(AnimalMesh)?.value?.getObjectByName(`animal-leg-${index}`);

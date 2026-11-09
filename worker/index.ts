@@ -115,7 +115,8 @@ function parseAnimalSnapshots(value: unknown) {
     const data = entry as Record<string, unknown>;
     if (typeof data.id !== 'string' || data.id.length === 0 || data.id.length > 80 || !animalKinds.has(data.kind as string)) return null;
     if (!['x', 'y', 'z', 'yaw', 'health', 'speed'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]))) return null;
-    snapshots.push({ id: data.id, kind: data.kind, x: data.x, y: data.y, z: data.z, yaw: data.yaw, health: data.health, speed: data.speed });
+    if (data.running !== undefined && typeof data.running !== 'boolean') return null;
+    snapshots.push({ id: data.id, kind: data.kind, x: data.x, y: data.y, z: data.z, yaw: data.yaw, health: data.health, speed: data.speed, running: data.running === true });
   }
   return snapshots;
 }
