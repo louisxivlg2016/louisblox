@@ -12,7 +12,7 @@ import gunshotUrl from '../../son/tire-de-fusil.mp3';
 import ballUrl from '../../son/balon.mp3';
 import explosionUrl from '../../son/explosion.mp3';
 import fireUrl from '../../son/feu.mp3';
-import eatUrl from '../../son/manger-bruit.mp3';
+import eatUrl from '../../son/manger.mp3';
 import walkUrl from '../../son/marcher.mp3';
 import placeBlockUrl from '../../son/placer-un-bloc.mp3';
 import waterSplashUrl from "../../son/sauter-dans-l'eau.mp3";
