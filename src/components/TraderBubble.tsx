@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useWorld } from 'koota/react';
 import type { Entity } from 'koota';
 import { CanvasTexture, NearestFilter, Sprite, SpriteMaterial, SRGBColorSpace } from 'three';
-import { advanceTraderStory, beginTraderStory, MERCHANT_STORIES, useTradeStore } from '../game/trading';
+import { MERCHANT_STORIES, useTradeStore } from '../game/trading';
 import { PlayerPosition, TraderPosition } from '../game/traits';
 
 function bubbleTexture(text: string) {
@@ -55,7 +55,6 @@ function bubbleTexture(text: string) {
 export function TraderBubble({ entity }: { entity: Entity }) {
   const world = useWorld();
   const [near, setNear] = useState(false);
-  const open = useTradeStore((state) => state.open);
   const traderId = useTradeStore((state) => state.traderId);
   const storyId = useTradeStore((state) => state.storyId);
   const step = useTradeStore((state) => state.step);
@@ -66,8 +65,8 @@ export function TraderBubble({ entity }: { entity: Entity }) {
   const text = active
     ? following
       ? MERCHANT_STORIES[storyId].companion
-      : step === lastStep ? `${story} E pour répondre.` : story
-    : 'Approche, j’ai une histoire à te raconter. E pour m’écouter.';
+      : step === lastStep ? `${story} Choisis ta réponse ici.` : `${story} E pour la suite.`
+    : 'Appuie sur moi pour écouter mon histoire.';
   const sprite = useMemo(() => {
     const material = new SpriteMaterial({ map: bubbleTexture(text), transparent: true, depthWrite: false, depthTest: false, toneMapped: false });
     const object = new Sprite(material);
@@ -89,14 +88,7 @@ export function TraderBubble({ entity }: { entity: Entity }) {
     const trader = entity.get(TraderPosition);
     const visible = Boolean(player && trader && player.distanceToSquared(trader) < 10 * 10);
     if (visible !== near) setNear(visible);
-    if (visible && !open && !active) beginTraderStory(entity);
   });
-
-  useEffect(() => {
-    if (!near || open || following || !active || step >= lastStep) return;
-    const timer = window.setInterval(() => advanceTraderStory(entity), 4800);
-    return () => window.clearInterval(timer);
-  }, [near, open, following, active, entity, step, lastStep]);
 
   return <primitive object={sprite} visible={near} position={[0, 2.45, 0]} />;
 }

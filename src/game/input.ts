@@ -16,7 +16,7 @@ const touchMouseButtons = new Set<number>();
 const look = { x: 0, y: 0 };
 const edgeLook = { x: 0, y: 0 };
 const touchMovement = { x: 0, y: 0 };
-const actions = { place: 0, harvest: 0, tap: 0 };
+const actions = { place: 0, harvest: 0, tap: 0, interact: 0 };
 const footballActions = { power: 0, tackle: 0, pass: 0, shot: 0 };
 const TOUCH_MINE_DELAY = 400;
 let lastSpacePress = 0;
@@ -90,6 +90,7 @@ export function clearInput(preserveCaptureClick?: boolean | Event) {
   actions.place = 0;
   actions.harvest = 0;
   actions.tap = 0;
+  actions.interact = 0;
   footballActions.power = 0;
   footballActions.shot = 0;
   footballActions.tackle = 0;
@@ -373,6 +374,7 @@ export function initInput() {
       return;
     }
     mouseButtons.add(event.button);
+    if (event.button === 0) actions.interact += 1;
     if (event.button === 2) actions.place += 1;
   });
   window.addEventListener('mouseup', (event) => {
@@ -505,6 +507,7 @@ export function consumeActions() {
   actions.place = 0;
   actions.harvest = 0;
   actions.tap = 0;
+  actions.interact = 0;
   return result;
 }
 

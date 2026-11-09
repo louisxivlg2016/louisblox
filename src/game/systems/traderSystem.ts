@@ -7,6 +7,7 @@ import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import { isCollidable, moveVoxelCharacter } from './collisionSystem';
 import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, Player, PlayerPosition, Trader, TraderMesh, TraderPosition } from '../traits';
 import { getFireSources, nearestFire } from '../hazards';
+import { useTradeStore } from '../trading';
 
 const foliage = new Set<BlockKind>([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple]);
 const stuckCamels = new Map<Entity, { x: number; z: number; time: number }>();
@@ -56,10 +57,17 @@ export function traderSystem(world: World, dt: number) {
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return;
   const fires = getFireSources(world);
+  const conversation = useTradeStore.getState();
+  const talkingTo = conversation.open ? conversation.traderId : null;
   for (const entity of world.query(Trader, TraderPosition, TraderMesh)) {
     const trader = entity.get(Trader)!;
     const position = entity.get(TraderPosition)!;
     const mesh = entity.get(TraderMesh)!;
+    if (talkingTo === entity) {
+      if (trader.walking) entity.set(Trader, { walking: false });
+      if (mesh.value) mesh.value.rotation.y = turnToward(mesh.value.rotation.y, Math.atan2(player.x - position.x, player.z - position.z), dt * 4);
+      continue;
+    }
     const fire = nearestFire(fires, position);
     trader.panic = fire ? Math.max(trader.panic, 0.5) : Math.max(0, trader.panic - dt);
     const heading = traderHeading(trader);
@@ -127,6 +135,10 @@ export function traderSystem(world: World, dt: number) {
     const trader = leash.trader?.get(TraderPosition);
     if (!trader) {
       stuckCamels.delete(entity);
+      return;
+    }
+    if (talkingTo === leash.trader) {
+      motion.speed = 0;
       return;
     }
     const heading = leash.trader?.get(TraderMesh)?.value?.rotation.y ?? traderHeading(leash.trader?.get(Trader) ?? { homeX: trader.x, homeZ: trader.z });

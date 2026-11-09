@@ -81,8 +81,8 @@ export function beginTraderStory(traderId: import('koota').Entity) {
 }
 
 export function openTrader(traderId: import('koota').Entity) {
-  beginTraderStory(traderId);
-  useTradeStore.setState({ open: true, view: 'story', message: '' });
+  const storyId = Math.abs(Number(traderId)) % MERCHANT_STORIES.length;
+  useTradeStore.setState({ open: true, traderId, storyId, step: 0, story: MERCHANT_STORIES[storyId].steps[0], view: 'story', following: false, message: '' });
 }
 
 export function advanceTraderStory(traderId: import('koota').Entity | null) {

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { advanceTraderStory, canTrade, MERCHANT_STORIES, tradeWithMerchant, TRADE_OFFERS, useTradeStore } from '../game/trading';
 import { requestPlay } from '../game/input';
 import { selectionInfo } from '../game/items';
@@ -13,6 +14,17 @@ export function TradingPanel() {
   const step = useTradeStore((state) => state.step);
   const traderId = useTradeStore((state) => state.traderId);
   const following = useTradeStore((state) => state.following);
+  useEffect(() => {
+    if (!open || view !== 'story' || following) return;
+    const next = (event: KeyboardEvent) => {
+      if (event.code !== 'KeyE' || event.repeat) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      advanceTraderStory(traderId);
+    };
+    window.addEventListener('keydown', next, true);
+    return () => window.removeEventListener('keydown', next, true);
+  }, [open, view, following, traderId, step]);
   const itemCounts = useGameStore((state) => state.itemCounts);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   if (!open) return null;
@@ -43,7 +55,7 @@ export function TradingPanel() {
             {!following && step < lastStep && <p>Reste près de moi pour écouter la suite, ou avance le récit ici.</p>}
             {!following && step === lastStep && <p>Veux-tu m’accompagner un moment, ou préfères-tu voir mes marchandises ?</p>}
             <div className="trade-story-actions">
-              {!following && step < lastStep && <button className="primary-button" onClick={() => advanceTraderStory(traderId)}>Écouter la suite</button>}
+              {!following && step < lastStep && <button className="primary-button" aria-keyshortcuts="E" onClick={() => advanceTraderStory(traderId)}>Texte suivant (E)</button>}
               {!following && step === lastStep && <button className="primary-button" onClick={accompany}>L’accompagner</button>}
               {following && <button className="primary-button" onClick={stopAccompanying}>Reprendre la route seul</button>}
               <button className="secondary-button" onClick={() => useTradeStore.getState().setView('offers')}>Voir les marchandises</button>
