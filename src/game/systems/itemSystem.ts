@@ -19,6 +19,7 @@ import { isPaintballGun, paintballColor } from '../paintball';
 import { drawPaintStroke, endPaintStroke } from '../paintStrokes';
 import { drainConnectedWater } from './waterSystem';
 import { tryFireBombLauncher, updateBombLauncher } from '../weaponAmmo';
+import { useFireExtinguisher } from '../extinguisher';
 
 export { eatItem, eatMeat } from '../foods';
 
@@ -93,6 +94,11 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
 
   if (useFood(world, selected, origin, direction, interact)) return true;
   if ((selected === 'bucket' || selected === 'water_bucket') && interact > 0) return useBucket(world, selected === 'water_bucket', origin, direction);
+  if (selected === 'extinguisher' && (interact > 0 || isMouseButtonDown(0) || isDown('KeyE')) && cooldown <= 0) {
+    useFireExtinguisher(world, origin, direction);
+    cooldowns.set(world, 0.3);
+    return true;
+  }
 
   if (meta.shape === 'book' && interact > 0) {
     useGameStore.getState().setBookOpen(true);

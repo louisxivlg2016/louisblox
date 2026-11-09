@@ -14,6 +14,7 @@ import wheatCropIcon from '../../assets/crop-icons/wheat.png';
 import carrotCropIcon from '../../assets/crop-icons/carrot.png';
 import cornCropIcon from '../../assets/crop-icons/corn.png';
 import tomatoCropIcon from '../../assets/crop-icons/tomato.png';
+import extinguisherUrl from '../../son/extincteur.png';
 
 const cropIcons: Partial<Record<BlockKind, string>> = {
   [BlockKind.Wheat]: wheatCropIcon,
@@ -67,6 +68,7 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
     return <img className={`block-swatch block-icon${brick ? ' block-icon-smooth' : ''}`} src={blockIcon(kind)} alt="" />;
   }
   const meta = getItemMeta(kind);
+  if (kind === 'extinguisher') return <img className="item-model-icon" style={{ imageRendering: 'pixelated' }} src={extinguisherUrl} alt={info.name} />;
   if (meta.shape === 'cake') return <span className="item-icon item-cake" style={{ '--item-color': info.color } as React.CSSProperties} aria-hidden="true"><i /><b /><em /></span>;
   if (meta.shape === 'bucket' || meta.shape === 'water_bucket') return <span className={`item-icon item-bucket ${meta.shape === 'water_bucket' ? 'full' : 'empty'}`} aria-hidden="true"><i /><b /><em /></span>;
   const rawShape = meta.shape ?? meta.category;

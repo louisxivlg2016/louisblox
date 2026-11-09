@@ -521,6 +521,7 @@ export function ItemModel({ kind, held = false, flipGuns = false }: ModelProps) 
   if (isPaintballGun(kind)) model = <WeaponWithFallback kind="paintball" />;
   else if (isGalleryItem(kind)) model = <GalleryModel kind={kind} />;
   else if (kind === 'bucket' || kind === 'water_bucket') model = <BucketModel filled={kind === 'water_bucket'} />;
+  else if (kind === 'extinguisher') model = <WeaponWithFallback kind="extinguisher" />;
   else if (meta.category === 'sword') model = <SwordModel color={meta.color} />;
   else if (meta.category === 'bow') model = <BowModel crossbow={kind === 'crossbow'} />;
   else if (meta.category === 'gun') model = kind === 'rifle_flintlock' ? <FlintlockModel /> : <GunModel color={meta.color} bomb={kind === 'pistol_bomb'} rifle={kind === 'rifle_auto'} />;

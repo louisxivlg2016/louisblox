@@ -29,6 +29,7 @@ import { useCharacterStore } from '../game/characterStore';
 import { FootballBall } from './FootballBall';
 import { FootballReferee } from './FootballReferee';
 import { PirateWorld } from './PirateWorld';
+import { ExtinguisherSprays } from './ExtinguisherSpray';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -125,6 +126,7 @@ export function Game() {
       <Fish key={`fish-${generation}`} />
       <Vehicles key={`vehicles-${generation}`} />
       <Fires key={`fires-${generation}`} />
+      <ExtinguisherSprays />
       <Projectiles key={`projectiles-${generation}`} />
       <MeatDrops key={`meat-${generation}`} />
       <DroppedItems key={`drops-${generation}`} />

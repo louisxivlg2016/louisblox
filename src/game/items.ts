@@ -6,7 +6,7 @@ export type { GalleryItemId } from './galleryCatalog';
 export type ItemCategory = 'sword' | 'pickaxe' | 'shovel' | 'bow' | 'gun' | 'armor' | 'food' | 'vehicle' | 'saddle' | 'resource';
 export type ArmorKind = 'gold' | 'diamond' | 'silver';
 export type ItemKind =
-  | 'hand' | 'stick' | 'bucket' | 'water_bucket'
+  | 'hand' | 'stick' | 'bucket' | 'water_bucket' | 'extinguisher'
   | 'sword_wood' | 'sword_stone' | 'sword_iron' | 'sword_gold' | 'sword_diamond' | 'sword_silver'
   | 'pickaxe_wood' | 'pickaxe_stone' | 'pickaxe_iron' | 'pickaxe_gold' | 'pickaxe_diamond' | 'pickaxe_silver'
   | 'shovel_wood' | 'shovel_stone' | 'shovel_iron' | 'shovel_gold' | 'shovel_diamond' | 'shovel_silver'
@@ -98,6 +98,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   carriage: item('Calèche avec chevaux', '#d6ae40', 'vehicle', { shape: 'carriage' }),
   cannon: item('Canon à roues', '#6d4829', 'vehicle', { shape: 'cannon' }),
   saddle: item('Selle pour cheval', '#80502e', 'saddle'),
+  extinguisher: item('Extincteur', '#d72b25', 'resource', { shape: 'extinguisher' }),
 };
 
 export const ITEM_ORDER = Object.keys(ITEM_META) as ItemKind[];

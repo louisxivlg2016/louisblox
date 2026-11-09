@@ -1,14 +1,17 @@
 import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { CanvasTexture, Color, Mesh, NearestFilter, SRGBColorSpace } from 'three';
+import { useLoader } from '@react-three/fiber';
+import { Box3, CanvasTexture, Color, Mesh, NearestFilter, SRGBColorSpace, Sprite, SpriteMaterial, TextureLoader, Vector3 } from 'three';
 import type { Texture } from 'three';
+import extinguisherImageUrl from '../../son/extincteur.png';
 import { usePaintballStore } from '../game/paintball';
 import autoRifleUrl from '../../assets/models/weapon-auto-rifle.glb';
 import bombLauncherUrl from '../../assets/models/weapon-bomb-launcher.glb';
 import pistolUrl from '../../assets/models/weapon-pistol.glb';
 import paintballUrl from '../../assets/models/weapon-paintball.glb';
+import extinguisherUrl from '../../assets/models/weapon-extinguisher.glb';
 
-const models = { 'auto-rifle': autoRifleUrl, 'bomb-launcher': bombLauncherUrl, pistol: pistolUrl, paintball: paintballUrl };
+const models = { 'auto-rifle': autoRifleUrl, 'bomb-launcher': bombLauncherUrl, pistol: pistolUrl, paintball: paintballUrl, extinguisher: extinguisherUrl };
 for (const model of Object.values(models)) useGLTF.preload(model);
 
 type WeaponKind = keyof typeof models;
@@ -53,6 +56,7 @@ function recolorTexture(source: Texture, metalColor?: string, paintColor?: strin
 export function WeaponGlb({ kind, metalColor }: { kind: WeaponKind; metalColor?: string }) {
   const paintColor = usePaintballStore((state) => kind === 'paintball' ? state.color : undefined);
   const { scene } = useGLTF(models[kind]);
+  const extinguisherTexture = useLoader(TextureLoader, extinguisherImageUrl);
   const model = useMemo(() => {
     const clone = scene.clone(true);
     clone.name = `weapon-${kind}`;
@@ -71,9 +75,24 @@ export function WeaponGlb({ kind, metalColor }: { kind: WeaponKind; metalColor?:
         material.map.needsUpdate = true;
       }
     });
+    if (kind === 'extinguisher') {
+      extinguisherTexture.magFilter = NearestFilter;
+      extinguisherTexture.minFilter = NearestFilter;
+      extinguisherTexture.generateMipmaps = false;
+      extinguisherTexture.colorSpace = SRGBColorSpace;
+      const bounds = new Box3().setFromObject(clone);
+      const size = bounds.getSize(new Vector3());
+      const center = bounds.getCenter(new Vector3());
+      const label = new Sprite(new SpriteMaterial({ map: extinguisherTexture, transparent: true, depthTest: false, depthWrite: false, toneMapped: false }));
+      label.name = 'extinguisher-label';
+      label.scale.set(size.y * 0.38 * (874 / 972), size.y * 0.38, 1);
+      label.position.copy(center);
+      label.renderOrder = 10;
+      clone.add(label);
+    }
     return clone;
-  }, [scene, kind, metalColor, paintColor]);
-  return <group scale={0.65}><primitive object={model} /></group>;
+  }, [scene, kind, metalColor, paintColor, extinguisherTexture]);
+  return <group scale={kind === 'extinguisher' ? 0.34 : 0.65} rotation={[0, kind === 'extinguisher' ? Math.PI : 0, 0]}><primitive object={model} /></group>;
 }
 
 export function WeaponWithFallback(props: Parameters<typeof WeaponGlb>[0]) {
