@@ -3,7 +3,7 @@ import { BlockKind } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { PixelPart } from './ItemModel';
 import { NormalStreetLampModel, ParisStreetLampModel } from './StreetLights';
-import { EXTRA_BLOCK_META, isBed, isRail, isTrafficSign } from '../game/extraBlocks';
+import { EXTRA_BLOCK_META, facingYaw, isBed, isRail, isTrafficSign } from '../game/extraBlocks';
 import { TrafficSignModel } from './TrafficSigns';
 import { ParisStreetSignModel } from './ParisStreetSign';
 
@@ -63,7 +63,7 @@ export function RailModel() {
 export function BedModel({ kind }: { kind: BlockKind }) {
   const color = EXTRA_BLOCK_META[kind as keyof typeof EXTRA_BLOCK_META].color;
   return (
-    <group scale={[1.12, 1, 1.12]}>
+    <group scale={[1.12, 1, 1.35]}>
       <PixelPart position={[0, 0.14, 0]} size={[0.94, 0.22, 1.65]} color="#765035" />
       <PixelPart position={[0, 0.34, 0]} size={[0.88, 0.22, 1.55]} color="#e8e5d7" />
       <PixelPart position={[0, 0.51, 0.48]} size={[0.72, 0.14, 0.42]} color="#f7f4e8" />
@@ -114,7 +114,7 @@ export function UtilityBlocks({ blocks }: { blocks: Voxel[] }) {
     const oriented = block.kind === BlockKind.Ladder || block.kind === BlockKind.TrafficLight || isTrafficSign(block.kind) || isBed(block.kind) || rail;
     const rotation = rail
       ? block.facing === 'east' || block.facing === 'west' ? Math.PI / 2 : 0
-      : !oriented ? 0 : block.facing === 'north' ? Math.PI : block.facing === 'east' ? -Math.PI / 2 : block.facing === 'west' ? Math.PI / 2 : 0;
+      : oriented ? facingYaw(block.facing) : 0;
     return <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]} rotation={[0, rotation, 0]}><UtilityBlockModel kind={block.kind} /></group>;
   });
 }

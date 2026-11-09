@@ -134,6 +134,7 @@ export const isFurnace = (kind: number) => kind === EXTRA_BLOCKS.Furnace;
 export const isChest = (kind: number) => kind === EXTRA_BLOCKS.Chest;
 export const isLadder = (kind: number) => kind === EXTRA_BLOCKS.Ladder;
 export const isBed = (kind: number) => kind >= EXTRA_BLOCKS.Bed && kind <= EXTRA_BLOCKS.BedBlack;
+export const facingYaw = (facing?: import('./voxel').Voxel['facing']) => facing === 'north' ? Math.PI : facing === 'east' ? -Math.PI / 2 : facing === 'west' ? Math.PI / 2 : 0;
 export const isFireBlock = (kind: number) => kind === EXTRA_BLOCKS.Campfire || kind === EXTRA_BLOCKS.Wildfire;
 export const isRail = (kind: number) => kind === EXTRA_BLOCKS.Rail;
 export const isSign = (kind: number) => kind === EXTRA_BLOCKS.Sign || kind === EXTRA_BLOCKS.ParisStreetSign;

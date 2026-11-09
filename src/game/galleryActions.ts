@@ -149,7 +149,8 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     return true;
   }
   if (shape === 'bed') {
-    addVoxel(world, x, y, z, bedForName(meta.name));
+    const facing = Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
+    addVoxel(world, x, y, z, bedForName(meta.name), undefined, facing);
     store.setNotice('Lit placé. Appuie sur E en le visant pour dormir.');
     return true;
   }

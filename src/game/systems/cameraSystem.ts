@@ -24,11 +24,12 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const avatar = entity.get(PlayerMesh)?.value;
   const mounted = entity.get(PlayerMount)?.vehicle;
   const velocity = entity.get(PlayerVelocity);
+  const sleep = world.queryFirst(Sleep)?.get(Sleep);
   if (avatar) {
     avatar.rotation.order = 'YXZ';
-    if (mounted || velocity && Math.hypot(velocity.x, velocity.z) > 0.1) avatar.rotation.y = turnToward(avatar.rotation.y, state.yaw, dt * 6);
+    if (sleep) avatar.rotation.y = turnToward(avatar.rotation.y, sleep.yaw, dt * 8);
+    else if (mounted || velocity && Math.hypot(velocity.x, velocity.z) > 0.1) avatar.rotation.y = turnToward(avatar.rotation.y, state.yaw, dt * 6);
   }
-  const sleep = world.queryFirst(Sleep)?.get(Sleep);
   const previous = sleepBlends.get(world) ?? 0;
   const blend = sleep ? Math.min(1, previous + dt * 3) : Math.max(0, previous - dt * 3);
   sleepBlends.set(world, blend);
@@ -40,14 +41,14 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const mountKind = entity.get(PlayerMount)?.kind;
   const emote = useEmoteStore.getState().current;
   const seatedHeight = mounted && mountKind !== 'horse' ? mountKind === 'car' ? -0.9 : -0.7 : 0;
-  const lyingHeight = !mounted && emote === 'lie' ? 0.18 : 0;
+  const lyingHeight = !mounted && !sleep && emote === 'lie' ? 0.18 : 0;
   if (avatar) {
-    avatar.rotation.x = !mounted && emote === 'lie' ? -Math.PI / 2 : -flightAmount * Math.PI / 2;
-    avatar.rotation.z = amount * Math.PI / 2;
-    avatar.position.set(-0.9 * amount, 0.35 * amount + flightAmount + seatedHeight + lyingHeight, 0);
+    avatar.rotation.x = sleep ? amount * Math.PI / 2 : !mounted && emote === 'lie' ? -Math.PI / 2 : -flightAmount * Math.PI / 2;
+    avatar.rotation.z = 0;
+    avatar.position.set(-Math.sin(sleep?.yaw ?? 0) * 1.1 * amount, -0.32 * amount + (sleep ? 0 : flightAmount) + seatedHeight + lyingHeight, -Math.cos(sleep?.yaw ?? 0) * 1.1 * amount);
   }
   if (sleep) {
-    sleepCameraPosition.set(sleep.x + Math.sin(state.yaw) * 4.5, sleep.y + 2.2, sleep.z + Math.cos(state.yaw) * 4.5);
+    sleepCameraPosition.set(sleep.x + Math.cos(sleep.yaw) * 4.5, sleep.y + 2.8, sleep.z - Math.sin(sleep.yaw) * 4.5);
     camera.position.lerp(sleepCameraPosition, 1 - Math.exp(-dt * 5));
     camera.lookAt(sleep.x, sleep.y + 0.5, sleep.z);
     camera.updateMatrixWorld();

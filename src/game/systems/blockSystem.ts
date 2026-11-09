@@ -136,7 +136,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   if ((actions.place > 0 || actions.harvest > 0) && isBed(hit.block.kind)) {
-    startSleep(world, hit.x, hit.y, hit.z);
+    startSleep(world, hit.x, hit.y, hit.z, hit.block.facing);
     return;
   }
   if ((actions.place > 0 || actions.harvest > 0) && isChest(hit.block.kind)) {
@@ -217,7 +217,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         : kind === BlockKind.TrafficLight || isTrafficSign(kind)
           ? Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'south' : 'north'
           : Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
-      const placed = addVoxel(world, x, y, z, kind, undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
+      const placed = addVoxel(world, x, y, z, kind, undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
       if (placed) playSound('placeBlock', 0.45);
       if (placed && store.gameplayMode === 'survival') changeInventory(kind, -1);
       if (kind === BlockKind.Tnt) {

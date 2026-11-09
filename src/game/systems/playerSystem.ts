@@ -44,7 +44,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     position.set(sleep.x, sleep.y + 0.58, sleep.z);
     body.setNextKinematicTranslation(position);
     velocity.set(0, 0, 0);
-    entity.set(PlayerState, { grounded: true, flying: false });
+    entity.set(PlayerState, { grounded: true, flying: false, yaw: sleep.yaw, pitch: 0 });
     updateHud(world, position, health, false, dt);
     return;
   }

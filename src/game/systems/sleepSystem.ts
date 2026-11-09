@@ -1,13 +1,15 @@
 import type { World } from 'koota';
+import type { Voxel } from '../voxel';
 import { useGameStore } from '../store';
 import { dismount } from '../vehicles';
+import { facingYaw } from '../extraBlocks';
 import { Sleep, Environment, Player, PlayerMount } from '../traits';
 import { DAY_DURATION } from './environmentSystem';
 
-export function startSleep(world: World, x: number, y: number, z: number) {
+export function startSleep(world: World, x: number, y: number, z: number, facing?: Voxel['facing']) {
   if (world.queryFirst(Sleep)) return;
   if (world.queryFirst(Player)?.get(PlayerMount)?.vehicle) dismount(world);
-  world.spawn(Sleep({ x, y, z }));
+  world.spawn(Sleep({ x, y, z, yaw: facingYaw(facing) }));
   useGameStore.getState().setSleepProgress(0);
   useGameStore.getState().setNotice('');
 }
