@@ -11,7 +11,7 @@ import type { ChunkEdit } from '../game/chunks';
 import { isPlayerSnapshot, resolveMultiplayerUrl } from '../game/multiplayer';
 import type { PlayerSnapshot } from '../game/multiplayer';
 import { useMultiplayerStore, useRemotePlayerStore } from '../game/multiplayerStore';
-import { createWorldSave, listWorlds, saveWorld } from '../game/save';
+import { canCreateWorld, createWorldSave, listWorlds, saveWorld } from '../game/save';
 import { rememberWorld, useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
 import { useAvatarStore } from '../game/avatar';
@@ -332,6 +332,13 @@ export function MultiplayerConnection() {
       }
       if (pending.seed === null) {
         const existing = listWorlds().find((saved) => saved.id === room);
+        if (!existing && !canCreateWorld(room)) {
+          pendingWorld.current = null;
+          store.setEnabled(false);
+          store.setStatus('error', 'Tu as déjà 20 mondes. Supprimes-en un avant de créer un salon.');
+          socket.current?.close();
+          return;
+        }
         const game = useGameStore.getState();
         const mode = requestedRoomMode ?? existing?.gameplayMode ?? game.gameplayMode;
         requestedRoomMode = null;

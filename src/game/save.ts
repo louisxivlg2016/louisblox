@@ -11,6 +11,12 @@ const WORLDS_KEY = 'louisblox-worlds-v1';
 const DEFAULT_WORLD_ID = 'main-room';
 
 export type WorldMeta = { id: string; name: string; gameplayMode: WorldSave['gameplayMode']; updatedAt: number };
+export const MAX_WORLDS = 20;
+
+export function canCreateWorld(worldId?: string) {
+  const worlds = listWorlds();
+  return worlds.length < MAX_WORLDS || worldId !== undefined && worlds.some((world) => world.id === worldId);
+}
 
 function worldKey(worldId: string) {
   return `louisblox-world-${worldId}`;
@@ -43,6 +49,10 @@ export function listWorlds(): WorldMeta[] {
 let storageWarningShown = false;
 
 export function writeWorldSave(worldId: string, save: WorldSave, name = worldId): WorldMeta | null {
+  if (!canCreateWorld(worldId)) {
+    useGameStore.getState().setNotice('Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes pour libérer une place.');
+    return null;
+  }
   const metadata: WorldMeta = { id: worldId, name: name.trim().slice(0, 80) || worldId, gameplayMode: save.gameplayMode, updatedAt: Date.now() };
   try {
     localStorage.setItem(worldKey(worldId), JSON.stringify({ ...save, worldId }));

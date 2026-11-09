@@ -4,7 +4,7 @@ import type { PublicWorld } from '../game/publicWorlds';
 import { GAMEPLAY_MODE_LABELS } from '../game/worldMode';
 import type { GameplayMode } from '../game/worldMode';
 import { playerIdentity } from '../game/playerIdentity';
-import { listWorlds } from '../game/save';
+import { canCreateWorld, listWorlds, MAX_WORLDS } from '../game/save';
 import type { WorldMeta } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
@@ -34,6 +34,7 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
   const localIds = new Set(localWorlds.map((world) => world.id));
   const ownPublic = worlds.filter((world) => world.ownerId === selfId && world.gameplayMode === selectedMode && !localIds.has(world.id));
   const ownLocal = localWorlds.filter((world) => (world.gameplayMode ?? 'creative') === selectedMode);
+  const full = !canCreateWorld();
 
   useEffect(() => {
     let active = true;
@@ -80,9 +81,10 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
       </div>
       <div className="community-actions">
         <button className="multiplayer-join community-random" onClick={() => void joinRandom(selectedMode)} disabled={pending || status === 'connecting'}>Rejoindre</button>
-        {onCreate && <button className="secondary-button community-create" onClick={onCreate} disabled={pending || status === 'connecting'}>Créer ici</button>}
+        {onCreate && <button className="secondary-button community-create" onClick={onCreate} disabled={full || pending || status === 'connecting'}>Créer ici</button>}
       </div>
       <p className="community-random-hint">Choix au hasard parmi les mondes {GAMEPLAY_MODE_LABELS[selectedMode]} avec d’autres joueurs en ligne.</p>
+      {full && <p className="multiplayer-error" role="alert">Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un pour en créer un autre.</p>}
       {error && <p className="multiplayer-error" role="alert">{error}</p>}
       {deleteError && <p className="multiplayer-error" role="alert">{deleteError}</p>}
       <section className="community-section">

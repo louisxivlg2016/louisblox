@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { listWorlds } from '../game/save';
+import { listWorlds, MAX_WORLDS } from '../game/save';
 import type { WorldMeta } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
@@ -79,7 +79,7 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
 
   return (
     <section id="mes-mondes" className="world-library">
-      <div className="world-library-heading"><h2>Mes mondes</h2><span>{worlds.length}</span></div>
+      <div className="world-library-heading"><h2>Mes mondes</h2><span>{worlds.length} / {MAX_WORLDS}</span></div>
       <div className="world-backup">
         <button type="button" className="secondary-button" onClick={exportBackup} disabled={busy}>Exporter mes mondes</button>
         <label className="world-backup-import" role="button" tabIndex={0} onKeyDown={(event) => {
@@ -96,6 +96,7 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
         </label>
       </div>
       <p className="world-backup-hint">Le fichier contient tes mondes et leurs maisons. Garde-le pour les retrouver sur un autre appareil ou après un effacement du navigateur.</p>
+      {worlds.length >= MAX_WORLDS && <p className="world-backup-hint" role="alert">Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un pour libérer une place.</p>}
       {message && <p className="world-backup-message" role="status">{message}</p>}
       <div className="world-library-list">
         {worlds.map((world) => (

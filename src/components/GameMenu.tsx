@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '../game/store';
 import { newProtection, useProtectionStore } from '../game/protection';
-import { readWorldSave } from '../game/save';
+import { canCreateWorld, MAX_WORLDS, readWorldSave } from '../game/save';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { isMinigameMode } from '../game/worldMode';
 import type { GameplayMode } from '../game/worldMode';
@@ -80,14 +80,16 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     setPendingWorld(null);
     void onPlay();
   }, [pendingWorld, room, status, worldReady, onPlay]);
+  const full = !canCreateWorld();
   const create = (gameplayMode: GameplayMode, sharedOverride?: boolean, options?: import('./CreateWorldDialog').CreateWorldOptions) => {
+    if (enabled && isMinigameMode(gameplayMode) && status === 'online' && useGameStore.getState().gameplayMode === gameplayMode) {
+      requestRoomMode(null);
+      void onPlay();
+      return;
+    }
+    if (full) return;
     if (enabled && isMinigameMode(gameplayMode)) {
       requestRoomMode(gameplayMode);
-      if (status === 'online' && useGameStore.getState().gameplayMode === gameplayMode) {
-        requestRoomMode(null);
-        void onPlay();
-        return;
-      }
       const minigameRoom = `salon-${crypto.randomUUID().slice(0, 8)}`;
       setPendingWorld(minigameRoom);
       regenerate(gameplayMode, minigameRoom);
@@ -141,7 +143,8 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               </div>
             ))}
           </div>
-          <MenuActionBar multiplayer={enabled} onSolo={() => setEnabled(false)} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} />
+          <MenuActionBar multiplayer={enabled} onSolo={() => setEnabled(false)} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} createDisabled={full} />
+          {full && <p className="multiplayer-error" role="alert">Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un dans Mes mondes pour en créer un autre.</p>}
           {enabled && <section className="lobby-section"><MultiplayerLobby onPlay={onPlay} /></section>}
           {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(options) => { setCreateOpen(false); create(options.mode, options.multiplayer, options); }} />}
           {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}

@@ -3,6 +3,7 @@ import { useMultiplayerStore } from '../game/multiplayerStore';
 import { deleteRoom, fetchRoomInfo } from '../game/multiplayer';
 import type { RoomInfo } from '../game/multiplayer';
 import { useGameStore } from '../game/store';
+import { canCreateWorld } from '../game/save';
 import { GAMEPLAY_MODE_LABELS, isGameplayMode } from '../game/worldMode';
 import type { GameplayMode } from '../game/worldMode';
 import { requestRoomMode } from './Multiplayer';
@@ -66,7 +67,12 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
     void onPlay();
   }, [status, worldReady, onPlay]);
 
+  const limitReached = !canCreateWorld();
   const join = (nextRoom = room) => {
+    if (roomInfo?.gameplayMode === null && !canCreateWorld(nextRoom)) {
+      useMultiplayerStore.getState().setStatus('error', 'Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes avant de créer un salon.');
+      return;
+    }
     pendingJoin.current = true;
     requestRoomMode(joinMode === 'room' ? null : joinMode);
     const settings = configure({ playerName, room: nextRoom, server: showServer ? server : '' });
@@ -83,6 +89,10 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
   };
 
   const createRoom = () => {
+    if (!canCreateWorld()) {
+      useMultiplayerStore.getState().setStatus('error', 'Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes avant de créer un salon.');
+      return;
+    }
     const worldId = `salon-${crypto.randomUUID().slice(0, 8)}`;
     useGameStore.getState().regenerate(useGameStore.getState().gameplayMode, worldId, undefined, room.trim().slice(0, 48) || worldId);
     join(worldId);
@@ -147,10 +157,11 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
             </p>
           </div>
           <div className="multiplayer-actions">
-            <button type="submit" className="multiplayer-join">Rejoindre{joinTarget ? ` en ${GAMEPLAY_MODE_LABELS[joinTarget]}` : ''}</button>
-            <button type="button" className="multiplayer-new-room" onClick={createRoom}>Nouveau salon</button>
+            <button type="submit" className="multiplayer-join" disabled={roomInfo?.gameplayMode === null && limitReached}>Rejoindre{joinTarget ? ` en ${GAMEPLAY_MODE_LABELS[joinTarget]}` : ''}</button>
+            <button type="button" className="multiplayer-new-room" onClick={createRoom} disabled={limitReached}>Nouveau salon</button>
             <button type="button" className="multiplayer-delete-room" onClick={removeRoom}>Supprimer le salon</button>
           </div>
+          {limitReached && <p className="multiplayer-error" role="alert">Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes pour libérer une place.</p>}
           <div className={`multiplayer-status ${status}`} role="status" aria-live="polite">
             <span className="multiplayer-status-dot" />
             <span>{status === 'online' && !worldReady ? 'Chargement du monde…' : STATUS_NAMES[status]}{status === 'online' && worldReady ? ` · ${players.length} joueur${players.length > 1 ? 's' : ''}` : ''}</span>
