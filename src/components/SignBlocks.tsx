@@ -1,7 +1,11 @@
 import { useEffect, useMemo } from 'react';
+import { useWorld } from 'koota/react';
 import { CanvasTexture, NearestFilter, SRGBColorSpace } from 'three';
-import { BlockKind } from '../game/voxel';
+import { BlockKind, voxelKey } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
+import { getBlockIndex } from '../game/chunks';
+import { facingYaw } from '../game/extraBlocks';
+import { isCollidable } from '../game/systems/collisionSystem';
 import { PixelPart } from './ItemModel';
 import { ParisStreetSignModel } from './ParisStreetSign';
 
@@ -41,7 +45,7 @@ export function SignModel({ text = '' }: { text?: string }) {
     <group>
       <PixelPart position={[0, -0.17, 0]} size={[0.13, 0.66, 0.13]} color="#765035" />
       <PixelPart position={[0, 0.3, 0]} size={[1, 0.66, 0.12]} color="#bb925b" />
-      <mesh position={[0, 0.3, 0.066]}>
+      <mesh name="sign-plaque" position={[0, 0.3, 0.066]}>
         <planeGeometry args={[0.96, 0.62]} />
         <meshBasicMaterial map={texture} toneMapped={false} />
       </mesh>
@@ -50,8 +54,16 @@ export function SignModel({ text = '' }: { text?: string }) {
 }
 
 export function SignBlocks({ blocks }: { blocks: Voxel[] }) {
+  const world = useWorld();
+  const blockIndex = getBlockIndex(world);
   return blocks.map((block) => {
-    const rotation = block.facing === 'north' ? 0 : block.facing === 'south' ? Math.PI : block.facing === 'east' ? -Math.PI / 2 : Math.PI / 2;
+    let rotation = facingYaw(block.facing);
+    const front = blockIndex.get(voxelKey(block.x + Math.round(Math.sin(rotation)), block.y, block.z + Math.round(Math.cos(rotation))));
+    if (isCollidable(front)) {
+      const reverse = rotation + Math.PI;
+      const back = blockIndex.get(voxelKey(block.x + Math.round(Math.sin(reverse)), block.y, block.z + Math.round(Math.cos(reverse))));
+      if (!isCollidable(back)) rotation = reverse;
+    }
     return <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]} rotation={[0, rotation, 0]}>{block.kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel text={block.text} /> : <SignModel text={block.text ?? ''} />}</group>;
   });
 }

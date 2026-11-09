@@ -135,6 +135,10 @@ export const isChest = (kind: number) => kind === EXTRA_BLOCKS.Chest;
 export const isLadder = (kind: number) => kind === EXTRA_BLOCKS.Ladder;
 export const isBed = (kind: number) => kind >= EXTRA_BLOCKS.Bed && kind <= EXTRA_BLOCKS.BedBlack;
 export const facingYaw = (facing?: import('./voxel').Voxel['facing']) => facing === 'north' ? Math.PI : facing === 'east' ? -Math.PI / 2 : facing === 'west' ? Math.PI / 2 : 0;
+export const signFacing = (direction: { x: number; z: number }, normal?: { x: number; y: number; z: number }): NonNullable<import('./voxel').Voxel['facing']> => {
+  if (normal && normal.y === 0) return normal.x > 0 ? 'west' : normal.x < 0 ? 'east' : normal.z > 0 ? 'south' : 'north';
+  return Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
+};
 export const isFireBlock = (kind: number) => kind === EXTRA_BLOCKS.Campfire || kind === EXTRA_BLOCKS.Wildfire;
 export const isRail = (kind: number) => kind === EXTRA_BLOCKS.Rail;
 export const isSign = (kind: number) => kind === EXTRA_BLOCKS.Sign || kind === EXTRA_BLOCKS.ParisStreetSign;

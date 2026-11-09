@@ -5,7 +5,7 @@ import type { AnimalKind } from './animals';
 import { findAnimalTarget, removeAnimal } from './combat';
 import { addVoxel, batchVoxelEdits, chunkCoordinate, getBlockIndex, growSapling, removeVoxel, replaceVoxel, setVoxelText } from './chunks';
 import { cropDefinition } from './crops';
-import { isCrop, isSapling } from './extraBlocks';
+import { isCrop, isSapling, signFacing } from './extraBlocks';
 import { GALLERY_ITEMS } from './galleryCatalog';
 import { getItemMeta, isAnimalPoison } from './items';
 import type { GalleryItemId } from './items';
@@ -155,7 +155,7 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     return true;
   }
   if (shape === 'banner' || shape === 'arrow_sign') {
-    const facing = Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
+    const facing = signFacing(direction, hit?.normal);
     addVoxel(world, x, y, z, BlockKind.Sign, undefined, facing);
     setVoxelText(world, { x, y, z }, shape === 'arrow_sign' ? '→' : meta.name);
     store.setNotice('Panneau placé. Vise-le avec E pour écrire dessus.');
