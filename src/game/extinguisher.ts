@@ -1,12 +1,11 @@
 import { create } from 'zustand';
 import { Vector3 } from 'three';
 import type { World } from 'koota';
-import { getBlockIndex, replaceVoxel } from './chunks';
+import { getBlockIndex, removeVoxel } from './chunks';
 import { extinguishFireAt } from './fireLifecycle';
 import { isFireBlock } from './extraBlocks';
 import { getFireSources } from './hazards';
-import { BlockKind, raycastVoxel, voxelKey } from './voxel';
-import { playSound } from './audio';
+import { raycastVoxel, voxelKey } from './voxel';
 import { useGameStore } from './store';
 
 export type ExtinguisherSpray = { id: number; origin: Vector3; direction: Vector3; age: number };
@@ -36,9 +35,8 @@ export function useFireExtinguisher(world: World, origin: Vector3, direction: Ve
   }
   const { x, y, z } = target.position;
   const block = blocks.get(voxelKey(x, y, z));
-  if (block && isFireBlock(block.kind)) replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: target.distance }, BlockKind.Water);
+  if (block && isFireBlock(block.kind)) removeVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: target.distance });
   else extinguishFireAt(world, x, y, z);
-  playSound('waterSplash', 0.35);
   useGameStore.getState().setNotice('Feu éteint avec l’extincteur.');
   return true;
 }
