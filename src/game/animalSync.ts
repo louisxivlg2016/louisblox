@@ -11,7 +11,7 @@ import { playerIdentity } from './playerIdentity';
 export type AnimalSnapshot = { id: string; kind: AnimalKind; x: number; y: number; z: number; yaw: number; health: number; speed: number; running?: boolean };
 export type FishSnapshot = { id: string; kind: FishKind; x: number; y: number; z: number; yaw: number; age: number; phase: number; speed: number };
 
-const animalKinds = new Set<AnimalKind>(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie']);
+const animalKinds = new Set<AnimalKind>(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie', 'monkey', 'ocelot', 'giraffe', 'elephant']);
 const fishKinds = new Set<FishKind>(['salmon', 'clownfish', 'blueTang']);
 const clocks = new Map<World, number>();
 let socket: WebSocket | null = null;

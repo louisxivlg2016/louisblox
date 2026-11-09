@@ -104,7 +104,7 @@ function parseHorse(value: unknown): PlayerState['horse'] {
   return { id: horse.id, x: horse.x as number, y: horse.y as number, z: horse.z as number, yaw: horse.yaw as number };
 }
 
-const animalKinds = new Set(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie']);
+const animalKinds = new Set(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie', 'monkey', 'ocelot', 'giraffe', 'elephant']);
 const fishKinds = new Set(['salmon', 'clownfish', 'blueTang']);
 
 function parseAnimalSnapshots(value: unknown) {

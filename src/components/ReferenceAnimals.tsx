@@ -20,9 +20,13 @@ import bearUrl from '../../assets/models/reference-bear.glb';
 import snowBearUrl from '../../assets/models/reference-snowBear.glb';
 import deerUrl from '../../assets/models/reference-deer.glb';
 import snowDeerUrl from '../../assets/models/reference-snowDeer.glb';
+import singeUrl from '../../assets/models/reference-singe.glb';
+import ocelotUrl from '../../assets/models/reference-ocelot.glb';
+import girafeUrl from '../../assets/models/reference-girafe.glb';
+import elephantUrl from '../../assets/models/reference-elephant.glb';
 import traderUrl from '../../assets/models/full-trader.glb';
 
-const hunyuanAnimals = { cow: cowUrl, chicken: chickenUrl, sheep: sheepUrl, pig: pigUrl, horse: horseUrl, camel: camelUrl, duck: duckUrl, wolf: wolfUrl, snowWolf: snowWolfUrl, bear: bearUrl, snowBear: snowBearUrl, deer: deerUrl, snowDeer: snowDeerUrl };
+const hunyuanAnimals = { cow: cowUrl, chicken: chickenUrl, sheep: sheepUrl, pig: pigUrl, horse: horseUrl, camel: camelUrl, duck: duckUrl, wolf: wolfUrl, snowWolf: snowWolfUrl, bear: bearUrl, snowBear: snowBearUrl, deer: deerUrl, snowDeer: snowDeerUrl, monkey: singeUrl, ocelot: ocelotUrl, giraffe: girafeUrl, elephant: elephantUrl };
 for (const model of [...Object.values(hunyuanAnimals), traderUrl]) useGLTF.preload(model);
 
 function useAnimalLegs(entity: Entity, bird = false) {

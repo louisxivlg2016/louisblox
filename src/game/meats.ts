@@ -15,6 +15,10 @@ export const MEAT_NAMES: Record<AnimalKind, string> = {
   snowBear: 'Viande d’ours blanc',
   snowDeer: 'Venaison des neiges',
   zombie: 'Chair de zombie',
+  monkey: 'Viande de singe',
+  ocelot: 'Viande d’ocelot',
+  giraffe: 'Viande de girafe',
+  elephant: 'Viande d’éléphant',
 };
 
 export const MEAT_COLORS: Record<AnimalKind, string> = {
@@ -32,6 +36,10 @@ export const MEAT_COLORS: Record<AnimalKind, string> = {
   snowBear: '#ead9d4',
   snowDeer: '#d9c4a7',
   zombie: '#657d43',
+  monkey: '#7a4b2b',
+  ocelot: '#c9a33a',
+  giraffe: '#c29c5a',
+  elephant: '#89969b',
 };
 
 export function createMeatInventory(): Record<AnimalKind, number> {

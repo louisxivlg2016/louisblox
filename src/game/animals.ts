@@ -31,13 +31,14 @@ function safeRoamSpawn(x: number, z: number, seed: number) {
 
 export type AnimalKind =
   | 'camel' | 'cow' | 'horse' | 'pig' | 'sheep' | 'chicken' | 'duck'
-  | 'bear' | 'deer' | 'wolf' | 'snowWolf' | 'snowBear' | 'snowDeer' | 'zombie';
+  | 'bear' | 'deer' | 'wolf' | 'snowWolf' | 'snowBear' | 'snowDeer' | 'zombie'
+  | 'monkey' | 'ocelot' | 'giraffe' | 'elephant';
 
 const species: Record<Biome, AnimalKind[]> = {
   prairie: ['cow', 'horse', 'pig', 'sheep', 'chicken'],
   desert: ['camel'],
   forest: ['bear', 'deer', 'wolf'],
-  jungle: ['pig', 'chicken', 'deer'],
+  jungle: ['pig', 'chicken', 'deer', 'monkey', 'ocelot', 'giraffe', 'elephant'],
   winter: ['snowWolf', 'snowBear', 'snowDeer'],
   autumn: ['cow', 'sheep', 'deer'],
 };
@@ -57,6 +58,10 @@ const health: Record<AnimalKind, number> = {
   snowBear: 6,
   snowDeer: 3,
   zombie: 5,
+  monkey: 3,
+  ocelot: 3,
+  giraffe: 5,
+  elephant: 8,
 };
 
 function hash(x: number, z: number, seed: number) {
