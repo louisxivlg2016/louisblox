@@ -51,7 +51,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const cannonHandled = !sleeping && !footballHandled && vehicleWeaponSystem(world, camera, delta, actions.tap);
       const vehicleTarget = !sleeping && !footballHandled && (cannonHandled || vehicleCombatSystem(world, camera, dt, actions.tap));
       const animalTarget = !sleeping && !footballHandled && !vehicleTarget && animalCombatSystem(world, camera, dt, actions.tap);
-      animalSystem(world, dt);
+      animalSystem(world, Math.min(delta, 0.25));
       traderSystem(world, dt);
       fishSystem(world, dt);
       meatDropSystem(world, dt);
