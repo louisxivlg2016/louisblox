@@ -28,7 +28,7 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     else if (legs && Math.abs(x) < width * 0.28 && y < floor + height * 0.48) part = `${side}Leg`;
     indices[part].push(a, b, c);
   }
-  return { geometry, indices, material: appearance ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair, princessHair, outfit) : material };
+  return { geometry, indices, material: appearance && outfit !== 'explorer' ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair, princessHair, outfit) : material };
 }
 
 function addPrincessHair(root: Group, width: number, height: number, depth: number, floor: number, offsetY: number, hairColor?: string) {

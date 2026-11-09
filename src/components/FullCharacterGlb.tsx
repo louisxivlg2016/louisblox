@@ -22,16 +22,16 @@ import princessUrl from '../../assets/models/full-princess.glb';
 import louis14Url from '../../assets/models/full-louis14.glb';
 import louis15Url from '../../assets/models/full-louis15.glb';
 import pirateUrl from '../../assets/models/full-pirate.glb';
-import footballerUrl from '../../assets/models/full-footballer.glb';
 import firefighterUrl from '../../assets/models/full-firefighter.glb';
 import policeUrl from '../../assets/models/full-police.glb';
 import soldierUrl from '../../assets/models/full-soldier.glb';
 import classicGirlUrl from '../../assets/models/full-classic-girl.glb';
 import classicBoyUrl from '../../assets/models/full-classic-boy.glb';
 import traderUrl from '../../assets/models/full-trader.glb';
+import { FootballerAvatar } from './FootballerAvatar';
 
 type FullCharacterModel = Exclude<OutfitKind, 'default'> | 'classic-girl' | 'classic-boy';
-const models = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, footballer: footballerUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
+const models: Partial<Record<FullCharacterModel, string>> = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
 
 export function hasFullCharacter(outfit: OutfitKind, wig: WigSelection = 'auto') {
   return outfit !== 'default' || selectedWig(outfit, wig) === null;
@@ -40,7 +40,7 @@ export function hasFullCharacter(outfit: OutfitKind, wig: WigSelection = 'auto')
 function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance, headAccessory }: { outfit: FullCharacterModel; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance; headAccessory?: ReactNode }) {
   const group = useRef<Object3D>(null);
   const current = useRef('');
-  const { scene, animations } = useGLTF(models[outfit]);
+  const { scene, animations } = useGLTF(models[outfit] ?? explorerUrl);
   const scale = 2.05 / fullCharacterHeights[outfit];
   const character = useMemo(() => {
     const source = scene.clone(true);
@@ -122,5 +122,6 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
 }
 
 export function FullCharacterGlb(props: Parameters<typeof FullCharacter>[0]) {
+  if (props.outfit === 'footballer') return <FootballerAvatar {...props} outfit="footballer" />;
   return <Suspense fallback={null}><FullCharacter {...props} /></Suspense>;
 }
