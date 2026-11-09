@@ -74,7 +74,12 @@ export function biomeAt(x: number, z: number, seed: number): Biome {
   return biome;
 }
 
+const terrainHeights = new Map<string, number>();
+
 export function heightAt(x: number, z: number, seed: number) {
+  const key = `${seed}:${x}:${z}`;
+  const cached = terrainHeights.get(key);
+  if (cached !== undefined) return cached;
   const biome = biomeAt(x, z, seed);
   const winterWeight = biome === 'winter' ? 1 : 0;
   const terrainX = winterWeight ? Math.floor(x / 2) * 2 : x;
@@ -95,7 +100,10 @@ export function heightAt(x: number, z: number, seed: number) {
     height = Math.max(1, Math.floor(height - carve * 4));
   }
 
-  return Math.max(1, height);
+  const result = Math.max(1, height);
+  terrainHeights.set(key, result);
+  if (terrainHeights.size > 4096) terrainHeights.delete(terrainHeights.keys().next().value!);
+  return result;
 }
 
 export function safeSpawnAt(x: number, z: number, seed: number, biome?: Biome) {

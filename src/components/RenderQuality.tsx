@@ -20,8 +20,8 @@ export function RenderQuality() {
     const dpr = gl.getPixelRatio();
     sample.current.elapsed = 0;
     sample.current.frames = 0;
-    if (fps >= 30 || dpr <= 0.5) return;
-    setDpr(Math.max(0.5, Math.round((dpr - 0.15) * 100) / 100));
+    if (fps >= 30 || dpr <= 0.35) return;
+    setDpr(fps < 20 ? 0.35 : Math.max(0.5, Math.round((dpr - 0.15) * 100) / 100));
   });
   return null;
 }

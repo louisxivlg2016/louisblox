@@ -32,7 +32,6 @@ import traderUrl from '../../assets/models/full-trader.glb';
 
 type FullCharacterModel = Exclude<OutfitKind, 'default'> | 'classic-girl' | 'classic-boy';
 const models = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, footballer: footballerUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
-for (const model of Object.values(models)) useGLTF.preload(model);
 
 export function hasFullCharacter(outfit: OutfitKind, wig: WigSelection = 'auto') {
   return outfit !== 'default' || selectedWig(outfit, wig) === null;

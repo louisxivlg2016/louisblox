@@ -14,7 +14,10 @@ function hash(x: number, z: number, seed: number) {
   return ((value ^ (value >>> 16)) >>> 0) / 4294967295;
 }
 
-export function villageAt(cx: number, cz: number, seed: number) {
+const villageSites = new Map<string, { x: number; z: number } | null>();
+const villageBlockCache = new Map<string, Voxel[]>();
+
+function findVillageSite(cx: number, cz: number, seed: number) {
   const first = cx >= 0 && cx <= 2 && cz >= -1 && cz <= 0;
   const cellX = first ? 0 : Math.floor(cx / 12);
   const cellZ = first ? -1 : Math.floor(cz / 12);
@@ -27,7 +30,19 @@ export function villageAt(cx: number, cz: number, seed: number) {
   return { x: site.x, z: site.z };
 }
 
+export function villageAt(cx: number, cz: number, seed: number) {
+  const key = `${cx},${cz},${seed}`;
+  if (villageSites.has(key)) return villageSites.get(key)!;
+  const site = findVillageSite(cx, cz, seed);
+  if (villageSites.size > 256) villageSites.delete(villageSites.keys().next().value!);
+  villageSites.set(key, site);
+  return site;
+}
+
 export function generateVillageBlocks(cx: number, cz: number, seed: number): Voxel[] {
+  const cacheKey = `${cx},${cz},${seed}`;
+  const cached = villageBlockCache.get(cacheKey);
+  if (cached) return cached;
   const site = villageAt(cx, cz, seed);
   if (!site) return [];
   const blocks: Voxel[] = [];
@@ -79,6 +94,8 @@ export function generateVillageBlocks(cx: number, cz: number, seed: number): Vox
   }
   put(site.x - 7, heightAt(site.x - 7, site.z, seed) + 1, site.z, BlockKind.StreetLamp);
   put(site.x + 7, heightAt(site.x + 7, site.z, seed) + 1, site.z, BlockKind.StreetLamp);
+  if (villageBlockCache.size > 64) villageBlockCache.delete(villageBlockCache.keys().next().value!);
+  villageBlockCache.set(cacheKey, blocks);
   return blocks;
 }
 
