@@ -36,7 +36,7 @@ function CropModel({ block, scene }: { block: Voxel; scene: Group }) {
   const stage = block.growth ?? 3;
   const scale = [0.18, 0.4, 0.7, 1][stage];
   const cropName = block.kind === BlockKind.Wheat ? 'wheat' : block.kind === BlockKind.Carrot ? 'carrot' : block.kind === BlockKind.Corn ? 'corn' : 'tomato';
-  return <group name={`crop-${cropName}`} userData={{ source: 'Hunyuan', growth: stage }} position={[block.x, block.y - 0.5, block.z]} scale={scale}><primitive object={model} /></group>;
+  return <group name={`crop-${cropName}`} userData={{ source: 'Hunyuan', growth: stage }} position={[block.x, block.y - 0.5, block.z]} scale={scale * 0.6}><primitive object={model} /></group>;
 }
 
 export function HunyuanCropInstances({ blocks }: { blocks: Voxel[] }) {

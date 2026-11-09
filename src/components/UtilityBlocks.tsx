@@ -115,6 +115,6 @@ export function UtilityBlocks({ blocks }: { blocks: Voxel[] }) {
     const rotation = rail
       ? block.facing === 'east' || block.facing === 'west' ? Math.PI / 2 : 0
       : oriented ? facingYaw(block.facing) : 0;
-    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]} rotation={[0, rotation, 0]}><UtilityBlockModel kind={block.kind} /></group>;
+    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]} rotation={[0, rotation, 0]} scale={0.6}><UtilityBlockModel kind={block.kind} /></group>;
   });
 }

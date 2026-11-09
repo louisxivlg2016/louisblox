@@ -84,8 +84,8 @@ function CropPartInstances({ parts, color }: { parts: PositionedPart[]; color: s
   useLayoutEffect(() => {
     if (!ref.current) return;
     parts.forEach(({ block, part }, index) => {
-      matrix.makeScale(part.sx, part.sy, part.sz);
-      matrix.setPosition(block.x + part.x, block.y + part.y, block.z + part.z);
+      matrix.makeScale(part.sx * 0.6, part.sy * 0.6, part.sz * 0.6);
+      matrix.setPosition(block.x + part.x * 0.6, block.y + part.y * 0.6, block.z + part.z * 0.6);
       ref.current!.setMatrixAt(index, matrix);
     });
     ref.current.instanceMatrix.needsUpdate = true;

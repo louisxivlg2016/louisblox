@@ -372,3 +372,4 @@ export const blockMaterials = {
 } as unknown as Record<BlockKind, Material[]>;
 
 export const blockGeometry = new BoxGeometry(1, 1, 1);
+export const placedBlockGeometry = new BoxGeometry(0.6, 0.6, 0.6);

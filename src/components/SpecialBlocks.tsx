@@ -77,7 +77,7 @@ export function SpecialBlocks({ kind, blocks }: { kind: BlockKind; blocks: Voxel
   return (
     <>
       {blocks.map((block) => (
-        <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]}>
+        <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]} scale={0.6}>
           {kind === BlockKind.Candle ? <CandleModel /> : <CampfireModel destructive={kind === BlockKind.Wildfire} />}
         </group>
       ))}

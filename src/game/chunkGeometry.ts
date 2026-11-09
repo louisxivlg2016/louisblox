@@ -193,7 +193,7 @@ function addFace(group: GeometryGroup, block: Voxel, face: (typeof faces)[number
   const [nx, ny, nz] = face.direction;
   for (let index = 0; index < 4; index += 1) {
     const corner = face.corners[index];
-    group.positions.push(block.x + corner[0], block.y + corner[1], block.z + corner[2]);
+    group.positions.push(block.x + corner[0] * 0.6, block.y + corner[1] * 0.6, block.z + corner[2] * 0.6);
     group.normals.push(nx, ny, nz);
     group.uvs.push(uvCorners[index][0], uvCorners[index][1]);
     if (color) group.colors.push(color.r, color.g, color.b);
