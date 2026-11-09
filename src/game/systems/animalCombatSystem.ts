@@ -5,7 +5,8 @@ import { damageAnimal, findAnimalTarget } from '../combat';
 import { findBattleTarget } from '../battleCombat';
 import { requestBattleHit } from '../battle';
 import { isMouseButtonDown, stopMining } from '../input';
-import { getItemMeta, isSword } from '../items';
+import { getItemMeta, isAnimalPoison, isSword } from '../items';
+import { useGalleryItem } from '../galleryActions';
 import { hasInventory } from '../inventory';
 import { useGameStore } from '../store';
 import { Player, PlayerPosition } from '../traits';
@@ -31,6 +32,13 @@ export function animalCombatSystem(world: World, camera: Camera, dt: number, tou
     if ((touchTaps > 0 || isMouseButtonDown(0)) && cooldown <= 0) {
       requestBattleHit(enemy.playerId, 'melee');
       cooldowns.set(world, typeof selected === 'string' ? getItemMeta(selected).cooldown ?? 0.35 : 0.35);
+    }
+    return true;
+  }
+  if (attacking && isAnimalPoison(selected)) {
+    if (cooldown <= 0) {
+      useGalleryItem(world, selected, origin, direction);
+      cooldowns.set(world, 0.35);
     }
     return true;
   }

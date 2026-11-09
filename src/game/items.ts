@@ -128,6 +128,10 @@ function toolEfficiency(name: string) {
   return 2;
 }
 
+export function isAnimalPoison(kind: SelectedKind) {
+  return kind === 'gallery_potions_poison_potion' || kind === 'gallery_potions_splash_poison_potion';
+}
+
 export function getItemMeta(kind: ItemKind | GalleryItemId): ItemMeta {
   if (isGalleryItem(kind)) {
     const item = GALLERY_ITEM_MAP[kind];
@@ -140,8 +144,8 @@ export function getItemMeta(kind: ItemKind | GalleryItemId): ItemMeta {
     const armor = shape === 'armor' ? name.includes('diamond') ? 'diamond' as const : name.includes('gold') ? 'gold' as const : 'silver' as const : undefined;
     const cooldown = shape === 'rpg' ? 1.2 : shape === 'gun' ? 0.4 : shape === 'bow' || shape === 'crossbow' ? 0.6 : undefined;
     return {
-      name: item.name,
-      color: item.color,
+      name: isAnimalPoison(kind) ? kind === 'gallery_potions_splash_poison_potion' ? 'Poison à lancer pour animaux' : 'Poison pour animaux' : item.name,
+      color: isAnimalPoison(kind) ? '#72a94b' : item.color,
       category: galleryCategory(shape),
       shape,
       healing,

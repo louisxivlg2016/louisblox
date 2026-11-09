@@ -42,6 +42,14 @@ export function findAnimalTarget(world: World, origin: Vector3, direction: Vecto
   return target;
 }
 
+export function removeAnimal(world: World, target: Entity) {
+  for (const chunkEntity of world.query(ChunkData)) {
+    const data = chunkEntity.get(ChunkData)!;
+    data.animals = data.animals.filter((entity) => entity !== target);
+  }
+  target.destroy();
+}
+
 export function damageAnimal(world: World, target: Entity, amount: number, attacker?: Vector3) {
   const health = target.get(AnimalHealth);
   const animal = target.get(Animal);
@@ -66,10 +74,6 @@ export function damageAnimal(world: World, target: Entity, amount: number, attac
     MeatDropMotion({ age: 0, baseY: dropY }),
     MeatDropMesh(),
   );
-  for (const chunkEntity of world.query(ChunkData)) {
-    const data = chunkEntity.get(ChunkData)!;
-    data.animals = data.animals.filter((entity) => entity !== target);
-  }
-  target.destroy();
+  removeAnimal(world, target);
   return true;
 }

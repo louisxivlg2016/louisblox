@@ -2,12 +2,12 @@ import type { World } from 'koota';
 import type { Vector3 } from 'three';
 import { spawnAnimal } from './animals';
 import type { AnimalKind } from './animals';
-import { findAnimalTarget } from './combat';
+import { findAnimalTarget, removeAnimal } from './combat';
 import { addVoxel, batchVoxelEdits, chunkCoordinate, getBlockIndex, growSapling, removeVoxel, replaceVoxel, setVoxelText } from './chunks';
 import { cropDefinition } from './crops';
 import { isCrop, isSapling } from './extraBlocks';
 import { GALLERY_ITEMS } from './galleryCatalog';
-import { getItemMeta } from './items';
+import { getItemMeta, isAnimalPoison } from './items';
 import type { GalleryItemId } from './items';
 import { SEA_LEVEL } from './levels';
 import { spawnSapling } from './saplingLifecycle';
@@ -80,6 +80,17 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
   const playerEntity = world.queryFirst(Player);
   const player = playerEntity?.get(PlayerPosition);
   if (!playerEntity || !player) return true;
+  if (isAnimalPoison(selected)) {
+    const target = findAnimalTarget(world, origin, direction, 6);
+    if (!target) {
+      store.setNotice('Vise un animal avec le poison pour le faire disparaître.');
+      return true;
+    }
+    removeAnimal(world, target.entity);
+    if (store.gameplayMode === 'survival') store.setItemCount(selected, (store.itemCounts[selected] ?? 1) - 1);
+    store.setNotice('Poison utilisé : l’animal a disparu.');
+    return true;
+  }
   const blocks = getBlockIndex(world);
   const hit = raycastVoxel(blocks, origin, direction, 6, meta.name === 'Empty Bottle');
   const x = hit ? hit.x + hit.normal.x : Math.round(player.x + direction.x * 2);
