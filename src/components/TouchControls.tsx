@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { queueHarvest, requestFlightToggle, setTouchKey, setTouchMovement } from '../game/input';
+import { queueHarvest, requestFlightToggle, setTouchKey, setTouchMouseButton, setTouchMovement } from '../game/input';
 import { useGameStore } from '../game/store';
 import { landPlane } from '../game/vehicles';
 import { world } from '../game/world';
@@ -32,6 +32,29 @@ function HoldButton({ code, label, onDoubleTap }: { code: string; label: string;
   );
 }
 
+function CannonFireButton() {
+  useEffect(() => () => setTouchMouseButton(0, false), []);
+  const release = () => setTouchMouseButton(0, false);
+  return (
+    <button
+      type="button"
+      className="touch-button touch-attack touch-cannon-fire"
+      aria-label="Tirer avec le canon"
+      onPointerDown={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        setTouchMouseButton(0, true);
+      }}
+      onPointerUp={release}
+      onPointerCancel={release}
+      onLostPointerCapture={release}
+    >
+      Tirer
+    </button>
+  );
+}
+
 export function TouchControls() {
   const joystick = useRef<HTMLDivElement>(null);
   const knob = useRef<HTMLDivElement>(null);
@@ -39,6 +62,7 @@ export function TouchControls() {
   const riding = useGameStore((state) => state.riding);
   const plane = riding === 'plane';
   const pilot = useGameStore((state) => state.ridingRole === 'driver');
+  const cannon = riding === 'cannon' && pilot;
 
   const moveJoystick = (event: ReactPointerEvent<HTMLDivElement>) => {
     const rect = joystick.current!.getBoundingClientRect();
@@ -87,6 +111,7 @@ export function TouchControls() {
         <HoldButton code="KeyG" label="Passe" />
       </div>}
       <div className={plane ? 'touch-actions plane-touch-actions' : 'touch-actions'}>
+        {cannon && <CannonFireButton />}
         {!plane && <>
           <HoldButton code="Space" label="Sauter" onDoubleTap={requestFlightToggle} />
           <button
