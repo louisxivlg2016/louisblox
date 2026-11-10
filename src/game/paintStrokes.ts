@@ -3,7 +3,7 @@ import { Vector3 } from 'three';
 import { getBlockIndex } from './chunks';
 import { spawnPaintStroke } from './paintball';
 import { syncPaintStroke } from './projectileSync';
-import { raycastVoxel } from './voxel';
+import { raycastPaintSurface } from './paintSurface';
 
 const previous = new WeakMap<World, { point: Vector3; normal: Vector3 }>();
 
@@ -12,7 +12,7 @@ export function endPaintStroke(world: World) {
 }
 
 export function drawPaintStroke(world: World, origin: Vector3, direction: Vector3, color: string) {
-  const hit = raycastVoxel(getBlockIndex(world), origin, direction, 60);
+  const hit = raycastPaintSurface(getBlockIndex(world), origin, direction, 60);
   if (!hit) {
     endPaintStroke(world);
     return;

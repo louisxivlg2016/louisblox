@@ -1,11 +1,9 @@
 import { useEffect, useMemo } from 'react';
-import { useWorld } from 'koota/react';
 import { CanvasTexture, NearestFilter, SRGBColorSpace } from 'three';
-import { BlockKind, voxelKey } from '../game/voxel';
+import { BlockKind } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
-import { getBlockIndex } from '../game/chunks';
 import { facingYaw } from '../game/extraBlocks';
-import { isCollidable } from '../game/systems/collisionSystem';
+import { wallMount } from '../game/wallMount';
 import { PixelPart } from './ItemModel';
 import { ParisStreetSignModel } from './ParisStreetSign';
 
@@ -38,12 +36,12 @@ function signTexture(text: string) {
   return texture;
 }
 
-export function SignModel({ text = '' }: { text?: string }) {
+export function SignModel({ text = '', wallMounted = false }: { text?: string; wallMounted?: boolean }) {
   const texture = useMemo(() => signTexture(text), [text]);
   useEffect(() => () => texture.dispose(), [texture]);
   return (
     <group>
-      <PixelPart position={[0, -0.17, 0]} size={[0.13, 0.66, 0.13]} color="#765035" />
+      {!wallMounted && <PixelPart position={[0, -0.17, 0]} size={[0.13, 0.66, 0.13]} color="#765035" />}
       <PixelPart position={[0, 0.3, 0]} size={[1, 0.66, 0.12]} color="#bb925b" />
       <mesh name="sign-plaque" position={[0, 0.3, 0.066]}>
         <planeGeometry args={[0.96, 0.62]} />
@@ -53,17 +51,9 @@ export function SignModel({ text = '' }: { text?: string }) {
   );
 }
 
-export function SignBlocks({ blocks }: { blocks: Voxel[] }) {
-  const world = useWorld();
-  const blockIndex = getBlockIndex(world);
+export function SignBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIndex: ReadonlyMap<string, Voxel> }) {
   return blocks.map((block) => {
-    let rotation = facingYaw(block.facing);
-    const front = blockIndex.get(voxelKey(block.x + Math.round(Math.sin(rotation)), block.y, block.z + Math.round(Math.cos(rotation))));
-    if (isCollidable(front)) {
-      const reverse = rotation + Math.PI;
-      const back = blockIndex.get(voxelKey(block.x + Math.round(Math.sin(reverse)), block.y, block.z + Math.round(Math.cos(reverse))));
-      if (!isCollidable(back)) rotation = reverse;
-    }
-    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]} rotation={[0, rotation, 0]} scale={0.6}>{block.kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel text={block.text} /> : <SignModel text={block.text ?? ''} />}</group>;
+    const mount = wallMount(blockIndex, block, facingYaw(block.facing));
+    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y - 0.5, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} scale={0.6} userData={{ wallMounted: mount.mounted }}>{block.kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel text={block.text} /> : <SignModel text={block.text ?? ''} wallMounted={mount.mounted} />}</group>;
   });
 }

@@ -10,6 +10,7 @@ import { AnimalPosition, Explosion, ExplosionMaterial, ExplosionMesh, ExplosionP
 import { MIN_WORLD_Y } from '../levels';
 import { raycastVoxel } from '../voxel';
 import { spawnPaintSplash } from '../paintball';
+import { raycastPaintSurface } from '../paintSurface';
 import { playSound } from '../audio';
 import { damagePirateObjectivesInRadius } from '../piratesClient';
 
@@ -78,7 +79,7 @@ export function projectileSystem(world: World, dt: number) {
       const distance = step.length();
       next.copy(position).add(step);
       const direction = step.normalize();
-      const hit = raycastVoxel(blocks, position, direction, distance);
+      const hit = projectile.color ? raycastPaintSurface(blocks, position, direction, distance) : raycastVoxel(blocks, position, direction, distance);
       const playerTarget = findBattleTarget(world, position, direction, distance + 1.2);
       if (playerTarget && (!hit || playerTarget.distance < hit.distance)) {
         if (projectile.kind === 'bomb') {

@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
-import { useGLTF } from '@react-three/drei';
+import { useEffect, useMemo, useState } from 'react';
 import { Box3, FrontSide, NearestFilter, Vector3 } from 'three';
+import type { Group } from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BlockKind } from '../game/voxel';
 import stopUrl from '../../assets/models/traffic-sign-stop.glb';
 import yieldUrl from '../../assets/models/traffic-sign-yield.glb';
@@ -30,11 +31,19 @@ const models: Partial<Record<BlockKind, string>> = {
   [BlockKind.PrioritySign]: priorityUrl,
 };
 
-export function TrafficSignModel({ kind, held = false }: { kind: BlockKind; held?: boolean }) {
-  const { scene } = useGLTF(models[kind]!);
+export function TrafficSignModel({ kind, held = false, wallMounted = false }: { kind: BlockKind; held?: boolean; wallMounted?: boolean }) {
+  const [scene, setScene] = useState<Group | null>(null);
+  useEffect(() => {
+    let active = true;
+    new GLTFLoader().load(models[kind]!, (gltf) => {
+      if (active) setScene(gltf.scene);
+    }, undefined, (error) => console.error('Chargement du panneau routier impossible', error));
+    return () => { active = false; };
+  }, [kind]);
   const model = useMemo(() => {
+    if (!scene) return null;
     const clone = scene.clone(true);
-    clone.rotation.y = held ? 0 : Math.PI;
+    clone.rotation.y = held || wallMounted ? 0 : Math.PI;
     clone.traverse((object) => {
       if (object.type !== 'Mesh') return;
       const mesh = object as import('three').Mesh;
@@ -57,6 +66,6 @@ export function TrafficSignModel({ kind, held = false }: { kind: BlockKind; held
     clone.scale.setScalar(scale);
     clone.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
     return clone;
-  }, [scene, held]);
-  return <group name={`traffic-sign-${kind}`} userData={{ trafficSign: kind }}><primitive object={model} /></group>;
+  }, [scene, held, wallMounted]);
+  return <group name={`traffic-sign-${kind}`} userData={{ trafficSign: kind }}>{model && <primitive object={model} />}</group>;
 }

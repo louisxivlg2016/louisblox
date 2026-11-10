@@ -75,11 +75,11 @@ export function spawnPaintStroke(world: World, from: Vector3, to: Vector3, norma
   const direction = normal.clone();
   if (direction.lengthSq() === 0) direction.set(0, 1, 0);
   direction.normalize();
-  const paintFrom = from.clone();
-  const paintTo = to.clone();
+  const paintFrom = from.clone().addScaledVector(direction, 0.012);
+  const paintTo = to.clone().addScaledVector(direction, 0.012);
   world.spawn(
     Explosion({ time: Infinity, maxTime: Infinity, paintColor: color, paintNormal: direction, paintFrom, paintTo, paintWidth: width * (0.9 + Math.sin(from.x * 19.3 + from.y * 13.7 + from.z * 7.1) * 0.12) }),
-    ExplosionPosition(paintFrom.clone().add(paintTo).multiplyScalar(0.5).addScaledVector(direction, 0.015)),
+    ExplosionPosition(paintFrom.clone().add(paintTo).multiplyScalar(0.5)),
     ExplosionMesh(),
     ExplosionMaterial(),
   );

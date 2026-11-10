@@ -172,8 +172,8 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         <HunyuanCropInstances blocks={cropBlocks} />
         <CropInstances blocks={cropBlocks.filter((block) => block.kind === BlockKind.Watermelon)} />
       </Suspense>
-      <UtilityBlocks blocks={utilityBlocks} />
-      <SignBlocks blocks={signBlocks} />
+      <UtilityBlocks blocks={utilityBlocks} blockIndex={blockIndex} />
+      <SignBlocks blocks={signBlocks} blockIndex={blockIndex} />
       <SpecialBlocks kind={BlockKind.Candle} blocks={candleBlocks} />
       <DoorInstances blocks={doorBlocks} />
     </group>
