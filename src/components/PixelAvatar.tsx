@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { appearanceHairColor, sanitizeAppearance } from '../game/appearance';
+import { appearanceHairColor, appearanceSkinColor, sanitizeAppearance } from '../game/appearance';
 import type { CharacterAppearance } from '../game/appearance';
 import type { CharacterKind } from '../game/characterStore';
 import { selectedWig } from '../game/outfits';
@@ -19,7 +19,7 @@ export function PixelAvatar({ character = 'boy', outfit = 'default', wig = 'auto
   return (
     <span
       className={`pixel-avatar hair-${current.hairStyle} ${periodWig ? `wig-${periodWig}` : ''} ${crowned ? 'has-crown' : ''}`}
-      style={{ '--avatar-size': `${size}px`, '--skin': current.skinColor, '--hair': hair, '--eyes': current.eyeColor, '--eyebrows': current.eyebrowColor ?? hair } as CSSProperties}
+      style={{ '--avatar-size': `${size}px`, '--skin': appearanceSkinColor(current, character), '--hair': hair, '--eyes': current.eyeColor, '--eyebrows': current.eyebrowColor ?? hair } as CSSProperties}
       aria-hidden="true"
     >
       <span className="avatar-crown" />

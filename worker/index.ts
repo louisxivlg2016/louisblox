@@ -18,6 +18,7 @@ export type PlayerState = {
   flying: boolean;
   moving: boolean;
   airborne?: boolean;
+  parachuting?: boolean;
   mounted?: boolean;
   vehicleKind?: MountKind;
   vehicleId?: string;

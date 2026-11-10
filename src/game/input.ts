@@ -410,6 +410,12 @@ export function initInput() {
   });
 }
 
+export function releasePointerForOverlay() {
+  pointerLockFallback = true;
+  clearInput(true);
+  if (document.pointerLockElement) document.exitPointerLock();
+}
+
 export async function requestPlay() {
   const multiplayer = useMultiplayerStore.getState();
   if (multiplayer.enabled && multiplayer.joined && !multiplayer.worldReady && useGameStore.getState().mode !== 'play') return;

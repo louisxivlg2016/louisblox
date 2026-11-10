@@ -17,7 +17,7 @@ export type ItemKind =
   | 'raw_chicken' | 'cooked_chicken' | 'raw_salmon' | 'cooked_salmon'
   | 'cheese_slice' | 'cheese_wheel' | 'milk'
   | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb' | 'rifle_auto' | 'rifle_flintlock'
-  | 'car_red' | 'car_blue' | 'plane' | 'train' | 'boat' | 'jeep' | 'police_car' | 'firetruck' | 'carriage' | 'cannon' | 'saddle';
+  | 'car_red' | 'car_blue' | 'plane' | 'train' | 'boat' | 'jeep' | 'police_car' | 'firetruck' | 'carriage' | 'cannon' | 'saddle' | 'parachute';
 export type SelectedKind = BlockKind | ItemKind | GalleryItemId;
 export type ItemMeta = {
   name: string;
@@ -100,6 +100,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   cannon: item('Canon à roues', '#6d4829', 'vehicle', { shape: 'cannon' }),
   saddle: item('Selle pour cheval', '#80502e', 'saddle'),
   extinguisher: item('Extincteur', '#d72b25', 'resource', { shape: 'extinguisher' }),
+  parachute: item('Parachute', '#d94b45', 'resource', { shape: 'parachute' }),
 };
 
 export const ITEM_ORDER = Object.keys(ITEM_META) as ItemKind[];

@@ -3,7 +3,7 @@ import { chooseBattleTeam, useBattleStore } from '../game/battle';
 import { buyPirateItem, choosePirateKit, isPirateEliminated, usePirateStore } from '../game/piratesClient';
 import { PIRATE_KITS, PIRATE_SHOP } from '../game/pirates';
 import type { PirateKit } from '../game/pirates';
-import { clearInput, requestPlay } from '../game/input';
+import { clearInput, releasePointerForOverlay, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 import { MatchResultActions } from './MatchResultActions';
@@ -56,7 +56,7 @@ export function PiratesHud() {
           )}
         </div>
       )}
-      {team && kit && !winner && <button className="pirate-shop-toggle" onClick={() => { clearInput(); if (document.pointerLockElement) document.exitPointerLock(); setShopOpen(true); useGameStore.getState().setMode('pause'); }}>Boutique pirate</button>}
+      {team && kit && !winner && <button className="pirate-shop-toggle" onClick={() => { releasePointerForOverlay(); setShopOpen(true); }}>Boutique pirate</button>}
       {shopOpen && (
         <div className="pirate-shop-panel">
           <h2>Boutique pirate · {money} pièces</h2>

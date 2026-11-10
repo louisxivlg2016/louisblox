@@ -28,10 +28,11 @@ import soldierUrl from '../../assets/models/full-soldier.glb';
 import classicGirlUrl from '../../assets/models/full-classic-girl.glb';
 import classicBoyUrl from '../../assets/models/full-classic-boy.glb';
 import traderUrl from '../../assets/models/full-trader.glb';
-import { FootballerAvatar } from './FootballerAvatar';
+import footballerUrl from '../../assets/models/full-footballer.glb';
+import { PoliceSunglasses } from './PoliceSunglasses';
 
 type FullCharacterModel = Exclude<OutfitKind, 'default'> | 'classic-girl' | 'classic-boy';
-const models: Partial<Record<FullCharacterModel, string>> = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
+const models: Partial<Record<FullCharacterModel, string>> = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, footballer: footballerUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
 
 export function hasFullCharacter(outfit: OutfitKind, wig: WigSelection = 'auto') {
   return outfit !== 'default' || selectedWig(outfit, wig) === null;
@@ -54,7 +55,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
       for (const part of sideHair) part.removeFromParent();
     }
     return createCharacterRig(source, outfit === 'classic-girl' || outfit === 'classic-boy' ? 'explorer' : outfit, scale, appearance);
-  }, [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor, appearance?.eyeColor, appearance?.eyebrowColor, appearance?.originalHairColor]);
+  }, [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor, appearance?.eyeColor, appearance?.eyebrowColor, appearance?.clothingColor, appearance?.originalHairColor, appearance?.originalSkinColor]);
   const { actions } = useAnimations(animations, group);
   const metadata = useMemo(() => ({ outfit: outfit.startsWith('classic-') ? 'default' : outfit, source: 'Hunyuan', whole: true }), [outfit]);
   const eating = useEatingStore((state) => remote ? null : state.eating);
@@ -117,11 +118,11 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
     <group ref={group} name="full-character" userData={metadata}>
       <primitive object={character} scale={scale} rotation={[0, Math.PI, 0]} />
       {headAccessory && head ? createPortal(<group name="costume-wig" position={[0, -head.position.y, 0]}>{headAccessory}</group>, head) : null}
+      {outfit === 'police' && head ? createPortal(<PoliceSunglasses />, head) : null}
     </group>
   );
 }
 
 export function FullCharacterGlb(props: Parameters<typeof FullCharacter>[0]) {
-  if (props.outfit === 'footballer') return <FootballerAvatar {...props} outfit="footballer" />;
   return <Suspense fallback={null}><FullCharacter {...props} /></Suspense>;
 }

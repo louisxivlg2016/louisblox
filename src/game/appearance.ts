@@ -7,6 +7,7 @@ export type CharacterAppearance = {
   clothingColor: string | null;
   hairStyle: HairStyle;
   originalHairColor: boolean;
+  originalSkinColor: boolean;
 };
 
 export const DEFAULT_APPEARANCE: CharacterAppearance = {
@@ -17,6 +18,7 @@ export const DEFAULT_APPEARANCE: CharacterAppearance = {
   clothingColor: null,
   hairStyle: 'short',
   originalHairColor: false,
+  originalSkinColor: false,
 };
 
 export function defaultAppearance(character: 'boy' | 'girl'): CharacterAppearance {
@@ -25,6 +27,10 @@ export function defaultAppearance(character: 'boy' | 'girl'): CharacterAppearanc
 
 export function appearanceHairColor(appearance: CharacterAppearance, character: 'boy' | 'girl') {
   return appearance.originalHairColor ? defaultAppearance(character).hairColor : appearance.hairColor;
+}
+
+export function appearanceSkinColor(appearance: Pick<CharacterAppearance, 'skinColor' | 'originalSkinColor'>, character: 'boy' | 'girl') {
+  return appearance.originalSkinColor ? defaultAppearance(character).skinColor : appearance.skinColor;
 }
 
 const color = (value: unknown): value is string => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
@@ -40,5 +46,6 @@ export function sanitizeAppearance(value: unknown, character: 'boy' | 'girl' = '
     clothingColor: data.clothingColor === null || color(data.clothingColor) ? data.clothingColor as string | null : null,
     hairStyle: data.hairStyle === 'long' || data.hairStyle === 'short' ? data.hairStyle : defaults.hairStyle,
     originalHairColor: data.originalHairColor === true,
+    originalSkinColor: data.originalSkinColor === true,
   };
 }

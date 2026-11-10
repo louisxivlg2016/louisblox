@@ -7,72 +7,79 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
     ship.set(voxelKey(x, y, z), { x, y, z, kind, facing });
   };
   const teamColor = team === 'red' ? BlockKind.ConcreteRed : BlockKind.ConcreteBlue;
+  const widthAt = (z: number) => Math.max(2, 6 - Math.floor(Math.max(0, Math.abs(z) - 10) * 0.6));
 
-  for (let z = -12; z <= 12; z += 1) {
-    const taper = Math.max(0, Math.abs(z) - 7);
-    const deckWidth = Math.max(1, 5 - Math.floor(taper * 0.7));
-    for (let y = 4; y <= 8; y += 1) {
-      const width = Math.max(0, deckWidth - (8 - y));
-      for (let x = -width; x <= width; x += 1) {
-        const shell = Math.abs(x) === width || y === 4 || y === 8 || Math.abs(z) === 12;
-        if (!shell) continue;
-        put(center + x, y, z, y === 8 ? BlockKind.OakPlanks : BlockKind.Wood);
+  for (let z = -16; z <= 16; z++) {
+    const deckWidth = widthAt(z);
+    for (let y = 4; y <= 8; y++) {
+      const width = Math.max(1, deckWidth - Math.max(0, 7 - y));
+      for (let x = -width; x <= width; x++) {
+        if (Math.abs(x) === width || y === 4 || Math.abs(z) === 16) put(center + x, y, z, BlockKind.Wood);
       }
     }
-    if (Math.abs(z) < 11) {
+    for (let x = -deckWidth; x <= deckWidth; x++) {
+      if (x !== 0 || z !== 0) put(center + x, 9, z, BlockKind.OakPlanks);
+    }
+    if (Math.abs(z) < 16) {
       for (const side of [-1, 1]) {
-        put(center + side * deckWidth, 9, z, BlockKind.Wood);
-        if (z % 2 === 0) put(center + side * deckWidth, 10, z, BlockKind.OakPlanks);
+        put(center + side * deckWidth, 10, z, BlockKind.Wood);
+        if (z % 3 === 0) put(center + side * deckWidth, 11, z, teamColor);
       }
     }
   }
 
+  for (let z = -20; z <= -17; z++) put(center, 9 + Math.floor((z + 20) / 2), z, BlockKind.Wood);
+  put(center, 10, -18, BlockKind.GoldOre);
+
+  for (let x = -4; x <= 4; x++) {
+    for (let z = 8; z <= 13; z++) {
+      put(center + x, 12, z, BlockKind.OakPlanks);
+      for (let y = 10; y <= 12; y++) {
+        const wall = Math.abs(x) === 4 || z === 13;
+        const doorway = z === 8 && x === 0 && y <= 11;
+        if (wall && !doorway) put(center + x, y, z, y === 11 && Math.abs(x) === 4 && z % 3 === 0 ? BlockKind.Glass : BlockKind.Wood);
+      }
+    }
+  }
+  for (let layer = 0; layer <= 1; layer++) {
+    for (let x = -4 + layer; x <= 4 - layer; x++) for (let z = 8; z <= 13; z++) put(center + x, 13 + layer, z, BlockKind.PinePlanks);
+  }
+  for (let step = 0; step < 4; step++) {
+    for (let x = -1; x <= 1; x++) {
+      for (let y = 9; y <= 9 + step; y++) put(center + x, y, 5 + step, BlockKind.OakPlanks);
+    }
+  }
+  for (let x = -1; x <= 1; x++) {
+    put(center + x, 9, -11, BlockKind.OakPlanks);
+    put(center + x, 10, -12, BlockKind.OakPlanks);
+  }
+
+  for (let y = 5; y <= 9; y++) put(center, y, 0, BlockKind.Ladder, 'south');
   for (const side of [-1, 1]) {
-    put(center + side * 5, 7, 0, BlockKind.OakPlanks);
-    put(center + side * 6, 7, 0, BlockKind.OakPlanks);
-    put(center + side * 7, 6, 0, BlockKind.OakPlanks);
-    put(center + side * 8, 5, 0, BlockKind.OakPlanks);
-  }
-
-  for (let x = -3; x <= 3; x += 1) {
-    for (let z = 6; z <= 10; z += 1) {
-      put(center + x, 11, z, BlockKind.OakPlanks);
-      for (let y = 9; y <= 10; y += 1) {
-        const wall = Math.abs(x) === 3 || z === 10;
-        const doorway = z === 6 && x === 0 && y <= 10;
-        if (wall && !doorway) put(center + x, y, z, y === 10 && Math.abs(x) === 3 && z % 3 === 0 ? BlockKind.Glass : BlockKind.Wood);
-      }
-      if (Math.abs(x) === 3 || z === 10) put(center + x, 12, z, BlockKind.Wood);
+    for (const z of [-5, 5]) put(center + side, 5, z, BlockKind.OakPlanks);
+    for (const z of [-6, 0, 6]) {
+      put(center + side * 5, 10, z, BlockKind.Furnace, side === -1 ? 'west' : 'east');
+      put(center + side * 6, 10, z, BlockKind.ConcreteBlack);
     }
+    put(center + side * 3, 13, 11, BlockKind.Candle);
   }
-  for (let x = -2; x <= 2; x += 1) {
-    for (let z = -11; z <= -8; z += 1) put(center + x, 9, z, BlockKind.OakPlanks);
-  }
-  for (let z = -16; z <= -12; z += 1) put(center, 9 + Math.floor((z + 16) / 3), z, BlockKind.Wood);
 
   const mast = (z: number, top: number) => {
-    for (let y = 9; y <= top; y += 1) put(center, y, z, BlockKind.Wood);
-    put(center - 1, top - 1, z, BlockKind.OakPlanks);
-    put(center + 1, top - 1, z, BlockKind.OakPlanks);
-    put(center, top - 1, z - 1, BlockKind.OakPlanks);
-    put(center, top - 1, z + 1, BlockKind.OakPlanks);
-    for (let x = -2; x <= 2; x += 1) {
-      put(center + x, top + 1, z, BlockKind.ConcreteBlack);
-      if (Math.abs(x) <= 1) put(center + x, top + 2, z, x === 0 ? BlockKind.ConcreteWhite : teamColor);
+    for (let y = 10; y <= top; y++) put(center, y, z, BlockKind.Wood);
+    for (let y = 10; y <= top - 2; y++) {
+      put(center - 1, y, z, BlockKind.Ladder, 'west');
+      put(center + 1, y, z, BlockKind.Ladder, 'east');
     }
+    for (let x = -2; x <= 2; x++) put(center + x, top + 1, z, x === 0 ? teamColor : BlockKind.ConcreteBlack);
+    put(center, top + 2, z, teamColor);
   };
   const sail = (z: number, bottom: number, height: number, width: number, skull: boolean) => {
     const top = bottom + height;
-    for (let x = -width - 1; x <= width + 1; x += 1) put(center + x, top + 1, z, BlockKind.Wood);
-    for (let x = -width; x <= width; x += 1) {
+    for (let x = -width - 1; x <= width + 1; x++) put(center + x, top + 1, z, BlockKind.Wood);
+    for (let x = -width; x <= width; x++) {
       const bulge = Math.round((1 - Math.abs(x) / (width + 1)) * 1.4);
-      for (let y = bottom; y <= top; y += 1) {
-        const skullPixel = skull && (
-          (y === bottom + 4 && Math.abs(x) <= 2)
-          || (y === bottom + 3 && Math.abs(x) <= 2)
-          || (y === bottom + 2 && Math.abs(x) === 1)
-          || (y === bottom + 1 && (x === -2 || x === 0 || x === 2))
-        );
+      for (let y = bottom; y <= top; y++) {
+        const skullPixel = skull && ((y === bottom + 4 && Math.abs(x) <= 2) || (y === bottom + 3 && Math.abs(x) <= 2) || (y === bottom + 2 && Math.abs(x) === 1) || (y === bottom + 1 && (x === -2 || x === 0 || x === 2)));
         const eyeHole = skull && y === bottom + 3 && Math.abs(x) === 1;
         const border = Math.abs(x) === width || y === bottom || y === top;
         put(center + x, y, z + bulge, skullPixel && !eyeHole ? BlockKind.ConcreteBlack : border || y === bottom + 1 ? teamColor : BlockKind.ConcreteWhite);
@@ -80,35 +87,13 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
     }
   };
 
-  mast(-6, 18);
-  sail(-6, 11, 5, 3, false);
-  mast(0, 23);
-  sail(0, 16, 4, 4, false);
-  sail(0, 10, 5, 4, true);
-  mast(8, 20);
-  sail(8, 12, 5, 3, false);
-
-  for (const side of [-1, 1]) {
-    for (const z of [-5, 0, 5]) {
-      put(center + side * 4, 9, z, BlockKind.Furnace, side === -1 ? 'west' : 'east');
-      put(center + side * 5, 7, z, BlockKind.ConcreteBlack);
-    }
-    for (let y = 9; y <= 16; y += 1) {
-      const z = Math.round(2 + (y - 9) * 0.55);
-      put(center + side * 2, y, z, BlockKind.Ladder, side === -1 ? 'west' : 'east');
-    }
-    put(center + side * 3, 12, 9, BlockKind.Candle);
-    put(center + side * 2, 6, -11, BlockKind.ConcreteWhite);
-    put(center + side * 2, 7, -11, BlockKind.ConcreteWhite);
-  }
-  for (let z = 5; z <= 10; z += 1) put(center + 3, 9, z, BlockKind.OakPlanks);
-  for (let x = -2; x <= 2; x += 1) put(center + x, 6, 0, BlockKind.OakPlanks);
-  for (const side of [-1, 1]) {
-    put(center + side, 5, -5, BlockKind.OakPlanks);
-    put(center + side, 5, 5, BlockKind.OakPlanks);
-  }
-  put(center, 7, 0, BlockKind.Chest);
-  put(center + 3, 9, 3, BlockKind.GoldOre);
+  mast(-8, 22);
+  sail(-8, 12, 6, 4, false);
+  mast(0, 27);
+  sail(0, 18, 5, 5, false);
+  sail(0, 11, 6, 5, true);
+  mast(9, 23);
+  sail(9, 13, 6, 4, false);
 
   const first = blocks[0];
   if (!first) return;

@@ -4,10 +4,11 @@ import { getBlockIndex, getWorldSeed } from './chunks';
 import { getFireSources, nearestFire } from './hazards';
 import { groundAt } from './vehicles';
 import { isDoor } from './extraBlocks';
-import { heightAt } from './levels';
 import { Environment, Trader, TraderMesh, TraderPosition } from './traits';
 import { replaceVoxel } from './chunks';
 import { villageBeds } from './villages';
+import { openRestaurant, useTradeStore } from './trading';
+import { useGameStore } from './store';
 
 function wake(world: World, entity: Entity) {
   const trader = entity.get(Trader);
@@ -15,7 +16,7 @@ function wake(world: World, entity: Entity) {
   const mesh = entity.get(TraderMesh)?.value;
   if (!trader || !position) return;
   if (trader.bedY !== null) position.y = groundAt(world, position.x, position.z, trader.bedY + 2) + 0.02;
-  entity.set(Trader, { sleeping: false });
+  entity.set(Trader, { sleeping: false, bedDoorReached: false });
   if (mesh) {
     mesh.position.copy(position);
     mesh.rotation.x = 0;
@@ -67,16 +68,28 @@ export function updateVillageSleep(world: World, entity: Entity, dt: number, tal
     if (trader.sleeping) wake(world, entity);
     return false;
   }
+  if (!trader.villager && !trader.restaurantInvited) {
+    entity.set(Trader, { restaurantInvited: true, walking: false });
+    openRestaurant();
+    useTradeStore.setState({ open: true, traderId: entity, restaurantAvailable: true });
+    useGameStore.getState().setMode('pause');
+    if (typeof document !== 'undefined' && document.pointerLockElement) document.exitPointerLock();
+    return false;
+  }
   if (trader.bedX === null || trader.bedY === null || trader.bedZ === null) return false;
+  const doorDistance = Math.hypot(trader.bedX - position.x, trader.bedZ + 3 - position.z);
+  const doorReached = trader.bedDoorReached || doorDistance <= 1.2;
+  if (doorReached && !trader.bedDoorReached) entity.set(Trader, { bedDoorReached: true });
+  const targetZ = position.z > trader.bedZ + 1 && !doorReached ? trader.bedZ + 3 : trader.bedZ + 0.55;
   const dx = trader.bedX - position.x;
-  const dz = trader.bedZ + 0.55 - position.z;
+  const dz = targetZ - position.z;
   if (Math.hypot(dx, dz) > 0.24) {
     openDoors(world, position);
     const distance = Math.hypot(dx, dz);
     const step = Math.min(distance, dt * 1.25);
     const nextX = position.x + dx / distance * step;
     const nextZ = position.z + dz / distance * step;
-    const ground = Math.max(heightAt(nextX, nextZ, getWorldSeed(world)) + 0.5, trader.bedY - 0.5);
+    const ground = Math.max(groundAt(world, nextX, nextZ, position.y + 2.05), trader.bedY - 0.5);
     if (ground !== null) {
       position.set(nextX, ground, nextZ);
       if (mesh) {

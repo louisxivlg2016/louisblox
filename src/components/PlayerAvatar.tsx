@@ -19,7 +19,8 @@ import { hasFullCharacter } from './FullCharacterGlb';
 import { useEmoteStore } from '../game/emotes';
 import { useEatingStore } from '../game/eating';
 import { canWalkInVehicle } from '../game/vehicleTypes';
-import { appearanceHairColor } from '../game/appearance';
+import { appearanceHairColor, appearanceSkinColor } from '../game/appearance';
+import { ParachuteModel } from './ParachuteModel';
 
 export function PlayerAvatar({ entity, preview = false }: { entity: Entity; preview?: boolean }) {
   const cameraMode = useGameStore((state) => state.cameraMode);
@@ -34,6 +35,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   const wig = useCharacterStore((state) => state.wig);
   const appearance = useCharacterStore((state) => state.appearance);
   const hair = appearanceHairColor(appearance, character);
+  const skin = appearanceSkinColor(appearance, character);
   const emote = useEmoteStore((state) => state.current);
   const eating = useEatingStore((state) => state.eating);
   const leftArm = useRef<Group>(null);
@@ -42,9 +44,11 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   const rightLeg = useRef<Group>(null);
   const headRef = useRef<Group>(null);
   const bodyMesh = useRef<Group>(null);
+  const parachute = useRef<Group>(null);
   const phase = useRef(0);
 
   useFrame((_, delta) => {
+    if (parachute.current) parachute.current.visible = Boolean(entity?.get(PlayerState)?.parachuting);
     if (!entity) return;
     if (!preview) {
       const mesh = entity.get(PlayerMesh);
@@ -85,7 +89,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   const armor = equipped ? getItemMeta(`armor_${equipped}`).color : null;
   const girl = character === 'girl';
   const body = armor ?? appearance.clothingColor ?? (outfit === 'default' ? (girl ? '#625887' : '#526b45') : OUTFITS[outfit].body);
-  const limbs = armor ?? (outfit === 'default' ? body : appearance.skinColor);
+  const limbs = armor ?? (outfit === 'default' ? body : skin);
   const legs = armor ?? appearance.clothingColor ?? (outfit === 'default' ? '#38363b' : OUTFITS[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
   const classicDetails = outfit === 'default' && !armor && !girl && (
@@ -93,7 +97,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   );
   const headContent = (
     <>
-      <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color={appearance.skinColor} />
+      <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color={skin} />
       {!hasWig && (
         <group name="natural-hair">
           <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={hair} />
@@ -189,6 +193,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
           <PixelPart position={[0.4, 1.34, 0]} size={[0.28, 0.2, 0.32]} color={armor} />
         </>
       )}
+      <group ref={parachute} visible={false}><ParachuteModel /></group>
     </group>
   );
 }

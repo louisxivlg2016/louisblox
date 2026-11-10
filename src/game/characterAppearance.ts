@@ -26,7 +26,7 @@ function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, 
     const arm = Math.abs(x) > size.x * 0.25 && vertical > 0.28 && vertical < 0.82;
     const leg = horizontal && vertical < 0.48;
     const eyes = z * frontSign > 0 && Math.abs(x) < size.x * 0.22 && vertical > 0.655 && vertical < 0.697;
-    const eyebrows = z * frontSign > 0 && Math.abs(x) > size.x * 0.025 && Math.abs(x) < size.x * 0.25 && vertical > 0.697 && vertical < 0.73;
+    const eyebrows = z * frontSign > 0 && Math.abs(x) > size.x * 0.025 && Math.abs(x) < size.x * 0.25 && vertical > 0.68 && vertical < 0.735;
     const lowerStrand = princessHair && z * frontSign > 0 && Math.abs(x) > size.x * 0.13 && Math.abs(x) < size.x * 0.33 && vertical > 0.38 && vertical < 0.7;
     const visible = region === 'uniform'
       ? vertical > 0.36 && vertical < 0.67
@@ -84,13 +84,14 @@ function skinPixel(red: number, green: number, blue: number) {
   return red > 115 && green > 65 && blue > 55 && red > green * 1.06 && green > blue * 1.1 && red - green < 125 && green - blue < 105;
 }
 
-function hairPixel(red: number, green: number, blue: number, allowGrayHair: boolean) {
+function hairPixel(red: number, green: number, blue: number, allowGrayHair: boolean, allowGoldHair = false) {
   const maximum = Math.max(red, green, blue);
   const minimum = Math.min(red, green, blue);
   const brown = red > green * 1.06 && green > blue * 1.1 && red < 190 && blue < 110;
   const gray = allowGrayHair && maximum - minimum < 45 && maximum > 85;
   const gold = red > 150 && green > 95 && blue < Math.min(red, green) * 0.62 && green > blue * 1.5;
-  return (brown || gray) && !gold && maximum > 30;
+  if (gold) return allowGoldHair;
+  return (brown || gray) && maximum > 30;
 }
 
 function irisPixel(red: number, green: number, blue: number) {
@@ -103,7 +104,7 @@ function eyebrowPixel(red: number, green: number, blue: number) {
   return maximum > 8 && maximum < 190 && red >= blue * 0.85 && green >= blue * 0.85;
 }
 
-export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'originalHairColor'>, allowGrayHair = false, princessHair = false, outfit?: import('./outfits').OutfitKind) {
+export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>, allowGrayHair = false, princessHair = false, outfit?: import('./outfits').OutfitKind) {
   const material = source.clone();
   const image = material.map?.image as { width?: number; height?: number } | undefined;
   if (!material.map || !image?.width || !image.height || !geometry.getAttribute('uv')) return material;
@@ -119,12 +120,13 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   const eyeMask = maskCanvas(geometry, bounds, 'eyes', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
   const eyebrowMask = maskCanvas(geometry, bounds, 'eyebrows', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
   material.userData.faceFrontSign = frontSign;
-  const skin = new Color(appearance.skinColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const hair = appearance.originalHairColor ? null : new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const eyes = new Color(appearance.eyeColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const eyebrows = new Color(appearance.eyebrowColor ?? appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const uniform = new Color(outfit === 'pirate' ? '#b6373b' : '#397ab5').getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const uniformMask = outfit === 'pirate' || outfit === 'footballer'
+  const skin = appearance.originalSkinColor ? null : new Color(appearance.skinColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const hair = appearance.originalHairColor || outfit === 'trader' || outfit === 'firefighter' ? null : new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const eyes = outfit === 'louis15' ? null : new Color(appearance.eyeColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const eyebrows = outfit === 'firefighter' ? null : new Color(appearance.eyebrowColor ?? appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const uniformColor = appearance.clothingColor ?? (outfit === 'pirate' ? '#b6373b' : outfit === 'footballer' ? '#2868b3' : null);
+  const uniform = uniformColor ? new Color(uniformColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace) : null;
+  const uniformMask = uniform
     ? maskCanvas(geometry, bounds, 'uniform', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data
     : null;
   let eyebrowPixels = 0;
@@ -134,16 +136,18 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
     const blue = pixels.data[index + 2];
     const brightness = (red * 0.2126 + green * 0.7152 + blue * 0.0722) / 255;
     const factor = Math.min(1.35, 0.65 + brightness * 0.65);
-    const uniformPixel = uniformMask && uniformMask[index + 3] > 0 && (outfit === 'footballer'
-      ? brightness < 0.78 && !skinPixel(red, green, blue)
-      : Math.max(red, green, blue) > 55 && red > green * 1.08 && green > blue * 1.07 && !skinPixel(red, green, blue));
+    const uniformPixel = uniformMask && uniformMask[index + 3] > 0 && !skinPixel(red, green, blue) && (appearance.clothingColor
+      ? brightness < 0.96
+      : outfit === 'footballer'
+        ? brightness < 0.78
+        : Math.max(red, green, blue) > 55 && red > green * 1.08 && green > blue * 1.07);
     const target = skinMask[index + 3] > 0 && skinPixel(red, green, blue)
       ? skin
       : eyeMask[index + 3] > 0 && irisPixel(red, green, blue)
         ? eyes
         : eyebrowMask[index + 3] > 0 && eyebrowPixel(red, green, blue)
           ? eyebrows
-          : hairMask[index + 3] > 0 && hairPixel(red, green, blue, allowGrayHair) ? hair
+          : hairMask[index + 3] > 0 && hairPixel(red, green, blue, allowGrayHair, outfit === 'footballer') ? hair
             : uniformPixel ? uniform : null;
     if (!target) continue;
     if (target === eyebrows) eyebrowPixels += 1;

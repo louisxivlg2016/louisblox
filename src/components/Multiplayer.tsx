@@ -30,6 +30,8 @@ import { dismount } from '../game/vehicles';
 import { applyVehicleRemoval, applyVehicleSnapshot, isVehicleSnapshot, onVehicleSync } from '../game/vehicleSync';
 import type { VehicleSnapshot } from '../game/vehicleSync';
 import { isAnimalMount } from '../game/vehicleTypes';
+import { appearanceSkinColor } from '../game/appearance';
+import { ParachuteModel } from './ParachuteModel';
 import { isOutfitKind, isWigSelection, OUTFITS, selectedWig } from '../game/outfits';
 import type { OutfitKind, WigSelection } from '../game/outfits';
 import { CharacterOutfit } from './CharacterOutfit';
@@ -115,6 +117,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
   const girl = character === 'girl';
   const current = sanitizeAppearance(appearance, character);
   const hair = appearanceHairColor(current, character);
+  const skin = appearanceSkinColor(current, character);
   const body = current.clothingColor ?? (outfit === 'default' ? (girl ? '#9a5f9f' : `hsl(${hue}, 45%, 48%)`) : OUTFITS[outfit].body);
   const legs = current.clothingColor ?? (outfit === 'default' ? (girl ? '#4b405e' : '#354d6d') : OUTFITS[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
@@ -163,7 +166,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
 
   const headContent = (
     <>
-      <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color={current.skinColor} />
+      <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color={skin} />
       {!hasWig && (
         <group name="natural-hair">
           <PixelPart position={[0, 1.96, 0]} size={[0.5, 0.1, 0.5]} color={hair} />
@@ -192,10 +195,11 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
       <PlayerNameTag name={name} playerId={playerId} />
       {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit character={character} outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} appearance={current} />
+      {state.parachuting && <ParachuteModel />}
       {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={battleTeamColor(team)} /></group>}
-      <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={current.skinColor} /></group>
+      <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={skin} /></group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
-        {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={current.skinColor} />}
+        {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={skin} />}
         {state.selected !== undefined && (
           <group
             name="remote-held-item"
@@ -722,7 +726,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, bodyYaw: entity?.get(PlayerMesh)?.value?.rotation.y, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: world.queryFirst(Sleep) ? 'lie' : useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, bodyYaw: entity?.get(PlayerMesh)?.value?.rotation.y, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, parachuting: playerState.parachuting, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: world.queryFirst(Sleep) ? 'lie' : useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

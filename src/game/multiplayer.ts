@@ -17,6 +17,7 @@ export type PlayerSnapshot = {
   flying: boolean;
   moving?: boolean;
   airborne?: boolean;
+  parachuting?: boolean;
   mounted?: boolean;
   vehicleKind?: MountKind;
   vehicleId?: string;
@@ -78,6 +79,7 @@ export function isPlayerSnapshot(value: unknown): value is PlayerSnapshot {
     && (state.bodyYaw === undefined || typeof state.bodyYaw === 'number' && Number.isFinite(state.bodyYaw))
     && (state.moving === undefined || typeof state.moving === 'boolean')
     && (state.airborne === undefined || typeof state.airborne === 'boolean')
+    && (state.parachuting === undefined || typeof state.parachuting === 'boolean')
     && (state.mounted === undefined || typeof state.mounted === 'boolean')
     && (state.vehicleKind === undefined || isVehicleKind(state.vehicleKind) || isAnimalMount(state.vehicleKind))
     && (state.vehicleId === undefined || typeof state.vehicleId === 'string' && state.vehicleId.length > 0 && state.vehicleId.length <= 80)

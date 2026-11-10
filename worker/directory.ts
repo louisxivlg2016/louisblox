@@ -9,6 +9,7 @@ export type Appearance = {
   clothingColor: string | null;
   hairStyle: 'short' | 'long';
   originalHairColor?: boolean;
+  originalSkinColor?: boolean;
 };
 
 export type SocialPlayer = {
@@ -52,6 +53,7 @@ export function parseAppearance(value: unknown, character: 'boy' | 'girl' = 'boy
     clothingColor: data.clothingColor === null || color(data.clothingColor) ? data.clothingColor as string | null : null,
     hairStyle: data.hairStyle === 'long' || data.hairStyle === 'short' ? data.hairStyle : character === 'girl' ? 'long' : 'short',
     originalHairColor: data.originalHairColor === true,
+    originalSkinColor: data.originalSkinColor === true,
   };
 }
 

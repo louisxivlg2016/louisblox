@@ -44,7 +44,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     position.set(sleep.x, sleep.y + 0.58, sleep.z);
     body.setNextKinematicTranslation(position);
     velocity.set(0, 0, 0);
-    entity.set(PlayerState, { grounded: true, flying: false, yaw: sleep.yaw, pitch: 0 });
+    entity.set(PlayerState, { grounded: true, flying: false, yaw: sleep.yaw, pitch: 0, parachuting: false });
     updateHud(world, position, health, false, dt);
     return;
   }
@@ -73,7 +73,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const pitch = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, state.pitch - mouse.y * 0.004 - edge.y * dt * 3.2));
   const flightToggles = consumeFlightToggle();
   const canDoubleJump = hasEffect('doubleJump') && !state.grounded && !state.flying && (airJumps.get(world) ?? 0) < 1;
-  const flying = !['pirates', 'football', 'maze'].includes(useGameStore.getState().gameplayMode) && !canDoubleJump && flightToggles % 2 === 1 ? !state.flying : state.flying;
+  const flying = !['pirates', 'football', 'maze'].includes(useGameStore.getState().gameplayMode) && useGameStore.getState().selected !== 'parachute' && !canDoubleJump && flightToggles % 2 === 1 ? !state.flying : state.flying;
   if (health && health.value <= 0 && entity.get(PlayerMount)?.vehicle) dismount(world);
 
   const mount = entity.get(PlayerMount);
@@ -92,7 +92,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     }
     body.setNextKinematicTranslation(position);
     velocity.set(0, 0, 0);
-    entity.set(PlayerState, { grounded: true, flying: false, yaw, pitch });
+    entity.set(PlayerState, { grounded: true, flying: false, yaw, pitch, parachuting: false });
     updateHud(world, position, health, false, dt);
     return;
   }
@@ -107,6 +107,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const blocks = getBlockIndex(world);
   const swimming = getSwimState(blocks, position);
   const inWater = !flying && swimming.inWater;
+  const parachuting = useGameStore.getState().selected === 'parachute' && !flying && !state.grounded && !inWater && velocity.y < 0;
   const ladderAt = (y: number) => blocks.get(voxelKey(Math.round(position.x), Math.round(y), Math.round(position.z)))?.kind === BlockKind.Ladder;
   const onLadder = !flying && (ladderAt(position.y) || ladderAt(position.y + 0.75) || ladderAt(position.y + 1.5));
   const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1) * movementMultiplier();
@@ -122,6 +123,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   spaceWasDown.set(world, spaceDown);
   if (state.grounded) airJumps.set(world, 0);
   if (flying) velocity.y = (Number(spaceDown) - Number(isDown('KeyC'))) * FLY_SPEED;
+  else if (parachuting) velocity.y = Math.max(velocity.y, -1.25);
   else if (onLadder) velocity.y = spaceDown ? 3.8 : isDown('KeyC') ? -2.8 : Math.max(velocity.y, -0.8);
   else if (inWater) velocity.y = swimVerticalVelocity(swimming, velocity.y, isDown('KeyC'), spaceDown, position.y);
   else if (state.grounded && spaceDown) velocity.y = JUMP_SPEED * jumpMultiplier();
@@ -182,7 +184,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   }
   body.setNextKinematicTranslation(next);
   position.set(next.x, next.y, next.z);
-  entity.set(PlayerState, { grounded, flying: nextFlying, yaw, pitch });
+  entity.set(PlayerState, { grounded, flying: nextFlying, yaw, pitch, parachuting });
   updateHud(world, next, health, nextFlying, dt);
 }
 

@@ -10,6 +10,7 @@ import { WeaponWithFallback } from './WeaponGlb';
 import { isPaintballGun } from '../game/paintball';
 import { isReferenceFood, ReferenceFoodModel } from './ReferenceFoodModel';
 import { SaddleGlb } from './SaddleGlb';
+import { ParachuteModel } from './ParachuteModel';
 
 type ModelProps = { kind: ItemKind | GalleryItemId; held?: boolean; flipGuns?: boolean };
 type PartProps = { position: [number, number, number]; size: [number, number, number]; color: string; rotation?: [number, number, number] };
@@ -507,10 +508,11 @@ export function heldItemPosition(kind: ItemKind | GalleryItemId | number, fullCh
 
 export function itemGripOffset(kind: ItemKind | GalleryItemId) {
   const meta = getItemMeta(kind);
-  if (meta.category === 'sword' || meta.shape === 'sword') return 0.09;
-  if (meta.shape === 'dagger') return 0.063;
-  if (meta.category === 'gun' || meta.shape === 'gun' || meta.shape === 'rpg') return -0.22;
-  if (meta.category === 'pickaxe' || meta.category === 'shovel' || meta.shape === 'pickaxe' || meta.shape === 'spade') return -0.17;
+  if (meta.category === 'sword' || meta.shape === 'sword') return 0.28;
+  if (meta.shape === 'dagger') return 0.18;
+  if (meta.category === 'bow' || meta.shape === 'staff') return 0.18;
+  if (meta.category === 'gun' || meta.shape === 'gun' || meta.shape === 'rpg') return -0.32;
+  if (meta.category === 'pickaxe' || meta.category === 'shovel' || meta.shape === 'pickaxe' || meta.shape === 'spade') return -0.27;
   return 0;
 }
 
@@ -522,6 +524,7 @@ export function ItemModel({ kind, held = false, flipGuns = false }: ModelProps) 
   else if (isGalleryItem(kind)) model = <GalleryModel kind={kind} />;
   else if (kind === 'bucket' || kind === 'water_bucket') model = <BucketModel filled={kind === 'water_bucket'} />;
   else if (kind === 'extinguisher') model = <WeaponWithFallback kind="extinguisher" />;
+  else if (kind === 'parachute') model = <ParachuteModel held />;
   else if (meta.category === 'sword') model = <SwordModel color={meta.color} />;
   else if (meta.category === 'bow') model = <BowModel crossbow={kind === 'crossbow'} />;
   else if (meta.category === 'gun') model = kind === 'rifle_flintlock' ? <FlintlockModel /> : <GunModel color={meta.color} bomb={kind === 'pistol_bomb'} rifle={kind === 'rifle_auto'} />;

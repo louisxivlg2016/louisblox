@@ -9,7 +9,7 @@ export const PlayerVelocity = trait(() => new Vector3());
 export const PlayerBody = trait(() => ({ value: null as RapierRigidBody | null }));
 export const PlayerCollider = trait(() => ({ value: null as RapierCollider | null }));
 export const PlayerMesh = trait(() => ({ value: null as import('three').Object3D | null }));
-export const PlayerState = trait({ grounded: false, flying: false, yaw: 0, pitch: 0 });
+export const PlayerState = trait({ grounded: false, flying: false, yaw: 0, pitch: 0, parachuting: false });
 export const PlayerHealth = trait({ value: 10, max: 10, absorbed: 0 });
 
 export const BlockTarget = trait(() => ({
@@ -50,7 +50,7 @@ export const AnimalPosition = trait(() => new Vector3());
 export const AnimalMotion = trait({ yaw: 0, displayYaw: 0, turnIn: 0, phase: 0, running: false, speed: 0.5, idle: 0, velocityY: 0, grounded: true, avoid: 0, climbTarget: null as number | null, hunting: false, sightIn: 0 });
 export const AnimalMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 
-export const Trader = trait({ homeX: 0, homeZ: 0, targetX: 0, targetZ: 0, destinationX: null as number | null, destinationZ: null as number | null, detourX: null as number | null, detourZ: null as number | null, detourIn: 0, arrived: false, phase: 0, walking: true, following: false, villager: false, health: 5, panic: 0, fireIn: 0, bedX: null as number | null, bedY: null as number | null, bedZ: null as number | null, sleeping: false });
+export const Trader = trait({ homeX: 0, homeZ: 0, targetX: 0, targetZ: 0, destinationX: null as number | null, destinationZ: null as number | null, detourX: null as number | null, detourZ: null as number | null, detourIn: 0, arrived: false, phase: 0, walking: true, following: false, villager: false, health: 5, panic: 0, fireIn: 0, bedX: null as number | null, bedY: null as number | null, bedZ: null as number | null, sleeping: false, restaurantInvited: false, bedDoorReached: false });
 export const TraderPosition = trait(() => new Vector3());
 export const TraderMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 export const CamelLeash = trait(() => ({ trader: null as import('koota').Entity | null, order: 0 }));
