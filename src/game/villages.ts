@@ -48,7 +48,7 @@ const tradeCitySites = new Map<number, { x: number; z: number }>();
 export function tradeCityAt(seed: number) {
   const cached = tradeCitySites.get(seed);
   if (cached) return cached;
-  for (let radius = 5; radius <= 32; radius += 1) {
+  for (let radius = 3; radius <= 32; radius += 1) {
     let best: { x: number; z: number; score: number } | null = null;
     for (let cellX = -radius; cellX <= radius; cellX += 1) {
       for (let cellZ = -radius; cellZ <= radius; cellZ += 1) {
@@ -57,9 +57,10 @@ export function tradeCityAt(seed: number) {
         const z = cellZ * 192 + 96;
         const site = villageAt(Math.floor(x / 16), Math.floor(z / 16), seed);
         if (!site) continue;
+        if (![...HOUSE_OFFSETS, ...CITY_HOUSE_OFFSETS].every(([offsetX, offsetZ]) => heightAt(site.x + offsetX, site.z + offsetZ, seed) >= SEA_LEVEL)) continue;
         const distance = Math.hypot(site.x, site.z);
-        if (distance < 700) continue;
-        const score = Math.abs(distance - 960);
+        if (distance < 500) continue;
+        const score = Math.abs(distance - 650);
         if (!best || score < best.score) best = { ...site, score };
       }
     }
@@ -69,7 +70,7 @@ export function tradeCityAt(seed: number) {
       return site;
     }
   }
-  const fallback = safeSpawnAt(960, 0, seed, 'prairie');
+  const fallback = safeSpawnAt(650, 0, seed, 'prairie');
   const site = { x: fallback.x, z: fallback.z };
   tradeCitySites.set(seed, site);
   return site;

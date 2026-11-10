@@ -14,18 +14,23 @@ import { updateVillageSleep } from '../villageLife';
 
 const foliage = new Set<BlockKind>([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple]);
 const stuckCamels = new Map<Entity, { x: number; z: number; time: number }>();
+const stuckTraders = new Map<Entity, { x: number; z: number; time: number }>();
+const obstacleDetours = new Set<Entity>();
+const traderPaths = new Map<Entity, Array<{ x: number; y: number; z: number }>>();
 
-function walkableGround(world: World, x: number, z: number, currentY: number) {
+function walkableGround(world: World, x: number, z: number, currentY: number, rise = 2.05) {
   if (!isChunkLoaded(world, x, z)) return null;
-  const ground = groundAt(world, x, z, currentY + 4.05);
-  if (ground <= MIN_WORLD_Y + 0.5) return null;
   const blocks = getBlockIndex(world);
+  let ground = groundAt(world, x, z, currentY + rise);
+  const overhead = blocks.get(voxelKey(Math.round(x), Math.floor(ground), Math.round(z)));
+  if (overhead && foliage.has(overhead.kind) && ground > currentY + 1.05) ground = groundAt(world, x, z, currentY + 1.05);
+  if (ground <= MIN_WORLD_Y + 0.5) return null;
   if (ground < SEA_LEVEL + 0.5) {
     const water = blocks.get(voxelKey(Math.round(x), SEA_LEVEL, Math.round(z)));
     return isWaterBlock(water?.kind) ? SEA_LEVEL + 0.05 : null;
   }
-  if (ground - currentY > 4.05 || currentY - ground > 8.05) return null;
-  const groundBlock = blocks.get(voxelKey(Math.round(x), Math.round(ground), Math.round(z)));
+  if (ground - currentY > rise || currentY - ground > 8.05) return null;
+  const groundBlock = blocks.get(voxelKey(Math.round(x), Math.floor(ground), Math.round(z)));
   if (groundBlock && foliage.has(groundBlock.kind)) return null;
   for (const height of [0.5, 1.75]) {
     const block = blocks.get(voxelKey(Math.round(x), Math.round(ground + height), Math.round(z)));
@@ -38,12 +43,94 @@ function moveOnGround(_world: World, position: import('three').Vector3, x: numbe
   position.set(x, ground, z);
 }
 
+function clearRoute(world: World, x: number, y: number, z: number, yaw: number, distance: number) {
+  for (let step = 1; step <= distance; step++) {
+    if (walkableGround(world, x + Math.sin(yaw) * step, z + Math.cos(yaw) * step, y) === null) return false;
+  }
+  return true;
+}
+
+function routeDirection(world: World, position: import('three').Vector3, yaw: number, distance = 10) {
+  const offsets = [0, 0.45, -0.45];
+  return offsets.map((offset) => yaw + offset).find((candidate) => clearRoute(world, position.x, position.y, position.z, candidate, distance));
+}
+
+type PathNode = { x: number; y: number; z: number; g: number; f: number; parent: PathNode | null };
+
+function findPath(world: World, position: import('three').Vector3, targetX: number, targetZ: number) {
+  const yaw = Math.atan2(targetX - position.x, targetZ - position.z);
+  let goal: { x: number; y: number; z: number } | null = null;
+  for (const distance of [12, 18, 24]) {
+    const x = Math.round(position.x + Math.sin(yaw) * distance);
+    const z = Math.round(position.z + Math.cos(yaw) * distance);
+    const ground = walkableGround(world, x, z, position.y);
+    if (ground !== null) {
+      goal = { x, y: ground, z };
+      break;
+    }
+  }
+  if (!goal) return null;
+  const start = { x: Math.round(position.x), z: Math.round(position.z) };
+  const heuristic = (x: number, z: number) => Math.abs(goal.x - x) + Math.abs(goal.z - z);
+  const open: PathNode[] = [{ x: start.x, y: position.y, z: start.z, g: 0, f: heuristic(start.x, start.z), parent: null }];
+  const best = new Map<string, number>([[`${start.x},${start.z}`, 0]]);
+  const closed = new Set<string>();
+  let visited = 0;
+  while (open.length > 0 && visited < 1200) {
+    let bestIndex = 0;
+    for (let index = 1; index < open.length; index++) if (open[index].f < open[bestIndex].f) bestIndex = index;
+    const current = open.splice(bestIndex, 1)[0];
+    const key = `${current.x},${current.z}`;
+    if (closed.has(key)) continue;
+    closed.add(key);
+    visited++;
+    if (current.x === goal.x && current.z === goal.z) {
+      const path: Array<{ x: number; y: number; z: number }> = [];
+      let cursor: PathNode | null = current;
+      while (cursor?.parent) {
+        path.unshift({ x: cursor.x, y: cursor.y, z: cursor.z });
+        cursor = cursor.parent;
+      }
+      return path;
+    }
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const x = current.x + dx;
+      const z = current.z + dz;
+      if (Math.abs(x - start.x) > 26 || Math.abs(z - start.z) > 26) continue;
+      const ground = walkableGround(world, x, z, current.y);
+      if (ground === null) continue;
+      const neighborKey = `${x},${z}`;
+      if (closed.has(neighborKey)) continue;
+      const g = current.g + 1;
+      if (g >= (best.get(neighborKey) ?? Infinity)) continue;
+      best.set(neighborKey, g);
+      open.push({ x, y: ground, z, g, f: g + heuristic(x, z), parent: current });
+    }
+  }
+  return null;
+}
+
+function rescueTrader(world: World, position: import('three').Vector3, yaw: number) {
+  for (const distance of [1.5, 2.5, 3.5, 4.5]) {
+    for (const side of [1, -1]) {
+      const x = position.x + Math.cos(yaw) * side * distance;
+      const z = position.z - Math.sin(yaw) * side * distance;
+      const ground = walkableGround(world, x, z, position.y);
+      if (ground === null) continue;
+      if (!clearRoute(world, x, ground, z, yaw, 4)) continue;
+      position.set(x, ground, z);
+      return true;
+    }
+  }
+  return false;
+}
+
 function rescueCamel(world: World, trader: import('three').Vector3, position: import('three').Vector3, motion: { yaw: number; displayYaw: number }, heading: number) {
   const offsets = [[1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5], [0, 0], [2, 2], [-2, 2], [2, -2], [-2, -2]];
   for (const [dx, dz] of offsets) {
     const x = Math.round(trader.x + dx);
     const z = Math.round(trader.z + dz);
-    const ground = walkableGround(world, x, z, trader.y);
+    const ground = walkableGround(world, x, z, trader.y, 4.05);
     if (ground === null) continue;
     position.set(x, ground, z);
     motion.yaw = heading;
@@ -113,6 +200,8 @@ export function traderSystem(world: World, dt: number) {
     const heading = traderHeading(trader);
     const following = !fire && (trader.following || position.distanceToSquared(player) > 18 * 18);
     if (fire) {
+      traderPaths.delete(entity);
+      obstacleDetours.delete(entity);
       const dx = position.x - fire.x;
       const dz = position.z - fire.z;
       const length = Math.hypot(dx, dz);
@@ -136,6 +225,18 @@ export function traderSystem(world: World, dt: number) {
       }
       trader.detourIn = Math.max(0, trader.detourIn - dt);
       if (trader.detourX !== null && trader.detourZ !== null && Math.hypot(trader.detourX - position.x, trader.detourZ - position.z) < 0.5) trader.detourIn = 0;
+      if (trader.detourIn <= 0) obstacleDetours.delete(entity);
+      if (trader.detourIn <= 0 && remaining > 14) {
+        trader.phase += 30;
+        const route = Math.atan2(trader.destinationX - position.x, trader.destinationZ - position.z);
+        const bend = Math.sin(trader.phase * 0.11 + heading) * 0.75;
+        const direction = routeDirection(world, position, route + bend);
+        if (direction !== undefined) {
+          trader.detourX = position.x + Math.sin(direction) * 10;
+          trader.detourZ = position.z + Math.cos(direction) * 10;
+          trader.detourIn = 8;
+        }
+      }
       if (trader.detourIn > 0 && trader.detourX !== null && trader.detourZ !== null) {
         trader.targetX = trader.detourX;
         trader.targetZ = trader.detourZ;
@@ -154,21 +255,58 @@ export function traderSystem(world: World, dt: number) {
       trader.targetX = player.x - Math.sin(heading) * 2.5;
       trader.targetZ = player.z - Math.cos(heading) * 2.5;
     }
-    const dx = trader.targetX - position.x;
-    const dz = trader.targetZ - position.z;
-    const distance = Math.hypot(dx, dz);
-    if (distance < 0.7 && !trader.following) {
+    let path = traderPaths.get(entity);
+    if (path && Math.hypot(path[0].x - position.x, path[0].z - position.z) < 0.15) {
+      path.shift();
+      if (path.length === 0) {
+        traderPaths.delete(entity);
+        path = undefined;
+      }
+    }
+    if (path) {
+      trader.targetX = path[0].x;
+      trader.targetZ = path[0].z;
+      trader.detourIn = Math.max(trader.detourIn, 1);
+      obstacleDetours.delete(entity);
+    }
+    let dx = trader.targetX - position.x;
+    let dz = trader.targetZ - position.z;
+    let distance = Math.hypot(dx, dz);
+    if (distance < 0.7 && !trader.following && !path) {
       trader.phase += 30;
-      trader.targetX = trader.homeX + Math.sin(heading) * trader.phase;
-      trader.targetZ = trader.homeZ + Math.cos(heading) * trader.phase;
+      const turn = Math.sin(trader.phase * 0.11 + heading) * 0.9;
+      const direction = routeDirection(world, position, heading + turn);
+      if (direction !== undefined) {
+        trader.targetX = position.x + Math.sin(direction) * 10;
+        trader.targetZ = position.z + Math.cos(direction) * 10;
+      }
     }
     if (distance > 0.001) {
-      const step = Math.min(distance, dt * (trader.panic > 0 ? 3.2 : following ? trader.following ? 5.8 : 5.5 : 1.05));
+      let step = Math.min(distance, dt * (trader.panic > 0 ? 3.2 : following ? trader.following ? 7.2 : 5.5 : 1.05));
       const forward = fire ? Math.atan2(position.x - fire.x, position.z - fire.z) : Math.atan2(dx, dz);
       const forwardGround = walkableGround(world, position.x + Math.sin(forward) * 1.2, position.z + Math.cos(forward) * 1.2, position.y);
+      let ground = forwardGround === null ? null : walkableGround(world, position.x + dx / distance * step, position.z + dz / distance * step, position.y);
+      if (ground === null) {
+        if (path) {
+          traderPaths.delete(entity);
+          path = undefined;
+        }
+        const found = findPath(world, position, trader.targetX, trader.targetZ);
+        if (found && found.length > 0) {
+          path = found;
+          traderPaths.set(entity, path);
+          obstacleDetours.delete(entity);
+          trader.targetX = path[0].x;
+          trader.targetZ = path[0].z;
+          dx = trader.targetX - position.x;
+          dz = trader.targetZ - position.z;
+          distance = Math.hypot(dx, dz);
+          step = Math.min(distance, dt * (trader.panic > 0 ? 3.2 : following ? trader.following ? 7.2 : 5.5 : 1.05));
+        }
+      }
+      if (path) ground = walkableGround(world, position.x + dx / distance * step, position.z + dz / distance * step, position.y);
       const x = position.x + dx / distance * step;
       const z = position.z + dz / distance * step;
-      const ground = forwardGround === null ? null : walkableGround(world, x, z, position.y);
       if (ground !== null) {
         moveOnGround(world, position, x, z, ground);
         if (mesh.value) {
@@ -178,8 +316,8 @@ export function traderSystem(world: World, dt: number) {
       } else {
         const side = Math.sin(trader.homeX + trader.homeZ) >= 0 ? 1 : -1;
         const escape = fire ? Math.atan2(position.x - fire.x, position.z - fire.z) : Math.atan2(dx, dz);
-        const candidates = [escape + side * 0.4, escape - side * 0.4, escape + side * 0.85, escape - side * 0.85, escape + side * 1.3, escape - side * 1.3, escape + side * Math.PI / 2, escape - side * Math.PI / 2, escape + Math.PI];
-        const nextYaw = candidates.find((yaw) => walkableGround(world, position.x + Math.sin(yaw) * step, position.z + Math.cos(yaw) * step, position.y) !== null);
+        const candidates = [escape + side * 0.45, escape - side * 0.45, escape + side * 0.9, escape - side * 0.9, escape + side * 1.35, escape - side * 1.35, escape + side * Math.PI / 2, escape - side * Math.PI / 2, escape + side * 2.05, escape - side * 2.05];
+        const nextYaw = candidates.find((yaw) => clearRoute(world, position.x, position.y, position.z, yaw, 4));
         if (nextYaw !== undefined) {
           const escapeGround = walkableGround(world, position.x + Math.sin(nextYaw) * step, position.z + Math.cos(nextYaw) * step, position.y);
           if (escapeGround !== null) {
@@ -189,20 +327,48 @@ export function traderSystem(world: World, dt: number) {
               mesh.value.rotation.y = turnToward(mesh.value.rotation.y, nextYaw, dt * 4);
             }
           }
-          trader.detourX = position.x + Math.sin(nextYaw) * 4;
-          trader.detourZ = position.z + Math.cos(nextYaw) * 4;
-          trader.detourIn = 1.2;
+          if (!obstacleDetours.has(entity)) {
+            trader.detourX = position.x + Math.sin(nextYaw) * 6;
+            trader.detourZ = position.z + Math.cos(nextYaw) * 6;
+            trader.detourIn = 3.5;
+            trader.targetX = trader.detourX;
+            trader.targetZ = trader.detourZ;
+            obstacleDetours.add(entity);
+          }
+        } else if (!fire && !obstacleDetours.has(entity)) {
+          trader.detourX = position.x + Math.sin(escape + Math.PI) * 6;
+          trader.detourZ = position.z + Math.cos(escape + Math.PI) * 6;
+          trader.detourIn = 3.5;
           trader.targetX = trader.detourX;
           trader.targetZ = trader.detourZ;
-        } else if (!fire) {
-          trader.detourX = position.x + Math.sin(escape + Math.PI) * 4;
-          trader.detourZ = position.z + Math.cos(escape + Math.PI) * 4;
-          trader.detourIn = 1.2;
-          trader.targetX = trader.detourX;
-          trader.targetZ = trader.detourZ;
+          obstacleDetours.add(entity);
         }
       }
     }
+    if (distance > 0.7) {
+      const stuck = stuckTraders.get(entity) ?? { x: position.x, z: position.z, time: 0 };
+      if (Math.hypot(position.x - stuck.x, position.z - stuck.z) > 1) {
+        stuck.x = position.x;
+        stuck.z = position.z;
+        stuck.time = 0;
+      } else stuck.time += dt;
+      if (stuck.time >= 1.5) {
+        const routeYaw = Math.atan2(trader.targetX - position.x, trader.targetZ - position.z);
+        if (rescueTrader(world, position, routeYaw)) {
+          if (mesh.value) mesh.value.position.copy(position);
+          trader.detourX = position.x + Math.sin(routeYaw) * 6;
+          trader.detourZ = position.z + Math.cos(routeYaw) * 6;
+          trader.detourIn = 3.5;
+          trader.targetX = trader.detourX;
+          trader.targetZ = trader.detourZ;
+          obstacleDetours.add(entity);
+          stuck.x = position.x;
+          stuck.z = position.z;
+        }
+        stuck.time = 0;
+      }
+      stuckTraders.set(entity, stuck);
+    } else stuckTraders.delete(entity);
     entity.set(Trader, { walking: distance > 0.03, panic: trader.panic, phase: trader.phase, targetX: trader.targetX, targetZ: trader.targetZ, detourX: trader.detourX, detourZ: trader.detourZ, detourIn: trader.detourIn, destinationX: trader.destinationX, destinationZ: trader.destinationZ });
   }
 
@@ -230,10 +396,10 @@ export function traderSystem(world: World, dt: number) {
     const previousX = position.x;
     const previousZ = position.z;
     if (distance > 0.001) {
-      const step = Math.min(distance, dt * (leader?.following ? 6.4 : 1.65));
+      const step = Math.min(distance, dt * (leader?.following ? 8 : 1.65));
       const x = position.x + dx / distance * step;
       const z = position.z + dz / distance * step;
-      const ground = walkableGround(world, x, z, position.y);
+      const ground = walkableGround(world, x, z, position.y, 4.05);
       if (ground !== null) moveOnGround(world, position, x, z, ground);
       else {
         const side = leash.order % 2 === 0 ? 1 : -1;
@@ -242,7 +408,7 @@ export function traderSystem(world: World, dt: number) {
           const sideStep = Math.min(step, 0.35);
           const sideX = position.x + Math.sin(yaw) * sideStep;
           const sideZ = position.z + Math.cos(yaw) * sideStep;
-          const sideGround = walkableGround(world, sideX, sideZ, position.y);
+          const sideGround = walkableGround(world, sideX, sideZ, position.y, 4.05);
           if (sideGround === null) continue;
           moveOnGround(world, position, sideX, sideZ, sideGround);
           break;
@@ -268,7 +434,7 @@ export function traderSystem(world: World, dt: number) {
     motion.yaw = moving ? Math.atan2(movedX, movedZ) : heading;
     motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, dt * (leader?.following ? 12 : 5));
     motion.running = moving && leader?.following === true;
-    motion.speed = moving ? leader?.following ? 6.4 : 1.65 : 0;
+    motion.speed = moving ? leader?.following ? 8 : 1.65 : 0;
     if (mesh.value) {
       mesh.value.position.copy(position);
       mesh.value.rotation.y = motion.displayYaw;
