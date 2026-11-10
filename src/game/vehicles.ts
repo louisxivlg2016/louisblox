@@ -4,7 +4,7 @@ import { addVoxel, getBlockIndex, getColumnTop, streamChunks } from './chunks';
 import { getTouchMovement, isDown } from './input';
 import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from './levels';
 import { useGameStore } from './store';
-import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerBody, PlayerCollider, PlayerMount, PlayerPosition, PlayerState, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
+import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, HorseRider, Player, PlayerBody, PlayerCollider, PlayerMount, PlayerPosition, PlayerState, Trader, TraderPosition, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import { EXTRA_BLOCKS, isCrop, isRail } from './extraBlocks';
 import { turnToward } from './rotation';
@@ -13,6 +13,7 @@ import { syncVehicleMotion, syncVehicleSpawn } from './vehicleSync';
 import { CABINS, canWalkInVehicle, isAnimalMount } from './vehicleTypes';
 import { stopSirens } from './vehicleControls';
 import { findInteractionTarget } from './interactionTargets';
+import { useTradeStore } from './trading';
 import type { Camera } from 'three';
 import type { MountKind, SeatRole, VehicleKind } from './vehicleTypes';
 export { PLANE_SCALE } from './vehicleTypes';
@@ -126,6 +127,12 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
     if (rider) vehicle.set(HorseRider, { mounted: true, speed: 0 });
     else vehicle.add(HorseRider({ mounted: true }));
   }
+  const guidedCamel = kind === 'camel' ? vehicle.get(CamelLeash)?.trader ?? null : null;
+  const leader = guidedCamel?.get(Trader);
+  if (guidedCamel && leader && !leader.arrived && !leader.villager) {
+    guidedCamel.set(Trader, { following: true });
+    if (useTradeStore.getState().traderId === guidedCamel) useTradeStore.getState().setFollowing(true);
+  }
   const walkable = !isAnimalMount(kind) && canWalkInVehicle(kind, role);
   player.get(PlayerCollider)?.value?.setEnabled(walkable);
   mount.vehicle = vehicle;
@@ -137,7 +144,7 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
   useGameStore.getState().setRiding(kind, role);
   useGameStore.getState().setNotice(
     kind === 'horse' ? 'Cheval sellé · E : descendre'
-      : kind === 'camel' ? 'Chameau du marchand · WASD / flèches : le guider · E : descendre'
+      : kind === 'camel' ? guidedCamel ? 'Chameau attaché au marchand · Il guide le trajet · E : descendre' : 'Chameau · WASD / flèches : le guider · E : descendre'
         : walkable ? 'Passager · WASD / flèches : marcher dans le véhicule · E : descendre · Le véhicule reste arrêté sans conducteur.'
         : role === 'passenger' ? 'Passager · E : descendre · Le véhicule reste arrêté sans conducteur.'
           : kind === 'plane' ? 'WASD : piloter · Espace/C : monter/descendre · E : sortir'
@@ -327,6 +334,10 @@ export function vehicleMovementSystem(world: World, dt: number) {
   world.query(Animal, AnimalPosition, AnimalMotion, AnimalMesh, HorseRider).updateEach(([animal, position, motion, mesh, rider], entity) => {
     const active = isAnimalMount(animal.kind) && mount?.vehicle === entity && mount.kind === animal.kind && state;
     if (!active) return;
+    if (animal.kind === 'camel' && entity.get(CamelLeash)?.trader?.get(TraderPosition)) {
+      rider.speed = 0;
+      return;
+    }
     const target = input.forward * (input.forward < 0 ? 2.2 : animal.kind === 'camel' ? 4.8 : 6.2);
     rider.speed += Math.max(-10 * dt, Math.min(10 * dt, target - rider.speed));
     motion.yaw = state.yaw;

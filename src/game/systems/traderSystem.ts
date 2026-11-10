@@ -5,7 +5,7 @@ import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import { isCollidable } from './collisionSystem';
-import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerPosition, Trader, TraderMesh, TraderPosition } from '../traits';
+import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerBody, PlayerMount, PlayerPosition, Trader, TraderMesh, TraderPosition } from '../traits';
 import { getFireSources, nearestFire } from '../hazards';
 import { useTradeStore } from '../trading';
 import { useGameStore } from '../store';
@@ -59,7 +59,8 @@ function traderHeading(trader: { homeX: number; homeZ: number }) {
 }
 
 export function traderSystem(world: World, dt: number) {
-  const player = world.queryFirst(Player)?.get(PlayerPosition);
+  const playerEntity = world.queryFirst(Player);
+  const player = playerEntity?.get(PlayerPosition);
   if (!player) return;
   const fires = getFireSources(world);
   const conversation = useTradeStore.getState();
@@ -206,10 +207,7 @@ export function traderSystem(world: World, dt: number) {
   }
 
   world.query(CamelLeash, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([leash, position, motion, mesh], entity) => {
-    if (entity.get(HorseRider)?.mounted) {
-      motion.speed = 0;
-      return;
-    }
+    if (entity.get(HorseRider)?.mounted) entity.set(HorseRider, { speed: 0 });
     const trader = leash.trader?.get(TraderPosition);
     if (!trader) {
       stuckCamels.delete(entity);
@@ -274,6 +272,10 @@ export function traderSystem(world: World, dt: number) {
     if (mesh.value) {
       mesh.value.position.copy(position);
       mesh.value.rotation.y = motion.displayYaw;
+    }
+    if (player && playerEntity?.get(PlayerMount)?.vehicle === entity) {
+      player.set(position.x + Math.sin(motion.yaw) * 0.3, position.y + 1.4, position.z + Math.cos(motion.yaw) * 0.3);
+      playerEntity.get(PlayerBody)?.value?.setNextKinematicTranslation(player);
     }
   });
 }
