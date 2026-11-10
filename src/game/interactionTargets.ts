@@ -1,5 +1,5 @@
 import type { Entity, World } from 'koota';
-import { DoubleSide, Mesh, Raycaster, Vector3 } from 'three';
+import { Box3, DoubleSide, Mesh, Raycaster, Vector3 } from 'three';
 import type { Camera, Object3D } from 'three';
 import { getBlockIndex } from './chunks';
 import { raycastVoxel } from './voxel';
@@ -36,18 +36,26 @@ export function findInteractionTarget(world: World, camera: Camera, interaction:
     });
     try {
       const hit = raycaster.intersectObject(mesh, true)[0];
-      if (!hit) return;
-      closest = hit.distance;
-      result = { entity, kind, distance: hit.distance };
+      if (hit) {
+        closest = hit.distance;
+        result = { entity, kind, distance: hit.distance };
+      } else if (kind === 'trader') {
+        const center = new Box3().setFromObject(mesh).getCenter(new Vector3());
+        const offset = center.sub(origin);
+        const forward = offset.dot(direction);
+        if (forward > 0 && forward <= raycaster.far && offset.lengthSq() - forward * forward <= 1.75 ** 2) {
+          const distance = offset.length();
+          closest = distance;
+          result = { entity, kind, distance };
+        }
+      }
     } finally {
       for (const [material, side] of sides) material.side = side;
     }
   }
 
   if (interaction === 'trade') {
-    for (const entity of world.query(Trader, TraderMesh)) {
-      if (!entity.get(Trader)!.villager) inspect(entity, 'trader', entity.get(TraderMesh)!.value, 6);
-    }
+    for (const entity of world.query(Trader, TraderMesh)) inspect(entity, 'trader', entity.get(TraderMesh)!.value, 6);
   } else {
     for (const entity of world.query(Vehicle, VehicleMesh)) inspect(entity, 'vehicle', entity.get(VehicleMesh)!.value, entity.get(Vehicle)?.kind === 'plane' ? 12 : 6);
     for (const entity of world.query(Animal, AnimalMesh)) {

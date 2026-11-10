@@ -10,6 +10,7 @@ import { getFireSources, nearestFire } from '../hazards';
 import { useTradeStore } from '../trading';
 import { useGameStore } from '../store';
 import { tradeCityAt } from '../villages';
+import { updateVillageSleep } from '../villageLife';
 
 const foliage = new Set<BlockKind>([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple]);
 const stuckCamels = new Map<Entity, { x: number; z: number; time: number }>();
@@ -68,6 +69,7 @@ export function traderSystem(world: World, dt: number) {
     const position = entity.get(TraderPosition)!;
     const mesh = entity.get(TraderMesh)!;
     if (mesh.value) mesh.value.visible = trader.following || position.distanceToSquared(player) < 64 * 64;
+    if (updateVillageSleep(world, entity, dt, talkingTo)) continue;
     if (talkingTo === entity) {
       if (trader.walking) entity.set(Trader, { walking: false });
       if (mesh.value) mesh.value.rotation.y = turnToward(mesh.value.rotation.y, Math.atan2(player.x - position.x, player.z - position.z), dt * 4);
@@ -128,7 +130,7 @@ export function traderSystem(world: World, dt: number) {
       if (remaining <= 2.2) {
         entity.set(Trader, { following: false, arrived: true, walking: false, targetX: trader.destinationX, targetZ: trader.destinationZ });
         if (conversation.traderId === entity) useTradeStore.setState({ following: false });
-        useGameStore.getState().setNotice('La caravane est arrivée en ville ! Les habitants et les maisons sont autour de toi.');
+        useGameStore.getState().setNotice('La caravane est arrivée ! Le marchand t’invite au restaurant du village. Parle-lui pour manger.');
         continue;
       }
       trader.detourIn = Math.max(0, trader.detourIn - dt);
@@ -218,6 +220,10 @@ export function traderSystem(world: World, dt: number) {
       return;
     }
     const leader = leash.trader?.get(Trader);
+    if (leader?.sleeping) {
+      motion.speed = 0;
+      return;
+    }
     const heading = leash.trader?.get(TraderMesh)?.value?.rotation.y ?? traderHeading(leader ?? { homeX: trader.x, homeZ: trader.z });
     const gap = 1.65 + leash.order * 1.2;
     const dx = trader.x - Math.sin(heading) * gap - position.x;

@@ -4,10 +4,13 @@ import { changeInventory, inventoryCount } from './inventory';
 import type { SelectedKind } from './items';
 import { selectionInfo } from './items';
 import { useGameStore } from './store';
-import { PlayerMount, PlayerPosition } from './traits';
+import { Player, PlayerBody, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Trader } from './traits';
 import type { World } from 'koota';
 import { BlockKind } from './voxel';
 import { findInteractionTarget } from './interactionTargets';
+import { getWorldSeed, streamChunks } from './chunks';
+import { tradeCityAt, restaurantAt } from './villages';
+import { requestPlay } from './input';
 
 export type TradeOffer = { id: string; cost: SelectedKind; costCount: number; reward: SelectedKind; rewardCount: number };
 
@@ -42,15 +45,24 @@ export const MERCHANT_STORIES = [
   },
 ] as const;
 
+export const VILLAGER_LINES = [
+  'Bonjour ! Nos maisons ont des portes et deux lits. La nuit, nous rentrons dormir.',
+  'Les chemins en terre mènent aux champs de blé, de maïs et de carottes.',
+  'Notre petite église est au nord du village. Elle est intacte et ouverte à tous.',
+  'Le restaurant est à l’est du village. Le marchand offre un repas aux voyageurs.',
+] as const;
+
 type TradeState = {
   open: boolean;
   message: string;
-  view: 'story' | 'offers';
+  view: 'story' | 'offers' | 'village' | 'restaurant';
   story: string;
   traderId: import('koota').Entity | null;
   storyId: number;
   step: number;
   following: boolean;
+  restaurantAvailable: boolean;
+  mealEaten: boolean;
   setOpen: (open: boolean) => void;
   setView: (view: TradeState['view']) => void;
   setMessage: (message: string) => void;
@@ -66,6 +78,8 @@ export const useTradeStore = create<TradeState>((set) => ({
   storyId: 0,
   step: 0,
   following: false,
+  restaurantAvailable: false,
+  mealEaten: false,
   setOpen: (open) => set({ open }),
   setView: (view) => set({ view }),
   setMessage: (message) => set({ message }),
@@ -76,24 +90,79 @@ export function beginTraderStory(traderId: import('koota').Entity) {
   useTradeStore.setState((state) => {
     if (state.traderId === traderId) return {};
     const storyId = Math.abs(Number(traderId)) % MERCHANT_STORIES.length;
-    return { traderId, storyId, step: 0, story: MERCHANT_STORIES[storyId].steps[0], view: 'story', following: false };
+    return { traderId, storyId, step: 0, story: MERCHANT_STORIES[storyId].steps[0], view: 'story', following: false, restaurantAvailable: false, mealEaten: false };
   });
 }
 
 export function openTrader(traderId: import('koota').Entity) {
+  const trader = traderId.get(Trader);
+  const villager = trader?.villager === true;
   const storyId = Math.abs(Number(traderId)) % MERCHANT_STORIES.length;
-  useTradeStore.setState({ open: true, traderId, storyId, step: 0, story: MERCHANT_STORIES[storyId].steps[0], view: 'story', following: false, message: '' });
+  const restaurantAvailable = villager || trader?.arrived === true;
+  useTradeStore.setState({
+    open: true,
+    traderId,
+    storyId,
+    step: 0,
+    story: villager ? VILLAGER_LINES[0] : restaurantAvailable ? 'Nous voilà enfin au village ! Je t’invite à manger au restaurant, à l’est en suivant le chemin de terre.' : MERCHANT_STORIES[storyId].steps[0],
+    view: villager ? 'village' : restaurantAvailable ? 'restaurant' : 'story',
+    following: false,
+    message: '',
+    restaurantAvailable,
+    mealEaten: false,
+  });
 }
 
 export function advanceTraderStory(traderId: import('koota').Entity | null) {
   if (traderId === null) return;
   useTradeStore.setState((state) => {
     if (state.traderId !== traderId || state.following) return {};
+    if (state.view === 'village') {
+      const step = state.step + 1;
+      return { step, storyId: step % VILLAGER_LINES.length, story: VILLAGER_LINES[step % VILLAGER_LINES.length] };
+    }
     const story = MERCHANT_STORIES[state.storyId];
     const step = Math.min(state.step + 1, story.steps.length - 1);
     if (step === state.step) return {};
     return { step, story: story.steps[step], view: 'story' };
   });
+}
+
+export function openRestaurant() {
+  useTradeStore.setState({ view: 'restaurant', story: 'Le marchand t’invite à partager un repas chaud au restaurant du village. Les champs et les habitants sont autour de toi.', message: '' });
+}
+
+export function acceptRestaurantInvitation(world: World) {
+  const playerEntity = world.queryFirst(Player);
+  const player = playerEntity?.get(PlayerPosition);
+  if (!playerEntity || !player) return false;
+  const seed = getWorldSeed(world);
+  const next = restaurantAt(tradeCityAt(seed), seed);
+  for (let index = 0; index < 9; index++) streamChunks(world, next.x, next.z);
+  player.set(next.x, next.y, next.z);
+  playerEntity.get(PlayerBody)?.value?.setTranslation(next, true);
+  playerEntity.get(PlayerVelocity)?.set(0, 0, 0);
+  playerEntity.set(PlayerState, { flying: false, grounded: true });
+  useGameStore.setState({ flying: false });
+  useGameStore.getState().setNotice('Te voilà au restaurant ! Choisis ton repas ici ou ramasse la nourriture sur la table avec E.');
+  useTradeStore.getState().setOpen(false);
+  void requestPlay().then(() => {
+    playerEntity.get(PlayerPosition)?.set(next.x, next.y, next.z);
+    playerEntity.get(PlayerBody)?.value?.setTranslation(next, true);
+    playerEntity.set(PlayerState, { flying: false, grounded: true });
+  });
+  return true;
+}
+
+export function eatRestaurantMeal(world: World) {
+  if (useTradeStore.getState().mealEaten) {
+    useTradeStore.getState().setMessage('Tu as déjà mangé ce repas. La prochaine assiette sera offerte à ta prochaine visite.');
+    return false;
+  }
+  const health = world.queryFirst(PlayerHealth)?.get(PlayerHealth);
+  if (health) health.value = Math.min(health.max, health.value + 4);
+  useTradeStore.setState({ mealEaten: true, message: 'Le repas est délicieux ! Tu as récupéré 4 points de vie. Bon appétit !' });
+  return true;
 }
 
 export function canTrade(offer: TradeOffer) {

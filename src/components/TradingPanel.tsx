@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { advanceTraderStory, canTrade, MERCHANT_STORIES, tradeWithMerchant, TRADE_OFFERS, useTradeStore } from '../game/trading';
+import { acceptRestaurantInvitation, advanceTraderStory, canTrade, eatRestaurantMeal, MERCHANT_STORIES, openRestaurant, tradeWithMerchant, TRADE_OFFERS, useTradeStore } from '../game/trading';
+import { world } from '../game/world';
 import { requestPlay } from '../game/input';
 import { selectionInfo } from '../game/items';
 import { useGameStore } from '../game/store';
@@ -14,8 +15,9 @@ export function TradingPanel() {
   const step = useTradeStore((state) => state.step);
   const traderId = useTradeStore((state) => state.traderId);
   const following = useTradeStore((state) => state.following);
+  const mealEaten = useTradeStore((state) => state.mealEaten);
   useEffect(() => {
-    if (!open || view !== 'story' || following) return;
+    if (!open || (view !== 'story' && view !== 'village') || following) return;
     const next = (event: KeyboardEvent) => {
       if (event.code !== 'KeyE' || event.repeat) return;
       event.preventDefault();
@@ -28,7 +30,7 @@ export function TradingPanel() {
   const itemCounts = useGameStore((state) => state.itemCounts);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   if (!open) return null;
-  const definition = MERCHANT_STORIES[storyId];
+  const definition = MERCHANT_STORIES[storyId] ?? MERCHANT_STORIES[0];
   const lastStep = definition.steps.length - 1;
   const close = () => {
     useTradeStore.getState().setOpen(false);
@@ -47,8 +49,26 @@ export function TradingPanel() {
   return (
     <div className="backpack-backdrop">
       <section className="book-panel backpack-panel trade-panel" aria-label="Discussion avec le marchand">
-        <div className="backpack-header"><h2>Marchand ambulant</h2><button className="secondary-button" onClick={close}>Fermer et reprendre</button></div>
-        {view === 'story' ? (
+        <div className="backpack-header"><h2>{view === 'village' ? 'Habitant du village' : view === 'restaurant' ? 'Restaurant du village' : 'Marchand ambulant'}</h2><button className="secondary-button" onClick={close}>Fermer et reprendre</button></div>
+        {view === 'village' ? (
+          <div className="trade-story" role="status">
+            <p>{story}</p>
+            <div className="trade-story-actions">
+              <button className="primary-button" aria-keyshortcuts="E" onClick={() => advanceTraderStory(traderId)}>Parler encore (E)</button>
+              <button className="secondary-button" onClick={openRestaurant}>L’invitation au restaurant</button>
+            </div>
+          </div>
+        ) : view === 'restaurant' ? (
+          <div className="trade-story" role="status">
+            <p>{story}</p>
+            <p>Au menu : pain, maïs et fromage. Le marchand offre le repas aux voyageurs.</p>
+            <div className="trade-story-actions">
+              <button className="primary-button" onClick={() => acceptRestaurantInvitation(world)}>Aller au restaurant</button>
+              <button className="secondary-button" disabled={mealEaten} onClick={() => eatRestaurantMeal(world)}>Manger le repas · +4 vie</button>
+            </div>
+            {message && <p className="trade-message">{message}</p>}
+          </div>
+        ) : view === 'story' ? (
           <div className="trade-story" role="status">
             <p><strong>{definition.title}</strong> · Récit {step + 1} / {definition.steps.length}</p>
             <p>{following ? definition.companion : story}</p>
