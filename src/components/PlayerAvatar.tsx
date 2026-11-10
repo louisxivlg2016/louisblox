@@ -88,14 +88,8 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   const limbs = armor ?? (outfit === 'default' ? body : appearance.skinColor);
   const legs = armor ?? appearance.clothingColor ?? (outfit === 'default' ? '#38363b' : OUTFITS[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
-  const classicDetails = outfit === 'default' && !armor && (
-    <group>
-      {girl ? <PixelPart position={[0, 1.14, -0.18]} size={[0.21, 0.58, 0.035]} color="#e0e1e5" /> : <>
-        <PixelPart position={[0, 1.05, -0.185]} size={[0.24, 0.52, 0.03]} color="#42494a" />
-        <PixelPart position={[0, 1.15, -0.205]} size={[0.1, 0.66, 0.035]} color="#76553b" rotation={[0, 0, -0.42]} />
-      </>}
-      <PixelPart position={[0, 0.81, 0]} size={[0.58, 0.11, 0.36]} color="#60452f" />
-    </group>
+  const classicDetails = outfit === 'default' && !armor && !girl && (
+    <PixelPart position={[0, 1.15, -0.205]} size={[0.1, 0.66, 0.035]} color="#76553b" rotation={[0, 0, -0.42]} />
   );
   const headContent = (
     <>
