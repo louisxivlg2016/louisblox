@@ -1,7 +1,11 @@
 export const VEHICLE_KINDS = ['car', 'plane', 'train', 'boat', 'jeep', 'police', 'firetruck', 'carriage', 'cannon'] as const;
 export type VehicleKind = (typeof VEHICLE_KINDS)[number];
-export type MountKind = VehicleKind | 'horse';
+export type MountKind = VehicleKind | 'horse' | 'camel';
 export type SeatRole = 'driver' | 'passenger';
+
+export function isAnimalMount(kind: unknown): kind is 'horse' | 'camel' {
+  return kind === 'horse' || kind === 'camel';
+}
 
 export function isVehicleKind(value: unknown): value is VehicleKind {
   return typeof value === 'string' && (VEHICLE_KINDS as readonly string[]).includes(value);
@@ -24,7 +28,7 @@ export const CABINS: Partial<Record<VehicleKind, CabinDefinition>> = {
 };
 
 export function canWalkInVehicle(kind: MountKind | null, role: SeatRole) {
-  return role === 'passenger' && kind !== null && kind !== 'horse' && CABINS[kind] !== undefined;
+  return role === 'passenger' && kind !== null && !isAnimalMount(kind) && CABINS[kind] !== undefined;
 }
 
 export function vehicleViewDistance(kind: VehicleKind) {

@@ -10,7 +10,7 @@ import { EXTRA_BLOCKS, isCrop, isRail } from './extraBlocks';
 import { turnToward } from './rotation';
 import { isCollidable } from './systems/collisionSystem';
 import { syncVehicleMotion, syncVehicleSpawn } from './vehicleSync';
-import { CABINS, canWalkInVehicle } from './vehicleTypes';
+import { CABINS, canWalkInVehicle, isAnimalMount } from './vehicleTypes';
 import { stopSirens } from './vehicleControls';
 import { findInteractionTarget } from './interactionTargets';
 import type { Camera } from 'three';
@@ -109,7 +109,7 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
   const player = world.queryFirst(Player);
   const mount = player?.get(PlayerMount);
   if (!player || !mount || mount.vehicle) return false;
-  if (kind !== 'horse') {
+  if (!isAnimalMount(kind)) {
     const motion = vehicle.get(VehicleMotion);
     if (!motion) return false;
     if (role === 'driver' && motion.mounted) {
@@ -122,10 +122,11 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
     }
   } else {
     const rider = vehicle.get(HorseRider);
-    if (!rider?.saddled || rider.mounted) return false;
-    vehicle.set(HorseRider, { mounted: true, speed: 0 });
+    if ((kind === 'horse' && !rider?.saddled) || rider?.mounted) return false;
+    if (rider) vehicle.set(HorseRider, { mounted: true, speed: 0 });
+    else vehicle.add(HorseRider({ mounted: true }));
   }
-  const walkable = kind !== 'horse' && canWalkInVehicle(kind, role);
+  const walkable = !isAnimalMount(kind) && canWalkInVehicle(kind, role);
   player.get(PlayerCollider)?.value?.setEnabled(walkable);
   mount.vehicle = vehicle;
   mount.kind = kind;
@@ -136,7 +137,8 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
   useGameStore.getState().setRiding(kind, role);
   useGameStore.getState().setNotice(
     kind === 'horse' ? 'Cheval sellé · E : descendre'
-      : walkable ? 'Passager · WASD / flèches : marcher dans le véhicule · E : descendre · Le véhicule reste arrêté sans conducteur.'
+      : kind === 'camel' ? 'Chameau du marchand · WASD / flèches : le guider · E : descendre'
+        : walkable ? 'Passager · WASD / flèches : marcher dans le véhicule · E : descendre · Le véhicule reste arrêté sans conducteur.'
         : role === 'passenger' ? 'Passager · E : descendre · Le véhicule reste arrêté sans conducteur.'
           : kind === 'plane' ? 'WASD : piloter · Espace/C : monter/descendre · E : sortir'
             : kind === 'cannon' ? 'Clic gauche : tirer · Caméra : viser · E : descendre'
@@ -155,12 +157,12 @@ export function dismount(world: World) {
   stopSirens();
   player.get(PlayerCollider)?.value?.setEnabled(true);
   const vehicle = mount.vehicle;
-  const vehiclePosition = mount.kind === 'horse' ? vehicle.get(AnimalPosition) : vehicle.get(VehiclePosition);
+  const vehiclePosition = isAnimalMount(mount.kind) ? vehicle.get(AnimalPosition) : vehicle.get(VehiclePosition);
   if (vehiclePosition) {
     for (let index = 0; index < 9; index++) streamChunks(world, vehiclePosition.x, vehiclePosition.z);
-    const yaw = mount.kind === 'horse' ? vehicle.get(AnimalMotion)?.yaw ?? 0 : vehicle.get(VehicleMotion)?.yaw ?? 0;
-    const cabin = mount.kind && mount.kind !== 'horse' ? CABINS[mount.kind] : undefined;
-    const offsets: Array<[number, number]> = cabin ? [[cabin.entrance[0], cabin.entrance[2]], [-cabin.entrance[0], cabin.entrance[2]]] : mount.kind === 'horse' ? [[1.6, 0], [-1.6, 0], [0, -1.6], [0, 1.6]] : [[2, 0], [-2, 0], [0, -3.6], [0, 3.6]];
+    const yaw = isAnimalMount(mount.kind) ? vehicle.get(AnimalMotion)?.yaw ?? 0 : vehicle.get(VehicleMotion)?.yaw ?? 0;
+    const cabin = mount.kind && !isAnimalMount(mount.kind) ? CABINS[mount.kind] : undefined;
+    const offsets: Array<[number, number]> = cabin ? [[cabin.entrance[0], cabin.entrance[2]], [-cabin.entrance[0], cabin.entrance[2]]] : isAnimalMount(mount.kind) ? [[1.6, 0], [-1.6, 0], [0, -1.6], [0, 1.6]] : [[2, 0], [-2, 0], [0, -3.6], [0, 3.6]];
     const blocks = getBlockIndex(world);
     let exit: { x: number; y: number; z: number } | null = null;
     for (const [side, forward] of offsets) {
@@ -177,7 +179,7 @@ export function dismount(world: World) {
     else position.set(vehiclePosition.x + 1.6, landingGroundAt(world, vehiclePosition.x + 1.6, vehiclePosition.z, vehiclePosition.y + 2) + 0.02, vehiclePosition.z);
     body?.setTranslation(position, true);
   }
-  if (mount.kind === 'horse') {
+  if (isAnimalMount(mount.kind)) {
     const motion = vehicle.get(AnimalMotion);
     if (motion) vehicle.set(AnimalMotion, { yaw: motion.displayYaw });
     vehicle.set(HorseRider, { mounted: false, speed: 0 });
@@ -204,13 +206,13 @@ export function vehicleInteractionSystem(world: World, camera: Camera, interact:
   if (mount.vehicle) return dismount(world);
   const target = findInteractionTarget(world, camera, 'mount');
   if (!target) return false;
-  if (target.kind === 'horse') {
-    if (!target.entity.get(HorseRider)?.saddled) {
+  if (isAnimalMount(target.kind)) {
+    if (target.kind === 'horse' && !target.entity.get(HorseRider)?.saddled) {
       if (useGameStore.getState().selected === 'saddle') return false;
       useGameStore.getState().setNotice('Choisis la selle dans le sac, vise le cheval puis appuie sur E.');
       return true;
     }
-    return mountEntity(world, target.entity, 'horse');
+    return mountEntity(world, target.entity, target.kind);
   }
   const vehicle = target.entity.get(Vehicle)!;
   useGameStore.getState().setSeatChoice({ vehicle: target.entity, kind: vehicle.kind });
@@ -323,9 +325,9 @@ export function vehicleMovementSystem(world: World, dt: number) {
   });
 
   world.query(Animal, AnimalPosition, AnimalMotion, AnimalMesh, HorseRider).updateEach(([animal, position, motion, mesh, rider], entity) => {
-    const active = animal.kind === 'horse' && mount?.vehicle === entity && mount.kind === 'horse' && state;
+    const active = isAnimalMount(animal.kind) && mount?.vehicle === entity && mount.kind === animal.kind && state;
     if (!active) return;
-    const target = input.forward * (input.forward < 0 ? 2.2 : 6.2);
+    const target = input.forward * (input.forward < 0 ? 2.2 : animal.kind === 'camel' ? 4.8 : 6.2);
     rider.speed += Math.max(-10 * dt, Math.min(10 * dt, target - rider.speed));
     motion.yaw = state.yaw;
     if (input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(rider.speed || 1);

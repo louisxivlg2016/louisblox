@@ -29,6 +29,7 @@ import { clearTeleportRequests, receiveTeleportRequest, receiveTeleportResponse,
 import { dismount } from '../game/vehicles';
 import { applyVehicleRemoval, applyVehicleSnapshot, isVehicleSnapshot, onVehicleSync } from '../game/vehicleSync';
 import type { VehicleSnapshot } from '../game/vehicleSync';
+import { isAnimalMount } from '../game/vehicleTypes';
 import { isOutfitKind, isWigSelection, OUTFITS, selectedWig } from '../game/outfits';
 import type { OutfitKind, WigSelection } from '../game/outfits';
 import { CharacterOutfit } from './CharacterOutfit';
@@ -127,7 +128,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
     const hiddenOccupant = useGameStore.getState().cameraMode === 'first' && mount?.kind === 'car' && vehicleId !== undefined && state.vehicleId === vehicleId;
     group.current.visible = !state.effects?.includes('invisibility') && !hiddenOccupant;
     const amount = 1 - Math.exp(-delta * 14);
-    const seatedHeight = state.mounted && state.vehicleKind !== 'horse' ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
+    const seatedHeight = state.mounted && !isAnimalMount(state.vehicleKind) ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
     const lyingHeight = !state.mounted && state.emote === 'lie' ? 0.18 : 0;
     target.set(state.x, state.y + (state.flying ? 1 : 0) + lyingHeight - seatedHeight, state.z);
     group.current.position.lerp(target, amount);
@@ -715,7 +716,7 @@ export function MultiplayerConnection() {
       const playerState = entity?.get(PlayerState);
       const velocity = entity?.get(PlayerVelocity);
       const mounted = entity?.get(PlayerMount)?.vehicle;
-      const horse = entity?.get(PlayerMount)?.kind === 'horse' && mounted
+      const horse = isAnimalMount(entity?.get(PlayerMount)?.kind) && mounted
         ? { id: mounted.get(AnimalId)!, ...mounted.get(AnimalPosition)!, yaw: mounted.get(AnimalMotion)?.yaw ?? 0 }
         : undefined;
       if (!position || !playerState) return;

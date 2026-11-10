@@ -50,16 +50,17 @@ function RemoteHorseSync() {
       let entity = horses.find((candidate) => candidate.get(AnimalId) === snapshot.id);
       if (entity === localMount) continue;
       if (!entity) {
-        entity = spawnAnimal(world, 'horse', snapshot.x, snapshot.y, snapshot.z, 0);
+        entity = spawnAnimal(world, state.vehicleKind === 'camel' ? 'camel' : 'horse', snapshot.x, snapshot.y, snapshot.z, 0);
         entity.set(AnimalId, snapshot.id);
         horses.push(entity);
       }
       current.add(entity);
       const rider = entity.get(HorseRider);
       if (rider) {
-        if (!rider.saddled || !rider.mounted) entity.set(HorseRider, { saddled: true, mounted: true });
+        if (!rider.mounted) entity.set(HorseRider, { mounted: true, speed: 0 });
+        if (state.vehicleKind === 'horse' && !rider.saddled) entity.set(HorseRider, { saddled: true });
       } else {
-        entity.add(HorseRider({ saddled: true, mounted: true }));
+        entity.add(HorseRider({ saddled: state.vehicleKind === 'horse', mounted: true }));
       }
       const position = entity.get(AnimalPosition)!;
       position.set(snapshot.x, snapshot.y, snapshot.z);

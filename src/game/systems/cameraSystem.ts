@@ -6,7 +6,7 @@ import { useEmoteStore } from '../emotes';
 import { turnToward } from '../rotation';
 import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 import { useMazeStore } from '../mazeClient';
-import { canWalkInVehicle, vehicleViewDistance } from '../vehicleTypes';
+import { canWalkInVehicle, isAnimalMount, vehicleViewDistance } from '../vehicleTypes';
 import { VehiclePosition } from '../traits';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
@@ -40,7 +40,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const flightAmount = flightBlend * flightBlend * (3 - 2 * flightBlend);
   const mountKind = entity.get(PlayerMount)?.kind;
   const emote = useEmoteStore.getState().current;
-  const seatedHeight = mounted && mountKind !== 'horse' ? mountKind === 'car' ? -0.9 : -0.7 : 0;
+  const seatedHeight = mounted && !isAnimalMount(mountKind) ? mountKind === 'car' ? -0.9 : -0.7 : 0;
   const lyingHeight = !mounted && !sleep && emote === 'lie' ? 0.18 : 0;
   if (avatar) {
     avatar.rotation.x = sleep ? amount * Math.PI / 2 : !mounted && emote === 'lie' ? -Math.PI / 2 : -flightAmount * Math.PI / 2;
@@ -64,7 +64,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const cameraMode = useGameStore.getState().cameraMode;
   const walkingCabin = Boolean(mount?.kind && canWalkInVehicle(mount.kind, mount.role));
   const center = mount?.vehicle?.get(VehiclePosition) ?? position;
-  const distance = mount?.kind && mount.kind !== 'horse' ? vehicleViewDistance(mount.kind) : 6;
+  const distance = mount?.kind && !isAnimalMount(mount.kind) ? vehicleViewDistance(mount.kind) : 6;
   const exteriorPlane = mount?.kind === 'plane' && cameraMode !== 'first';
   const height = exteriorPlane ? 22 : Math.max(0.6, Math.min(5.5, 2.4 - Math.sin(state.pitch) * 3));
   const targetHeight = exteriorPlane ? 14 : 1.3;
@@ -84,7 +84,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
       camera.position.x -= Math.sin(state.yaw) * 0.65;
       camera.position.z -= Math.cos(state.yaw) * 0.65;
     } else if (mount?.kind === 'plane') camera.position.y += 1;
-    else camera.position.y += mount?.vehicle && mount.kind !== 'horse' ? mount.kind === 'car' ? 0.65 : 0.55 : 1.62;
+    else camera.position.y += mount?.vehicle && !isAnimalMount(mount.kind) ? mount.kind === 'car' ? 0.65 : 0.55 : 1.62;
     rotation.set(state.pitch, state.yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(rotation);
   }

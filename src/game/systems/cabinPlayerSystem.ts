@@ -2,7 +2,7 @@ import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
 import { getTouchMovement, isDown } from '../input';
 import { PlayerBody, PlayerCollider, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, VehicleMotion } from '../traits';
-import { CABINS, canWalkInVehicle } from '../vehicleTypes';
+import { CABINS, canWalkInVehicle, isAnimalMount } from '../vehicleTypes';
 import { seatOffset, vehicleLocalPosition } from '../vehicles';
 import { moveVoxelCharacter } from './collisionSystem';
 import type { Voxel } from '../voxel';
@@ -14,7 +14,7 @@ export function moveCabinPlayer(world: World, entity: Entity, dt: number, yaw: n
   const vehicle = mount?.vehicle;
   const kind = mount?.kind;
   const role = mount?.role ?? 'driver';
-  if (!mount || !vehicle || !kind || kind === 'horse' || !canWalkInVehicle(kind, role)) return false;
+  if (!mount || !vehicle || !kind || isAnimalMount(kind) || !canWalkInVehicle(kind, role)) return false;
   const cabin = CABINS[kind]!;
   const position = entity.get(PlayerPosition);
   const state = entity.get(PlayerState);

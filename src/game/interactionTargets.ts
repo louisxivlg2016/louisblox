@@ -5,7 +5,7 @@ import { getBlockIndex } from './chunks';
 import { raycastVoxel } from './voxel';
 import { Animal, AnimalMesh, Player, PlayerPosition, Trader, TraderMesh, Vehicle, VehicleMesh } from './traits';
 
-export type InteractionTarget = { entity: Entity; kind: 'trader' | 'vehicle' | 'horse'; distance: number };
+export type InteractionTarget = { entity: Entity; kind: 'trader' | 'vehicle' | 'horse' | 'camel'; distance: number };
 
 export function findInteractionTarget(world: World, camera: Camera, interaction: 'trade' | 'mount'): InteractionTarget | null {
   const position = world.queryFirst(Player)?.get(PlayerPosition);
@@ -51,7 +51,8 @@ export function findInteractionTarget(world: World, camera: Camera, interaction:
   } else {
     for (const entity of world.query(Vehicle, VehicleMesh)) inspect(entity, 'vehicle', entity.get(VehicleMesh)!.value, entity.get(Vehicle)?.kind === 'plane' ? 12 : 6);
     for (const entity of world.query(Animal, AnimalMesh)) {
-      if (entity.get(Animal)!.kind === 'horse') inspect(entity, 'horse', entity.get(AnimalMesh)!.value, 6);
+      const kind = entity.get(Animal)!.kind;
+      if (kind === 'horse' || kind === 'camel') inspect(entity, kind, entity.get(AnimalMesh)!.value, 6);
     }
   }
   return result;

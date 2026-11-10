@@ -4,7 +4,7 @@ import type { Appearance, PlayerDirectory } from './directory';
 import { PirateEngine } from './pirates';
 import { FootballEngine } from './football';
 import { MazeEngine } from './maze';
-import { isVehicleKind } from '../src/game/vehicleTypes';
+import { isAnimalMount, isVehicleKind } from '../src/game/vehicleTypes';
 import type { MountKind, VehicleKind } from '../src/game/vehicleTypes';
 export { PlayerDirectory } from './directory';
 
@@ -150,9 +150,9 @@ function parseState(value: unknown): PlayerState | null {
     moving: state.moving === true,
     airborne: state.airborne === true,
     mounted: state.mounted === true,
-    vehicleKind: isVehicleKind(state.vehicleKind) || state.vehicleKind === 'horse' ? state.vehicleKind : undefined,
+    vehicleKind: isVehicleKind(state.vehicleKind) || isAnimalMount(state.vehicleKind) ? state.vehicleKind : undefined,
     vehicleId: isVehicleKind(state.vehicleKind) && typeof state.vehicleId === 'string' && state.vehicleId.length > 0 && state.vehicleId.length <= 80 ? state.vehicleId : undefined,
-    horse: state.vehicleKind === 'horse' ? parseHorse(state.horse) : undefined,
+    horse: isAnimalMount(state.vehicleKind) ? parseHorse(state.horse) : undefined,
     emote: state.emote === 'sit' || state.emote === 'lie' || state.emote === 'wave' ? state.emote : null,
     selected: typeof state.selected === 'string' && state.selected.length > 0 && state.selected.length <= 96
       ? state.selected

@@ -5,7 +5,7 @@ import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import { isCollidable } from './collisionSystem';
-import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, Player, PlayerPosition, Trader, TraderMesh, TraderPosition } from '../traits';
+import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerPosition, Trader, TraderMesh, TraderPosition } from '../traits';
 import { getFireSources, nearestFire } from '../hazards';
 import { useTradeStore } from '../trading';
 import { useGameStore } from '../store';
@@ -204,6 +204,10 @@ export function traderSystem(world: World, dt: number) {
   }
 
   world.query(CamelLeash, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([leash, position, motion, mesh], entity) => {
+    if (entity.get(HorseRider)?.mounted) {
+      motion.speed = 0;
+      return;
+    }
     const trader = leash.trader?.get(TraderPosition);
     if (!trader) {
       stuckCamels.delete(entity);

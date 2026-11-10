@@ -17,7 +17,7 @@ import { hasEffect, jumpMultiplier, movementMultiplier } from '../effects';
 import { isPirateEliminated } from '../piratesClient';
 import { footballBounds, isFootballFrozen } from '../footballClient';
 import { isMazeFrozen, mazeBounds } from '../mazeClient';
-import { canWalkInVehicle } from '../vehicleTypes';
+import { canWalkInVehicle, isAnimalMount } from '../vehicleTypes';
 import { moveCabinPlayer } from './cabinPlayerSystem';
 
 const GRAVITY = 24;
@@ -83,10 +83,10 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
       updateHud(world, position, health, false, dt);
       return;
     }
-    if (mount.kind === 'horse') {
+    if (isAnimalMount(mount.kind)) {
       const vehiclePosition = mount.vehicle.get(AnimalPosition);
       const vehicleYaw = mount.vehicle.get(AnimalMotion)?.yaw ?? state.yaw;
-      if (vehiclePosition) position.set(vehiclePosition.x + Math.sin(vehicleYaw) * 0.3, vehiclePosition.y + 1, vehiclePosition.z + Math.cos(vehicleYaw) * 0.3);
+      if (vehiclePosition) position.set(vehiclePosition.x + Math.sin(vehicleYaw) * 0.3, vehiclePosition.y + (mount.kind === 'camel' ? 1.4 : 1), vehiclePosition.z + Math.cos(vehicleYaw) * 0.3);
     } else if (mount.kind) {
       position.copy(vehicleSeatPosition(mount.vehicle, mount.kind, mount.role, mount.seat));
     }
