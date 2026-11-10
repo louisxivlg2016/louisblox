@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box3, FrontSide, NearestFilter, Vector3 } from 'three';
-import type { Group } from 'three';
+import type { Group, Mesh } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BlockKind } from '../game/voxel';
 import stopUrl from '../../assets/models/traffic-sign-stop.glb';
@@ -31,6 +31,38 @@ const models: Partial<Record<BlockKind, string>> = {
   [BlockKind.PrioritySign]: priorityUrl,
 };
 
+function resizeSign(mesh: Mesh) {
+  const geometry = mesh.geometry.clone();
+  mesh.geometry = geometry;
+  geometry.computeBoundingBox();
+  const bounds = geometry.boundingBox!;
+  const positions = geometry.getAttribute('position');
+  const centerX = (bounds.min.x + bounds.max.x) / 2;
+  const boardHalfWidth = Math.max(Math.abs(bounds.min.x - centerX), Math.abs(bounds.max.x - centerX)) * 0.45;
+  const height = bounds.max.z - bounds.min.z;
+  const searchLimit = bounds.min.z + height * 0.65;
+  let split = bounds.min.z + height * 0.55;
+  for (let i = 0; i < positions.count; i++) {
+    const z = positions.getZ(i);
+    if (z <= searchLimit && Math.abs(positions.getX(i) - centerX) >= boardHalfWidth) split = Math.max(split, z);
+  }
+  const centerZ = (bounds.min.z + split) / 2;
+  const resizedSplit = centerZ + (split - centerZ) * 0.75;
+  for (let i = 0; i < positions.count; i++) {
+    const z = positions.getZ(i);
+    if (z <= split) {
+      positions.setX(i, centerX + (positions.getX(i) - centerX) * 0.75);
+      positions.setZ(i, centerZ + (z - centerZ) * 0.75);
+    } else {
+      positions.setZ(i, resizedSplit + (z - split) * 1.5);
+    }
+  }
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+}
+
 export function TrafficSignModel({ kind, held = false, wallMounted = false }: { kind: BlockKind; held?: boolean; wallMounted?: boolean }) {
   const [scene, setScene] = useState<Group | null>(null);
   useEffect(() => {
@@ -46,7 +78,8 @@ export function TrafficSignModel({ kind, held = false, wallMounted = false }: { 
     clone.rotation.y = held || wallMounted ? 0 : Math.PI;
     clone.traverse((object) => {
       if (object.type !== 'Mesh') return;
-      const mesh = object as import('three').Mesh;
+      const mesh = object as Mesh;
+      resizeSign(mesh);
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       for (const material of materials) {
         material.side = FrontSide;
