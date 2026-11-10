@@ -1,4 +1,4 @@
-import { requestPlay } from '../game/input';
+import { releasePointerForOverlay, requestPlay } from '../game/input';
 import { useGameStore } from '../game/store';
 import { useBombLauncherStore } from '../game/weaponAmmo';
 import { selectionInfo } from '../game/items';
@@ -84,9 +84,9 @@ export function Hud() {
     if (document.pointerLockElement) document.exitPointerLock();
   };
   const openTribe = () => {
+    releasePointerForOverlay();
     useTribeStore.getState().setPanelOpen(true);
     useGameStore.getState().setMode('pause');
-    if (document.pointerLockElement) document.exitPointerLock();
   };
   return (
     <div className="hud">

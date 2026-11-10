@@ -25,6 +25,11 @@ export function PiratesHud() {
     if (document.pointerLockElement) document.exitPointerLock();
     useGameStore.getState().setMode('pause');
   }, [gameplayMode, enabled, status, team, mode, ready]);
+  useEffect(() => {
+    if (gameplayMode !== 'pirates' || mode !== 'play' || !winner) return;
+    setShopOpen(false);
+    releasePointerForOverlay();
+  }, [gameplayMode, mode, winner]);
   if (gameplayMode !== 'pirates' || !enabled) return null;
   const selectTeam = (next: 'red' | 'blue' | 'auto') => {
     if (!chooseBattleTeam(next)) return;

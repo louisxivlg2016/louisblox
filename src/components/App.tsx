@@ -8,6 +8,7 @@ import { MultiplayerConnection } from './Multiplayer';
 import { useMultiplayerStore, useRemotePlayerStore } from '../game/multiplayerStore';
 import { isDown, isMouseDown } from '../game/input';
 import { useBattleStore } from '../game/battle';
+import { usePirateStore } from '../game/piratesClient';
 import { useProtectionStore } from '../game/protection';
 import { useCharacterStore } from '../game/characterStore';
 import * as audio from '../game/audio';
@@ -17,8 +18,9 @@ import { buildChunkGeometry } from '../game/chunkGeometry';
 
 export function App() {
   const mode = useGameStore((state) => state.mode);
+  const pirateWinner = usePirateStore((state) => state.winner);
   return (
-    <main className={`game-shell ${mode === 'play' ? 'playing' : ''}`}>
+    <main className={`game-shell ${mode === 'play' && !pirateWinner ? 'playing' : ''}`}>
       <WorldProvider world={world}>
         <MultiplayerConnection />
         <Canvas
