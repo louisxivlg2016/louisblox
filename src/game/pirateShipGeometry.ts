@@ -58,7 +58,6 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
   for (const side of [-1, 1]) {
     for (const z of [-5, 5]) put(center + side, 5, z, BlockKind.OakPlanks);
     for (const z of [-6, 0, 6]) {
-      put(center + side * 5, 10, z, BlockKind.Furnace, side === -1 ? 'west' : 'east');
       put(center + side * 6, 10, z, BlockKind.ConcreteBlack);
     }
     put(center + side * 3, 13, 11, BlockKind.Candle);

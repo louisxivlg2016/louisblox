@@ -5,7 +5,7 @@ import { useEffectStore } from './effects';
 import { CHUNK_SIZE, MAX_BUILD_Y, MIN_WORLD_Y, VIEW_DISTANCE, biomeAt, generateChunk, safeSpawnAt } from './levels';
 import type { LevelData } from './levels';
 import { battleSpawn, generateBattleChunk } from './battleArena';
-import { generatePirateChunk, pirateSpawn } from './pirates';
+import { generatePirateChunk, pirateSpawn, spawnPirateCannons } from './pirates';
 import { footballSpawn, generateFootballChunk } from './footballArena';
 import { generateMazeChunk, mazeSpawn } from './maze';
 import type { GameplayMode } from './worldMode';
@@ -727,6 +727,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
       VehicleHealth(),
     );
   }
+  if (gameplayMode === 'pirates') spawnPirateCannons(world);
   streamChunks(world, spawn.x, spawn.z);
   return { spawn };
 }

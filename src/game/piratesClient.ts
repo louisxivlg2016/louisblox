@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { PIRATE_KITS, PIRATE_OBJECTIVES, teamObjective } from './pirates';
+import { PIRATE_KITS, PIRATE_LOADOUT, PIRATE_OBJECTIVES, teamObjective } from './pirates';
 import type { PirateKit } from './pirates';
 import { useBattleStore, respawnAtBase } from './battle';
 import { useGameStore } from './store';
@@ -35,14 +35,13 @@ function send(message: unknown) {
   if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
 }
 
-export function choosePirateKit(kit: PirateKit) {
+export function choosePirateKit(_kit?: PirateKit) {
   const team = useBattleStore.getState().team;
-  if (!team || !socket || socket.readyState !== WebSocket.OPEN) return false;
-  const loadout = PIRATE_KITS[kit].hotbar;
-  usePirateStore.setState({ kit });
+  if (!team) return false;
+  const loadout = PIRATE_LOADOUT;
+  usePirateStore.setState({ kit: null });
   useGameStore.setState({ hotbarSlots: [...loadout], selected: loadout[0] });
-  kitRequestPending = true;
-  send({ type: 'pirates-kit', kit });
+  kitRequestPending = false;
   respawnAtBase(world, team);
   useGameStore.getState().setMode('play');
   return true;
@@ -85,7 +84,7 @@ export function receivePirateState(value: unknown) {
   const kit = localId ? kits[localId] ?? (kitRequestPending ? previousKit : null) : null;
   if (localId && kit) kitRequestPending = false;
   if (!previousKit && kit) {
-    const loadout = PIRATE_KITS[kit].hotbar;
+    const loadout = PIRATE_LOADOUT;
     useGameStore.setState({ hotbarSlots: [...loadout], selected: loadout[0] });
   }
   usePirateStore.setState({ kits, coins, objectives, eliminated, winner, prices, kit });
