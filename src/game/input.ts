@@ -7,6 +7,7 @@ import { isPaintballGun } from './paintball';
 import { useTradeStore } from './trading';
 import { useHomeStore } from './homes';
 import { useMultiplayerStore } from './multiplayerStore';
+import { isMultiplayerOnlyMode } from './worldMode';
 import { toggleSiren } from './vehicleControls';
 
 const keys = new Set<string>();
@@ -418,7 +419,9 @@ export function releasePointerForOverlay() {
 
 export async function requestPlay() {
   const multiplayer = useMultiplayerStore.getState();
-  if (multiplayer.enabled && multiplayer.joined && !multiplayer.worldReady && useGameStore.getState().mode !== 'play') return;
+  const game = useGameStore.getState();
+  if (isMultiplayerOnlyMode(game.gameplayMode) && (!multiplayer.enabled || multiplayer.status !== 'online' || !multiplayer.worldReady)) return;
+  if (multiplayer.enabled && multiplayer.joined && !multiplayer.worldReady && game.mode !== 'play') return;
   let canvas = document.querySelector<HTMLCanvasElement>('#game-canvas canvas, canvas#game-canvas');
   if (!canvas) {
     await new Promise<void>((resolve) => { requestAnimationFrame(() => resolve()); });

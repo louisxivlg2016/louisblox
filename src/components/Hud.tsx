@@ -28,7 +28,6 @@ import { EmotePanel } from './EmotePanel';
 import { useEmoteStore } from '../game/emotes';
 import { EffectsHud } from './EffectsHud';
 import { PiratesHud } from './PiratesHud';
-import { usePirateStore } from '../game/piratesClient';
 import { FootballHud } from './FootballHud';
 import { MazeHud } from './MazeHud';
 import { FriendRequestDialog } from './FriendRequestDialog';
@@ -63,8 +62,7 @@ export function Hud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   const battleTeam = useBattleStore((state) => state.team);
   const multiplayerReady = useMultiplayerStore((state) => state.enabled && state.status === 'online');
-  const pirateKit = usePirateStore((state) => state.kit);
-  const teamSelection = mode === 'pause' && multiplayerReady && ((gameplayMode === 'battle' && battleTeam === null) || (gameplayMode === 'pirates' && (battleTeam === null || pirateKit === null)) || (gameplayMode === 'football' && battleTeam === null));
+  const teamSelection = mode === 'pause' && multiplayerReady && ((gameplayMode === 'battle' && battleTeam === null) || (gameplayMode === 'pirates' && battleTeam === null) || (gameplayMode === 'football' && battleTeam === null));
   const sleepProgress = useGameStore((state) => state.sleepProgress);
   const teleportRequestOpen = useTeleportRequestStore((state) => state.incoming !== null);
   const selectBlock = useGameStore((state) => state.selectBlock);

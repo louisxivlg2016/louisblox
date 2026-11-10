@@ -6,7 +6,7 @@ import { useMultiplayerStore } from '../game/multiplayerStore';
 import { downloadWorldBackup, importWorldBackup } from '../game/worldBackup';
 import { removeWorld } from '../game/deleteWorld';
 
-import { GAMEPLAY_MODE_LABELS } from '../game/worldMode';
+import { GAMEPLAY_MODE_LABELS, isMultiplayerOnlyMode } from '../game/worldMode';
 
 const MODE_NAMES = GAMEPLAY_MODE_LABELS;
 
@@ -33,6 +33,11 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
   }, [pending, status, worldReady, onPlay]);
 
   const open = (world: WorldMeta) => {
+    if (!enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative')) {
+      setMessage('Les modes Pirates et Football nécessitent le multijoueur. Choisis « Jouer en multijoueur » pour ouvrir cette sauvegarde.');
+      return;
+    }
+    setMessage('');
     openWorld(world.id, world.name);
     if (enabled) {
       configure({ playerName, room: world.id, server });

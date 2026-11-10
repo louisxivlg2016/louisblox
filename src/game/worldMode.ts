@@ -3,6 +3,7 @@ export type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern';
 
 export const isCityMode = (mode: GameplayMode) => mode === 'city-ancient' || mode === 'city-modern';
 export const isMinigameMode = (mode: GameplayMode) => mode === 'battle' || mode === 'pirates' || mode === 'football' || mode === 'maze';
+export const isMultiplayerOnlyMode = (mode: GameplayMode) => mode === 'pirates' || mode === 'football';
 export const hasTeamCombat = (mode: GameplayMode) => mode === 'battle' || mode === 'pirates';
 export const CITY_LIMIT = 5000;
 

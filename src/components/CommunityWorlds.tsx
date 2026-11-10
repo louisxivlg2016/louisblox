@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { listPublicWorlds } from '../game/publicWorlds';
 import type { PublicWorld } from '../game/publicWorlds';
-import { GAMEPLAY_MODE_LABELS } from '../game/worldMode';
+import { GAMEPLAY_MODE_LABELS, isMultiplayerOnlyMode } from '../game/worldMode';
 import type { GameplayMode } from '../game/worldMode';
 import { playerIdentity } from '../game/playerIdentity';
 import { canCreateWorld, listWorlds, MAX_WORLDS } from '../game/save';
@@ -46,6 +46,11 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
   useEffect(() => setLocalWorlds(listWorlds()), [worldId]);
 
   const openLocal = (world: WorldMeta) => {
+    if (!enabled && isMultiplayerOnlyMode(world.gameplayMode ?? selectedMode)) {
+      setDeleteError('Les modes Pirates et Football nécessitent le multijoueur.');
+      return;
+    }
+    setDeleteError('');
     if (!enabled) {
       useGameStore.getState().openWorld(world.id, world.name);
       window.setTimeout(onPlay, 120);
@@ -81,7 +86,7 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
       </div>
       <div className="community-actions">
         <button className="multiplayer-join community-random" onClick={() => void joinBusiest(selectedMode)} disabled={pending || status === 'connecting'}>Rejoindre</button>
-        {onCreate && <button className="secondary-button community-create" onClick={onCreate} disabled={full || pending || status === 'connecting'}>Créer ici</button>}
+        {onCreate && <button className="secondary-button community-create" onClick={onCreate} disabled={full || pending || status === 'connecting' || !enabled && isMultiplayerOnlyMode(selectedMode)}>{!enabled && isMultiplayerOnlyMode(selectedMode) ? 'Multijoueur requis' : 'Créer ici'}</button>}
       </div>
       <p className="community-random-hint">Rejoins le monde {GAMEPLAY_MODE_LABELS[selectedMode]} avec le plus de joueurs en ligne.</p>
       {full && <p className="multiplayer-error" role="alert">Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un pour en créer un autre.</p>}
@@ -113,9 +118,9 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
           ))}
           {ownLocal.map((world) => (
             <div className="world-library-item" key={world.id}>
-              <button className="world-library-entry" data-world-id={world.id} data-mode={world.gameplayMode ?? 'creative'} onClick={() => openLocal(world)} disabled={deleting || pending || status === 'connecting'}>
+              <button className="world-library-entry" data-world-id={world.id} data-mode={world.gameplayMode ?? 'creative'} onClick={() => openLocal(world)} disabled={deleting || pending || status === 'connecting' || !enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative')} title={!enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative') ? 'Multijoueur requis' : undefined}>
                 <strong>{world.name}</strong>
-                <small>Ma sauvegarde · {GAMEPLAY_MODE_LABELS[world.gameplayMode ?? 'creative']} · {world.updatedAt ? new Date(world.updatedAt).toLocaleDateString('fr-FR') : 'Ancienne sauvegarde'}</small>
+                <small>Ma sauvegarde · {GAMEPLAY_MODE_LABELS[world.gameplayMode ?? 'creative']} · {!enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative') ? 'Multijoueur requis' : world.updatedAt ? new Date(world.updatedAt).toLocaleDateString('fr-FR') : 'Ancienne sauvegarde'}</small>
               </button>
               <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={deleting || pending || status === 'connecting'} aria-label={`Supprimer ${world.name}`}>Supprimer</button>
             </div>
