@@ -1,5 +1,6 @@
 import { generatePirateChunk } from '../src/game/pirates';
 import { BlockKind } from '../src/game/voxel';
+import { PIRATE_CHEST_OFFSETS } from '../src/game/pirateShipGeometry';
 import type { PlayerAttachment } from './index';
 
 type PirateKit = 'defender' | 'gunner' | 'raider';
@@ -143,12 +144,14 @@ export class PirateEngine {
     const objective = objectives[team];
     const distance = Math.hypot(point.x - objective.x, point.y - objective.y, point.z - objective.z);
     if (distance > (impact ? 3.5 : kind === 'melee' ? 6 : 90)) return;
-    this.objectives[team] -= 1;
-    if (this.objectives[team] === 0) {
-      this.room.setEdit(`${objective.x},${objective.y},${objective.z}`, null);
-      this.room.broadcast({ type: 'edits', edits: [[`${objective.x},${objective.y},${objective.z}`, null]] });
-      void this.room.save();
+    const chest = PIRATE_CHEST_OFFSETS[6 - this.objectives[team]];
+    if (chest) {
+      const key = `${objective.x + chest[0]},${objective.y + chest[1]},${objective.z + chest[2]}`;
+      this.room.setEdit(key, null);
+      this.room.broadcast({ type: 'edits', edits: [[key, null]] });
     }
+    this.objectives[team] -= 1;
+    void this.room.save();
     this.update();
   }
 

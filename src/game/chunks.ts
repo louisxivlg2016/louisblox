@@ -137,7 +137,7 @@ function stateFor(world: World) {
 }
 
 export function snapshotWorldEdits(world: World): WorldSave['edits'] {
-  return [...stateFor(world).edits].map(([chunk, edits]) => [chunk, [...edits]]);
+  return [...stateFor(world).edits].map(([chunk, edits]) => [chunk, [...edits].filter(([, edit]) => edit === null || (typeof edit === 'number' ? edit !== BlockKind.Water : edit.kind !== BlockKind.Water))]);
 }
 
 export function groupVoxelEdits(edits: Array<[string, ChunkEdit]>): WorldSave['edits'] {
@@ -654,8 +654,8 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   useEffectStore.getState().reset();
   Object.assign(useGameStore.getState(), { worldTemplate: restore?.template ?? (restore?.gameplayMode === 'city-ancient' || restore?.gameplayMode === 'city-modern' ? restore.gameplayMode : 'nature') });
   useProtectionStore.getState().setProtection(restore?.protection ?? (restore ? null : useProtectionStore.getState().protection ?? newProtection()));
-  const seed = restore?.seed ?? 73421 + generation * 977;
-  const edits: WorldChunks['edits'] = restore ? new Map(restore.edits.map(([chunk, values]) => [chunk, new Map(values)])) : new Map();
+  const seed = restore?.seed ?? (useGameStore.getState().worldId === 'main-room' && generation === 0 ? 73421 : [...useGameStore.getState().worldId].reduce((value, letter) => Math.imul(value ^ letter.charCodeAt(0), 16777619) >>> 0, 2166136261) % 900000 + generation * 977);
+  const edits: WorldChunks['edits'] = restore ? new Map(restore.edits.map(([chunk, values]) => [chunk, new Map(values.filter(([, edit]) => edit === null || (typeof edit === 'number' ? edit !== BlockKind.Water : edit.kind !== BlockKind.Water)))])) : new Map();
   worlds.set(world, {
     world,
     seed,

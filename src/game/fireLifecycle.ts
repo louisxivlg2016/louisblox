@@ -17,7 +17,7 @@ export function spawnFire(world: World, block: Pick<Voxel, 'x' | 'y' | 'z' | 'ki
     Fire({
       kind: block.kind === BlockKind.Wildfire ? BlockKind.Wildfire : BlockKind.Campfire,
       age: 0,
-      spreadIn: block.kind === BlockKind.Wildfire ? 1.2 : Number.POSITIVE_INFINITY,
+      spreadIn: 1.2,
       generation,
     }),
     FirePosition(new Vector3(block.x, block.y, block.z)),

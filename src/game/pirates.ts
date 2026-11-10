@@ -4,7 +4,8 @@ import { BlockKind } from './voxel';
 import type { Voxel } from './voxel';
 import type { SelectedKind } from './items';
 import type { BattleTeam } from './battleArena';
-import { addPirateShip } from './pirateShipGeometry';
+import { addPirateShip, PIRATE_CHEST_OFFSETS } from './pirateShipGeometry';
+export { PIRATE_CHEST_OFFSETS } from './pirateShipGeometry';
 
 export type PirateKit = 'defender' | 'gunner' | 'raider';
 export const PIRATE_WATER_Y = 4.5;
@@ -50,7 +51,7 @@ export function generatePirateChunk(cx: number, cz: number): GeneratedChunk {
 export function isPirateObjective(x: number, y: number, z: number) {
   return (Object.keys(PIRATE_OBJECTIVES) as Array<'red' | 'blue'>).find((team) => {
     const objective = PIRATE_OBJECTIVES[team];
-    return objective.x === x && (objective.y === y || objective.y + 1 === y) && objective.z === z;
+    return PIRATE_CHEST_OFFSETS.some(([dx, dy, dz]) => objective.x + dx === x && objective.y + dy === y && objective.z + dz === z);
   });
 }
 

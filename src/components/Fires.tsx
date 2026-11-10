@@ -25,7 +25,7 @@ function FlameInstances({ fires }: { fires: readonly Entity[] }) {
       const fire = entity.get(Fire);
       if (!fire || outerIndex >= 512 || innerIndex >= 256) continue;
       const position = entity.get(FirePosition)!;
-      const scale = 1.2 + Math.min(fire.age / 20, 1.6);
+      const scale = 1.2 + fire.age / 20;
       matrix.makeScale(0.26 * scale, 0.44 * scale, 0.26 * scale);
       matrix.setPosition(position.x, position.y - 0.5 + 0.22 * scale, position.z);
       outer.current.setMatrixAt(outerIndex, matrix);
@@ -68,7 +68,7 @@ function SmokeInstances({ fires }: { fires: readonly Entity[] }) {
       const fire = entity.get(Fire);
       const position = entity.get(FirePosition);
       if (!fire || !position) continue;
-      const flameScale = 1.2 + Math.min(fire.age / 20, 1.6);
+      const flameScale = 1.2 + fire.age / 20;
       const offset = ((position.x * 0.17 + position.z * 0.29) % 1 + 1) % 1;
       for (let puff = 0; puff < SMOKE_PUFFS && index < SMOKE_CAPACITY; puff += 1) {
         const progress = (time * 0.3 + puff / SMOKE_PUFFS + offset) % 1;
@@ -106,7 +106,7 @@ function RedFlame({ entity }: { entity: Entity }) {
     const fire = entity.get(Fire);
     const position = entity.get(FirePosition);
     if (!group.current || !fire || !position) return;
-    const scale = (1.2 + Math.min(fire.age / 20, 1.6)) / height;
+    const scale = (1.2 + fire.age / 20) / height;
     group.current.scale.setScalar(scale);
     group.current.position.set(position.x, position.y - 0.5, position.z);
     group.current.rotation.y = Math.sin(fire.age * 2) * 0.04;

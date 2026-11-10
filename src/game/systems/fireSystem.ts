@@ -28,6 +28,7 @@ function hitAt(block: { x: number; y: number; z: number; kind: BlockKind }): Vox
 }
 
 const fireDamageClocks = new WeakMap<World, number>();
+const fireSpreadClocks = new WeakMap<World, { time: number; index: number }>();
 
 export function fireSystem(world: World, dt: number) {
   const player = world.queryFirst(Player)?.get(PlayerPosition);
@@ -42,11 +43,13 @@ export function fireSystem(world: World, dt: number) {
   } else fireDamageClocks.set(world, touchingFire ? damageIn : 0);
   fireHazardSystem(world, dt);
   const fires = world.query(Fire, FirePosition);
-  if (fires.length === 0) return;
+  if (fires.length === 0) {
+    fireSpreadClocks.delete(world);
+    return;
+  }
 
   batchVoxelEdits(world, () => {
     fires.updateEach(([fire, position]) => {
-      if (position.distanceToSquared(player) > 64 * 64) return;
       const water = [[0, 0, 0], ...directions].map(([dx, dy, dz]) => blocks.get(voxelKey(position.x + dx, position.y + dy, position.z + dz))).find((block) => isWaterBlock(block?.kind));
       if (water) {
         const block = blocks.get(voxelKey(position.x, position.y, position.z));
@@ -55,23 +58,47 @@ export function fireSystem(world: World, dt: number) {
         return;
       }
       fire.age += dt;
-      if (fire.kind === BlockKind.Campfire) return;
-      fire.spreadIn -= dt;
-      if (fire.spreadIn > 0 || fires.length >= 96 || fire.generation >= 6) return;
-      fire.spreadIn = 1.2;
+      fire.spreadIn = Math.max(0, fire.spreadIn - dt);
+    });
+
+    const clock = fireSpreadClocks.get(world) ?? { time: 0, index: 0 };
+    fireSpreadClocks.set(world, clock);
+    clock.time += dt;
+    if (clock.time < 1.2) return;
+    clock.time -= 1.2;
+    const candidates = fires.flatMap((entity) => {
+      const fire = entity.get(Fire);
+      const position = entity.get(FirePosition);
+      if (!fire || !position) return [];
+      return fire.spreadIn <= 0 && blocks.get(voxelKey(position.x, position.y, position.z))?.kind === fire.kind ? [entity] : [];
+    });
+    for (let attempt = 0; attempt < candidates.length; attempt += 1) {
+      const entity = candidates[clock.index % candidates.length];
+      clock.index = (clock.index + 1) % candidates.length;
+      const fire = entity.get(Fire)!;
+      const position = entity.get(FirePosition)!;
       const start = Math.abs(Math.floor(fire.age * 1.7 + position.x * 3 + position.z * 5));
-      let created = 0;
-      for (let index = 0; index < directions.length && created < 2; index += 1) {
+      let created = false;
+      for (let index = 0; index < directions.length; index += 1) {
         const [dx, dy, dz] = directions[(start + index) % directions.length];
         const x = position.x + dx;
         const y = position.y + dy;
         const z = position.z + dz;
-        const target = blocks.get(voxelKey(x, y, z));
+        const target = blocks.get(voxelKey(x, y, z)) ?? blocks.get(voxelKey(x, y - 1, z));
         if (!target || !isFlammable(target.kind)) continue;
-        removeVoxel(world, hitAt(target));
-        addVoxel(world, x, y, z, BlockKind.Wildfire, undefined, undefined, fire.generation + 1);
-        created += 1;
+        if (fire.kind === BlockKind.Campfire) {
+          const flameY = blocks.has(voxelKey(x, y, z)) ? y + 1 : y;
+          if (blocks.has(voxelKey(x, flameY, z))) continue;
+          addVoxel(world, x, flameY, z, BlockKind.Campfire, undefined, undefined, fire.generation + 1);
+        } else {
+          removeVoxel(world, hitAt(target));
+          addVoxel(world, target.x, target.y, target.z, BlockKind.Wildfire, undefined, undefined, fire.generation + 1);
+        }
+        fire.spreadIn = 1.2;
+        created = true;
+        break;
       }
-    });
+      if (created) break;
+    }
   });
 }

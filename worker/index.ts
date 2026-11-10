@@ -5,6 +5,7 @@ import { PirateEngine } from './pirates';
 import { FootballEngine } from './football';
 import { MazeEngine } from './maze';
 import { isAnimalMount, isVehicleKind } from '../src/game/vehicleTypes';
+import { BlockKind } from '../src/game/voxel';
 import type { MountKind, VehicleKind } from '../src/game/vehicleTypes';
 export { PlayerDirectory } from './directory';
 
@@ -95,7 +96,7 @@ const corsHeaders = {
 const facings = new Set(['north', 'south', 'east', 'west']);
 const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
-const profileAvatars = new Set(['pixel', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police']);
+const profileAvatars = new Set(['pixel', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 const potionEffects = new Set(['speed', 'slowness', 'jump', 'doubleJump', 'haste', 'strength', 'weakness', 'defence', 'regeneration', 'poison', 'invisibility', 'heatResistance', 'knockback']);
 
 function parseHorse(value: unknown): PlayerState['horse'] {
@@ -361,7 +362,8 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private worldSnapshot() {
-    return { type: 'world', seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName ?? this.worldId, template: this.worldTemplate, protection: this.protection };
+    const edits = [...this.worldEdits].filter(([, edit]) => edit === null || (typeof edit === 'number' ? edit !== BlockKind.Water : edit.kind !== BlockKind.Water));
+    return { type: 'world', seed: this.worldSeed, edits, gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName ?? this.worldId, template: this.worldTemplate, protection: this.protection };
   }
 
   private publisherId?: string;

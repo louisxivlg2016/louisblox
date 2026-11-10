@@ -65,6 +65,12 @@ export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
           <span>{PHOTO_AVATARS[kind].name}</span>
         </button>
       ))}
+      {(['soldier', 'trader'] as const).map((kind) => (
+        <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choisir ${kind === 'soldier' ? 'Soldat' : 'Marchand'}`}>
+          <ProfileAvatar kind={kind} outfit={kind} size={56} />
+          <span>{kind === 'soldier' ? 'Soldat' : 'Marchand'}</span>
+        </button>
+      ))}
     </div>
   );
 }

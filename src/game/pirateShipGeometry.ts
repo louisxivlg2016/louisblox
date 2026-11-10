@@ -1,6 +1,8 @@
 import { BlockKind, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
 
+export const PIRATE_CHEST_OFFSETS = [[-1, 0, -2], [1, 0, -2], [-1, 0, 0], [1, 0, 0], [-1, 0, 2], [1, 0, 2]] as const;
+
 export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'blue') {
   const ship = new Map<string, Voxel>();
   const put = (x: number, y: number, z: number, kind: BlockKind, facing?: Voxel['facing']) => {
@@ -93,6 +95,8 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
   sail(0, 11, 6, 5, true);
   mast(9, 23);
   sail(9, 13, 6, 4, false);
+
+  for (const [dx, dy, dz] of PIRATE_CHEST_OFFSETS) put(center + dx, 7 + dy, dz, BlockKind.Chest, 'south');
 
   const first = blocks[0];
   if (!first) return;

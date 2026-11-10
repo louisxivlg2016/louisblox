@@ -14,7 +14,8 @@ import { useMultiplayerStore, useRemotePlayerStore } from '../game/multiplayerSt
 import { canCreateWorld, createWorldSave, listWorlds, saveWorld } from '../game/save';
 import { rememberWorld, useGameStore } from '../game/store';
 import { useCharacterStore } from '../game/characterStore';
-import { useAvatarStore } from '../game/avatar';
+import { isProfileAvatarKind, useAvatarStore } from '../game/avatar';
+import type { ProfileAvatarKind } from '../game/avatar';
 import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep, Vehicle } from '../game/traits';
 import { getItemMeta } from '../game/items';
 import { ItemModel, PixelPart, heldItemPosition } from './ItemModel';
@@ -75,6 +76,7 @@ type ServerMessage = {
   outfit?: unknown;
   wig?: unknown;
   appearance?: unknown;
+  avatar?: unknown;
   gameplayMode?: unknown;
   worldId?: unknown;
   worldName?: unknown;
@@ -122,6 +124,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
   const legs = current.clothingColor ?? (outfit === 'default' ? (girl ? '#4b405e' : '#354d6d') : OUTFITS[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
   const team = useBattleStore((state) => state.teams[playerId]);
+  const avatar = useRemotePlayerStore((state) => state.avatars[playerId] ?? 'pixel');
   useEffect(() => () => removeBattleTargetPose(playerId), [playerId]);
 
   useFrame((_, delta) => {
@@ -194,7 +197,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
     <group ref={group} position={[state.x, state.y, state.z]}>
       <PlayerNameTag name={name} playerId={playerId} />
       {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
-      <CharacterOutfit character={character} outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} appearance={current} />
+      <CharacterOutfit character={character} outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} appearance={current} avatar={avatar} />
       {state.parachuting && <ParachuteModel />}
       {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={battleTeamColor(team)} /></group>}
       <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={skin} /></group>
@@ -208,7 +211,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
             userData={{ item: state.selected }}
           >
             {typeof state.selected === 'string'
-              ? <ItemModel kind={state.selected} flipGuns={!hasFullCharacter(outfit, wig)} />
+              ? <ItemModel kind={state.selected} />
               : state.selected === BlockKind.Tnt ? <BombModel /> : state.selected === BlockKind.Candle ? <CandleModel /> : state.selected === BlockKind.Campfire || state.selected === BlockKind.Wildfire ? <CampfireModel destructive={state.selected === BlockKind.Wildfire} /> : isUtilityBlock(state.selected) ? <UtilityBlockModel kind={state.selected} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[state.selected]]} />}
           </group>
         )}
@@ -287,6 +290,7 @@ export function MultiplayerConnection() {
     remote.setOutfits({});
     remote.setWigs({});
     remote.setAppearances({});
+    remote.setAvatars({});
     if (!connected) {
       store.setStatus('offline');
       return;
@@ -606,13 +610,15 @@ export function MultiplayerConnection() {
             const outfits: Record<string, OutfitKind> = {};
             const wigs: Record<string, WigSelection> = {};
             const appearances: Record<string, CharacterAppearance> = {};
-            for (const player of data.players as Array<{ playerId?: unknown; name?: unknown; character?: unknown; state?: unknown; outfit?: unknown; wig?: unknown; appearance?: unknown }>) {
+            const avatars: Record<string, ProfileAvatarKind> = {};
+            for (const player of data.players as Array<{ playerId?: unknown; name?: unknown; character?: unknown; state?: unknown; outfit?: unknown; wig?: unknown; appearance?: unknown; avatar?: unknown }>) {
               if (!player || typeof player.playerId !== 'string') continue;
               roster.current.set(player.playerId, typeof player.name === 'string' ? player.name : 'Joueur');
               characters[player.playerId] = player.character === 'girl' ? 'girl' : 'boy';
               outfits[player.playerId] = isOutfitKind(player.outfit) ? player.outfit : 'default';
               wigs[player.playerId] = isWigSelection(player.wig) ? player.wig : 'auto';
               appearances[player.playerId] = sanitizeAppearance(player.appearance, characters[player.playerId]);
+              avatars[player.playerId] = isProfileAvatarKind(player.avatar) ? player.avatar : 'pixel';
               if (!pendingSpawn.current && isPlayerSnapshot(player.state)) pendingSpawn.current = { ...player.state };
               if (isPlayerSnapshot(player.state)) updated[player.playerId] = player.state;
             }
@@ -621,6 +627,7 @@ export function MultiplayerConnection() {
             useRemotePlayerStore.getState().setOutfits(outfits);
             useRemotePlayerStore.getState().setWigs(wigs);
             useRemotePlayerStore.getState().setAppearances(appearances);
+            useRemotePlayerStore.getState().setAvatars(avatars);
           } else {
             roster.current.set(data.playerId, name);
             const character = data.character === 'girl' ? 'girl' : 'boy';
@@ -629,6 +636,7 @@ export function MultiplayerConnection() {
               outfits: { ...current.outfits, [data.playerId as string]: isOutfitKind(data.outfit) ? data.outfit : 'default' },
               wigs: { ...current.wigs, [data.playerId as string]: isWigSelection(data.wig) ? data.wig : 'auto' },
               appearances: { ...current.appearances, [data.playerId as string]: sanitizeAppearance(data.appearance, character) },
+              avatars: { ...current.avatars, [data.playerId as string]: isProfileAvatarKind(data.avatar) ? data.avatar : 'pixel' },
             }));
           }
           syncRoster();
@@ -636,6 +644,8 @@ export function MultiplayerConnection() {
           useRemotePlayerStore.setState((current) => ({ outfits: { ...current.outfits, [data.playerId as string]: data.outfit as OutfitKind } }));
         } else if (data.type === 'wig' && isWigSelection(data.wig)) {
           useRemotePlayerStore.setState((current) => ({ wigs: { ...current.wigs, [data.playerId as string]: data.wig as WigSelection } }));
+        } else if (data.type === 'profile-avatar' && isProfileAvatarKind(data.avatar)) {
+          useRemotePlayerStore.setState((current) => ({ avatars: { ...current.avatars, [data.playerId as string]: data.avatar as ProfileAvatarKind } }));
         } else if (data.type === 'appearance') {
           const character = useRemotePlayerStore.getState().characters[data.playerId] ?? 'boy';
           useRemotePlayerStore.setState((current) => ({ appearances: { ...current.appearances, [data.playerId as string]: sanitizeAppearance(data.appearance, character) } }));
@@ -655,12 +665,14 @@ export function MultiplayerConnection() {
             const outfits = { ...current.outfits };
             const wigs = { ...current.wigs };
             const appearances = { ...current.appearances };
+            const avatars = { ...current.avatars };
             delete players[data.playerId as string];
             delete characters[data.playerId as string];
             delete outfits[data.playerId as string];
             delete wigs[data.playerId as string];
             delete appearances[data.playerId as string];
-            return { players, characters, outfits, wigs, appearances };
+            delete avatars[data.playerId as string];
+            return { players, characters, outfits, wigs, appearances, avatars };
           });
         }
       };
@@ -701,6 +713,7 @@ export function MultiplayerConnection() {
         useRemotePlayerStore.getState().setOutfits({});
         useRemotePlayerStore.getState().setAppearances({});
         useRemotePlayerStore.getState().setWigs({});
+      useRemotePlayerStore.getState().setAvatars({});
         store.setStatus('error', 'Connexion interrompue. Nouvelle tentative…');
         reconnectTimer = window.setTimeout(connect, 1500);
       };
@@ -764,6 +777,7 @@ export function MultiplayerConnection() {
       useRemotePlayerStore.getState().setOutfits({});
         useRemotePlayerStore.getState().setAppearances({});
       useRemotePlayerStore.getState().setWigs({});
+      useRemotePlayerStore.getState().setAvatars({});
     };
   }, [world, connected, connectionId, room, server, playerName, character]);
 

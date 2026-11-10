@@ -4,6 +4,7 @@ import type { Entity } from 'koota';
 import type { Group } from 'three';
 import { getItemMeta } from '../game/items';
 import { useCharacterStore } from '../game/characterStore';
+import { useAvatarStore } from '../game/avatar';
 import { useGameStore } from '../game/store';
 import { PlayerMesh, PlayerMount, PlayerState, PlayerVelocity } from '../game/traits';
 import { blockGeometry, blockMaterials } from '../game/textures';
@@ -34,6 +35,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   const outfit = useCharacterStore((state) => state.outfit);
   const wig = useCharacterStore((state) => state.wig);
   const appearance = useCharacterStore((state) => state.appearance);
+  const avatar = useAvatarStore((state) => state.kind);
   const hair = appearanceHairColor(appearance, character);
   const skin = appearanceSkinColor(appearance, character);
   const emote = useEmoteStore((state) => state.current);
@@ -137,7 +139,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
       visible={preview || cameraMode !== 'first' || (riding !== 'plane' && sleeping)}
     >
       {(!hasFullCharacter(outfit, wig) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
-      <CharacterOutfit character={character} outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding) && !walkingCabin} head={headContent} headRef={headRef} appearance={appearance} />
+      <CharacterOutfit character={character} outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding) && !walkingCabin} head={headContent} headRef={headRef} appearance={appearance} avatar={avatar} />
       {classicDetails}
       <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
@@ -147,7 +149,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
         <group name="held-item" visible={!eating && !preview && !sleeping} position={heldItemPosition(held, hasFullCharacter(outfit, wig))} scale={typeof held === 'number' ? 0.5 : typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof held === 'number'
             ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
-            : <ItemModel kind={held} flipGuns={!hasFullCharacter(outfit, wig)} />}
+            : <ItemModel kind={held} />}
         </group>
       </group>
       {eating && <group name="eating-food" position={[0, 1.72, -0.42]} scale={0.65}><ItemModel kind={eating.kind} /></group>}

@@ -2,7 +2,7 @@ import { Box3, CanvasTexture, Color, NearestFilter, SRGBColorSpace, Vector3 } fr
 import type { BufferGeometry, Material } from 'three';
 import type { CharacterAppearance } from './appearance';
 
-type MaskRegion = 'skin' | 'hair' | 'eyes' | 'eyebrows' | 'uniform';
+type MaskRegion = 'skin' | 'hair' | 'eyes' | 'eyebrows' | 'uniform' | 'classic-boy-band';
 
 function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, width: number, height: number, flipY: boolean, princessHair = false, frontSign = 1) {
   const canvas = document.createElement('canvas');
@@ -28,8 +28,10 @@ function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, 
     const eyes = z * frontSign > 0 && Math.abs(x) < size.x * 0.22 && vertical > 0.655 && vertical < 0.697;
     const eyebrows = z * frontSign > 0 && Math.abs(x) > size.x * 0.025 && Math.abs(x) < size.x * 0.25 && vertical > 0.68 && vertical < 0.735;
     const lowerStrand = princessHair && z * frontSign > 0 && Math.abs(x) > size.x * 0.13 && Math.abs(x) < size.x * 0.33 && vertical > 0.38 && vertical < 0.7;
-    const visible = region === 'uniform'
-      ? vertical > 0.36 && vertical < 0.67
+    const visible = region === 'classic-boy-band'
+      ? horizontal && vertical > 0.34 && vertical < 0.76
+      : region === 'uniform'
+        ? vertical > 0.36 && vertical < 0.67
       : region === 'eyes'
         ? eyes
       : region === 'eyebrows'
@@ -104,6 +106,47 @@ function eyebrowPixel(red: number, green: number, blue: number) {
   return maximum > 8 && maximum < 190 && red >= blue * 0.85 && green >= blue * 0.85;
 }
 
+export function removeClassicBoyBand(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3) {
+  const material = source.clone();
+  const image = material.map?.image as { width?: number; height?: number } | undefined;
+  if (!material.map || !image?.width || !image.height || !geometry.getAttribute('uv')) return material;
+  const canvas = document.createElement('canvas');
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const context = canvas.getContext('2d')!;
+  context.drawImage(material.map.image as CanvasImageSource, 0, 0);
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+  const mask = maskCanvas(geometry, bounds, 'classic-boy-band', canvas.width, canvas.height, material.map.flipY).getImageData(0, 0, canvas.width, canvas.height).data;
+  const shirt = new Color('#526b45').getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  let removed = 0;
+  for (let index = 0; index < pixels.data.length; index += 4) {
+    if (mask[index + 3] === 0) continue;
+    const red = pixels.data[index];
+    const green = pixels.data[index + 1];
+    const blue = pixels.data[index + 2];
+    if (!hairPixel(red, green, blue, false) || skinPixel(red, green, blue)) continue;
+    const brightness = (red * 0.2126 + green * 0.7152 + blue * 0.0722) / 255;
+    const factor = 0.8 + brightness * 0.45;
+    pixels.data[index] = Math.min(255, shirt.r * 255 * factor);
+    pixels.data[index + 1] = Math.min(255, shirt.g * 255 * factor);
+    pixels.data[index + 2] = Math.min(255, shirt.b * 255 * factor);
+    removed += 1;
+  }
+  context.putImageData(pixels, 0, 0);
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = material.map.colorSpace;
+  texture.wrapS = material.map.wrapS;
+  texture.wrapT = material.map.wrapT;
+  texture.flipY = material.map.flipY;
+  texture.magFilter = NearestFilter;
+  texture.minFilter = NearestFilter;
+  texture.generateMipmaps = false;
+  material.map = texture;
+  material.userData.removedBandPixels = removed;
+  material.needsUpdate = true;
+  return material;
+}
+
 export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>, allowGrayHair = false, princessHair = false, outfit?: import('./outfits').OutfitKind) {
   const material = source.clone();
   const image = material.map?.image as { width?: number; height?: number } | undefined;
@@ -123,7 +166,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   const skin = appearance.originalSkinColor ? null : new Color(appearance.skinColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const hair = appearance.originalHairColor || outfit === 'trader' || outfit === 'firefighter' ? null : new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const eyes = outfit === 'louis15' ? null : new Color(appearance.eyeColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const eyebrows = outfit === 'firefighter' ? null : new Color(appearance.eyebrowColor ?? appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const eyebrows = outfit === 'firefighter' || outfit === 'trader' ? null : new Color(appearance.eyebrowColor ?? appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const uniformColor = appearance.clothingColor ?? (outfit === 'pirate' ? '#b6373b' : outfit === 'footballer' ? '#2868b3' : null);
   const uniform = uniformColor ? new Color(uniformColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace) : null;
   const uniformMask = uniform

@@ -23,6 +23,10 @@ type MultiplayerStore = MultiplayerSettings & {
   setServerEditing: (editing: boolean) => void;
 };
 
+export function normalizeRoomId(value: string) {
+  return value.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'main-room';
+}
+
 const query = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search);
 const autoJoin = query.has('server') || query.has('room');
 
@@ -51,7 +55,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
   setEnabled: (enabled) => set((state) => ({ enabled, joined: enabled && state.joined, status: enabled && state.joined ? 'connecting' : 'offline', worldReady: false, error: '', players: [] })),
   configure: (settings) => {
     const playerName = settings.playerName.trim().slice(0, 24) || 'Joueur';
-    const room = settings.room.trim().replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'main-room';
+    const room = normalizeRoomId(settings.room);
     const server = settings.server.trim();
     try {
       localStorage.setItem('louisblox-player-name', playerName);
@@ -79,6 +83,8 @@ export const useRemotePlayerStore = create<{
   outfits: Record<string, import('./outfits').OutfitKind>;
   wigs: Record<string, import('./outfits').WigSelection>;
   appearances: Record<string, import('./appearance').CharacterAppearance>;
+  avatars: Record<string, import('./avatar').ProfileAvatarKind>;
+  setAvatars: (avatars: Record<string, import('./avatar').ProfileAvatarKind>) => void;
   setPlayers: (players: Record<string, import('./multiplayer').PlayerSnapshot>) => void;
   setCharacters: (characters: Record<string, import('./characterStore').CharacterKind>) => void;
   setOutfits: (outfits: Record<string, import('./outfits').OutfitKind>) => void;
@@ -90,6 +96,8 @@ export const useRemotePlayerStore = create<{
   outfits: {},
   wigs: {},
   appearances: {},
+  avatars: {},
+  setAvatars: (avatars) => set({ avatars }),
   setPlayers: (players) => set({ players }),
   setCharacters: (characters) => set({ characters }),
   setOutfits: (outfits) => set({ outfits }),
