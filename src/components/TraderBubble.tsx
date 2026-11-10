@@ -57,6 +57,7 @@ export function TraderBubble({ entity }: { entity: Entity }) {
   const [near, setNear] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [arrived, setArrived] = useState(false);
+  const [restaurantMessage, setRestaurantMessage] = useState('');
   const traderId = useTradeStore((state) => state.traderId);
   const storyId = useTradeStore((state) => state.storyId);
   const step = useTradeStore((state) => state.step);
@@ -64,13 +65,13 @@ export function TraderBubble({ entity }: { entity: Entity }) {
   const following = useTradeStore((state) => state.following);
   const active = traderId === entity || following && entity.get(Trader)?.following === true;
   const lastStep = MERCHANT_STORIES[storyId].steps.length - 1;
-  const text = arrived
+  const text = restaurantMessage || (arrived
     ? 'Nous sommes arrivés en ville ! Les habitants sont heureux de te voir.'
     : active
       ? following
         ? `Direction la ville : encore ${remaining ?? '…'} m. Je t’attends si tu t’éloignes.`
         : step === lastStep ? `${story} Choisis ta réponse ici.` : `${story} E pour la suite.`
-      : 'Appuie sur moi pour écouter mon histoire.';
+      : 'Appuie sur moi pour écouter mon histoire.');
   const sprite = useMemo(() => {
     const material = new SpriteMaterial({ map: bubbleTexture(text), transparent: true, depthWrite: false, depthTest: false, toneMapped: false });
     const object = new Sprite(material);
@@ -95,6 +96,8 @@ export function TraderBubble({ entity }: { entity: Entity }) {
     if (visible !== near) setNear(visible);
     const isArrived = data?.arrived === true;
     if (isArrived !== arrived) setArrived(isArrived);
+    const message = data?.restaurantMessage ?? '';
+    if (message !== restaurantMessage) setRestaurantMessage(message);
     if (data?.following && trader && data.destinationX !== null && data.destinationZ !== null) {
       const next = Math.ceil(Math.hypot(data.destinationX - trader.x, data.destinationZ - trader.z) / 10) * 10;
       if (next !== remaining) setRemaining(next);

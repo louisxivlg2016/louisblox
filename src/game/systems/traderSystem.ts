@@ -4,13 +4,14 @@ import { MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
+import { isDoor } from '../extraBlocks';
 import { isCollidable } from './collisionSystem';
 import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerBody, PlayerMount, PlayerPosition, Trader, TraderMesh, TraderPosition } from '../traits';
 import { getFireSources, nearestFire } from '../hazards';
 import { useTradeStore } from '../trading';
 import { useGameStore } from '../store';
 import { tradeCityAt } from '../villages';
-import { updateVillageSleep } from '../villageLife';
+import { updateMerchantRestaurant, updateVillageSleep } from '../villageLife';
 
 const foliage = new Set<BlockKind>([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple]);
 const stuckCamels = new Map<Entity, { x: number; z: number; time: number }>();
@@ -25,6 +26,10 @@ function walkableGround(world: World, x: number, z: number, currentY: number, ri
   const overhead = blocks.get(voxelKey(Math.round(x), Math.floor(ground), Math.round(z)));
   if (overhead && foliage.has(overhead.kind) && ground > currentY + 1.05) ground = groundAt(world, x, z, currentY + 1.05);
   if (ground <= MIN_WORLD_Y + 0.5) return null;
+  if (ground > currentY + 1.05) {
+    const doorway = blocks.get(voxelKey(Math.round(x), Math.round(currentY + 0.5), Math.round(z)));
+    if (doorway && isDoor(doorway.kind) && doorway.open) ground = groundAt(world, x, z, currentY + 0.51);
+  }
   if (ground < SEA_LEVEL + 0.5) {
     const water = blocks.get(voxelKey(Math.round(x), SEA_LEVEL, Math.round(z)));
     return isWaterBlock(water?.kind) ? SEA_LEVEL + 0.05 : null;
@@ -60,7 +65,14 @@ type PathNode = { x: number; y: number; z: number; g: number; f: number; parent:
 function findPath(world: World, position: import('three').Vector3, targetX: number, targetZ: number) {
   const yaw = Math.atan2(targetX - position.x, targetZ - position.z);
   let goal: { x: number; y: number; z: number } | null = null;
+  if (Math.hypot(targetX - position.x, targetZ - position.z) <= 12) {
+    const x = Math.round(targetX);
+    const z = Math.round(targetZ);
+    const ground = walkableGround(world, x, z, position.y);
+    if (ground !== null) goal = { x, y: ground, z };
+  }
   for (const distance of [12, 18, 24]) {
+    if (goal) break;
     const x = Math.round(position.x + Math.sin(yaw) * distance);
     const z = Math.round(position.z + Math.cos(yaw) * distance);
     const ground = walkableGround(world, x, z, position.y);
@@ -140,6 +152,72 @@ function rescueCamel(world: World, trader: import('three').Vector3, position: im
   return false;
 }
 
+function treeNearby(world: World, position: { x: number; y: number; z: number }, radius: number) {
+  const blocks = getBlockIndex(world);
+  for (let dx = -radius; dx <= radius; dx += 1) {
+    for (let dz = -radius; dz <= radius; dz += 1) {
+      for (let dy = -2; dy <= 5; dy += 1) {
+        const block = blocks.get(voxelKey(Math.round(position.x + dx), Math.round(position.y + dy), Math.round(position.z + dz)));
+        if (block && foliage.has(block.kind)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function treeAhead(world: World, position: import('three').Vector3, yaw: number) {
+  for (let step = 1; step <= 4; step += 1) {
+    if (treeNearby(world, { x: position.x + Math.sin(yaw) * step, y: position.y, z: position.z + Math.cos(yaw) * step }, 1)) return true;
+  }
+  return false;
+}
+
+const restaurantPaths = new Map<Entity, { key: string; points: Array<{ x: number; y: number; z: number }> }>();
+
+function guideRestaurantTravel(world: World, entity: Entity, dt: number) {
+  const trader = entity.get(Trader)!;
+  const position = entity.get(TraderPosition)!;
+  const mesh = entity.get(TraderMesh)!.value;
+  const key = `${trader.targetX},${trader.targetZ}`;
+  let path = restaurantPaths.get(entity);
+  if (path?.key !== key) {
+    restaurantPaths.delete(entity);
+    path = undefined;
+  }
+  if (path && Math.hypot(path.points[0].x - position.x, path.points[0].z - position.z) < 0.16) {
+    path.points.shift();
+    if (path.points.length === 0) {
+      restaurantPaths.delete(entity);
+      path = undefined;
+    }
+  }
+  if (!path) {
+    const points = findPath(world, position, trader.targetX, trader.targetZ);
+    if (!points || points.length === 0) return;
+    path = { key, points };
+    restaurantPaths.set(entity, path);
+  }
+  const waypoint = path.points[0];
+  const dx = waypoint.x - position.x;
+  const dz = waypoint.z - position.z;
+  const distance = Math.hypot(dx, dz);
+  if (distance < 0.001) return;
+  const step = Math.min(distance, dt * 2.6);
+  const x = position.x + dx / distance * step;
+  const z = position.z + dz / distance * step;
+  const ground = walkableGround(world, x, z, position.y);
+  if (ground === null) {
+    restaurantPaths.delete(entity);
+    return;
+  }
+  moveOnGround(world, position, x, z, ground);
+  entity.set(Trader, { walking: true });
+  if (mesh) {
+    mesh.position.copy(position);
+    mesh.rotation.y = turnToward(mesh.rotation.y, Math.atan2(dx, dz), dt * 5);
+  }
+}
+
 function traderHeading(trader: { homeX: number; homeZ: number }) {
   const angle = trader.homeX * 0.17 + trader.homeZ * 0.31;
   return Math.atan2(Math.sin(angle), Math.cos(angle));
@@ -158,18 +236,27 @@ export function traderSystem(world: World, dt: number) {
     const mesh = entity.get(TraderMesh)!;
     if (mesh.value) mesh.value.visible = trader.following || position.distanceToSquared(player) < 64 * 64;
     if (updateVillageSleep(world, entity, dt, talkingTo)) continue;
+    if (updateMerchantRestaurant(world, entity, dt, talkingTo)) continue;
     if (talkingTo === entity) {
       if (trader.walking) entity.set(Trader, { walking: false });
       if (mesh.value) mesh.value.rotation.y = turnToward(mesh.value.rotation.y, Math.atan2(player.x - position.x, player.z - position.z), dt * 4);
       continue;
     }
-    if (trader.villager || trader.arrived) {
+    if (trader.restaurantMeal) {
+      guideRestaurantTravel(world, entity, dt);
+      continue;
+    }
+    if ((trader.villager || trader.arrived) && !trader.restaurantMeal) {
       const homeX = trader.arrived ? trader.destinationX ?? trader.homeX : trader.homeX;
       const homeZ = trader.arrived ? trader.destinationZ ?? trader.homeZ : trader.homeZ;
       let dx = trader.targetX - position.x;
       let dz = trader.targetZ - position.z;
       let distance = Math.hypot(dx, dz);
       if (distance < 0.35) {
+        if (!treeNearby(world, position, 6)) {
+          entity.set(Trader, { walking: false, targetX: position.x, targetZ: position.z });
+          continue;
+        }
         trader.phase += 1;
         trader.targetX = homeX + Math.sin(trader.phase * 1.7 + homeX) * 2.2;
         trader.targetZ = homeZ + Math.cos(trader.phase * 1.7 + homeZ) * 2.2;
@@ -226,7 +313,7 @@ export function traderSystem(world: World, dt: number) {
       trader.detourIn = Math.max(0, trader.detourIn - dt);
       if (trader.detourX !== null && trader.detourZ !== null && Math.hypot(trader.detourX - position.x, trader.detourZ - position.z) < 0.5) trader.detourIn = 0;
       if (trader.detourIn <= 0) obstacleDetours.delete(entity);
-      if (trader.detourIn <= 0 && remaining > 14) {
+      if (trader.detourIn <= 0 && remaining > 14 && treeAhead(world, position, Math.atan2(trader.destinationX - position.x, trader.destinationZ - position.z))) {
         trader.phase += 30;
         const route = Math.atan2(trader.destinationX - position.x, trader.destinationZ - position.z);
         const bend = Math.sin(trader.phase * 0.11 + heading) * 0.75;
@@ -272,7 +359,7 @@ export function traderSystem(world: World, dt: number) {
     let dx = trader.targetX - position.x;
     let dz = trader.targetZ - position.z;
     let distance = Math.hypot(dx, dz);
-    if (distance < 0.7 && !trader.following && !path) {
+    if (distance < 0.7 && !trader.following && !path && !trader.restaurantMeal) {
       trader.phase += 30;
       const turn = Math.sin(trader.phase * 0.11 + heading) * 0.9;
       const direction = routeDirection(world, position, heading + turn);
@@ -356,12 +443,20 @@ export function traderSystem(world: World, dt: number) {
         const routeYaw = Math.atan2(trader.targetX - position.x, trader.targetZ - position.z);
         if (rescueTrader(world, position, routeYaw)) {
           if (mesh.value) mesh.value.position.copy(position);
-          trader.detourX = position.x + Math.sin(routeYaw) * 6;
-          trader.detourZ = position.z + Math.cos(routeYaw) * 6;
-          trader.detourIn = 3.5;
-          trader.targetX = trader.detourX;
-          trader.targetZ = trader.detourZ;
-          obstacleDetours.add(entity);
+          if (trader.restaurantMeal) {
+            traderPaths.delete(entity);
+            trader.detourX = null;
+            trader.detourZ = null;
+            trader.detourIn = 0;
+            obstacleDetours.delete(entity);
+          } else {
+            trader.detourX = position.x + Math.sin(routeYaw) * 6;
+            trader.detourZ = position.z + Math.cos(routeYaw) * 6;
+            trader.detourIn = 3.5;
+            trader.targetX = trader.detourX;
+            trader.targetZ = trader.detourZ;
+            obstacleDetours.add(entity);
+          }
           stuck.x = position.x;
           stuck.z = position.z;
         }

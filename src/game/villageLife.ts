@@ -6,7 +6,7 @@ import { groundAt } from './vehicles';
 import { isDoor } from './extraBlocks';
 import { Environment, Trader, TraderMesh, TraderPosition } from './traits';
 import { replaceVoxel } from './chunks';
-import { villageBeds } from './villages';
+import { restaurantAt, tradeCityAt, villageBeds } from './villages';
 import { openRestaurant, useTradeStore } from './trading';
 import { useGameStore } from './store';
 
@@ -56,6 +56,7 @@ export function updateVillageSleep(world: World, entity: Entity, dt: number, tal
   const position = entity.get(TraderPosition);
   const mesh = entity.get(TraderMesh)?.value;
   if (!trader || !position || (!trader.villager && !trader.arrived)) return false;
+  if (trader.restaurantMeal) return false;
   if (trader.arrived && trader.bedX === null) assignMerchantBed(world, entity);
   const fire = nearestFire(getFireSources(world), position);
   if (talkingTo === entity || fire) {
@@ -110,4 +111,46 @@ export function updateVillageSleep(world: World, entity: Entity, dt: number, tal
     mesh.rotation.y = 0;
   }
   return true;
+}
+
+export function updateMerchantRestaurant(world: World, entity: Entity, dt: number, talkingTo: Entity | null) {
+  const trader = entity.get(Trader);
+  const position = entity.get(TraderPosition);
+  const mesh = entity.get(TraderMesh)?.value;
+  if (!trader?.restaurantMeal || trader.villager || !position) return false;
+  const seed = getWorldSeed(world);
+  const door = restaurantAt(tradeCityAt(seed), seed);
+  if (trader.restaurantMeal === 'eating') {
+    const restaurantMealTime = trader.restaurantMealTime + (talkingTo === entity ? 0 : dt);
+    if (restaurantMealTime >= 20) {
+      entity.set(Trader, { restaurantMeal: null, restaurantMealTime: 0, restaurantMessage: '', walking: false });
+      if (mesh) mesh.rotation.x = 0;
+      return false;
+    }
+    entity.set(Trader, { restaurantMealTime, walking: false });
+    if (mesh) {
+      mesh.position.copy(position);
+      mesh.rotation.y = Math.atan2(door.x + 2 - position.x, door.z - position.z);
+      mesh.rotation.x = -0.12;
+    }
+    return true;
+  }
+  const seat = { x: door.x + 1, y: door.y, z: door.z + 1 };
+  const distance = Math.hypot(seat.x - position.x, seat.z - position.z);
+  if (distance <= 0.35) {
+    position.set(seat.x, seat.y, seat.z);
+    entity.set(Trader, { restaurantMeal: 'eating', restaurantMealTime: 0, restaurantMessage: 'Bon appétit ! Ce repas est délicieux. Je mange avec toi.', walking: false });
+    useGameStore.getState().setNotice('Le marchand est arrivé au restaurant et mange avec toi. Bon appétit !');
+    return true;
+  }
+  const doorDistance = Math.hypot(door.x - position.x, door.z - position.z);
+  const approach = { x: door.x - 1, y: door.y, z: door.z };
+  const approachDistance = Math.hypot(approach.x - position.x, approach.z - position.z);
+  let restaurantStep = trader.restaurantStep;
+  if (restaurantStep === 0 && approachDistance <= 0.65) restaurantStep = 1;
+  if (restaurantStep === 1 && doorDistance <= 0.65) restaurantStep = 2;
+  const target = restaurantStep === 0 ? approach : restaurantStep === 1 ? door : seat;
+  entity.set(Trader, { targetX: target.x, targetZ: target.z, restaurantStep, walking: true });
+  if (doorDistance < 4) openDoors(world, position);
+  return false;
 }

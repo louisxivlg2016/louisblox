@@ -1,4 +1,5 @@
-import { Suspense, useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { ItemModel } from './ItemModel';
 import { useFrame } from '@react-three/fiber';
 import { useQuery } from 'koota/react';
 import type { Entity } from 'koota';
@@ -8,6 +9,10 @@ import { ReferenceTrader } from './ReferenceAnimals';
 import { TraderBubble } from './TraderBubble';
 
 function TraderPerson({ entity }: { entity: Entity }) {
+  const meal = useRef<import('three').Group>(null);
+  useFrame(() => {
+    if (meal.current) meal.current.visible = entity.get(Trader)?.restaurantMeal === 'eating';
+  });
   return (
     <group
       name="wandering-trader"
@@ -17,6 +22,7 @@ function TraderPerson({ entity }: { entity: Entity }) {
       }}
     >
       <Suspense fallback={null}><ReferenceTrader entity={entity} /></Suspense>
+      <group ref={meal} name="merchant-restaurant-meal" visible={false} position={[0.35, 1.4, -0.35]} scale={0.7}><ItemModel kind="bread" held /></group>
       {!entity.get(Trader)?.villager && <TraderBubble entity={entity} />}
     </group>
   );

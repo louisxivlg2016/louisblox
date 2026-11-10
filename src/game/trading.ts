@@ -104,7 +104,7 @@ export function openTrader(traderId: import('koota').Entity) {
     traderId,
     storyId,
     step: 0,
-    story: villager ? VILLAGER_LINES[0] : restaurantAvailable ? 'Nous voilà enfin au village ! Je t’invite à manger au restaurant, à l’est en suivant le chemin de terre.' : MERCHANT_STORIES[storyId].steps[0],
+    story: villager ? VILLAGER_LINES[0] : trader?.restaurantMessage || (restaurantAvailable ? 'Nous voilà enfin au village ! Je t’invite à manger au restaurant, à l’est en suivant le chemin de terre.' : MERCHANT_STORIES[storyId].steps[0]),
     view: villager ? 'village' : restaurantAvailable ? 'restaurant' : 'story',
     following: false,
     message: '',
@@ -138,6 +138,10 @@ export function acceptRestaurantInvitation(world: World) {
   if (!playerEntity || !player) return false;
   const seed = getWorldSeed(world);
   const next = restaurantAt(tradeCityAt(seed), seed);
+  const merchant = useTradeStore.getState().traderId;
+  if (merchant && !merchant.get(Trader)?.villager) {
+    merchant.set(Trader, { arrived: true, following: false, walking: true, restaurantInvited: true, restaurantMeal: 'going', restaurantMealTime: 0, restaurantStep: 0, restaurantMessage: 'Viens au restaurant avec moi. Je mange aussi avec toi !', targetX: next.x, targetZ: next.z });
+  }
   for (let index = 0; index < 9; index++) streamChunks(world, next.x, next.z);
   player.set(next.x, next.y, next.z);
   playerEntity.get(PlayerBody)?.value?.setTranslation(next, true);
