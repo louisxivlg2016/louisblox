@@ -19,7 +19,7 @@ function PlacedFood({ block }: { block: Voxel }) {
     group.current.updateMatrixWorld(true);
   }, [block.x, block.y, block.z, block.food, block.meat]);
   return (
-    <group ref={group} name="placed-food" userData={{ food: block.food, meat: block.meat }} position={[block.x, block.y - 0.5, block.z]} scale={0.6}>
+    <group ref={group} name="placed-food" userData={{ food: block.food, meat: block.meat }} position={[block.x, block.y - 0.5, block.z]} scale={0.65}>
       {block.meat ? <MeatModel kind={block.meat} /> : typeof block.food === 'string' && isSelectedKind(block.food) ? <ItemModel kind={block.food} /> : null}
     </group>
   );

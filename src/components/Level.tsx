@@ -4,7 +4,7 @@ import type { Entity } from 'koota';
 import { InstancedMesh, Matrix4 } from 'three';
 import { getBlockIndex } from '../game/chunks';
 import { buildChunkGeometry, createChunkLookup } from '../game/chunkGeometry';
-import { placedBlockGeometry, blockMaterials } from '../game/textures';
+import { blockGeometry, blockMaterials } from '../game/textures';
 import { Chunk, ChunkData } from '../game/traits';
 import { SpecialBlocks } from './SpecialBlocks';
 import { FoodBlocks } from './FoodBlocks';
@@ -67,10 +67,10 @@ function SaplingInstances({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }
 
   return (
     <>
-      <instancedMesh ref={trunk} args={[placedBlockGeometry, blockMaterials[BlockKind.Wood], blocks.length]} />
-      <instancedMesh ref={bottom} args={[placedBlockGeometry, blockMaterials[leafKind], blocks.length]} />
-      {pine && <instancedMesh ref={middle} args={[placedBlockGeometry, blockMaterials[leafKind], blocks.length]} />}
-      {pine && <instancedMesh ref={top} args={[placedBlockGeometry, blockMaterials[leafKind], blocks.length]} />}
+      <instancedMesh ref={trunk} args={[blockGeometry, blockMaterials[BlockKind.Wood], blocks.length]} />
+      <instancedMesh ref={bottom} args={[blockGeometry, blockMaterials[leafKind], blocks.length]} />
+      {pine && <instancedMesh ref={middle} args={[blockGeometry, blockMaterials[leafKind], blocks.length]} />}
+      {pine && <instancedMesh ref={top} args={[blockGeometry, blockMaterials[leafKind], blocks.length]} />}
     </>
   );
 }
@@ -92,8 +92,8 @@ function VineInstances({ blocks }: { blocks: Voxel[] }) {
   }, [blocks]);
   return (
     <>
-      <instancedMesh ref={vertical} args={[placedBlockGeometry, blockMaterials[BlockKind.JungleVine], blocks.length]} />
-      <instancedMesh ref={crossed} args={[placedBlockGeometry, blockMaterials[BlockKind.JungleVine], blocks.length]} />
+      <instancedMesh ref={vertical} args={[blockGeometry, blockMaterials[BlockKind.JungleVine], blocks.length]} />
+      <instancedMesh ref={crossed} args={[blockGeometry, blockMaterials[BlockKind.JungleVine], blocks.length]} />
     </>
   );
 }

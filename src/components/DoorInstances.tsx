@@ -12,7 +12,7 @@ export function DoorInstances({ blocks }: { blocks: Voxel[] }) {
         const facing = block.facing === 'north' ? Math.PI : block.facing === 'east' ? -Math.PI / 2 : block.facing === 'west' ? Math.PI / 2 : 0;
         if (trapdoor) {
           return (
-            <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.42, block.z]} rotation={[0, facing, 0]} scale={0.6}>
+            <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.42, block.z]} rotation={[0, facing, 0]}>
               <group position={[0, 0, 0.43]} rotation={[block.open ? Math.PI / 2 : 0, 0, 0]}>
                 <group position={[0, 0, -0.43]}>
                   <PixelPart position={[0, 0, 0]} size={[0.92, 0.14, 0.92]} color={color} />
@@ -26,7 +26,7 @@ export function DoorInstances({ blocks }: { blocks: Voxel[] }) {
           );
         }
         return (
-          <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y + 0.49, block.z]} rotation={[0, facing, 0]} scale={0.6}>
+          <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y + 0.49, block.z]} rotation={[0, facing, 0]}>
             <group position={[-0.47, 0, 0]} rotation={[0, block.open ? -Math.PI / 2 : 0, 0]}>
               <group position={[0.47, 0, 0]}>
                 <PixelPart position={[0, 0, 0]} size={[0.92, 1.96, 0.14]} color={color} />

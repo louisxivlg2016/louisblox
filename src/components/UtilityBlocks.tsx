@@ -118,6 +118,6 @@ export function UtilityBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIn
       ? block.facing === 'east' || block.facing === 'west' ? Math.PI / 2 : 0
       : oriented ? facingYaw(block.facing) : 0;
     const mount = isTrafficSign(block.kind) ? wallMount(blockIndex, block, rotation) : { rotation, offset: 0, mounted: false };
-    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y - 0.5, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} scale={0.6} userData={{ wallMounted: mount.mounted }}><UtilityBlockModel kind={block.kind} wallMounted={mount.mounted} /></group>;
+    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y - 0.5, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} scale={isTrafficSign(block.kind) ? 0.6 : 1} userData={{ wallMounted: mount.mounted }}><UtilityBlockModel kind={block.kind} wallMounted={mount.mounted} /></group>;
   });
 }

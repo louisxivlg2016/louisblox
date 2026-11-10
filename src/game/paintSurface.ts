@@ -10,7 +10,7 @@ function surfaceHit(block: Voxel, origin: Vector3, direction: Vector3) {
   let exit = Infinity;
   let normal = { x: 0, y: 0, z: 0 };
   for (const axis of axes) {
-    const half = 0.3;
+    const half = 0.5;
     const nearSign = direction[axis] > 0 ? -1 : 1;
     if (Math.abs(direction[axis]) < 0.000001) {
       if (Math.abs(origin[axis] - block[axis]) > half) return null;
