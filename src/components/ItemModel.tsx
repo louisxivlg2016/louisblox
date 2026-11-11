@@ -523,7 +523,7 @@ export function ItemModel({ kind, held = false }: ModelProps) {
   let model;
   if (isPaintballGun(kind)) model = <WeaponWithFallback kind="paintball" />;
   else if (isGalleryItem(kind)) model = <GalleryModel kind={kind} />;
-  else if (kind === 'bucket' || kind === 'water_bucket') model = <BucketModel filled={kind === 'water_bucket'} />;
+  else if (kind === 'bucket' || kind === 'water_bucket' || kind === 'empty_bucket') model = <BucketModel filled={kind === 'water_bucket'} />;
   else if (kind === 'extinguisher') model = <WeaponWithFallback kind="extinguisher" />;
   else if (kind === 'parachute') model = <ParachuteModel held />;
   else if (meta.category === 'sword') model = <SwordModel color={meta.color} />;

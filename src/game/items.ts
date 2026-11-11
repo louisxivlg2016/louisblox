@@ -7,7 +7,7 @@ export type { GalleryItemId } from './galleryCatalog';
 export type ItemCategory = 'sword' | 'pickaxe' | 'shovel' | 'bow' | 'gun' | 'armor' | 'food' | 'vehicle' | 'saddle' | 'resource';
 export type ArmorKind = 'gold' | 'diamond' | 'silver';
 export type ItemKind =
-  | 'hand' | 'stick' | 'bucket' | 'water_bucket' | 'extinguisher'
+  | 'hand' | 'stick' | 'bucket' | 'water_bucket' | 'empty_bucket' | 'extinguisher'
   | 'sword_wood' | 'sword_stone' | 'sword_iron' | 'sword_gold' | 'sword_diamond' | 'sword_silver'
   | 'pickaxe_wood' | 'pickaxe_stone' | 'pickaxe_iron' | 'pickaxe_gold' | 'pickaxe_diamond' | 'pickaxe_silver'
   | 'shovel_wood' | 'shovel_stone' | 'shovel_iron' | 'shovel_gold' | 'shovel_diamond' | 'shovel_silver'
@@ -41,6 +41,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   stick: item('Bâton', '#8b633c', 'resource', { shape: 'stick' }),
   bucket: item('Seau vide', '#a8b5bc', 'resource', { shape: 'bucket' }),
   water_bucket: item('Seau plein d’eau', '#359bd5', 'resource', { shape: 'water_bucket' }),
+  empty_bucket: item('Seau toujours vide', '#a8b5bc', 'resource', { shape: 'bucket' }),
   sword_wood: item('Épée en bois', '#b98a53', 'sword', { cooldown: 0.35 }),
   sword_stone: item('Épée en pierre', '#92999e', 'sword', { cooldown: 0.35 }),
   sword_iron: item('Épée en fer', '#e0e8eb', 'sword', { cooldown: 0.32 }),

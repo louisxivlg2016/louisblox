@@ -40,7 +40,7 @@ function changeHeldBucket(from: 'bucket' | 'water_bucket', to: 'bucket' | 'water
   else store.selectBlock(to);
 }
 
-function useBucket(world: World, filled: boolean, origin: Vector3, direction: Vector3) {
+function useBucket(world: World, filled: boolean, origin: Vector3, direction: Vector3, alwaysEmpty = false) {
   const store = useGameStore.getState();
   const blocks = getBlockIndex(world);
   const hit = raycastVoxel(blocks, origin, direction, 6, !filled);
@@ -50,12 +50,12 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
       const y = hit.y + hit.normal.y;
       const z = hit.z + hit.normal.z;
       if (y >= MIN_WORLD_Y && y <= MAX_BUILD_Y && !blocks.has(voxelKey(x, y, z)) && addVoxel(world, x, y, z, BlockKind.Water)) {
-        changeHeldBucket('water_bucket', 'bucket');
-        store.setNotice('Eau posée. Le seau est vide.');
+        if (!alwaysEmpty) changeHeldBucket('water_bucket', 'bucket');
+        store.setNotice(alwaysEmpty ? 'Eau posée. Le seau reste toujours vide.' : 'Eau posée. Le seau est vide.');
         return true;
       }
     }
-    store.setNotice('Vise un bloc avec le seau plein pour y poser l’eau.');
+    store.setNotice(alwaysEmpty ? 'Vise un bloc avec le seau toujours vide pour poser de l’eau.' : 'Vise un bloc avec le seau plein pour y poser l’eau.');
     return true;
   }
   if (hit && isWaterBlock(hit.block.kind)) {
@@ -93,6 +93,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
   camera.getWorldDirection(direction);
 
   if (useFood(world, selected, origin, direction, interact)) return true;
+  if (selected === 'empty_bucket' && interact > 0) return useBucket(world, true, origin, direction, true);
   if ((selected === 'bucket' || selected === 'water_bucket') && interact > 0) return useBucket(world, selected === 'water_bucket', origin, direction);
   if (selected === 'extinguisher' && (interact > 0 || isMouseButtonDown(0) || isDown('KeyE')) && cooldown <= 0) {
     useFireExtinguisher(world, origin, direction);
