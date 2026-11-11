@@ -28,7 +28,6 @@ function hitAt(block: { x: number; y: number; z: number; kind: BlockKind }): Vox
 }
 
 const fireDamageClocks = new WeakMap<World, number>();
-const fireSpreadClocks = new WeakMap<World, { time: number; index: number }>();
 
 export function fireSystem(world: World, dt: number) {
   const player = world.queryFirst(Player)?.get(PlayerPosition);
@@ -43,10 +42,7 @@ export function fireSystem(world: World, dt: number) {
   } else fireDamageClocks.set(world, touchingFire ? damageIn : 0);
   fireHazardSystem(world, dt);
   const fires = world.query(Fire, FirePosition);
-  if (fires.length === 0) {
-    fireSpreadClocks.delete(world);
-    return;
-  }
+  if (fires.length === 0) return;
 
   batchVoxelEdits(world, () => {
     fires.updateEach(([fire, position]) => {
@@ -61,24 +57,16 @@ export function fireSystem(world: World, dt: number) {
       fire.spreadIn = Math.max(0, fire.spreadIn - dt);
     });
 
-    const clock = fireSpreadClocks.get(world) ?? { time: 0, index: 0 };
-    fireSpreadClocks.set(world, clock);
-    clock.time += dt;
-    if (clock.time < 1.2) return;
-    clock.time -= 1.2;
     const candidates = fires.flatMap((entity) => {
       const fire = entity.get(Fire);
       const position = entity.get(FirePosition);
       if (!fire || !position) return [];
       return fire.spreadIn <= 0 && blocks.get(voxelKey(position.x, position.y, position.z))?.kind === fire.kind ? [entity] : [];
     });
-    for (let attempt = 0; attempt < candidates.length; attempt += 1) {
-      const entity = candidates[clock.index % candidates.length];
-      clock.index = (clock.index + 1) % candidates.length;
+    for (const entity of candidates) {
       const fire = entity.get(Fire)!;
       const position = entity.get(FirePosition)!;
       const start = Math.abs(Math.floor(fire.age * 1.7 + position.x * 3 + position.z * 5));
-      let created = false;
       for (let index = 0; index < directions.length; index += 1) {
         const [dx, dy, dz] = directions[(start + index) % directions.length];
         const x = position.x + dx;
@@ -95,10 +83,8 @@ export function fireSystem(world: World, dt: number) {
           addVoxel(world, target.x, target.y, target.z, BlockKind.Wildfire, undefined, undefined, fire.generation + 1);
         }
         fire.spreadIn = 1.2;
-        created = true;
         break;
       }
-      if (created) break;
     }
   });
 }

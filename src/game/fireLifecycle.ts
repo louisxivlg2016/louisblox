@@ -1,6 +1,5 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
-import { CHUNK_SIZE } from './levels';
 import { isFireBlock } from './extraBlocks';
 import { Fire, FirePosition } from './traits';
 import { BlockKind } from './voxel';
@@ -28,13 +27,6 @@ export function extinguishFireAt(world: World, x: number, y: number, z: number) 
   for (const entity of world.query(Fire, FirePosition)) {
     const position = entity.get(FirePosition)!;
     if (position.x === x && position.y === y && position.z === z) entity.destroy();
-  }
-}
-
-export function extinguishFiresInChunk(world: World, cx: number, cz: number) {
-  for (const entity of world.query(Fire, FirePosition)) {
-    const position = entity.get(FirePosition)!;
-    if (Math.floor((position.x + 0.5) / CHUNK_SIZE) === cx && Math.floor((position.z + 0.5) / CHUNK_SIZE) === cz) entity.destroy();
   }
 }
 

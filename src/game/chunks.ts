@@ -18,7 +18,7 @@ import { spawnChunkFish } from './fish';
 import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
 import { isBed, isChest, isCrop, isDoor, isFireBlock, isLadder, isRail, isSapling, isSign, isTrafficSign, isTrapdoor, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
-import { clearFires, extinguishFireAt, extinguishFiresInChunk, spawnFire } from './fireLifecycle';
+import { clearFires, extinguishFireAt, spawnFire } from './fireLifecycle';
 import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
 import type { ArmorKind, SelectedKind } from './items';
 import {
@@ -364,7 +364,6 @@ function unloadChunk(world: World, entity: Entity) {
   for (const fish of data.fish) fish.destroy();
   for (const bomb of data.bombs) bomb.destroy();
   for (const sapling of data.saplings) sapling.destroy();
-  extinguishFiresInChunk(world, chunk.x, chunk.z);
   data.animals = [];
   data.fish = [];
   data.bombs = [];

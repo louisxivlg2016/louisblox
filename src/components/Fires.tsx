@@ -16,14 +16,16 @@ const innerMaterial = new MeshBasicMaterial({ color: '#ffb12b' });
 function FlameInstances({ fires }: { fires: readonly Entity[] }) {
   const outer = useRef<InstancedMesh>(null);
   const inner = useRef<InstancedMesh>(null);
+  const outerCapacity = Math.max(512, fires.length * 2);
+  const innerCapacity = Math.max(256, fires.length);
 
   useFrame(() => {
-    if (!outer.current || !inner.current || fires.length === 0) return;
+    if (!outer.current || !inner.current) return;
     let outerIndex = 0;
     let innerIndex = 0;
     for (const entity of fires) {
       const fire = entity.get(Fire);
-      if (!fire || outerIndex >= 512 || innerIndex >= 256) continue;
+      if (!fire) continue;
       const position = entity.get(FirePosition)!;
       const scale = 1.2 + fire.age / 20;
       matrix.makeScale(0.26 * scale, 0.44 * scale, 0.26 * scale);
@@ -47,8 +49,8 @@ function FlameInstances({ fires }: { fires: readonly Entity[] }) {
 
   return (
     <>
-      <instancedMesh ref={outer} args={[geometry, outerMaterial, 512]} frustumCulled={false} dispose={null} />
-      <instancedMesh ref={inner} args={[geometry, innerMaterial, 256]} frustumCulled={false} dispose={null} />
+      <instancedMesh ref={outer} args={[geometry, outerMaterial, outerCapacity]} frustumCulled={false} dispose={null} />
+      <instancedMesh ref={inner} args={[geometry, innerMaterial, innerCapacity]} frustumCulled={false} dispose={null} />
     </>
   );
 }
@@ -59,6 +61,7 @@ const smokeMaterial = new MeshBasicMaterial({ color: '#6d777f', transparent: tru
 
 function SmokeInstances({ fires }: { fires: readonly Entity[] }) {
   const smoke = useRef<InstancedMesh>(null);
+  const capacity = Math.max(SMOKE_CAPACITY, fires.length * SMOKE_PUFFS);
 
   useFrame(({ clock }) => {
     if (!smoke.current) return;
@@ -70,7 +73,7 @@ function SmokeInstances({ fires }: { fires: readonly Entity[] }) {
       if (!fire || !position) continue;
       const flameScale = 1.2 + fire.age / 20;
       const offset = ((position.x * 0.17 + position.z * 0.29) % 1 + 1) % 1;
-      for (let puff = 0; puff < SMOKE_PUFFS && index < SMOKE_CAPACITY; puff += 1) {
+      for (let puff = 0; puff < SMOKE_PUFFS && index < capacity; puff += 1) {
         const progress = (time * 0.3 + puff / SMOKE_PUFFS + offset) % 1;
         const spread = 0.08 + progress * 0.65;
         const size = (0.16 + progress * 0.4) * Math.sin(progress * Math.PI) * (0.75 + flameScale * 0.2);
@@ -84,13 +87,13 @@ function SmokeInstances({ fires }: { fires: readonly Entity[] }) {
         smoke.current.setMatrixAt(index, matrix);
         index += 1;
       }
-      if (index >= SMOKE_CAPACITY) break;
+      if (index >= capacity) break;
     }
     smoke.current.count = index;
     smoke.current.instanceMatrix.needsUpdate = true;
   });
 
-  return <instancedMesh name="fire-smoke" ref={smoke} args={[geometry, smokeMaterial, SMOKE_CAPACITY]} count={0} frustumCulled={false} dispose={null} />;
+  return <instancedMesh name="fire-smoke" ref={smoke} args={[geometry, smokeMaterial, capacity]} count={0} frustumCulled={false} dispose={null} />;
 }
 
 function RedFlame({ entity }: { entity: Entity }) {
