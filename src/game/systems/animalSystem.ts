@@ -206,7 +206,7 @@ export function animalSystem(world: World, dt: number) {
   const player = playerEntity?.get(PlayerPosition);
   const health = playerEntity?.get(PlayerHealth);
   const fires = getFireSources(world);
-  const neighbors = world.query(Animal, AnimalPosition).map((entity) => ({ entity, position: entity.get(AnimalPosition)!, stationary: Boolean(entity.get(CamelLeash) || entity.get(HorseRider)?.mounted) }));
+  const neighbors = world.query(Animal, AnimalPosition).map((entity) => ({ entity, position: entity.get(AnimalPosition)!, stationary: Boolean(entity.get(CamelLeash) || entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) }));
 
   world.query(Animal, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, hit, position, motion, mesh], entity) => {
     const distanceSquared = player ? position.distanceToSquared(player) : Infinity;
@@ -219,7 +219,7 @@ export function animalSystem(world: World, dt: number) {
       entity.remove(CamelLeash);
       hit.panic = Math.max(hit.panic, 2.4);
     }
-    if (entity.get(HorseRider)?.mounted) return;
+    if (entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) return;
     const stepDt = dt;
     hit.time = Math.max(0, hit.time - stepDt);
     hit.panic = Math.max(0, hit.panic - stepDt);

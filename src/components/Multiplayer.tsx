@@ -749,7 +749,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, bodyYaw: entity?.get(PlayerMesh)?.value?.rotation.y, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, parachuting: playerState.parachuting, mounted: Boolean(mounted), vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: world.queryFirst(Sleep) ? 'lie' : useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, bodyYaw: entity?.get(PlayerMesh)?.value?.rotation.y, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, parachuting: playerState.parachuting, mounted: Boolean(mounted), mountRole: entity?.get(PlayerMount)?.role, vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: world.queryFirst(Sleep) ? 'lie' : useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

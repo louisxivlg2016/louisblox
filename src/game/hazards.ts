@@ -30,9 +30,9 @@ function touchingFire(fires: readonly Vector3[], position: Vector3, bodyHeight: 
 }
 
 export function damageAnimalFromHazard(world: World, target: Entity, amount: number) {
-  if (target.get(HorseRider)?.mounted) {
+  if (target.get(HorseRider)?.mounted || target.get(HorseRider)?.passenger) {
     if (world.queryFirst(Player)?.get(PlayerMount)?.vehicle === target) dismount(world);
-    target.set(HorseRider, { mounted: false, speed: 0 });
+    target.set(HorseRider, { mounted: false, passenger: false, speed: 0 });
   }
   return damageAnimal(world, target, amount);
 }

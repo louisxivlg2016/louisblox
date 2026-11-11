@@ -21,6 +21,7 @@ export type PlayerState = {
   airborne?: boolean;
   parachuting?: boolean;
   mounted?: boolean;
+  mountRole?: 'driver' | 'passenger';
   vehicleKind?: MountKind;
   vehicleId?: string;
   horse?: { id: string; x: number; y: number; z: number; yaw: number };
@@ -152,6 +153,7 @@ function parseState(value: unknown): PlayerState | null {
     moving: state.moving === true,
     airborne: state.airborne === true,
     mounted: state.mounted === true,
+    mountRole: state.mountRole === 'passenger' ? 'passenger' : state.mountRole === 'driver' ? 'driver' : undefined,
     vehicleKind: isVehicleKind(state.vehicleKind) || isAnimalMount(state.vehicleKind) ? state.vehicleKind : undefined,
     vehicleId: isVehicleKind(state.vehicleKind) && typeof state.vehicleId === 'string' && state.vehicleId.length > 0 && state.vehicleId.length <= 80 ? state.vehicleId : undefined,
     horse: isAnimalMount(state.vehicleKind) ? parseHorse(state.horse) : undefined,

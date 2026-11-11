@@ -12,6 +12,7 @@ import { useTradeStore } from '../trading';
 import { useGameStore } from '../store';
 import { tradeCityAt } from '../villages';
 import { updateMerchantRestaurant, updateVillageSleep } from '../villageLife';
+import { animalSeatOffset } from '../mounts';
 
 const foliage = new Set<BlockKind>([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple]);
 const stuckCamels = new Map<Entity, { x: number; z: number; time: number }>();
@@ -561,7 +562,8 @@ export function traderSystem(world: World, dt: number) {
       mesh.value.rotation.y = motion.displayYaw;
     }
     if (player && playerEntity?.get(PlayerMount)?.vehicle === entity) {
-      player.set(position.x + Math.sin(motion.yaw) * 0.3, position.y + 1.4, position.z + Math.cos(motion.yaw) * 0.3);
+      const offset = animalSeatOffset('camel', playerEntity.get(PlayerMount)?.role ?? 'driver', motion.yaw);
+      player.set(position.x + offset[0], position.y + offset[1], position.z + offset[2]);
       playerEntity.get(PlayerBody)?.value?.setNextKinematicTranslation(player);
     }
   });

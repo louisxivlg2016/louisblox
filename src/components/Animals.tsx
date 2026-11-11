@@ -6,6 +6,7 @@ import { Mesh } from 'three';
 import { Animal, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerMount } from '../game/traits';
 import { useRemotePlayerStore } from '../game/multiplayerStore';
 import { spawnAnimal } from '../game/animals';
+import { mountSnapshotsById } from '../game/mounts';
 import { AnimalGlb } from './AnimalGlb';
 import { SaddleModel } from './ItemModel';
 
@@ -44,13 +45,11 @@ function RemoteHorseSync() {
     const current = new Set<Entity>();
     const localMount = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
     const horses = [...world.query(Animal, AnimalId, AnimalPosition, AnimalMotion, AnimalMesh)];
-    for (const state of Object.values(useRemotePlayerStore.getState().players)) {
-      const snapshot = state.horse;
-      if (!snapshot) continue;
+    for (const { snapshot, kind, role } of mountSnapshotsById(useRemotePlayerStore.getState().players).values()) {
       let entity = horses.find((candidate) => candidate.get(AnimalId) === snapshot.id);
       if (entity === localMount) continue;
       if (!entity) {
-        entity = spawnAnimal(world, state.vehicleKind === 'camel' ? 'camel' : 'horse', snapshot.x, snapshot.y, snapshot.z, 0);
+        entity = spawnAnimal(world, kind, snapshot.x, snapshot.y, snapshot.z, 0);
         entity.set(AnimalId, snapshot.id);
         horses.push(entity);
       }
@@ -58,9 +57,10 @@ function RemoteHorseSync() {
       const rider = entity.get(HorseRider);
       if (rider) {
         if (!rider.mounted) entity.set(HorseRider, { mounted: true, speed: 0 });
-        if (state.vehicleKind === 'horse' && !rider.saddled) entity.set(HorseRider, { saddled: true });
+        entity.set(HorseRider, { passenger: role === 'passenger' });
+        if (kind === 'horse' && !rider.saddled) entity.set(HorseRider, { saddled: true });
       } else {
-        entity.add(HorseRider({ saddled: state.vehicleKind === 'horse', mounted: true }));
+        entity.add(HorseRider({ saddled: kind === 'horse', mounted: true, passenger: role === 'passenger' }));
       }
       const position = entity.get(AnimalPosition)!;
       position.set(snapshot.x, snapshot.y, snapshot.z);
@@ -75,7 +75,7 @@ function RemoteHorseSync() {
       if (current.has(entity) || entity === localMount || !entity.get(HorseRider)) continue;
       const motion = entity.get(AnimalMotion);
       if (motion) entity.set(AnimalMotion, { yaw: motion.displayYaw });
-      entity.set(HorseRider, { mounted: false, speed: 0 });
+      entity.set(HorseRider, { mounted: false, passenger: false, speed: 0 });
     }
     previous.current = current;
   });

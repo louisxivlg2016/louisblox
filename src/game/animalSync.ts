@@ -70,7 +70,7 @@ export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[]) 
   }
   for (const entity of world.query(Animal, AnimalId)) {
     const id = entity.get(AnimalId);
-    if (seen.has(id ?? '') || entity === localMount || entity.get(CamelLeash) || entity.get(HorseRider)?.mounted) continue;
+    if (seen.has(id ?? '') || entity === localMount || entity.get(CamelLeash) || entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) continue;
     entity.destroy();
   }
 }
@@ -107,7 +107,7 @@ export function syncAnimalState(world: World, dt: number) {
   clocks.set(world, 0.2);
   if (!socket || socket.readyState !== WebSocket.OPEN || !isAnimalAuthority()) return;
   const animals = world.query(Animal, AnimalId, AnimalPosition, AnimalMotion, AnimalHealth).flatMap((entity) => {
-    if (entity.get(CamelLeash) || entity.get(HorseRider)?.mounted) return [];
+    if (entity.get(CamelLeash) || entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) return [];
     const position = entity.get(AnimalPosition)!;
     const motion = entity.get(AnimalMotion)!;
     return [{ id: entity.get(AnimalId), kind: entity.get(Animal)!.kind, x: position.x, y: position.y, z: position.z, yaw: motion.displayYaw, health: entity.get(AnimalHealth)!.value, speed: motion.speed, running: motion.running }];

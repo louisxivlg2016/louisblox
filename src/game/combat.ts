@@ -27,7 +27,7 @@ export function findAnimalTarget(world: World, origin: Vector3, direction: Vecto
   let target: AnimalTarget | null = null;
   let closest = maxDistance;
   for (const entity of world.query(Animal, AnimalPosition, AnimalHealth)) {
-    if (entity.get(HorseRider)?.mounted) continue;
+    if (entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) continue;
     const kind = entity.get(Animal)!.kind;
     const position = entity.get(AnimalPosition)!;
     const bird = kind === 'chicken' || kind === 'duck';
@@ -54,7 +54,7 @@ export function damageAnimal(world: World, target: Entity, amount: number, attac
   const health = target.get(AnimalHealth);
   const animal = target.get(Animal);
   const position = target.get(AnimalPosition);
-  if (!health || !animal || !position || target.get(HorseRider)?.mounted) return false;
+  if (!health || !animal || !position || target.get(HorseRider)?.mounted || target.get(HorseRider)?.passenger) return false;
   const remaining = health.value - amount * (attacker ? attackMultiplier() : 1);
   if (remaining > 0) {
     target.set(AnimalHealth, { value: remaining });
