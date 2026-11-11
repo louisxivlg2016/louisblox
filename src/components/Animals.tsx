@@ -9,6 +9,7 @@ import { spawnAnimal } from '../game/animals';
 import { mountSnapshotsById } from '../game/mounts';
 import { AnimalGlb } from './AnimalGlb';
 import { SaddleModel } from './ItemModel';
+import { isAnimalDead } from '../game/deathSync';
 
 function AnimalView({ entity }: { entity: Entity }) {
   const kind = entity.get(Animal)!.kind;
@@ -46,10 +47,12 @@ function RemoteHorseSync() {
     const localMount = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
     const horses = [...world.query(Animal, AnimalId, AnimalPosition, AnimalMotion, AnimalMesh)];
     for (const { snapshot, kind, role } of mountSnapshotsById(useRemotePlayerStore.getState().players).values()) {
-      let entity = horses.find((candidate) => candidate.get(AnimalId) === snapshot.id);
+      if (isAnimalDead(snapshot.id)) continue;
+      let entity: Entity | undefined = horses.find((candidate) => candidate.get(AnimalId) === snapshot.id);
       if (entity === localMount) continue;
       if (!entity) {
-        entity = spawnAnimal(world, kind, snapshot.x, snapshot.y, snapshot.z, 0);
+        entity = spawnAnimal(world, kind, snapshot.x, snapshot.y, snapshot.z, 0) ?? undefined;
+        if (!entity) continue;
         entity.set(AnimalId, snapshot.id);
         horses.push(entity);
       }

@@ -52,7 +52,11 @@ function soloSpawn() {
 }
 type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; canBreak?: boolean; canPlace?: boolean; bannedPlayerIds?: string[]; bannedPlayerNames?: Record<string, string> };
 type Tribe = { id: string; name: string; ownerId: string; members: Array<{ playerId: string; name: string }> };
-type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; worldName?: string; template?: WorldTemplate; protection?: WorldProtection; tribes?: Tribe[]; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']> };
+type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; worldName?: string; template?: WorldTemplate; protection?: WorldProtection; tribes?: Tribe[]; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']>; deadAnimals?: string[]; deadTraders?: string[]; deathWorldId?: string };
+
+function isDeathId(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= 80;
+}
 type SharedVehicle = {
   id: string;
   kind: VehicleKind;
@@ -344,6 +348,9 @@ export class GameRoom extends DurableObject<Env> {
   private worldName?: string;
   private tribes: Tribe[] = [];
   private tribeInvitations = new Map<string, { tribeId: string; fromId: string }>();
+  private deadAnimals = new Set<string>();
+  private deadTraders = new Set<string>();
+  private deathWorldId?: string;
 
   private async ensureWorld() {
     this.worldReady ??= this.ctx.blockConcurrencyWhile(async () => {
@@ -356,6 +363,9 @@ export class GameRoom extends DurableObject<Env> {
       this.worldEdits = new Map(stored?.edits ?? []);
       this.gameplayMode = stored?.gameplayMode ?? 'creative';
       this.worldTemplate = stored?.template ?? (this.gameplayMode === 'city-ancient' || this.gameplayMode === 'city-modern' ? this.gameplayMode : 'nature');
+      this.deathWorldId = this.worldId;
+      this.deadAnimals = new Set(stored?.deathWorldId === this.worldId ? (stored?.deadAnimals ?? []).filter(isDeathId) : []);
+      this.deadTraders = new Set(stored?.deathWorldId === this.worldId ? (stored?.deadTraders ?? []).filter(isDeathId) : []);
       this.pirates.restore(stored?.pirates);
       this.football.restore(stored?.football);
       this.maze.restore(stored?.maze);
@@ -365,7 +375,7 @@ export class GameRoom extends DurableObject<Env> {
 
   private worldSnapshot() {
     const edits = [...this.worldEdits].filter(([, edit]) => edit === null || (typeof edit === 'number' ? edit !== BlockKind.Water : edit.kind !== BlockKind.Water));
-    return { type: 'world', seed: this.worldSeed, edits, gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName ?? this.worldId, template: this.worldTemplate, protection: this.protection };
+    return { type: 'world', seed: this.worldSeed, edits, gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName ?? this.worldId, template: this.worldTemplate, protection: this.protection, deadAnimals: [...this.deadAnimals], deadTraders: [...this.deadTraders] };
   }
 
   private publisherId?: string;
@@ -387,7 +397,7 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private async saveWorld(publisher?: PlayerAttachment) {
-    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName, template: this.worldTemplate, protection: this.protection, tribes: this.tribes, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot() } satisfies StoredWorld);
+    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName, template: this.worldTemplate, protection: this.protection, tribes: this.tribes, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot(), deadAnimals: [...this.deadAnimals], deadTraders: [...this.deadTraders], deathWorldId: this.deathWorldId } satisfies StoredWorld);
     this.publishWorld(publisher);
   }
 
@@ -468,6 +478,9 @@ export class GameRoom extends DurableObject<Env> {
     this.protection = undefined;
     this.worldEdits.clear();
     this.vehicles.clear();
+    this.deadAnimals.clear();
+    this.deadTraders.clear();
+    this.deathWorldId = undefined;
     this.gameplayMode = 'creative';
     this.battleHealth.clear();
     this.battleHits.clear();
@@ -977,7 +990,13 @@ export class GameRoom extends DurableObject<Env> {
       if (replace) {
         const newWorld = this.worldSeed === null;
         const worldId = (data as { worldId?: unknown }).worldId;
-        this.worldId = typeof worldId === 'string' && worldId.length <= 80 ? worldId : undefined;
+        const nextWorldId = typeof worldId === 'string' && worldId.length <= 80 ? worldId : undefined;
+        if (nextWorldId !== this.worldId) {
+          this.deadAnimals.clear();
+          this.deadTraders.clear();
+        }
+        this.worldId = nextWorldId;
+        this.deathWorldId = nextWorldId;
         const worldName = (data as { worldName?: unknown }).worldName;
         this.worldName = typeof worldName === 'string' && worldName.trim() ? worldName.trim().slice(0, 48) : this.worldId ?? attachment.room;
         this.worldSeed = seed;
@@ -1084,9 +1103,25 @@ export class GameRoom extends DurableObject<Env> {
       this.publishPresence(attachment);
       return;
     }
+    if (type === 'animal-death' || type === 'trader-death') {
+      const id = (data as { id?: unknown }).id;
+      const worldId = (data as { worldId?: unknown }).worldId;
+      const attachment = this.attachment(ws);
+      if (!attachment || !isDeathId(id) || (worldId !== undefined && worldId !== (this.worldId ?? attachment.room))) return;
+      const deaths = type === 'animal-death' ? this.deadAnimals : this.deadTraders;
+      if (deaths.has(id)) return;
+      deaths.add(id);
+      this.deathWorldId = this.worldId;
+      this.broadcast({ type, id });
+      await this.saveWorld();
+      return;
+    }
     if (type === 'animal-state') {
       const animals = parseAnimalSnapshots((data as { animals?: unknown }).animals);
-      if (animals) this.broadcast({ type: 'animal-state', animals }, ws);
+      if (animals) {
+        const living = animals.filter((animal) => (animal.health as number) > 0 && !this.deadAnimals.has(animal.id as string));
+        if (living.length > 0) this.broadcast({ type: 'animal-state', animals: living }, ws);
+      }
       return;
     }
     if (type === 'fish-state') {

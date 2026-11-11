@@ -1,8 +1,9 @@
 import type { Entity, World } from 'koota';
 import type { Vector3 } from 'three';
 import { damageAnimal } from './combat';
-import { Animal, AnimalHealth, AnimalHit, AnimalPosition, CamelLeash, ChunkData, FirePosition, HorseRider, Player, PlayerMount, Trader, TraderPosition } from './traits';
+import { Animal, AnimalHealth, AnimalHit, AnimalPosition, FirePosition, HorseRider, Player, PlayerMount, Trader, TraderPosition } from './traits';
 import { dismount } from './vehicles';
+import { applyTraderDeath, reportTraderDeath } from './deathSync';
 
 export function getFireSources(world: World) {
   return world.query(FirePosition).map((entity) => entity.get(FirePosition)!);
@@ -40,25 +41,11 @@ export function damageAnimalFromHazard(world: World, target: Entity, amount: num
 export function damageTrader(world: World, target: Entity, amount: number) {
   const trader = target.get(Trader);
   if (!trader) return false;
-  if (!trader.villager) {
-    target.set(Trader, { health: Math.max(1, trader.health - amount), panic: 3 });
-    return false;
-  }
   const health = Math.max(0, trader.health - amount);
   target.set(Trader, { health, panic: 3 });
   if (health > 0) return false;
-  for (const camel of world.query(CamelLeash, AnimalHit)) {
-    const leash = camel.get(CamelLeash)!;
-    if (leash.trader !== target) continue;
-    leash.trader = null;
-    camel.remove(CamelLeash);
-    camel.set(AnimalHit, { panic: 2.4 });
-  }
-  for (const chunkEntity of world.query(ChunkData)) {
-    const data = chunkEntity.get(ChunkData)!;
-    data.animals = data.animals.filter((entity) => entity !== target);
-  }
-  target.destroy();
+  reportTraderDeath(target);
+  applyTraderDeath(world, `${trader.homeX}:${trader.homeZ}`);
   return true;
 }
 

@@ -1,12 +1,13 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
 import type { AnimalKind } from './animals';
-import { Animal, AnimalHealth, AnimalHit, AnimalMotion, AnimalPosition, ChunkData, HorseRider, MeatDrop, MeatDropMesh, MeatDropMotion, MeatDropPosition, Player, PlayerHealth } from './traits';
+import { Animal, AnimalHealth, AnimalHit, AnimalId, AnimalMotion, AnimalPosition, ChunkData, HorseRider, MeatDrop, MeatDropMesh, MeatDropMotion, MeatDropPosition, Player, PlayerHealth } from './traits';
 import { useGameStore } from './store';
 import { ITEM_META } from './items';
 import { absorbWithShield, attackMultiplier, defenceMultiplier, hasEffect } from './effects';
 import { getBlockIndex } from './chunks';
 import { moveVoxelCharacter } from './systems/collisionSystem';
+import { applyAnimalDeath, reportAnimalDeath } from './deathSync';
 
 export function damagePlayer(world: World, amount: number, kind: 'physical' | 'fire' = 'physical') {
   const player = world.queryFirst(Player);
@@ -43,6 +44,12 @@ export function findAnimalTarget(world: World, origin: Vector3, direction: Vecto
 }
 
 export function removeAnimal(world: World, target: Entity) {
+  const id = target.get(AnimalId);
+  reportAnimalDeath(target);
+  if (id) {
+    applyAnimalDeath(world, id);
+    return;
+  }
   for (const chunkEntity of world.query(ChunkData)) {
     const data = chunkEntity.get(ChunkData)!;
     data.animals = data.animals.filter((entity) => entity !== target);

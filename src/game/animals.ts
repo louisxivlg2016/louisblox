@@ -6,6 +6,7 @@ import { Animal, AnimalHealth, AnimalHit, AnimalId, AnimalMesh, AnimalMotion, An
 import { useGameStore } from './store';
 import { isInAnyRuinFootprint } from './ruins';
 import { spawnVillageResidents, tradeCityAt } from './villages';
+import { isAnimalDead, isTraderDead } from './deathSync';
 
 function safeRoamSpawn(x: number, z: number, seed: number) {
   for (let radius = 0; radius <= 16; radius += 1) {
@@ -74,6 +75,7 @@ function hash(x: number, z: number, seed: number) {
 
 export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number, z: number, seed: number) {
   const id = `${kind}:${x}:${z}`;
+  if (isAnimalDead(id)) return null;
   const existing = world.query(Animal, AnimalId).find((entity) => entity.get(AnimalId) === id);
   if (existing) return existing;
   const site = kind === 'duck' ? { x, y, z } : safeRoamSpawn(x, z, seed);
@@ -97,6 +99,7 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
 
 export function spawnTrader(world: World, x: number, z: number, seed: number, destinationSeed = seed) {
   const site = safeRoamSpawn(x, z, seed);
+  if (isTraderDead(site.x, site.z)) return [];
   const existing = world.query(Trader).find((entity) => {
     const trader = entity.get(Trader)!;
     return !trader.villager && trader.homeX === site.x && trader.homeZ === site.z;
@@ -112,12 +115,13 @@ export function spawnTrader(world: World, x: number, z: number, seed: number, de
     TraderMesh(),
   );
   const heading = site.x * 0.17 + site.z * 0.31;
-  const camels = [0, 1].map((order) => {
+  const camels = [0, 1].flatMap((order) => {
     const gap = 2.7 + order * 2.6;
     const camel = spawnAnimal(world, 'camel', site.x - Math.sin(heading) * gap, site.y, site.z - Math.cos(heading) * gap, seed + order);
+    if (!camel) return [];
     camel.set(AnimalMotion, { yaw: heading, displayYaw: heading });
     camel.add(CamelLeash({ trader, order }));
-    return camel;
+    return [camel];
   });
   return [trader, ...camels];
 }
@@ -137,18 +141,22 @@ function spawnTradersAlongGrid(world: World, cx: number, cz: number, seed: numbe
 
 export function spawnChunkAnimals(world: World, cx: number, cz: number, water: WaterTile[], seed: number) {
   const entities: Entity[] = [...spawnTradersAlongGrid(world, cx, cz, seed), ...spawnVillageResidents(world, cx, cz, seed)];
+  const spawn = (...args: Parameters<typeof spawnAnimal>) => {
+    const entity = spawnAnimal(...args);
+    if (entity) entities.push(entity);
+  };
   const chunkBiome = biomeAt(cx * 16 + 8, cz * 16 + 8, seed);
 
   const openWater = water.filter((tile) => biomeAt(tile.x, tile.z, seed) !== 'jungle' && !isInAnyRuinFootprint(tile.x, tile.z, seed));
   if (openWater.length > 0 && hash(cx, cz, seed + 800) > 0.95) {
     const tile = openWater[Math.floor(hash(cx, cz, seed + 801) * openWater.length)];
-    entities.push(spawnAnimal(world, 'duck', tile.x, SEA_LEVEL + 0.35, tile.z, seed));
+    spawn(world, 'duck', tile.x, SEA_LEVEL + 0.35, tile.z, seed);
   }
 
   if (cx === 0 && cz === 0) {
-    entities.push(spawnAnimal(world, 'cow', -3, heightAt(-3, -4, seed) + 0.5, -4, seed));
-    entities.push(spawnAnimal(world, 'sheep', 4, heightAt(4, -5, seed) + 0.5, -5, seed));
-    entities.push(spawnAnimal(world, 'horse', 5, heightAt(5, 3, seed) + 0.5, 3, seed));
+    spawn(world, 'cow', -3, heightAt(-3, -4, seed) + 0.5, -4, seed);
+    spawn(world, 'sheep', 4, heightAt(4, -5, seed) + 0.5, -5, seed);
+    spawn(world, 'horse', 5, heightAt(5, 3, seed) + 0.5, 3, seed);
     entities.push(...spawnTrader(world, 7, 4, seed));
   }
 
@@ -159,7 +167,7 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
       const z = cz * 16 + 2 + Math.floor(hash(cx, cz + index, seed + 823) * 12);
       const height = heightAt(x, z, seed);
       if (height <= SEA_LEVEL + 1 || height > 24) continue;
-      entities.push(spawnAnimal(world, 'zombie', x, height + 0.5, z, seed + index));
+      spawn(world, 'zombie', x, height + 0.5, z, seed + index);
     }
   }
 
@@ -171,7 +179,7 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
   const height = heightAt(x, z, seed);
   if (height <= SEA_LEVEL + 1 || height > 24) return entities;
   const kind = candidates[Math.floor(hash(x, z, seed + 806) * candidates.length)];
-  entities.push(spawnAnimal(world, kind, x, height + 0.5, z, seed));
+  spawn(world, kind, x, height + 0.5, z, seed);
 
   return entities;
 }

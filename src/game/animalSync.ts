@@ -8,6 +8,7 @@ import type { FishKind } from './fish';
 import { useMultiplayerStore } from './multiplayerStore';
 import { playerIdentity } from './playerIdentity';
 import { turnToward } from './rotation';
+import { applyAnimalDeath, isAnimalDead } from './deathSync';
 
 export type AnimalSnapshot = { id: string; kind: AnimalKind; x: number; y: number; z: number; yaw: number; health: number; speed: number; running?: boolean };
 export type FishSnapshot = { id: string; kind: FishKind; x: number; y: number; z: number; yaw: number; age: number; phase: number; speed: number };
@@ -64,10 +65,15 @@ export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[]) 
   const interpolations = interpolationFor(world);
   for (const snapshot of snapshots) {
     if (!isAnimalSnapshot(snapshot)) continue;
+    if (snapshot.health <= 0 || isAnimalDead(snapshot.id)) {
+      applyAnimalDeath(world, snapshot.id);
+      continue;
+    }
     seen.add(snapshot.id);
-    let entity = world.query(Animal, AnimalId).find((candidate) => candidate.get(AnimalId) === snapshot.id);
+    let entity: Entity | undefined = world.query(Animal, AnimalId).find((candidate) => candidate.get(AnimalId) === snapshot.id);
     if (entity?.get(CamelLeash) || entity === localMount) continue;
-    if (!entity) entity = spawnAnimal(world, snapshot.kind, snapshot.x, snapshot.y, snapshot.z, 0);
+    if (!entity) entity = spawnAnimal(world, snapshot.kind, snapshot.x, snapshot.y, snapshot.z, 0) ?? undefined;
+    if (!entity) continue;
     entity.set(AnimalId, snapshot.id);
     const position = entity.get(AnimalPosition)!;
     if (!initializedAnimals.has(entity)) {
@@ -76,17 +82,17 @@ export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[]) 
     }
     interpolations.set(entity, { from: position.clone(), to: new Vector3(snapshot.x, snapshot.y, snapshot.z), yawTo: snapshot.yaw, elapsed: 0 });
     entity.set(AnimalMotion, { yaw: snapshot.yaw, speed: snapshot.speed, running: snapshot.running ?? false });
-    if (snapshot.health <= 0) {
-      interpolations.delete(entity);
-      entity.destroy();
-      continue;
-    }
     if (entity.get(AnimalHealth)?.value !== snapshot.health) entity.set(AnimalHealth, { value: snapshot.health });
     const mesh = entity.get(AnimalMesh)?.value;
     if (mesh) mesh.visible = !player || position.distanceToSquared(player) < 40 * 40;
   }
   for (const entity of world.query(Animal, AnimalId)) {
     const id = entity.get(AnimalId);
+    if (id && isAnimalDead(id)) {
+      interpolations.delete(entity);
+      applyAnimalDeath(world, id);
+      continue;
+    }
     if (seen.has(id ?? '') || entity === localMount || entity.get(CamelLeash) || entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) continue;
     interpolations.delete(entity);
     entity.destroy();
@@ -174,10 +180,12 @@ export function syncAnimalState(world: World, dt: number) {
   clocks.set(world, 0.2);
   if (!socket || socket.readyState !== WebSocket.OPEN || !isAnimalAuthority()) return;
   const animals = world.query(Animal, AnimalId, AnimalPosition, AnimalMotion, AnimalHealth).flatMap((entity) => {
-    if (entity.get(CamelLeash) || entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) return [];
+    const id = entity.get(AnimalId)!;
+    const health = entity.get(AnimalHealth)!.value;
+    if (health <= 0 || isAnimalDead(id) || entity.get(CamelLeash) || entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) return [];
     const position = entity.get(AnimalPosition)!;
     const motion = entity.get(AnimalMotion)!;
-    return [{ id: entity.get(AnimalId), kind: entity.get(Animal)!.kind, x: position.x, y: position.y, z: position.z, yaw: motion.displayYaw, health: entity.get(AnimalHealth)!.value, speed: motion.speed, running: motion.running }];
+    return [{ id, kind: entity.get(Animal)!.kind, x: position.x, y: position.y, z: position.z, yaw: motion.displayYaw, health, speed: motion.speed, running: motion.running }];
   });
   const fish = world.query(Fish, FishId, FishPosition, FishMotion).map((entity) => {
     const position = entity.get(FishPosition)!;

@@ -54,6 +54,7 @@ import { applyProtection, isWorldProtection, setProtectionSocket, useProtectionS
 import { clearMinigames, receiveMinigameMessage, setMinigameSocket } from '../game/minigameSync';
 import { applyAnimalSnapshots, applyFishSnapshots, isAnimalSnapshot, isFishSnapshot, setAnimalSocket } from '../game/animalSync';
 import { clearTribes, receiveTribeMessage, setTribeSocket } from '../game/tribes';
+import { applyAnimalDeath, applyDeathSnapshot, applyTraderDeath, isDeathId, setDeathSocket } from '../game/deathSync';
 
 type ServerMessage = {
   type?: unknown;
@@ -85,8 +86,11 @@ type ServerMessage = {
   protection?: unknown;
   animals?: unknown;
   fish?: unknown;
+  id?: unknown;
+  deadAnimals?: unknown;
+  deadTraders?: unknown;
 };
-type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string; worldName?: string; template?: import('../game/worldMode').WorldTemplate; protection?: import('../game/protection').WorldProtection };
+type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string; worldName?: string; template?: import('../game/worldMode').WorldTemplate; protection?: import('../game/protection').WorldProtection; deadAnimals?: string[]; deadTraders?: string[] };
 
 const requestedMode = new URLSearchParams(window.location.search).get('mode');
 let requestedRoomMode: GameplayMode | null = isGameplayMode(requestedMode) ? requestedMode : null;
@@ -438,6 +442,7 @@ export function MultiplayerConnection() {
         }
         pendingSpawn.current = null;
       }
+      applyDeathSnapshot(world, pending.deadAnimals, pending.deadTraders);
       pendingWorld.current = null;
       if (!joinOnly) saveWorld(world);
       store.setWorldReady(true);
@@ -493,6 +498,7 @@ export function MultiplayerConnection() {
       setMinigameSocket(next);
       setProtectionSocket(next);
       setAnimalSocket(next);
+      setDeathSocket(next);
       setTribeSocket(next);
       next.onopen = () => store.setStatus('online');
       next.onmessage = (event) => {
@@ -509,6 +515,16 @@ export function MultiplayerConnection() {
         }
         if (receiveMinigameMessage(data)) return;
         if (receiveTribeMessage(data)) return;
+        if ((data.type === 'animal-death' || data.type === 'trader-death') && isDeathId(data.id)) {
+          const pending = pendingWorld.current;
+          if (pending) {
+            const key = data.type === 'animal-death' ? 'deadAnimals' : 'deadTraders';
+            const deaths = pending[key] ?? [];
+            if (!deaths.includes(data.id)) pending[key] = [...deaths, data.id];
+          } else if (data.type === 'animal-death') applyAnimalDeath(world, data.id);
+          else applyTraderDeath(world, data.id);
+          return;
+        }
         if (data.type === 'animal-state' && Array.isArray(data.animals)) {
           applyAnimalSnapshots(world, data.animals.filter(isAnimalSnapshot));
           return;
@@ -589,7 +605,7 @@ export function MultiplayerConnection() {
           return;
         }
         if (data.type === 'world' && (data.seed === null || typeof data.seed === 'number') && Array.isArray(data.edits)) {
-          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: isGameplayMode(data.gameplayMode) ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined, worldName: typeof data.worldName === 'string' ? data.worldName : undefined, template: data.template === 'city-ancient' || data.template === 'city-modern' ? data.template : 'nature', protection: isWorldProtection(data.protection) ? data.protection : undefined };
+          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: isGameplayMode(data.gameplayMode) ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined, worldName: typeof data.worldName === 'string' ? data.worldName : undefined, template: data.template === 'city-ancient' || data.template === 'city-modern' ? data.template : 'nature', protection: isWorldProtection(data.protection) ? data.protection : undefined, deadAnimals: Array.isArray(data.deadAnimals) ? data.deadAnimals.filter(isDeathId) : [], deadTraders: Array.isArray(data.deadTraders) ? data.deadTraders.filter(isDeathId) : [] };
           applyPendingWorld();
           return;
         }
@@ -765,6 +781,7 @@ export function MultiplayerConnection() {
       socket.current = null;
       setProtectionSocket(null);
       setAnimalSocket(null);
+      setDeathSocket(null);
       setTribeSocket(null);
       clearTribes();
       clearTeleportRequests();

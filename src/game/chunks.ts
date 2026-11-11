@@ -318,6 +318,7 @@ function loadChunk(world: World, cx: number, cz: number) {
     if (existing) existing.add(HorseRider({ saddled: true }));
     else {
       const horse = spawnAnimal(world, 'horse', savedHorse.x, savedHorse.y, savedHorse.z, state.seed);
+      if (!horse) continue;
       horse.add(HorseRider({ saddled: true }));
       data.animals.push(horse);
     }
