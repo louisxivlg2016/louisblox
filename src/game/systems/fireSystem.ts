@@ -29,6 +29,23 @@ function hitAt(block: { x: number; y: number; z: number; kind: BlockKind }): Vox
 
 const fireDamageClocks = new WeakMap<World, number>();
 
+function nearbyWater(blocks: ReturnType<typeof getBlockIndex>, x: number, y: number, z: number) {
+  for (const [dx, dy, dz] of [[0, 0, 0], ...directions]) {
+    const block = blocks.get(voxelKey(x + dx, y + dy, z + dz));
+    if (isWaterBlock(block?.kind)) return block;
+  }
+  for (let dx = -2; dx <= 2; dx += 1) {
+    for (let dy = -2; dy <= 2; dy += 1) {
+      for (let dz = -2; dz <= 2; dz += 1) {
+        if (Math.max(Math.abs(dx), Math.abs(dy), Math.abs(dz)) < 2) continue;
+        const block = blocks.get(voxelKey(x + dx, y + dy, z + dz));
+        if (isWaterBlock(block?.kind)) return block;
+      }
+    }
+  }
+  return undefined;
+}
+
 export function fireSystem(world: World, dt: number) {
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return;
@@ -46,7 +63,7 @@ export function fireSystem(world: World, dt: number) {
 
   batchVoxelEdits(world, () => {
     fires.updateEach(([fire, position]) => {
-      const water = [[0, 0, 0], ...directions].map(([dx, dy, dz]) => blocks.get(voxelKey(position.x + dx, position.y + dy, position.z + dz))).find((block) => isWaterBlock(block?.kind));
+      const water = nearbyWater(blocks, position.x, position.y, position.z);
       if (water) {
         const block = blocks.get(voxelKey(position.x, position.y, position.z));
         if (block) replaceVoxel(world, hitAt(block), water.kind);
