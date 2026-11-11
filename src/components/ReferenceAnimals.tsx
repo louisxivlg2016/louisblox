@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { Mesh, NearestFilter } from 'three';
+import { Mesh, NearestFilter, Vector3 } from 'three';
 import type { Entity } from 'koota';
 import type { Group } from 'three';
 import { AnimalMesh, AnimalMotion, AnimalPosition, Trader } from '../game/traits';
@@ -31,16 +31,34 @@ for (const model of [...Object.values(hunyuanAnimals), traderUrl]) useGLTF.prelo
 
 function useAnimalLegs(entity: Entity, bird = false) {
   const last = useRef<{ x: number; z: number } | null>(null);
+  const renderPosition = useRef<Vector3 | null>(null);
+  const renderYaw = useRef<number | null>(null);
+  const walking = useRef(0);
   const phase = useRef(0);
   useFrame((_, delta) => {
     const position = entity.get(AnimalPosition);
     const motion = entity.get(AnimalMotion);
-    const moving = Boolean(position && last.current && Math.hypot(position.x - last.current.x, position.z - last.current.z) > 0.0002 && (motion?.idle ?? 0) <= 0);
-    if (position) last.current = { x: position.x, z: position.z };
+    const mesh = entity.get(AnimalMesh)?.value;
+    if (position && mesh) {
+      const moved = last.current !== null && Math.hypot(position.x - last.current.x, position.z - last.current.z) > 0.0002;
+      walking.current = moved ? 0.12 : Math.max(0, walking.current - delta);
+      last.current = { x: position.x, z: position.z };
+      const smoothing = 1 - Math.exp(-delta * 30);
+      if (!renderPosition.current || renderPosition.current.distanceToSquared(position) > 16) renderPosition.current = position.clone();
+      renderPosition.current.lerp(position, smoothing);
+      mesh.position.copy(renderPosition.current);
+      if (motion) {
+        const currentYaw = renderYaw.current ?? motion.displayYaw;
+        const angle = Math.atan2(Math.sin(motion.displayYaw - currentYaw), Math.cos(motion.displayYaw - currentYaw));
+        renderYaw.current = currentYaw + angle * smoothing;
+        mesh.rotation.y = renderYaw.current;
+      }
+    }
+    const moving = walking.current > 0 && (motion?.idle ?? 0) <= 0;
     if (moving) phase.current += delta * (bird ? 10 : 8) * (motion?.running ? 1.5 : 1);
     const swing = moving ? Math.sin(phase.current) * (bird ? 0.35 : motion?.running ? 0.6 : 0.44) : 0;
     for (let index = 0; index < 4; index += 1) {
-      const leg = entity.get(AnimalMesh)?.value?.getObjectByName(`animal-leg-${index}`);
+      const leg = mesh?.getObjectByName(`animal-leg-${index}`);
       if (leg) leg.rotation.x += (swing * (index === 0 || index === 3 ? 1 : -1) - leg.rotation.x) * (1 - Math.exp(-delta * 12));
     }
   });
