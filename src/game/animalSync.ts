@@ -27,8 +27,7 @@ export function setAnimalSocket(next: WebSocket | null) {
 
 export function isAnimalAuthority() {
   const state = useMultiplayerStore.getState();
-  if (!state.enabled) return true;
-  if (state.status !== 'online') return false;
+  if (!state.enabled || !state.joined || state.status !== 'online') return true;
   const authority = state.players.length > 0 ? state.players.map((player) => player.playerId).sort()[0] : playerIdentity();
   return authority === playerIdentity();
 }
