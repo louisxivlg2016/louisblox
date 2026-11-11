@@ -52,8 +52,10 @@ export function ProfileAvatar({ kind, size = 58 }: {
 }) {
   const selected = useAvatarStore((state) => state.kind);
   const current = kind ?? selected;
-  const photo = PHOTO_AVATARS[current === 'pixel' || current === 'default' ? 'boy' : current];
-  return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}`} src={photo.url} width={size} height={size} alt={`Portrait ${photo.name}`} />;
+  const photoKind = current === 'pixel' || current === 'default' ? 'boy' : current;
+  const photo = PHOTO_AVATARS[photoKind];
+  const newPortrait = ['girl', 'girl-dark', 'boy', 'boy-dark', 'trader', 'soldier'].includes(photoKind);
+  return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}${newPortrait ? ' profile-photo-new' : ''}`} src={photo.url} width={size} height={size} alt={`Portrait ${photo.name}`} />;
 }
 
 export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {

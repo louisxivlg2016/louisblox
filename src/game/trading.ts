@@ -4,7 +4,7 @@ import { changeInventory, inventoryCount } from './inventory';
 import type { SelectedKind } from './items';
 import { selectionInfo } from './items';
 import { useGameStore } from './store';
-import { Player, PlayerBody, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Trader } from './traits';
+import { AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Player, PlayerBody, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Trader, TraderMesh, TraderPosition } from './traits';
 import type { World } from 'koota';
 import { BlockKind } from './voxel';
 import { findInteractionTarget } from './interactionTargets';
@@ -143,6 +143,23 @@ export function acceptRestaurantInvitation(world: World) {
     merchant.set(Trader, { arrived: true, following: false, walking: true, restaurantInvited: true, restaurantMeal: 'going', restaurantMealTime: 0, restaurantStep: 0, restaurantMessage: 'Viens au restaurant avec moi. Je mange aussi avec toi !', targetX: next.x, targetZ: next.z });
   }
   for (let index = 0; index < 9; index++) streamChunks(world, next.x, next.z);
+  if (merchant && !merchant.get(Trader)?.villager) {
+    const position = merchant.get(TraderPosition);
+    if (position) {
+      position.set(next.x - 1, next.y, next.z);
+      const mesh = merchant.get(TraderMesh)?.value;
+      if (mesh) mesh.position.copy(position);
+    }
+    for (const camel of world.query(CamelLeash, AnimalPosition, AnimalMesh)) {
+      const leash = camel.get(CamelLeash)!;
+      if (leash.trader !== merchant) continue;
+      const position = camel.get(AnimalPosition)!;
+      position.set(next.x - 2.7 - leash.order * 2.6, next.y, next.z + (leash.order % 2 === 0 ? -1 : 1));
+      camel.set(AnimalMotion, { yaw: Math.PI / 2, displayYaw: Math.PI / 2, speed: 0, running: false });
+      const mesh = camel.get(AnimalMesh)?.value;
+      if (mesh) mesh.position.copy(position);
+    }
+  }
   player.set(next.x, next.y, next.z);
   playerEntity.get(PlayerBody)?.value?.setTranslation(next, true);
   playerEntity.get(PlayerVelocity)?.set(0, 0, 0);

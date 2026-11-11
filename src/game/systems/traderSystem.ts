@@ -172,6 +172,31 @@ function treeAhead(world: World, position: import('three').Vector3, yaw: number)
   return false;
 }
 
+function separateCamel(world: World, entity: Entity, position: import('three').Vector3, dt: number) {
+  const leash = entity.get(CamelLeash)!;
+  for (const other of world.query(CamelLeash, AnimalPosition)) {
+    if (other === entity) continue;
+    const otherPosition = other.get(AnimalPosition)!;
+    let dx = position.x - otherPosition.x;
+    let dz = position.z - otherPosition.z;
+    let distance = Math.hypot(dx, dz);
+    if (distance >= 2.4) continue;
+    if (distance < 0.001) {
+      dx = leash.order % 2 === 0 ? 1 : -1;
+      dz = 0;
+      distance = 1;
+    }
+    const step = Math.min(2.4 - distance, Math.max(0.025, dt * 3));
+    const x = position.x + dx / distance * step;
+    const z = position.z + dz / distance * step;
+    const ground = walkableGround(world, x, z, position.y, 4.05);
+    if (ground === null) continue;
+    moveOnGround(world, position, x, z, ground);
+    return true;
+  }
+  return false;
+}
+
 const restaurantPaths = new Map<Entity, { key: string; points: Array<{ x: number; y: number; z: number }> }>();
 
 function guideRestaurantTravel(world: World, entity: Entity, dt: number) {
@@ -474,6 +499,7 @@ export function traderSystem(world: World, dt: number) {
       stuckCamels.delete(entity);
       return;
     }
+    if (separateCamel(world, entity, position, dt) && mesh.value) mesh.value.position.copy(position);
     if (talkingTo === leash.trader) {
       motion.speed = 0;
       return;
@@ -484,7 +510,7 @@ export function traderSystem(world: World, dt: number) {
       return;
     }
     const heading = leash.trader?.get(TraderMesh)?.value?.rotation.y ?? traderHeading(leader ?? { homeX: trader.x, homeZ: trader.z });
-    const gap = 1.65 + leash.order * 1.2;
+    const gap = 2.7 + leash.order * 2.6;
     const dx = trader.x - Math.sin(heading) * gap - position.x;
     const dz = trader.z - Math.cos(heading) * gap - position.z;
     const distance = Math.hypot(dx, dz);
