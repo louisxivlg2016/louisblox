@@ -1,7 +1,15 @@
 import { create } from 'zustand';
 
-export const PROFILE_AVATAR_KINDS = ['pixel', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader'] as const;
+export const PROFILE_AVATAR_KINDS = ['pixel', 'girl', 'girl-dark', 'boy', 'boy-dark', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader'] as const;
 export type ProfileAvatarKind = (typeof PROFILE_AVATAR_KINDS)[number];
+export type ProfileHeadModel = Exclude<import('./outfits').OutfitKind, 'default'> | 'classic-girl' | 'classic-boy';
+
+export function profileHeadModel(kind: ProfileAvatarKind): ProfileHeadModel | null {
+  if (kind === 'pixel') return null;
+  if (kind === 'girl' || kind === 'girl-dark') return 'classic-girl';
+  if (kind === 'boy' || kind === 'boy-dark') return 'classic-boy';
+  return kind;
+}
 
 export function isProfileAvatarKind(value: unknown): value is ProfileAvatarKind {
   return typeof value === 'string' && (PROFILE_AVATAR_KINDS as readonly string[]).includes(value);

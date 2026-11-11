@@ -5,12 +5,11 @@ import { animalMaterial } from './animalTextures';
 import { colorCharacterMaterial } from './characterAppearance';
 import type { CharacterAppearance } from './appearance';
 import { appearanceSkinColor } from './appearance';
-import type { OutfitKind } from './outfits';
 
 type Part = 'body' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
 type Rig = Partial<Record<Exclude<Part, 'body'>, Group>>;
 
-function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean, bounds: Box3, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>, allowGrayHair = false, princessHair = false, outfit?: OutfitKind) {
+function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean, bounds: Box3, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>, allowGrayHair = false, princessHair = false, outfit?: import('./avatar').ProfileHeadModel | 'default') {
   const geometry = source.clone().applyMatrix4(matrix);
   const position = geometry.getAttribute('position');
   const index = geometry.index;
@@ -29,7 +28,7 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     else if (legs && Math.abs(x) < width * 0.28 && y < floor + height * 0.48) part = `${side}Leg`;
     indices[part].push(a, b, c);
   }
-  return { geometry, indices, material: appearance && outfit !== 'explorer' ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair, princessHair, outfit) : material };
+  return { geometry, indices, material: appearance ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair, princessHair, outfit) : material };
 }
 
 function addPrincessHair(root: Group, width: number, height: number, depth: number, floor: number, offsetY: number, hairColor?: string) {
@@ -51,7 +50,7 @@ function addPrincessHair(root: Group, width: number, height: number, depth: numb
   root.add(hair);
 }
 
-export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind, 'default'>, scale: number, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>) {
+export function createCharacterRig(source: Object3D, outfit: import('./avatar').ProfileHeadModel, scale: number, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>) {
   const scene = SkeletonUtils.clone(source);
   scene.updateMatrixWorld(true);
   const bounds = new Box3().setFromObject(scene);
@@ -60,7 +59,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   const floor = bounds.min.y;
   const pieces: Array<ReturnType<typeof splitGeometry>> = [];
   scene.traverse((object) => {
-    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, outfit !== 'princess', bounds, appearance, outfit === 'louis15', outfit === 'princess', outfit));
+    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, outfit !== 'princess', bounds, appearance, outfit === 'louis15', outfit === 'princess', outfit.startsWith('classic-') ? 'default' : outfit));
   });
   const root = new Group();
   const rig: Rig = {};
@@ -93,7 +92,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
     }
   }
   if (rig.head) {
-    const cover = new Mesh(new BoxGeometry(width * 0.3, height * 0.035, Math.max(0.12, (bounds.max.z - bounds.min.z) * 0.42)), animalMaterial(appearance ? appearanceSkinColor(appearance, 'boy') : '#c9926e'));
+    const cover = new Mesh(new BoxGeometry(width * 0.3, height * 0.035, Math.max(0.12, (bounds.max.z - bounds.min.z) * 0.42)), animalMaterial(appearance ? appearanceSkinColor(appearance, outfit === 'classic-girl' ? 'girl' : 'boy') : '#c9926e'));
     cover.name = 'head-neck-cover';
     cover.position.y = -height * 0.025;
     rig.head.add(cover);

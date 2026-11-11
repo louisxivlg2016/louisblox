@@ -1,3 +1,6 @@
+import type { ProfileAvatarKind } from './avatar';
+import type { OutfitKind } from './outfits';
+
 export type HairStyle = 'short' | 'long';
 export type CharacterAppearance = {
   skinColor: string;
@@ -31,6 +34,18 @@ export function appearanceHairColor(appearance: CharacterAppearance, character: 
 
 export function appearanceSkinColor(appearance: Pick<CharacterAppearance, 'skinColor' | 'originalSkinColor'>, character: 'boy' | 'girl') {
   return appearance.originalSkinColor ? defaultAppearance(character).skinColor : appearance.skinColor;
+}
+
+export function appearanceControls(outfit: OutfitKind, avatar: ProfileAvatarKind) {
+  const trader = outfit === 'trader' || avatar === 'trader';
+  const coveredHair = trader || outfit === 'firefighter' || avatar === 'firefighter';
+  return {
+    hairstyle: !trader,
+    hair: !coveredHair,
+    eyebrows: !coveredHair,
+    eyes: outfit !== 'louis15' && avatar !== 'louis15',
+    clothing: !trader,
+  };
 }
 
 const color = (value: unknown): value is string => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
