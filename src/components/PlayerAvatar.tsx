@@ -149,7 +149,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
         <group name="held-item" visible={!eating && !preview && !sleeping} position={heldItemPosition(held, hasFullCharacter(outfit, wig))} scale={typeof held === 'number' ? 0.5 : typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof held === 'number'
             ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
-            : <ItemModel kind={held} />}
+            : <ItemModel kind={held} flipWeapons={hasFullCharacter(outfit, wig)} />}
         </group>
       </group>
       {eating && <group name="eating-food" position={[0, 1.72, -0.42]} scale={0.65}><ItemModel kind={eating.kind} /></group>}

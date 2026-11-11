@@ -82,7 +82,8 @@ function detectFaceFront(geometry: BufferGeometry, bounds: Box3, pixels: Uint8Cl
   return scores.back > scores.front ? -1 : 1;
 }
 
-function skinPixel(red: number, green: number, blue: number) {
+function skinPixel(red: number, green: number, blue: number, relaxed = false) {
+  if (relaxed) return red > 60 && green > 32 && blue > 18 && red > green * 1.04 && green > blue * 1.08 && red < green * 2.05 && green < blue * 1.85;
   return red > 115 && green > 65 && blue > 55 && red > green * 1.06 && green > blue * 1.1 && red - green < 125 && green - blue < 105;
 }
 
@@ -147,7 +148,7 @@ export function removeClassicBoyBand(source: Material & { map?: import('three').
   return material;
 }
 
-export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>, allowGrayHair = false, princessHair = false, outfit?: import('./outfits').OutfitKind) {
+export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>, allowGrayHair = false, princessHair = false, outfit?: import('./outfits').OutfitKind | 'classic-girl' | 'classic-boy') {
   const material = source.clone();
   const image = material.map?.image as { width?: number; height?: number } | undefined;
   if (!material.map || !image?.width || !image.height || !geometry.getAttribute('uv')) return material;
@@ -173,6 +174,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
     ? maskCanvas(geometry, bounds, 'uniform', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data
     : null;
   let eyebrowPixels = 0;
+  let skinPixels = 0;
   for (let index = 0; index < pixels.data.length; index += 4) {
     const red = pixels.data[index];
     const green = pixels.data[index + 1];
@@ -184,7 +186,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
       : outfit === 'footballer'
         ? brightness < 0.78
         : Math.max(red, green, blue) > 55 && red > green * 1.08 && green > blue * 1.07);
-    const target = skinMask[index + 3] > 0 && skinPixel(red, green, blue)
+    const target = skinMask[index + 3] > 0 && skinPixel(red, green, blue, outfit === 'firefighter')
       ? skin
       : eyeMask[index + 3] > 0 && irisPixel(red, green, blue)
         ? eyes
@@ -194,6 +196,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
             : uniformPixel ? uniform : null;
     if (!target) continue;
     if (target === eyebrows) eyebrowPixels += 1;
+    if (target === skin) skinPixels += 1;
     pixels.data[index] = Math.min(255, target.r * 255 * factor);
     pixels.data[index + 1] = Math.min(255, target.g * 255 * factor);
     pixels.data[index + 2] = Math.min(255, target.b * 255 * factor);
@@ -209,6 +212,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   texture.generateMipmaps = false;
   material.map = texture;
   material.userData.eyebrowPixels = eyebrowPixels;
+  material.userData.skinPixels = skinPixels;
   material.needsUpdate = true;
   return material;
 }

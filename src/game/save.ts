@@ -4,6 +4,7 @@ import { useProtectionStore } from './protection';
 import { getWorldSeed, onVoxelEdit, snapshotSaddledHorses, snapshotVehicles, snapshotWorldEdits } from './chunks';
 import type { WorldSave } from './chunks';
 import { useGameStore } from './store';
+import { isJoinOnlyRoom } from './roomJoin';
 import { Environment, Player, PlayerHealth, PlayerPosition, PlayerState } from './traits';
 
 const LEGACY_SAVE_KEY = 'louisblox-save-v1';
@@ -113,9 +114,10 @@ export function createWorldSave(world: World): WorldSave | null {
 }
 
 export function saveWorld(world: World) {
+  const store = useGameStore.getState();
+  if (isJoinOnlyRoom(store.worldId)) return false;
   const save = createWorldSave(world);
   if (!save) return false;
-  const store = useGameStore.getState();
   return writeWorldSave(store.worldId, save, store.worldName || store.worldId) !== null;
 }
 

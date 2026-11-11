@@ -11,9 +11,9 @@ import { isPaintballGun } from '../game/paintball';
 import { isReferenceFood, ReferenceFoodModel } from './ReferenceFoodModel';
 import { SaddleGlb } from './SaddleGlb';
 import { ParachuteModel } from './ParachuteModel';
-import { firearmYaw } from '../game/itemPresentation';
+import { heldWeaponYaw } from '../game/itemPresentation';
 
-type ModelProps = { kind: ItemKind | GalleryItemId; held?: boolean };
+type ModelProps = { kind: ItemKind | GalleryItemId; held?: boolean; flipWeapons?: boolean };
 type PartProps = { position: [number, number, number]; size: [number, number, number]; color: string; rotation?: [number, number, number] };
 
 export function PixelPart({ position, size, color, rotation }: PartProps) {
@@ -517,7 +517,7 @@ export function itemGripOffset(kind: ItemKind | GalleryItemId) {
   return 0;
 }
 
-export function ItemModel({ kind, held = false }: ModelProps) {
+export function ItemModel({ kind, held = false, flipWeapons = false }: ModelProps) {
   const meta = getItemMeta(kind);
   if (kind === 'hand') return null;
   let model;
@@ -537,5 +537,5 @@ export function ItemModel({ kind, held = false }: ModelProps) {
   else if (kind === 'plane' || kind === 'train') model = <TransportItemModel kind={kind} color={meta.color} />;
   else if (meta.shape) model = <GalleryGenericModel shape={meta.shape} color={meta.color} />;
   else model = <CarModel color={meta.color} />;
-  return <group scale={held ? 0.58 : 1} rotation={[0, firearmYaw(kind), 0]}>{model}</group>;
+  return <group scale={held ? 0.58 : 1} rotation={[0, heldWeaponYaw(kind, flipWeapons), 0]}>{model}</group>;
 }

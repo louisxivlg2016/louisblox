@@ -10,7 +10,7 @@ import { GAMEPLAY_MODE_LABELS, isGameplayMode } from '../game/worldMode';
 import type { GameplayMode } from '../game/worldMode';
 import { requestRoomMode } from './Multiplayer';
 
-const MODE_ORDER: GameplayMode[] = ['battle', 'creative', 'survival', 'city-ancient', 'city-modern'];
+const MODE_ORDER: GameplayMode[] = ['creative', 'survival', 'battle', 'pirates', 'football', 'maze', 'city-ancient', 'city-modern'];
 
 function modeFromUrl(): GameplayMode | 'room' {
   const params = new URLSearchParams(window.location.search);
@@ -71,10 +71,10 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
 
   const [resolving, setResolving] = useState(false);
   const limitReached = !canCreateWorld();
-  const connect = (nextRoom: string, mode: GameplayMode | null) => {
+  const connect = (nextRoom: string, mode: GameplayMode | null, joinOnly = false) => {
     pendingJoin.current = true;
-    requestRoomMode(mode);
-    const settings = configure({ playerName, room: nextRoom, server: showServer ? server : '' });
+    requestRoomMode(joinOnly ? null : mode);
+    const settings = configure({ playerName, room: nextRoom, server: showServer ? server : '' }, joinOnly);
     setPlayerName(settings.playerName);
     setRoom(settings.room);
     setServer(settings.server);
@@ -88,9 +88,8 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
   };
   const joinExisting = (world: PublicWorld) => {
     setJoinMode('room');
-    useGameStore.getState().openWorld(world.id, world.name);
     useGameStore.setState({ worldTemplate: world.template ?? 'nature' });
-    connect(world.id, null);
+    connect(world.id, null, true);
   };
   const findAndJoin = async (name: string) => {
     const existing = findPublicWorldByName(await listPublicWorlds(), name);
@@ -103,11 +102,7 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
     setResolving(true);
     try {
       if (await findAndJoin(room)) return;
-      if (roomInfo?.gameplayMode === null && !canCreateWorld(room)) {
-        useMultiplayerStore.getState().setStatus('error', 'Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes avant de créer un salon.');
-        return;
-      }
-      connect(room, joinMode === 'room' ? null : joinMode);
+      connect(room, joinMode === 'room' ? null : joinMode, true);
     } catch {
       useMultiplayerStore.getState().setStatus('error', 'Impossible de vérifier le nom du salon. Réessaie dans un instant.');
     } finally {
@@ -153,7 +148,7 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
       ? `Salon actuel : ${GAMEPLAY_MODE_LABELS[roomInfo.gameplayMode]} · ${roomInfo.players} joueur${roomInfo.players > 1 ? 's' : ''}`
       : 'Nouveau salon (vide)'
     : 'Mode du salon inconnu';
-  const joinTarget = joinMode === 'room' ? roomInfo?.gameplayMode ?? null : joinMode;
+  const joinTarget = roomInfo?.gameplayMode ?? null;
   const switchesRoom = joinMode !== 'room' && roomInfo?.gameplayMode && roomInfo.gameplayMode !== joinMode;
 
   return (
@@ -189,11 +184,11 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
             </label>
             <p className="multiplayer-hint">
               {roomModeText}
-              {switchesRoom && ` → passera en ${GAMEPLAY_MODE_LABELS[joinMode as GameplayMode]} pour tout le monde`}
+              {switchesRoom && ` → rejoins sans changer le mode du salon`}
             </p>
           </div>
           <div className="multiplayer-actions">
-            <button type="submit" className="multiplayer-join" disabled={resolving || roomInfo?.gameplayMode === null && limitReached}>Rejoindre{joinTarget ? ` en ${GAMEPLAY_MODE_LABELS[joinTarget]}` : ''}</button>
+            <button type="submit" className="multiplayer-join" disabled={resolving}>Rejoindre{joinTarget ? ` en ${GAMEPLAY_MODE_LABELS[joinTarget]}` : ''}</button>
             <button type="button" className="multiplayer-new-room" onClick={() => void createRoom()} disabled={resolving || limitReached}>Nouveau salon</button>
             <button type="button" className="multiplayer-delete-room" onClick={removeRoom}>Supprimer le salon</button>
           </div>

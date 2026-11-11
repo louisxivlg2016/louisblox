@@ -32,12 +32,11 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
 
   const join = useCallback((world: PublicWorld) => {
     setError('');
-    requestRoomMode(world.gameplayMode, false);
-    useGameStore.getState().openWorld(world.id, world.name);
+    requestRoomMode(null, false);
     useGameStore.setState({ worldTemplate: world.template ?? 'nature' });
     setEnabled(true);
     setPendingRoom(world.id);
-    configure({ playerName, room: world.id, server });
+    configure({ playerName, room: world.id, server }, true);
   }, [playerName, server, configure, setEnabled]);
 
   const joinBusiest = useCallback(async (mode: GameplayMode) => {

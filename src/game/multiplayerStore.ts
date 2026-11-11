@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { rememberWorld } from './store';
+import { setJoinOnlyRoom } from './roomJoin';
 
 export type MultiplayerStatus = 'offline' | 'connecting' | 'online' | 'error';
 export type LobbyPlayer = { playerId: string; name: string; self?: boolean };
@@ -15,7 +16,7 @@ type MultiplayerStore = MultiplayerSettings & {
   players: LobbyPlayer[];
   setEnabled: (enabled: boolean) => void;
   setWorldReady: (ready: boolean) => void;
-  configure: (settings: MultiplayerSettings) => MultiplayerSettings;
+  configure: (settings: MultiplayerSettings, joinOnly?: boolean) => MultiplayerSettings;
   setStatus: (status: MultiplayerStatus, error?: string) => void;
   setPlayers: (players: LobbyPlayer[]) => void;
   setPlayerName: (name: string) => void;
@@ -29,6 +30,7 @@ export function normalizeRoomId(value: string) {
 
 const query = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search);
 const autoJoin = query.has('server') || query.has('room');
+setJoinOnlyRoom(autoJoin ? query.get('room') || 'main-room' : null);
 
 function initialPlayerName() {
   try {
@@ -52,8 +54,11 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
   serverEditing: false,
   setServerEditing: (serverEditing) => set({ serverEditing }),
   setWorldReady: (worldReady) => set({ worldReady }),
-  setEnabled: (enabled) => set((state) => ({ enabled, joined: enabled && state.joined, status: enabled && state.joined ? 'connecting' : 'offline', worldReady: false, error: '', players: [] })),
-  configure: (settings) => {
+  setEnabled: (enabled) => {
+    if (!enabled) setJoinOnlyRoom(null);
+    set((state) => ({ enabled, joined: enabled && state.joined, status: enabled && state.joined ? 'connecting' : 'offline', worldReady: false, error: '', players: [] }));
+  },
+  configure: (settings, joinOnly = false) => {
     const playerName = settings.playerName.trim().slice(0, 24) || 'Joueur';
     const room = normalizeRoomId(settings.room);
     const server = settings.server.trim();
@@ -61,7 +66,8 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
       localStorage.setItem('louisblox-player-name', playerName);
     } catch {
     }
-    rememberWorld(room);
+    setJoinOnlyRoom(joinOnly ? room : null);
+    if (!joinOnly) rememberWorld(room);
     set((state) => ({ playerName, room, server, enabled: true, joined: true, connectionId: state.connectionId + 1, status: 'connecting', worldReady: false, error: '', players: [] }));
     return { playerName, room, server };
   },

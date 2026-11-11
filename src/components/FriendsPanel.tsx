@@ -122,12 +122,10 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
     }
   };
   const joinFriend = (player: FriendPlayer) => {
-    const game = useGameStore.getState();
-    game.openWorld(player.room, player.room);
     requestRoomMode(null);
     setPendingJoin(player.room);
     setMessage(`Connexion au monde de ${player.name}…`);
-    configure({ playerName, room: player.room, server });
+    configure({ playerName, room: player.room, server }, true);
     const url = new URL(window.location.href);
     url.searchParams.set('room', player.room);
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);

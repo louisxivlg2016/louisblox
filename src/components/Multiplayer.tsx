@@ -13,6 +13,7 @@ import type { PlayerSnapshot } from '../game/multiplayer';
 import { useMultiplayerStore, useRemotePlayerStore } from '../game/multiplayerStore';
 import { canCreateWorld, createWorldSave, listWorlds, saveWorld } from '../game/save';
 import { rememberWorld, useGameStore } from '../game/store';
+import { isJoinOnlyRoom } from '../game/roomJoin';
 import { useCharacterStore } from '../game/characterStore';
 import { isProfileAvatarKind, useAvatarStore } from '../game/avatar';
 import type { ProfileAvatarKind } from '../game/avatar';
@@ -211,7 +212,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
             userData={{ item: state.selected }}
           >
             {typeof state.selected === 'string'
-              ? <ItemModel kind={state.selected} />
+              ? <ItemModel kind={state.selected} flipWeapons={hasFullCharacter(outfit, wig)} />
               : state.selected === BlockKind.Tnt ? <BombModel /> : state.selected === BlockKind.Candle ? <CandleModel /> : state.selected === BlockKind.Campfire || state.selected === BlockKind.Wildfire ? <CampfireModel destructive={state.selected === BlockKind.Wildfire} /> : isUtilityBlock(state.selected) ? <UtilityBlockModel kind={state.selected} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[state.selected]]} />}
           </group>
         )}
@@ -342,7 +343,16 @@ export function MultiplayerConnection() {
         streamChunks(world, position?.x ?? 0, position?.z ?? 0);
         return;
       }
+      const joinOnly = isJoinOnlyRoom(room);
+      if (joinOnly) requestedRoomMode = null;
       if (pending.seed === null) {
+        if (joinOnly) {
+          pendingWorld.current = null;
+          store.setEnabled(false);
+          store.setStatus('error', 'Ce salon n’existe pas encore. Ton ami doit le créer avant que tu puisses le rejoindre.');
+          socket.current?.close();
+          return;
+        }
         const existing = listWorlds().find((saved) => saved.id === room);
         if (!existing && !canCreateWorld(room)) {
           pendingWorld.current = null;
@@ -393,7 +403,7 @@ export function MultiplayerConnection() {
       const game = useGameStore.getState();
       if (currentWorldId !== game.worldId || currentWorldName !== game.worldName) {
         useGameStore.setState({ worldId: currentWorldId, worldName: currentWorldName });
-        if (currentWorldId !== game.worldId) rememberWorld(currentWorldId);
+        if (!joinOnly && currentWorldId !== game.worldId) rememberWorld(currentWorldId);
       }
       const roomCreator = pendingSpawn.current === null;
       const saved = createWorldSave(world);
@@ -429,7 +439,7 @@ export function MultiplayerConnection() {
         pendingSpawn.current = null;
       }
       pendingWorld.current = null;
-      saveWorld(world);
+      if (!joinOnly) saveWorld(world);
       store.setWorldReady(true);
       useBattleStore.setState({ ready: isMinigameMode(pending.gameplayMode ?? 'creative') });
       applyPendingVehicles();

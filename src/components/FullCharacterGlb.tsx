@@ -61,7 +61,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
       });
       for (const part of sideHair) part.removeFromParent();
     }
-    return createCharacterRig(source, outfit === 'classic-girl' || outfit === 'classic-boy' ? 'explorer' : outfit, scale, appearance);
+    return createCharacterRig(source, outfit, scale, appearance);
   }, [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor, appearance?.eyeColor, appearance?.eyebrowColor, appearance?.clothingColor, appearance?.originalHairColor, appearance?.originalSkinColor]);
   const { actions } = useAnimations(animations, group);
   const metadata = useMemo(() => ({ outfit: outfit.startsWith('classic-') ? 'default' : outfit, avatar: profileAvatar, source: 'Hunyuan', whole: true }), [outfit, profileAvatar]);
