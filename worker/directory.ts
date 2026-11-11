@@ -41,7 +41,7 @@ export function json(value: unknown, status = 200) {
 const color = (value: unknown) => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
 const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
-const avatars = new Set(['pixel', 'girl', 'girl-dark', 'boy', 'boy-dark', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
+const avatars = new Set(['pixel', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police']);
 
 export function parseAppearance(value: unknown, character: 'boy' | 'girl' = 'boy'): Appearance {
   const data = value && typeof value === 'object' ? value as Record<string, unknown> : {};

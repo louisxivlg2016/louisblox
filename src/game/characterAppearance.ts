@@ -147,7 +147,7 @@ export function removeClassicBoyBand(source: Material & { map?: import('three').
   return material;
 }
 
-export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>, allowGrayHair = false, princessHair = false, outfit?: import('./avatar').ProfileHeadModel | 'default') {
+export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>, allowGrayHair = false, princessHair = false, outfit?: import('./outfits').OutfitKind) {
   const material = source.clone();
   const image = material.map?.image as { width?: number; height?: number } | undefined;
   if (!material.map || !image?.width || !image.height || !geometry.getAttribute('uv')) return material;
@@ -167,13 +167,12 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   const hair = appearance.originalHairColor || outfit === 'trader' || outfit === 'firefighter' ? null : new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const eyes = outfit === 'louis15' ? null : new Color(appearance.eyeColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const eyebrows = outfit === 'firefighter' || outfit === 'trader' ? null : new Color(appearance.eyebrowColor ?? appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const uniformColor = outfit === 'trader' ? null : appearance.clothingColor ?? (outfit === 'pirate' ? '#b6373b' : outfit === 'footballer' ? '#2868b3' : null);
+  const uniformColor = appearance.clothingColor ?? (outfit === 'pirate' ? '#b6373b' : outfit === 'footballer' ? '#2868b3' : null);
   const uniform = uniformColor ? new Color(uniformColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace) : null;
   const uniformMask = uniform
     ? maskCanvas(geometry, bounds, 'uniform', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data
     : null;
   let eyebrowPixels = 0;
-  let eyePixels = 0;
   for (let index = 0; index < pixels.data.length; index += 4) {
     const red = pixels.data[index];
     const green = pixels.data[index + 1];
@@ -191,11 +190,10 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
         ? eyes
         : eyebrowMask[index + 3] > 0 && eyebrowPixel(red, green, blue)
           ? eyebrows
-          : hairMask[index + 3] > 0 && hairPixel(red, green, blue, allowGrayHair, outfit === 'footballer' || outfit === 'classic-boy' || outfit === 'classic-girl' || outfit === 'default') ? hair
+          : hairMask[index + 3] > 0 && hairPixel(red, green, blue, allowGrayHair, outfit === 'footballer') ? hair
             : uniformPixel ? uniform : null;
     if (!target) continue;
     if (target === eyebrows) eyebrowPixels += 1;
-    if (target === eyes) eyePixels += 1;
     pixels.data[index] = Math.min(255, target.r * 255 * factor);
     pixels.data[index + 1] = Math.min(255, target.g * 255 * factor);
     pixels.data[index + 2] = Math.min(255, target.b * 255 * factor);
@@ -211,7 +209,6 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   texture.generateMipmaps = false;
   material.map = texture;
   material.userData.eyebrowPixels = eyebrowPixels;
-  material.userData.eyePixels = eyePixels;
   material.needsUpdate = true;
   return material;
 }

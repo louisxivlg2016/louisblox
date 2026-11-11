@@ -15,7 +15,6 @@ import { fullCharacterHeights } from '../game/fullCharacters';
 import { applyCharacterGesture } from '../game/characterGestures';
 import type { EmoteKind } from '../game/emotes';
 import type { CharacterAppearance } from '../game/appearance';
-import { profileHeadModel } from '../game/avatar';
 import kingUrl from '../../assets/models/full-king.glb';
 import militaryUrl from '../../assets/models/full-military.glb';
 import knightUrl from '../../assets/models/full-knight.glb';
@@ -40,52 +39,29 @@ export function hasFullCharacter(outfit: OutfitKind, wig: WigSelection = 'auto')
   return outfit !== 'default' || selectedWig(outfit, wig) === null;
 }
 
-function PrincessEyes({ eyeColor = '#5485a5' }: { eyeColor?: string }) {
+function PrincessEyes() {
   return <group name="princess-smooth-eyes">{[-1, 1].map((side) => <group key={side} position={[side * 0.125, 0.245, 0.265]}>
     <mesh scale={[1, 1.1, 0.65]}><sphereGeometry args={[0.068, 24, 18]} /><meshStandardMaterial color="#fffdf6" roughness={0.25} /></mesh>
-    <mesh position={[0, 0, 0.037]} scale={[1, 1, 0.3]}><sphereGeometry args={[0.034, 20, 16]} /><meshStandardMaterial color={eyeColor} roughness={0.3} /></mesh>
+    <mesh position={[0, 0, 0.037]} scale={[1, 1, 0.3]}><sphereGeometry args={[0.034, 20, 16]} /><meshStandardMaterial color="#5485a5" roughness={0.3} /></mesh>
     <mesh position={[0, 0, 0.048]} scale={[1, 1, 0.25]}><sphereGeometry args={[0.017, 16, 12]} /><meshStandardMaterial color="#172638" roughness={0.35} /></mesh>
   </group>)}</group>;
 }
 
-function prepareCharacterModel(scene: Object3D, outfit: FullCharacterModel) {
-  const source = scene.clone(true);
-  if (outfit === 'classic-boy') {
-    const bounds = new Box3().setFromObject(source);
-    source.traverse((object) => {
-      if (object instanceof Mesh && !Array.isArray(object.material)) object.material = removeClassicBoyBand(object.material, object.geometry, bounds);
-    });
-  }
-  if (outfit === 'soldier') {
-    const sideHair: Object3D[] = [];
-    source.traverse((object) => {
-      if (!(object instanceof Mesh)) return;
-      const materials = Array.isArray(object.material) ? object.material : [object.material];
-      if (materials.some((material) => material.name === 'soldier-back-hair')) sideHair.push(object);
-    });
-    for (const part of sideHair) part.removeFromParent();
-  }
-  return source;
-}
-
-function ProfileHead({ kind, appearance }: { kind: import('../game/avatar').ProfileAvatarKind; appearance?: CharacterAppearance }) {
-  const modelKind = profileHeadModel(kind);
-  const { scene } = useGLTF(models[modelKind ?? 'explorer'] ?? explorerUrl);
-  const scale = 2.05 / fullCharacterHeights[modelKind ?? 'explorer'];
+function ProfileHead({ kind }: { kind: Exclude<import('../game/avatar').ProfileAvatarKind, 'pixel'> }) {
+  const { scene } = useGLTF(models[kind] ?? explorerUrl);
+  const scale = 2.05 / fullCharacterHeights[kind];
   const model = useMemo(() => {
-    if (!modelKind) return null;
-    const character = createCharacterRig(prepareCharacterModel(scene, modelKind), modelKind, scale, appearance);
+    const character = createCharacterRig(scene.clone(true), kind, scale);
     const head = character.userData.rig?.head as Object3D | undefined;
     if (!head) return null;
     const root = character.clone(false);
     root.clear();
     root.add(head);
     root.name = 'profile-avatar-head';
-    root.userData.profileAvatar = kind;
     return root;
-  }, [scene, kind, modelKind, scale, appearance]);
+  }, [scene, kind, scale]);
   if (!model) return null;
-  return <><primitive object={model} scale={scale} rotation={[0, Math.PI, 0]} />{kind === 'princess' && <PrincessEyes eyeColor={appearance?.eyeColor} />}{kind === 'police' && <PoliceSunglasses />}</>;
+  return <><primitive object={model} scale={scale} rotation={[0, Math.PI, 0]} />{kind === 'princess' && <PrincessEyes />}{kind === 'police' && <PoliceSunglasses />}</>;
 }
 
 function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance, headAccessory, profileAvatar = 'pixel' }: { outfit: FullCharacterModel; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance; headAccessory?: ReactNode; profileAvatar?: import('../game/avatar').ProfileAvatarKind }) {
@@ -94,8 +70,24 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
   const { scene, animations } = useGLTF(models[outfit] ?? explorerUrl);
   const scale = 2.05 / fullCharacterHeights[outfit];
   const character = useMemo(() => {
-    const character = createCharacterRig(prepareCharacterModel(scene, outfit), outfit, scale, appearance);
-    if (profileHeadModel(profileAvatar)) {
+    const source = scene.clone(true);
+    if (outfit === 'classic-boy') {
+      const bounds = new Box3().setFromObject(source);
+      source.traverse((object) => {
+        if (object instanceof Mesh && !Array.isArray(object.material)) object.material = removeClassicBoyBand(object.material, object.geometry, bounds);
+      });
+    }
+    if (outfit === 'soldier') {
+      const sideHair: Object3D[] = [];
+      source.traverse((object) => {
+        if (!(object instanceof Mesh)) return;
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        if (materials.some((material) => material.name === 'soldier-back-hair')) sideHair.push(object);
+      });
+      for (const part of sideHair) part.removeFromParent();
+    }
+    const character = createCharacterRig(source, outfit === 'classic-girl' || outfit === 'classic-boy' ? 'explorer' : outfit, scale, appearance);
+    if (profileAvatar !== 'pixel') {
       const head = character.userData.rig?.head as Object3D | undefined;
       for (const child of head?.children ?? []) child.visible = false;
     }
@@ -162,9 +154,9 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
   return (
     <group ref={group} name="full-character" userData={metadata}>
       <primitive object={character} scale={scale} rotation={[0, Math.PI, 0]} />
-      {headAccessory && head && !profileHeadModel(profileAvatar) ? createPortal(<group name="costume-wig" position={[0, -head.position.y, 0]}>{headAccessory}</group>, head) : null}
-      {profileHeadModel(profileAvatar) && head ? createPortal(<ProfileHead kind={profileAvatar} appearance={appearance} />, head) : null}
-      {outfit === 'princess' && !profileHeadModel(profileAvatar) && head ? createPortal(<PrincessEyes eyeColor={appearance?.eyeColor} />, head) : null}
+      {headAccessory && head && profileAvatar === 'pixel' ? createPortal(<group name="costume-wig" position={[0, -head.position.y, 0]}>{headAccessory}</group>, head) : null}
+      {profileAvatar !== 'pixel' && head ? createPortal(<ProfileHead kind={profileAvatar} />, head) : null}
+      {outfit === 'princess' && profileAvatar === 'pixel' && head ? createPortal(<PrincessEyes />, head) : null}
       {outfit === 'police' && profileAvatar === 'pixel' && head ? createPortal(<PoliceSunglasses />, head) : null}
     </group>
   );
