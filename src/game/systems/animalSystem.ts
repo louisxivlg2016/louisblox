@@ -78,12 +78,30 @@ function canAdvance(world: World, kind: AnimalKind, position: Vector3, yaw: numb
   return walkableGround(world, x, z, ground) && ground <= position.y + rise && bodyClear(world, x, z, ground);
 }
 
+function rescueAnimal(world: World, kind: AnimalKind, position: Vector3, entity: Entity) {
+  const direction = entity % 2 === 0 ? 1 : -1;
+  const offsets = [[0.75, 0], [-0.75, 0], [0, 0.75], [0, -0.75], [1.5, 1.5], [-1.5, 1.5], [1.5, -1.5], [-1.5, -1.5]];
+  for (const [dx, dz] of offsets) {
+    const x = position.x + dx * direction;
+    const z = position.z + dz * direction;
+    if (!isLoaded(world, x, z) || !canInhabit(world, kind, x, z)) continue;
+    const ground = groundAt(world, x, z, position.y + 2.2);
+    if (!walkableGround(world, x, z, ground) || ground > position.y + 2.2 || position.y - ground > 4 || !bodyClear(world, x, z, ground)) continue;
+    position.set(x, ground, z);
+    return true;
+  }
+  return false;
+}
+
 function avoidWall(world: World, kind: AnimalKind, position: Vector3, motion: Motion, entity: Entity) {
   const direction = entity % 2 === 0 ? 1 : -1;
   const candidates = [motion.yaw + direction * Math.PI / 2, motion.yaw - direction * Math.PI / 2, motion.yaw + direction * Math.PI * 0.75, motion.yaw - direction * Math.PI * 0.75];
   const open = candidates.find((yaw) => canAdvance(world, kind, position, yaw));
   if (open !== undefined) motion.yaw = open;
-  else motion.yaw += direction * Math.PI / 3;
+  else {
+    motion.yaw += direction * Math.PI / 3;
+    rescueAnimal(world, kind, position, entity);
+  }
   motion.avoid = open !== undefined ? 0.35 : 0.1;
   motion.turnIn = Math.max(motion.turnIn, 1.2);
 }
@@ -91,10 +109,11 @@ function avoidWall(world: World, kind: AnimalKind, position: Vector3, motion: Mo
 export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0) {
   if (!isLoaded(world, position.x, position.z)) return true;
   if (!bodyClear(world, position.x, position.z, position.y)) {
-    position.y = groundAt(world, position.x, position.z, position.y + 2.2);
+    const rescued = rescueAnimal(world, kind, position, entity);
     motion.velocityY = 0;
     motion.grounded = true;
-    if (!bodyClear(world, position.x, position.z, position.y)) {
+    if (!rescued) {
+      position.y = groundAt(world, position.x, position.z, position.y + 2.2);
       avoidWall(world, kind, position, motion, entity);
       return true;
     }
@@ -102,9 +121,9 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
   if (motion.speed > 0 && motion.idle <= 0 && (motion.avoid ?? 0) <= 0 && !canAdvance(world, kind, position, motion.yaw)) avoidWall(world, kind, position, motion, entity);
   motion.avoid = Math.max(0, (motion.avoid ?? 0) - dt);
   motion.running = panic > 0 || kind !== 'duck' && Math.sin(motion.phase * 0.45 + entity * 1.37) > 0.2;
-  const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : Math.max(motion.speed, 2.6);
-  const normalSpeed = motion.running && kind !== 'duck' ? Math.max(baseSpeed * 2.2, 5.8) : Math.max(baseSpeed, kind === 'duck' ? 0.65 : 2.6);
-  const chaseSpeed = kind === 'zombie' ? 6.4 : kind === 'bear' || kind === 'snowBear' || kind === 'wolf' || kind === 'snowWolf' ? 6.2 : kind === 'duck' ? 1.4 : 6.4;
+  const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : motion.speed;
+  const normalSpeed = motion.running && kind !== 'duck' ? Math.max(baseSpeed * 2.2, 3.6) : Math.max(baseSpeed, kind === 'duck' ? 0.65 : 1.8);
+  const chaseSpeed = kind === 'zombie' ? 4.6 : kind === 'bear' || kind === 'snowBear' || kind === 'wolf' || kind === 'snowWolf' ? 4.2 : kind === 'duck' ? 1.4 : 4.2;
   const speed = panic > 0 ? chaseSpeed : normalSpeed;
   const x = position.x + Math.sin(motion.yaw) * speed * dt;
   const z = position.z + Math.cos(motion.yaw) * speed * dt;
