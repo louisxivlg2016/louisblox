@@ -8,6 +8,6 @@ export function firearmYaw(kind: ItemKind | GalleryItemId) {
 }
 
 export function heldWeaponYaw(kind: ItemKind | GalleryItemId, fullCharacter: boolean) {
-  const weapon = ['sword', 'bow', 'gun', 'pickaxe', 'shovel'].includes(getItemMeta(kind).category) || kind === 'extinguisher';
+  const weapon = ['sword', 'bow', 'gun', 'pickaxe', 'shovel'].includes(getItemMeta(kind).category) || kind === 'extinguisher' || getItemMeta(kind).shape === 'shears';
   return firearmYaw(kind) + (fullCharacter && weapon ? Math.PI : 0);
 }

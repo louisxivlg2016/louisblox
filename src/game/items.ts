@@ -7,7 +7,7 @@ export type { GalleryItemId } from './galleryCatalog';
 export type ItemCategory = 'sword' | 'pickaxe' | 'shovel' | 'bow' | 'gun' | 'armor' | 'food' | 'vehicle' | 'saddle' | 'resource';
 export type ArmorKind = 'gold' | 'diamond' | 'silver';
 export type ItemKind =
-  | 'hand' | 'stick' | 'bucket' | 'water_bucket' | 'empty_bucket' | 'extinguisher'
+  | 'hand' | 'stick' | 'shears' | 'bucket' | 'water_bucket' | 'empty_bucket' | 'extinguisher'
   | 'sword_wood' | 'sword_stone' | 'sword_iron' | 'sword_gold' | 'sword_diamond' | 'sword_silver'
   | 'pickaxe_wood' | 'pickaxe_stone' | 'pickaxe_iron' | 'pickaxe_gold' | 'pickaxe_diamond' | 'pickaxe_silver'
   | 'shovel_wood' | 'shovel_stone' | 'shovel_iron' | 'shovel_gold' | 'shovel_diamond' | 'shovel_silver'
@@ -39,6 +39,7 @@ const item = (name: string, color: string, category: ItemCategory, extra: Partia
 export const ITEM_META: Record<ItemKind, ItemMeta> = {
   hand: item('Main', '#e7a0aa', 'resource', { shape: 'hand' }),
   stick: item('Bâton', '#8b633c', 'resource', { shape: 'stick' }),
+  shears: item('Cisailles', '#a8b5bc', 'resource', { shape: 'shears', efficiency: 2 }),
   bucket: item('Seau vide', '#a8b5bc', 'resource', { shape: 'bucket' }),
   water_bucket: item('Seau plein d’eau', '#359bd5', 'resource', { shape: 'water_bucket' }),
   empty_bucket: item('Seau toujours vide', '#a8b5bc', 'resource', { shape: 'bucket' }),

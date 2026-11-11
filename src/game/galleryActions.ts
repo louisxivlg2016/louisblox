@@ -73,6 +73,33 @@ function attachGrowth(world: World, kind: BlockKind, x: number, y: number, z: nu
   }
 }
 
+export function useShears(world: World, origin: Vector3, direction: Vector3) {
+  const store = useGameStore.getState();
+  const blocks = getBlockIndex(world);
+  const hit = raycastVoxel(blocks, origin, direction, 6);
+  if (hit && ([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine] as BlockKind[]).includes(hit.block.kind)) {
+    removeVoxel(world, hit);
+    store.setNotice('Feuillage taillé avec les cisailles.');
+    return true;
+  }
+  if (hit?.normal.y === 1) {
+    const x = hit.x + hit.normal.x;
+    const y = hit.y + hit.normal.y;
+    const z = hit.z + hit.normal.z;
+    if (blocks.has(voxelKey(x, y, z))) {
+      store.setNotice('Cet emplacement est déjà occupé. Vise un endroit libre au-dessus du sol.');
+      return true;
+    }
+    const grass = ([BlockKind.Grass, BlockKind.ForestGrass, BlockKind.AutumnGrass, BlockKind.JungleGrass] as BlockKind[]).includes(hit.block.kind) ? hit.block.kind : BlockKind.Grass;
+    if (addVoxel(world, x, y, z, grass)) {
+      store.setNotice('Herbe reproduite avec les cisailles.');
+      return true;
+    }
+  }
+  store.setNotice('Vise le dessus libre d’un bloc d’herbe ou du sol avec les cisailles.');
+  return true;
+}
+
 export function useGalleryItem(world: World, selected: GalleryItemId, origin: Vector3, direction: Vector3) {
   const meta = getItemMeta(selected);
   const shape = meta.shape ?? 'resource';
@@ -111,13 +138,7 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     } else store.setNotice('Vise un bloc d’herbe ou de terre avec la houe.');
     return true;
   }
-  if (shape === 'shears') {
-    if (hit && ([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine] as BlockKind[]).includes(hit.block.kind)) {
-      removeVoxel(world, hit);
-      store.setNotice('Feuillage taillé avec les cisailles.');
-    } else store.setNotice('Vise des feuilles avec les cisailles. Les animaux ne sont pas blessés.');
-    return true;
-  }
+  if (shape === 'shears') return useShears(world, origin, direction);
   if (shape === 'bone_meal') {
     if (hit && isSapling(hit.block.kind)) {
       growSapling(world, hit.block.kind, hit.x, hit.y, hit.z);

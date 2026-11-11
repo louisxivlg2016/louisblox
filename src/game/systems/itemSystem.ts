@@ -6,7 +6,7 @@ import { addVoxel, getBlockIndex } from '../chunks';
 import { consumeActions, isDown, isMouseButtonDown } from '../input';
 import { getItemMeta } from '../items';
 import { isGalleryItem } from '../galleryCatalog';
-import { useGalleryItem } from '../galleryActions';
+import { useGalleryItem, useShears } from '../galleryActions';
 import { useFood } from '../foods';
 import { hasInventory } from '../inventory';
 import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
@@ -98,6 +98,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
   camera.getWorldDirection(direction);
 
   if (useFood(world, selected, origin, direction, interact)) return true;
+  if (meta.shape === 'shears' && interact > 0) return useShears(world, origin, direction);
   if (selected === 'empty_bucket' && interact > 0) return useBucket(world, true, origin, direction, true);
   if ((selected === 'bucket' || selected === 'water_bucket') && interact > 0) return useBucket(world, selected === 'water_bucket', origin, direction);
   if (selected === 'extinguisher' && (interact > 0 || isMouseButtonDown(0) || isDown('KeyE')) && cooldown <= 0) {

@@ -69,6 +69,7 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
   }
   const meta = getItemMeta(kind);
   if (kind === 'extinguisher') return <img className="item-model-icon" style={{ imageRendering: 'pixelated' }} src={extinguisherUrl} alt={info.name} />;
+  if (meta.shape === 'shears') return <span className="item-icon item-shears" style={{ '--item-color': info.color } as React.CSSProperties} aria-hidden="true"><i /><b /><em /></span>;
   if (meta.shape === 'cake') return <span className="item-icon item-cake" style={{ '--item-color': info.color } as React.CSSProperties} aria-hidden="true"><i /><b /><em /></span>;
   if (meta.shape === 'bucket' || meta.shape === 'water_bucket') return <span className={`item-icon item-bucket ${meta.shape === 'water_bucket' ? 'full' : 'empty'}`} aria-hidden="true"><i /><b /><em /></span>;
   const rawShape = meta.shape ?? meta.category;
