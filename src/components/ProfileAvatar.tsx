@@ -4,6 +4,12 @@ import type { CharacterAppearance } from '../game/appearance';
 import type { CharacterKind } from '../game/characterStore';
 import type { OutfitKind, WigSelection } from '../game/outfits';
 import { PixelAvatar } from './PixelAvatar';
+import girlUrl from '../../assets/avatars/fille.webp';
+import girlDarkUrl from '../../assets/avatars/fille-noir.webp';
+import boyUrl from '../../assets/avatars/garcon.webp';
+import boyDarkUrl from '../../assets/avatars/garcon-noir.webp';
+import traderUrl from '../../assets/avatars/marchand.webp';
+import soldierUrl from '../../assets/avatars/soldat.webp';
 import louis14Url from '../../assets/avatars/louis14.webp';
 import louis15Url from '../../assets/avatars/louis15.webp';
 import kingUrl from '../../assets/avatars/king.webp';
@@ -17,6 +23,12 @@ import firefighterUrl from '../../assets/avatars/firefighter.webp';
 import policeUrl from '../../assets/avatars/police.webp';
 
 export const PHOTO_AVATARS = {
+  girl: { name: 'Fille', url: girlUrl },
+  'girl-dark': { name: 'Fille peau foncée', url: girlDarkUrl },
+  boy: { name: 'Garçon', url: boyUrl },
+  'boy-dark': { name: 'Garçon peau foncé', url: boyDarkUrl },
+  trader: { name: 'Marchand', url: traderUrl },
+  soldier: { name: 'Soldat', url: soldierUrl },
   louis14: { name: 'Louis XIV', url: louis14Url },
   louis15: { name: 'Louis XV', url: louis15Url },
   king: { name: 'Roi', url: kingUrl },
@@ -41,9 +53,9 @@ export function ProfileAvatar({ kind, character, outfit, wig, appearance, size =
 }) {
   const selected = useAvatarStore((state) => state.kind);
   const current = kind ?? selected;
-  if (current === 'pixel' || current === 'soldier' || current === 'default' || current === 'trader') return <PixelAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={size} />;
+  if (current === 'pixel' || current === 'default') return <PixelAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={size} />;
   const photo = PHOTO_AVATARS[current];
-  return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}`} src={photo.url} width={size} height={size} alt={`Photo ${photo.name}`} />;
+  return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}`} src={photo.url} width={size} height={size} alt={`Portrait ${photo.name}`} />;
 }
 
 export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
@@ -63,12 +75,6 @@ export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
         <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choisir ${PHOTO_AVATARS[kind].name}`}>
           <ProfileAvatar kind={kind} size={56} />
           <span>{PHOTO_AVATARS[kind].name}</span>
-        </button>
-      ))}
-      {(['soldier', 'trader'] as const).map((kind) => (
-        <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choisir ${kind === 'soldier' ? 'Soldat' : 'Marchand'}`}>
-          <ProfileAvatar kind={kind} outfit={kind} size={56} />
-          <span>{kind === 'soldier' ? 'Soldat' : 'Marchand'}</span>
         </button>
       ))}
     </div>
