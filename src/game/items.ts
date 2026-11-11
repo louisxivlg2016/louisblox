@@ -39,8 +39,8 @@ const item = (name: string, color: string, category: ItemCategory, extra: Partia
 export const ITEM_META: Record<ItemKind, ItemMeta> = {
   hand: item('Main', '#e7a0aa', 'resource', { shape: 'hand' }),
   stick: item('Bâton', '#8b633c', 'resource', { shape: 'stick' }),
-  bucket: item('Sceau vide', '#a8b5bc', 'resource', { shape: 'bucket' }),
-  water_bucket: item('Sceau plein d’eau', '#359bd5', 'resource', { shape: 'water_bucket' }),
+  bucket: item('Seau vide', '#a8b5bc', 'resource', { shape: 'bucket' }),
+  water_bucket: item('Seau plein d’eau', '#359bd5', 'resource', { shape: 'water_bucket' }),
   sword_wood: item('Épée en bois', '#b98a53', 'sword', { cooldown: 0.35 }),
   sword_stone: item('Épée en pierre', '#92999e', 'sword', { cooldown: 0.35 }),
   sword_iron: item('Épée en fer', '#e0e8eb', 'sword', { cooldown: 0.32 }),

@@ -51,24 +51,24 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
       const z = hit.z + hit.normal.z;
       if (y >= MIN_WORLD_Y && y <= MAX_BUILD_Y && !blocks.has(voxelKey(x, y, z)) && addVoxel(world, x, y, z, BlockKind.Water)) {
         changeHeldBucket('water_bucket', 'bucket');
-        store.setNotice('Eau posée. Le sceau est vide.');
+        store.setNotice('Eau posée. Le seau est vide.');
         return true;
       }
     }
-    store.setNotice('Vise un bloc avec le sceau plein pour y poser l’eau.');
+    store.setNotice('Vise un bloc avec le seau plein pour y poser l’eau.');
     return true;
   }
   if (hit && isWaterBlock(hit.block.kind)) {
     const drained = drainConnectedWater(world, hit);
     if (drained > 0) {
       changeHeldBucket('bucket', 'water_bucket');
-      store.setNotice(`Toute l’eau connectée a été retirée d’un coup : ${drained} blocs. Le sceau est plein.`);
+      store.setNotice(`Toute l’eau connectée a été retirée d’un coup : ${drained} blocs. Le seau est plein.`);
       return true;
     }
     store.setNotice('Tu ne peux pas récupérer cette eau ici.');
     return true;
   }
-  store.setNotice('Vise un bloc d’eau avec le sceau vide pour retirer toute l’eau connectée.');
+  store.setNotice('Vise un bloc d’eau avec le seau vide pour retirer toute l’eau connectée.');
   return true;
 }
 
