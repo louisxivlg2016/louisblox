@@ -10,9 +10,9 @@ export function isProfileAvatarKind(value: unknown): value is ProfileAvatarKind 
 function initialAvatar(): ProfileAvatarKind {
   try {
     const saved = localStorage.getItem('louisblox-profile-avatar');
-    return (PROFILE_AVATAR_KINDS as readonly string[]).includes(saved ?? '') ? saved as ProfileAvatarKind : 'pixel';
+    return saved !== 'pixel' && (PROFILE_AVATAR_KINDS as readonly string[]).includes(saved ?? '') ? saved as ProfileAvatarKind : 'boy';
   } catch {
-    return 'pixel';
+    return 'boy';
   }
 }
 

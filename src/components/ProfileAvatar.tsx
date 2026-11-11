@@ -3,7 +3,6 @@ import type { ProfileAvatarKind } from '../game/avatar';
 import type { CharacterAppearance } from '../game/appearance';
 import type { CharacterKind } from '../game/characterStore';
 import type { OutfitKind, WigSelection } from '../game/outfits';
-import { PixelAvatar } from './PixelAvatar';
 import girlUrl from '../../assets/avatars/fille.webp';
 import girlDarkUrl from '../../assets/avatars/fille-noir.webp';
 import boyUrl from '../../assets/avatars/garcon.webp';
@@ -43,7 +42,7 @@ export const PHOTO_AVATARS = {
 } as const;
 const photoKinds = Object.keys(PHOTO_AVATARS) as Array<keyof typeof PHOTO_AVATARS>;
 
-export function ProfileAvatar({ kind, character, outfit, wig, appearance, size = 58 }: {
+export function ProfileAvatar({ kind, size = 58 }: {
   kind?: ProfileAvatarKind | OutfitKind;
   character?: CharacterKind;
   outfit?: OutfitKind;
@@ -53,8 +52,7 @@ export function ProfileAvatar({ kind, character, outfit, wig, appearance, size =
 }) {
   const selected = useAvatarStore((state) => state.kind);
   const current = kind ?? selected;
-  if (current === 'pixel' || current === 'default') return <PixelAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={size} />;
-  const photo = PHOTO_AVATARS[current];
+  const photo = PHOTO_AVATARS[current === 'pixel' || current === 'default' ? 'boy' : current];
   return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}`} src={photo.url} width={size} height={size} alt={`Portrait ${photo.name}`} />;
 }
 
@@ -67,10 +65,6 @@ export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
   };
   return (
     <div className="profile-photo-picker" role="group" aria-label="Choisir ma photo">
-      <button className={`profile-photo-choice ${selected === 'pixel' ? 'active' : ''}`} onClick={() => choose('pixel')} aria-pressed={selected === 'pixel'}>
-        <PixelAvatar size={48} />
-        <span>Voxel</span>
-      </button>
       {photoKinds.map((kind) => (
         <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choisir ${PHOTO_AVATARS[kind].name}`}>
           <ProfileAvatar kind={kind} size={56} />
