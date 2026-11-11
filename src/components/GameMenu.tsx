@@ -116,7 +116,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     }
   };
   const openJoinMode = (mode: GameplayMode) => {
-    if (!enabled && isMultiplayerOnlyMode(mode)) return;
+    if (!enabled) {
+      create(mode, false);
+      return;
+    }
     setBrowseMode(mode);
     setJoinOpen(true);
   };
@@ -130,7 +133,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           <button className="sidebar-shop" onClick={onShop}><img src={shopUrl} alt="" /><span>Ouvrir la boutique</span></button>
         </aside>
         <main className="world-browser">
-          <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}<span className="creator-label">JEU DU CRÉATEUR</span></h1></div><div className="world-entry-actions"><button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={pendingWorld !== null}>Rejoindre</button>{paused && <button className="primary-button resume-button" onClick={onPlay} disabled={soloModeBlocked} title={soloModeBlocked ? 'Active le multijoueur pour reprendre cette partie' : undefined}>Reprendre</button>}</div></div>
+          <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}<span className="creator-label">JEU DU CRÉATEUR</span></h1></div><div className="world-entry-actions">{enabled && <button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={pendingWorld !== null}>Rejoindre</button>}{paused && <button className="primary-button resume-button" onClick={onPlay} disabled={soloModeBlocked} title={soloModeBlocked ? 'Active le multijoueur pour reprendre cette partie' : undefined}>Reprendre</button>}</div></div>
           <div className="world-cards">
             <button className="world-card featured" aria-controls="mes-mondes" aria-expanded={libraryOpen} aria-haspopup="dialog" onClick={() => setLibraryOpen(true)}>
               <img src={myWorldsUrl} alt="Mes mondes" />
@@ -155,7 +158,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           {enabled && <section className="lobby-section"><MultiplayerLobby onPlay={onPlay} /></section>}
           {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(options) => { setCreateOpen(false); create(options.mode, options.multiplayer, options); }} />}
           {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
-          {joinOpen && (
+          {enabled && joinOpen && (
             <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setJoinOpen(false); }}>
               <section className="world-library-modal" role="dialog" aria-modal="true" aria-label="Rejoindre un monde">
                 <button className="world-library-close" aria-label="Fermer la liste des mondes" onClick={() => setJoinOpen(false)} autoFocus>×</button>
