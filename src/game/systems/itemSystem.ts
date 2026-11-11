@@ -43,7 +43,12 @@ function changeHeldBucket(from: 'bucket' | 'water_bucket', to: 'bucket' | 'water
 function useBucket(world: World, filled: boolean, origin: Vector3, direction: Vector3, alwaysEmpty = false) {
   const store = useGameStore.getState();
   const blocks = getBlockIndex(world);
-  const hit = raycastVoxel(blocks, origin, direction, 6, !filled);
+  const hit = raycastVoxel(blocks, origin, direction, 6, alwaysEmpty || !filled);
+  if (alwaysEmpty && hit && isWaterBlock(hit.block.kind)) {
+    const drained = drainConnectedWater(world, hit);
+    store.setNotice(drained > 0 ? `Eau retirée (${drained} blocs). Le seau reste toujours vide.` : 'Tu ne peux pas récupérer cette eau ici.');
+    return true;
+  }
   if (filled) {
     if (hit) {
       const x = hit.x + hit.normal.x;
