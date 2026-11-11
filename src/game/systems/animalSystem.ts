@@ -13,7 +13,7 @@ import { damagePlayer } from '../combat';
 import { canSeePlayer } from '../hostility';
 import { hasEffect } from '../effects';
 import { getFireSources, nearestFire } from '../hazards';
-import { isAnimalAuthority, syncAnimalState } from '../animalSync';
+import { interpolateAnimalMovement, isAnimalAuthority, syncAnimalState } from '../animalSync';
 import { isCollidable } from './collisionSystem';
 
 type Motion = {
@@ -200,6 +200,7 @@ export function animalSystem(world: World, dt: number) {
   dt = elapsed;
   if (!isAnimalAuthority()) {
     syncAnimalState(world, dt);
+    interpolateAnimalMovement(world, dt);
     return;
   }
   const playerEntity = world.queryFirst(Player);

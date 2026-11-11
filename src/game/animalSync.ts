@@ -7,6 +7,7 @@ import { spawnFish } from './fish';
 import type { FishKind } from './fish';
 import { useMultiplayerStore } from './multiplayerStore';
 import { playerIdentity } from './playerIdentity';
+import { turnToward } from './rotation';
 
 export type AnimalSnapshot = { id: string; kind: AnimalKind; x: number; y: number; z: number; yaw: number; health: number; speed: number; running?: boolean };
 export type FishSnapshot = { id: string; kind: FishKind; x: number; y: number; z: number; yaw: number; age: number; phase: number; speed: number };
@@ -14,6 +15,10 @@ export type FishSnapshot = { id: string; kind: FishKind; x: number; y: number; z
 const animalKinds = new Set<AnimalKind>(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie', 'monkey', 'ocelot', 'giraffe', 'elephant']);
 const fishKinds = new Set<FishKind>(['salmon', 'clownfish', 'blueTang']);
 const clocks = new Map<World, number>();
+const animalInterpolations = new WeakMap<World, Map<Entity, { from: Vector3; to: Vector3; yawTo: number; elapsed: number }>>();
+const fishInterpolations = new WeakMap<World, Map<Entity, { from: Vector3; to: Vector3; yawTo: number; elapsed: number }>>();
+const initializedAnimals = new Set<Entity>();
+const initializedFish = new Set<Entity>();
 let socket: WebSocket | null = null;
 
 export function setAnimalSocket(next: WebSocket | null) {
@@ -43,10 +48,21 @@ export function isFishSnapshot(value: unknown): value is FishSnapshot {
     && ['x', 'y', 'z', 'yaw', 'age', 'phase', 'speed'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]));
 }
 
+function interpolationFor(world: World, fish = false) {
+  const source = fish ? fishInterpolations : animalInterpolations;
+  let entries = source.get(world);
+  if (!entries) {
+    entries = new Map();
+    source.set(world, entries);
+  }
+  return entries;
+}
+
 export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[]) {
   const seen = new Set<string>();
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   const localMount = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
+  const interpolations = interpolationFor(world);
   for (const snapshot of snapshots) {
     if (!isAnimalSnapshot(snapshot)) continue;
     seen.add(snapshot.id);
@@ -54,23 +70,26 @@ export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[]) 
     if (entity?.get(CamelLeash) || entity === localMount) continue;
     if (!entity) entity = spawnAnimal(world, snapshot.kind, snapshot.x, snapshot.y, snapshot.z, 0);
     entity.set(AnimalId, snapshot.id);
-    entity.get(AnimalPosition)!.set(snapshot.x, snapshot.y, snapshot.z);
-    entity.set(AnimalMotion, { yaw: snapshot.yaw, displayYaw: snapshot.yaw, speed: snapshot.speed, running: snapshot.running ?? false });
+    const position = entity.get(AnimalPosition)!;
+    if (!initializedAnimals.has(entity)) {
+      position.set(snapshot.x, snapshot.y, snapshot.z);
+      initializedAnimals.add(entity);
+    }
+    interpolations.set(entity, { from: position.clone(), to: new Vector3(snapshot.x, snapshot.y, snapshot.z), yawTo: snapshot.yaw, elapsed: 0 });
+    entity.set(AnimalMotion, { yaw: snapshot.yaw, speed: snapshot.speed, running: snapshot.running ?? false });
     if (snapshot.health <= 0) {
+      interpolations.delete(entity);
       entity.destroy();
       continue;
     }
     if (entity.get(AnimalHealth)?.value !== snapshot.health) entity.set(AnimalHealth, { value: snapshot.health });
     const mesh = entity.get(AnimalMesh)?.value;
-    if (mesh) {
-      mesh.position.copy(entity.get(AnimalPosition)!);
-      mesh.rotation.y = snapshot.yaw;
-      mesh.visible = !player || mesh.position.distanceToSquared(player) < 40 * 40;
-    }
+    if (mesh) mesh.visible = !player || position.distanceToSquared(player) < 40 * 40;
   }
   for (const entity of world.query(Animal, AnimalId)) {
     const id = entity.get(AnimalId);
     if (seen.has(id ?? '') || entity === localMount || entity.get(CamelLeash) || entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) continue;
+    interpolations.delete(entity);
     entity.destroy();
   }
 }
@@ -78,23 +97,72 @@ export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[]) 
 export function applyFishSnapshots(world: World, snapshots: FishSnapshot[]) {
   const seen = new Set<string>();
   const player = world.queryFirst(Player)?.get(PlayerPosition);
+  const interpolations = interpolationFor(world, true);
   for (const snapshot of snapshots) {
     if (!isFishSnapshot(snapshot)) continue;
     seen.add(snapshot.id);
     let entity = world.query(Fish, FishId).find((candidate) => candidate.get(FishId) === snapshot.id);
     if (!entity) entity = spawnFish(world, snapshot.kind, snapshot.x, snapshot.y, snapshot.z, 0);
     entity.set(FishId, snapshot.id);
-    entity.get(FishPosition)!.set(snapshot.x, snapshot.y, snapshot.z);
+    const position = entity.get(FishPosition)!;
+    if (!initializedFish.has(entity)) {
+      position.set(snapshot.x, snapshot.y, snapshot.z);
+      initializedFish.add(entity);
+    }
+    interpolations.set(entity, { from: position.clone(), to: new Vector3(snapshot.x, snapshot.y, snapshot.z), yawTo: snapshot.yaw, elapsed: 0 });
     entity.set(FishMotion, { yaw: snapshot.yaw, age: snapshot.age, phase: snapshot.phase, speed: snapshot.speed });
     const mesh = entity.get(FishMesh)?.value;
-    if (mesh) {
-      mesh.position.copy(entity.get(FishPosition)!);
-      mesh.rotation.y = snapshot.yaw;
-      mesh.visible = !player || mesh.position.distanceToSquared(player) < 40 * 40;
-    }
+    if (mesh) mesh.visible = !player || position.distanceToSquared(player) < 40 * 40;
   }
   for (const entity of world.query(Fish, FishId)) {
-    if (!seen.has(entity.get(FishId) ?? '')) entity.destroy();
+    if (seen.has(entity.get(FishId) ?? '')) continue;
+    interpolations.delete(entity);
+    entity.destroy();
+  }
+}
+
+export function interpolateAnimalMovement(world: World, dt: number) {
+  const player = world.queryFirst(Player)?.get(PlayerPosition);
+  const animals = animalInterpolations.get(world);
+  if (animals) {
+    for (const [entity, interpolation] of animals) {
+      if (!entity.isAlive()) {
+        animals.delete(entity);
+        continue;
+      }
+      interpolation.elapsed += dt;
+      const position = entity.get(AnimalPosition)!;
+      position.lerpVectors(interpolation.from, interpolation.to, Math.min(1, interpolation.elapsed / 0.2));
+      const motion = entity.get(AnimalMotion);
+      if (motion) motion.displayYaw = turnToward(motion.displayYaw, interpolation.yawTo, dt * 12);
+      const mesh = entity.get(AnimalMesh)?.value;
+      if (mesh) {
+        mesh.position.copy(position);
+        mesh.rotation.y = motion?.displayYaw ?? interpolation.yawTo;
+        mesh.visible = !player || position.distanceToSquared(player) < 40 * 40;
+      }
+      if (interpolation.elapsed >= 0.2) animals.delete(entity);
+    }
+  }
+  const fish = fishInterpolations.get(world);
+  if (!fish) return;
+  for (const [entity, interpolation] of fish) {
+    if (!entity.isAlive()) {
+      fish.delete(entity);
+      continue;
+    }
+    interpolation.elapsed += dt;
+    const position = entity.get(FishPosition)!;
+    position.lerpVectors(interpolation.from, interpolation.to, Math.min(1, interpolation.elapsed / 0.2));
+    const motion = entity.get(FishMotion);
+    if (motion) motion.yaw = turnToward(motion.yaw, interpolation.yawTo, dt * 12);
+    const mesh = entity.get(FishMesh)?.value;
+    if (mesh) {
+      mesh.position.copy(position);
+      mesh.rotation.y = motion?.yaw ?? interpolation.yawTo;
+      mesh.visible = !player || position.distanceToSquared(player) < 40 * 40;
+    }
+    if (interpolation.elapsed >= 0.2) fish.delete(entity);
   }
 }
 
