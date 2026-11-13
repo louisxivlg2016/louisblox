@@ -1,7 +1,7 @@
 import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { brickTexture, texture } from './textures';
-import { EXTRA_BLOCK_META, isCrop, isDoor, isGlass, isSapling, isSign, isStair, isTrapdoor, isUtilityBlock } from './extraBlocks';
+import { EXTRA_BLOCK_META, isCrop, isDoor, isGlass, isGrassPlate, isSapling, isSign, isStair, isTrapdoor, isUtilityBlock } from './extraBlocks';
 import { getVitrailDesign, getVitrailTexture } from './vitrailDesigns';
 import type { ExtraBlockKind } from './extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
@@ -120,7 +120,7 @@ function computeSeparateModel(kind: BlockKind) {
 }
 
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {
-  if (!neighbor || neighbor.open) return true;
+  if (!neighbor || neighbor.open || isGrassPlate(neighbor)) return true;
   if (neighbor.kind === BlockKind.JungleVine) return true;
   if (block.kind === BlockKind.JungleLeaves && neighbor.kind === block.kind) return false;
   if (usesSeparateModel(neighbor.kind)) return !isWaterBlock(block.kind) && !isGlass(block.kind);
@@ -263,7 +263,7 @@ export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxe
   createAtlas();
   const groups = new Map<string, GeometryGroup>();
   for (const block of blocks) {
-    if (usesSeparateModel(block.kind)) continue;
+    if (isGrassPlate(block) || usesSeparateModel(block.kind)) continue;
     const groupName = groupFor(block.kind);
     const concrete = block.kind >= BlockKind.ConcreteWhite && block.kind <= BlockKind.ConcreteBlack;
     let color: Color | null = null;

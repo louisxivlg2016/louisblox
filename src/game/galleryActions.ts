@@ -92,8 +92,8 @@ export function useShears(world: World, origin: Vector3, direction: Vector3) {
       return true;
     }
     const grass = ([BlockKind.Grass, BlockKind.ForestGrass, BlockKind.AutumnGrass, BlockKind.JungleGrass] as BlockKind[]).includes(hit.block.kind) ? hit.block.kind : BlockKind.Grass;
-    if (addVoxel(world, x, y, z, grass)) {
-      store.setNotice('Herbe reproduite avec les cisailles.');
+    if (addVoxel(world, x, y, z, grass, 0)) {
+      store.setNotice('Plaque d’herbe ajoutée avec les cisailles.');
       return true;
     }
   }

@@ -34,7 +34,6 @@ import { applyVehicleRemoval, applyVehicleSnapshot, isVehicleSnapshot, onVehicle
 import type { VehicleSnapshot } from '../game/vehicleSync';
 import { isAnimalMount } from '../game/vehicleTypes';
 import { appearanceSkinColor } from '../game/appearance';
-import { ParachutePackModel } from './ParachuteModel';
 import { StairModel } from './StairModel';
 import { isOutfitKind, isWigSelection, OUTFITS, selectedWig } from '../game/outfits';
 import type { OutfitKind, WigSelection } from '../game/outfits';
@@ -207,7 +206,6 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
       <PlayerNameTag name={name} playerId={playerId} />
       {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit character={character} outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} appearance={current} avatar={avatar} />
-      {(state.hasParachute || state.selected === 'parachute') && outfit !== 'pirate' && outfit !== 'corsair' && <ParachutePackModel />}
       {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={battleTeamColor(team)} /></group>}
       <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={skin} /></group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
@@ -221,7 +219,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
           >
             {typeof state.selected === 'string'
               ? <ItemModel kind={state.selected} flipWeapons={hasFullCharacter(outfit, wig)} />
-              : state.selected === BlockKind.Tnt ? <BombModel /> : state.selected === BlockKind.Candle ? <CandleModel /> : state.selected === BlockKind.Campfire || state.selected === BlockKind.Wildfire ? <CampfireModel destructive={state.selected === BlockKind.Wildfire} /> : isUtilityBlock(state.selected) ? <UtilityBlockModel kind={state.selected} withLight={false} /> : isStair(state.selected) ? <StairModel kind={state.selected} /> : <mesh args={[blockGeometry, blockMaterials[state.selected]]} />}
+              : state.selected === BlockKind.Tnt ? <BombModel /> : state.selected === BlockKind.Candle ? <CandleModel /> : state.selected === BlockKind.Campfire || state.selected === BlockKind.Wildfire ? <CampfireModel destructive={state.selected === BlockKind.Wildfire} /> : isUtilityBlock(state.selected) ? <UtilityBlockModel kind={state.selected} withLight={false} /> : isStair(state.selected) ? <StairModel kind={state.selected} upsideDown={state.pitch > 0.15} /> : <mesh args={[blockGeometry, blockMaterials[state.selected]]} />}
           </group>
         )}
       </group>

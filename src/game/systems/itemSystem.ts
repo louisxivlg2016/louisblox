@@ -54,7 +54,7 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
       const x = hit.x + hit.normal.x;
       const y = hit.y + hit.normal.y;
       const z = hit.z + hit.normal.z;
-      if (y >= MIN_WORLD_Y && y <= MAX_BUILD_Y && !blocks.has(voxelKey(x, y, z)) && addVoxel(world, x, y, z, BlockKind.Water)) {
+      if (y >= MIN_WORLD_Y && y <= MAX_BUILD_Y && !blocks.has(voxelKey(x, y, z)) && addVoxel(world, x, y, z, BlockKind.CalmWater)) {
         if (!alwaysEmpty) changeHeldBucket('water_bucket', 'bucket');
         store.setNotice(alwaysEmpty ? 'Eau posée. Le seau reste toujours vide.' : 'Eau posée. Le seau est vide.');
         return true;

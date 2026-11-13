@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { playerIdentity } from './playerIdentity';
 import { useGameStore } from './store';
 import { useMultiplayerStore } from './multiplayerStore';
+import { BlockKind } from './voxel';
 
 export type WorldProtection = {
   ownerId: string;
@@ -12,6 +13,10 @@ export type WorldProtection = {
   allowedPlayerIds: string[];
   canBreak?: boolean;
   canPlace?: boolean;
+  allowDestructiveFire?: boolean;
+  allowCampfire?: boolean;
+  allowFloodingWater?: boolean;
+  allowCalmWater?: boolean;
   bannedPlayerIds?: string[];
   bannedPlayerNames?: Record<string, string>;
 };
@@ -31,7 +36,7 @@ export function setProtectionSocket(next: WebSocket | null) {
 }
 
 export function newProtection(ownerId = playerIdentity()): WorldProtection {
-  return { ownerId, centerX: 0, centerZ: 0, radius: 500, enabled: true, allowedPlayerIds: [ownerId], canBreak: false, canPlace: false, bannedPlayerIds: [] };
+  return { ownerId, centerX: 0, centerZ: 0, radius: 500, enabled: true, allowedPlayerIds: [ownerId], canBreak: false, canPlace: false, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true, bannedPlayerIds: [] };
 }
 
 export function isWorldProtection(value: unknown): value is WorldProtection {
@@ -44,6 +49,10 @@ export function isWorldProtection(value: unknown): value is WorldProtection {
     && Array.isArray(data.allowedPlayerIds) && data.allowedPlayerIds.every((id) => typeof id === 'string' && id.length > 0 && id.length <= 80)
     && (data.canBreak === undefined || typeof data.canBreak === 'boolean')
     && (data.canPlace === undefined || typeof data.canPlace === 'boolean')
+    && (data.allowDestructiveFire === undefined || typeof data.allowDestructiveFire === 'boolean')
+    && (data.allowCampfire === undefined || typeof data.allowCampfire === 'boolean')
+    && (data.allowFloodingWater === undefined || typeof data.allowFloodingWater === 'boolean')
+    && (data.allowCalmWater === undefined || typeof data.allowCalmWater === 'boolean')
     && (data.bannedPlayerIds === undefined || Array.isArray(data.bannedPlayerIds) && data.bannedPlayerIds.every((id) => typeof id === 'string' && id.length > 0 && id.length <= 80))
     && (data.bannedPlayerNames === undefined || data.bannedPlayerNames !== null && typeof data.bannedPlayerNames === 'object' && Object.entries(data.bannedPlayerNames).every(([id, name]) => id.length > 0 && id.length <= 80 && typeof name === 'string' && name.length <= 24));
 }
@@ -57,7 +66,7 @@ export function canManageProtection() {
   return Boolean(protection && protection.ownerId === playerIdentity());
 }
 
-export function updateProtection(change: { enabled?: boolean; allowedPlayerIds?: string[]; canBreak?: boolean; canPlace?: boolean; bannedPlayerIds?: string[] }) {
+export function updateProtection(change: { enabled?: boolean; allowedPlayerIds?: string[]; canBreak?: boolean; canPlace?: boolean; allowDestructiveFire?: boolean; allowCampfire?: boolean; allowFloodingWater?: boolean; allowCalmWater?: boolean; bannedPlayerIds?: string[] }) {
   const current = useProtectionStore.getState().protection;
   if (!current || !canManageProtection()) return false;
   const protection: WorldProtection = {
@@ -66,6 +75,10 @@ export function updateProtection(change: { enabled?: boolean; allowedPlayerIds?:
     allowedPlayerIds: [...new Set([current.ownerId, ...(change.allowedPlayerIds ?? current.allowedPlayerIds)])].slice(0, 50),
     canBreak: change.canBreak ?? current.canBreak ?? false,
     canPlace: change.canPlace ?? current.canPlace ?? false,
+    allowDestructiveFire: change.allowDestructiveFire ?? current.allowDestructiveFire !== false,
+    allowCampfire: change.allowCampfire ?? current.allowCampfire !== false,
+    allowFloodingWater: change.allowFloodingWater ?? current.allowFloodingWater !== false,
+    allowCalmWater: change.allowCalmWater ?? current.allowCalmWater !== false,
     bannedPlayerIds: change.bannedPlayerIds ?? current.bannedPlayerIds ?? [],
   };
   useProtectionStore.getState().setProtection(protection);
@@ -87,7 +100,15 @@ export function unbanPlayer(targetId: string) {
   return true;
 }
 
-export function canEditAt(x: number, z: number, action: 'break' | 'place' | 'interact' = 'interact') {
+export function allowsBlockCategory(protection: WorldProtection, kind: BlockKind) {
+  if (kind === BlockKind.Wildfire) return protection.allowDestructiveFire !== false;
+  if (kind === BlockKind.Campfire) return protection.allowCampfire !== false;
+  if (kind === BlockKind.Water) return protection.allowFloodingWater !== false;
+  if (kind === BlockKind.CalmWater) return protection.allowCalmWater !== false;
+  return true;
+}
+
+export function canEditAt(x: number, z: number, action: 'break' | 'place' | 'interact' = 'interact', kind?: BlockKind) {
   const mode = useGameStore.getState().gameplayMode;
   if (mode === 'pirates') return true;
   if (mode === 'football') return false;
@@ -103,7 +124,11 @@ export function canEditAt(x: number, z: number, action: 'break' | 'place' | 'int
   }
   if (protection.allowedPlayerIds.includes(playerIdentity())) return true;
   if (action === 'break' && protection.canBreak === true) return true;
-  if (action === 'place' && protection.canPlace === true) return true;
+  if (action === 'place' && protection.canPlace === true && (kind === undefined || allowsBlockCategory(protection, kind))) return true;
+  if (action === 'place' && kind !== undefined && protection.canPlace === true && !allowsBlockCategory(protection, kind)) {
+    useGameStore.getState().setNotice('Le créateur a désactivé cette catégorie de bloc.');
+    return false;
+  }
   if (action === 'break' && protection.canBreak === false) {
     useGameStore.getState().setNotice('Le créateur a désactivé la destruction des blocs.');
     return false;

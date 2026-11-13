@@ -3,6 +3,12 @@ import battleMusicUrl from '../../assets/audio/The_Last_Move.mp3';
 import pirateMusicUrl from '../../assets/audio/Salt_On_The_Gunwale.m4a';
 import marchMusicUrl from '../../assets/audio/March_to_the_Final_Peak.m4a';
 import voxelMusicUrl from '../../assets/audio/Voxel_Ascent.m4a';
+import music3Url from '../../son/music3.mp4';
+import music4Url from '../../son/music4.mp4';
+import music5Url from '../../son/music5.mp4';
+import music6Url from '../../son/music6.mp4';
+import music7Url from '../../son/music7.mp4';
+import music8Url from '../../son/music8.mp4';
 import whistleUrl from '../../son/siflet.mp3';
 import fireSirenUrl from '../../son/sirene-de-pompier.mp3';
 import breakBlockUrl from '../../son/son-de-casse-un-bloc.mp3';
@@ -63,7 +69,7 @@ function attemptPlay(element: HTMLAudioElement) {
   });
 }
 
-const explorationTracks = [musicUrl, marchMusicUrl, voxelMusicUrl] as const;
+const explorationTracks = [musicUrl, marchMusicUrl, voxelMusicUrl, music3Url, music4Url, music5Url, music6Url, music7Url, music8Url] as const;
 let explorationTrack = 0;
 
 function playNextTrack() {

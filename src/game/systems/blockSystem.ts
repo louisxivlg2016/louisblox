@@ -46,7 +46,7 @@ function attachGrowth(world: World, kind: BlockKind, x: number, y: number, z: nu
   }
 }
 
-export function blockSystem(world: World, camera: Camera, dt: number, disabled = false, pendingActions?: { place: number; harvest: number }) {
+export function blockSystem(world: World, camera: Camera, dt: number, disabled = false, pendingActions?: { place: number; harvest: number; interact?: number }) {
   const playerEntity = world.queryFirst(Player);
   const targetEntity = world.queryFirst(BlockTarget);
   const player = playerEntity?.get(PlayerPosition);
@@ -156,7 +156,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     return;
   }
 
-  if ((actions.place > 0 || actions.harvest > 0) && (isDoor(hit.block.kind) || isTrapdoor(hit.block.kind))) {
+  if ((actions.place > 0 || actions.harvest > 0 || (actions.interact ?? 0) > 0) && (isDoor(hit.block.kind) || isTrapdoor(hit.block.kind))) {
     replaceVoxel(world, hit, hit.block.kind, !hit.block.open);
     return;
   }
@@ -223,7 +223,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
           : kind === BlockKind.TrafficLight
             ? Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'south' : 'north'
             : Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
-      const placed = addVoxel(world, x, y, z, kind, undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
+      const placed = addVoxel(world, x, y, z, kind, isStair(kind) && hit.normal.y === -1 ? 1 : undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
       if (placed) playSound('placeBlock', 0.45);
       if (placed && store.gameplayMode === 'survival') changeInventory(kind, -1);
       if (kind === BlockKind.Tnt) {

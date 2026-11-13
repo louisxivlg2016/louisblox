@@ -200,6 +200,13 @@ export const STAIR_SOURCES: Readonly<Partial<Record<ExtraBlockKind, number>>> = 
   [EXTRA_BLOCKS.StairBedrock]: 17,
 };
 export const stairSource = (kind: number) => STAIR_SOURCES[kind as ExtraBlockKind];
+export const isUpsideDownStair = (block: Pick<import('./voxel').Voxel, 'kind' | 'growth'>) => isStair(block.kind) && block.growth === 1;
+export const isGrassPlate = (block: Pick<import('./voxel').Voxel, 'kind' | 'growth'> | undefined) => block?.growth === 0 && [0, 11, 12, 142].includes(block.kind);
+export const stairFacingFromYaw = (yaw: number): NonNullable<import('./voxel').Voxel['facing']> => {
+  const x = -Math.sin(yaw);
+  const z = -Math.cos(yaw);
+  return Math.abs(x) > Math.abs(z) ? x > 0 ? 'east' : 'west' : z > 0 ? 'north' : 'south';
+};
 export const CROP_KINDS = [EXTRA_BLOCKS.Corn, EXTRA_BLOCKS.Wheat, EXTRA_BLOCKS.Tomato, EXTRA_BLOCKS.Carrot] as const;
 export const isCrop = (kind: number) => (CROP_KINDS as readonly number[]).includes(kind);
 export const isFurnace = (kind: number) => kind === EXTRA_BLOCKS.Furnace;

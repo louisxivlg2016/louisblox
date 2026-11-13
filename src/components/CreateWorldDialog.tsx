@@ -23,6 +23,10 @@ export type CreateWorldOptions = {
   multiplayer: boolean;
   canBreak: boolean;
   canPlace: boolean;
+  allowDestructiveFire: boolean;
+  allowCampfire: boolean;
+  allowFloodingWater: boolean;
+  allowCalmWater: boolean;
   customWorld?: CustomWorldDefinition;
 };
 
@@ -44,7 +48,7 @@ function seedFromName(name: string) {
 
 export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () => void; onCreate: (options: CreateWorldOptions) => void; onPlay: () => void | Promise<void> }) {
   const [draft] = useState(readEditorDraft);
-  const [options, setOptions] = useState<CreateWorldOptions>({ name: draft?.name ?? 'Mon aventure', mode: 'creative', template: draft ? 'custom' : 'nature', multiplayer: false, canBreak: true, canPlace: true });
+  const [options, setOptions] = useState<CreateWorldOptions>({ name: draft?.name ?? 'Mon aventure', mode: 'creative', template: draft ? 'custom' : 'nature', multiplayer: false, canBreak: true, canPlace: true, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true });
   const [tab, setTab] = useState<'world' | 'lobby' | 'code' | 'editor'>(draft ? 'editor' : 'world');
   const [source, setSource] = useState(draft?.world.source ?? DEFAULT_WORLD_SOURCE);
   const [terrain, setTerrain] = useState<CustomTerrain>(draft?.world.terrain ?? initialWorld.terrain);
@@ -158,6 +162,10 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () =
             <legend>Autorisations des autres joueurs</legend>
             <label className="protection-option"><input type="checkbox" checked={options.canBreak} onChange={(event) => change('canBreak', event.target.checked)} /> Casser des blocs</label>
             <label className="protection-option"><input type="checkbox" checked={options.canPlace} onChange={(event) => change('canPlace', event.target.checked)} /> Poser des blocs</label>
+            <label className="protection-option"><input type="checkbox" checked={options.allowDestructiveFire} onChange={(event) => change('allowDestructiveFire', event.target.checked)} /> Feu rouge destructeur</label>
+            <label className="protection-option"><input type="checkbox" checked={options.allowCampfire} onChange={(event) => change('allowCampfire', event.target.checked)} /> Feu de camp non destructeur</label>
+            <label className="protection-option"><input type="checkbox" checked={options.allowFloodingWater} onChange={(event) => change('allowFloodingWater', event.target.checked)} /> Eau avec inondation</label>
+            <label className="protection-option"><input type="checkbox" checked={options.allowCalmWater} onChange={(event) => change('allowCalmWater', event.target.checked)} /> Eau calme sans inondation</label>
           </fieldset>
         </div>}
         {tab === 'lobby' && <div id="create-panel-lobby" role="tabpanel" aria-labelledby="create-tab-lobby" className="create-lobby-panel">

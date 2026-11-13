@@ -54,7 +54,7 @@ export function WigGlb({ kind, color = null }: { kind: WigKind; color?: string |
   const large = kind === 'louis14';
   return (
     <Suspense fallback={null}>
-      <Model url={wigModels[kind]} width={large ? 0.68 : 0.6} height={large ? 0.88 : 0.5} depth={large ? 0.64 : 0.57} centerY={large ? 1.68 : 1.79} />
+      <Model url={wigModels[kind]} width={large ? 0.68 : 0.6} height={large ? 0.88 : 0.5} depth={large ? 0.64 : 0.57} centerY={large ? 1.58 : 1.79} />
     </Suspense>
   );
 }

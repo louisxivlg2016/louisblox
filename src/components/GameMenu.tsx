@@ -112,7 +112,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     const names: Record<GameplayMode, string> = { survival: 'Survie avec tous les joueurs', creative: 'Créatif avec tous les joueurs', battle: 'Bataille', 'city-ancient': 'Ville ancienne · 10 km', 'city-modern': 'Ville moderne · 10 km', pirates: 'Pirates en équipe', football: 'Match de football', maze: 'Course Labyrinthe' };
     const worldName = options?.name.trim().slice(0, 48) || names[gameplayMode];
     const worldId = options?.multiplayer ? `salon-${crypto.randomUUID().slice(0, 8)}` : normalizeRoomId(worldName);
-    if (options) useProtectionStore.getState().setProtection({ ...newProtection(), canBreak: options.canBreak, canPlace: options.canPlace });
+    if (options) useProtectionStore.getState().setProtection({ ...newProtection(), canBreak: options.canBreak, canPlace: options.canPlace, allowDestructiveFire: options.allowDestructiveFire, allowCampfire: options.allowCampfire, allowFloodingWater: options.allowFloodingWater, allowCalmWater: options.allowCalmWater });
     if (readWorldSave(worldId)) useGameStore.getState().openWorld(worldId, worldName);
     else regenerate(gameplayMode, worldId, template, worldName, options?.customWorld);
     if (shared) useGameStore.setState({ worldName });

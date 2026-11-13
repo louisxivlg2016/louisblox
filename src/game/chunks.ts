@@ -17,7 +17,7 @@ import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnChunkFish } from './fish';
 import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
-import { isBed, isChest, isCrop, isDoor, isFireBlock, isLadder, isRail, isSapling, isSign, isTrafficSign, isTrapdoor, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
+import { isBed, isChest, isCrop, isDoor, isFireBlock, isGrassPlate, isLadder, isRail, isSapling, isSign, isStair, isTrafficSign, isTrapdoor, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
 import { clearFires, extinguishFireAt, spawnFire } from './fireLifecycle';
 import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
 import type { ArmorKind, SelectedKind } from './items';
@@ -102,7 +102,7 @@ export const chunkCoordinate = (value: number) => Math.floor((value + 0.5) / CHU
 const columnKey = (x: number, z: number) => `${x},${z}`;
 
 function supportsGround(block: Voxel) {
-  return !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind)
+  return !isGrassPlate(block) && !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind)
     && !(block.open && block.kind >= 48 && block.kind <= 79);
 }
 
@@ -539,11 +539,12 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
   block.kind = kind;
   if (open !== undefined) block.open = open;
   if (isCrop(kind)) block.growth = growth ?? block.growth ?? 3;
+  else if (isGrassPlate({ kind, growth }) || isStair(kind) && growth !== undefined) block.growth = growth;
   else delete block.growth;
   if (isChest(kind)) block.items = items ?? block.items ?? [];
   else delete block.items;
   if (facing !== undefined) block.facing = facing;
-  if (!isLadder(kind) && !isDoor(kind) && !isTrapdoor(kind) && !isRail(kind) && !isSign(kind) && !isBed(kind) && kind !== BlockKind.TrafficLight && !isTrafficSign(kind)) delete block.facing;
+  if (!isLadder(kind) && !isDoor(kind) && !isTrapdoor(kind) && !isRail(kind) && !isSign(kind) && !isBed(kind) && !isStair(kind) && kind !== BlockKind.TrafficLight && !isTrafficSign(kind)) delete block.facing;
   if (kind === BlockKind.Food) {
     block.food = food;
     block.meat = meat;
@@ -569,7 +570,7 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
 }
 
 export function addVoxel(world: World, x: number, y: number, z: number, kind: BlockKind, growth?: number, facing?: Voxel['facing'], fireGeneration = 0, food?: SelectedKind, meat?: import('./animals').AnimalKind, protectedBlock = false, authoritative = false) {
-  if (!authoritative && !canEditAt(x, z, 'place')) return;
+  if (!authoritative && !canEditAt(x, z, 'place', kind)) return;
   const state = stateFor(world);
   const cx = chunkCoordinate(x);
   const cz = chunkCoordinate(z);
@@ -585,10 +586,10 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
   if (existing) data.blocks = data.blocks.filter((block) => voxelKey(block.x, block.y, block.z) !== position);
 
   const block: Voxel = { x, y, z, kind, ...(protectedBlock ? { protected: true } : {}) };
-  if (isCrop(kind)) block.growth = growth ?? 3;
+  if (isCrop(kind) || isGrassPlate({ kind, growth }) || isStair(kind) && growth !== undefined) block.growth = growth ?? 3;
   if (isChest(kind)) block.items = [];
   if (isSign(kind)) block.text = kind === BlockKind.ParisStreetSign ? PARIS_STREET_SIGN_TEXT : '';
-  if (isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind)) block.facing = facing ?? (isBed(kind) ? 'south' : 'north');
+  if (isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind)) block.facing = facing ?? (isBed(kind) || isStair(kind) ? 'south' : 'north');
   if (kind === BlockKind.Food) {
     block.food = food;
     block.meat = meat;

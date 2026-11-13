@@ -93,7 +93,7 @@ export function Hands() {
         ) : isUtilityBlock(selected) ? (
           <group position={[0.46, -0.3, -1]} scale={0.32}><UtilityBlockModel kind={selected} withLight={false} held /></group>
         ) : isStair(selected) ? (
-          <group position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.32}><StairModel kind={selected} materials={heldMaterials} renderOrder={11} /></group>
+          <group position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.32}><StairModel kind={selected} materials={heldMaterials} renderOrder={11} followPlayer /></group>
         ) : (
           <mesh args={[blockGeometry, heldMaterials]} position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.16} renderOrder={11} frustumCulled={false} />
         )

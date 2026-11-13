@@ -1,4 +1,4 @@
-import { isCrop, isDoor, isLadder, isRail, isStair, isTrapdoor } from '../extraBlocks';
+import { isCrop, isDoor, isGrassPlate, isLadder, isRail, isStair, isTrapdoor, isUpsideDownStair } from '../extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import type { Voxel } from '../voxel';
 import type { CabinDefinition } from '../vehicleTypes';
@@ -12,7 +12,7 @@ const EPSILON = 0.0001;
 const MAX_SUBSTEP = 0.18;
 
 export function isCollidable(block: Voxel | undefined) {
-  if (!block || isWaterBlock(block.kind) || block.kind === BlockKind.Food || block.kind === BlockKind.JungleVine || isCrop(block.kind) || isLadder(block.kind) || isRail(block.kind)) return false;
+  if (!block || isGrassPlate(block) || isWaterBlock(block.kind) || block.kind === BlockKind.Food || block.kind === BlockKind.JungleVine || isCrop(block.kind) || isLadder(block.kind) || isRail(block.kind)) return false;
   return !(isDoor(block.kind) || isTrapdoor(block.kind)) || !block.open;
 }
 
@@ -20,13 +20,14 @@ function stairCollides(block: Voxel, position: Vector, height: number) {
   const overlaps = (minA: number, maxA: number, minB: number, maxB: number) => minA < maxB - EPSILON && maxA > minB + EPSILON;
   const xOverlap = overlaps(position.x - RADIUS, position.x + RADIUS, block.x - 0.5, block.x + 0.5);
   const zOverlap = overlaps(position.z - RADIUS, position.z + RADIUS, block.z - 0.5, block.z + 0.5);
-  const lowerOverlap = overlaps(position.y, position.y + height, block.y - 0.5, block.y);
+  const upsideDown = isUpsideDownStair(block);
+  const lowerOverlap = overlaps(position.y, position.y + height, upsideDown ? block.y : block.y - 0.5, upsideDown ? block.y + 0.5 : block.y);
   if (xOverlap && zOverlap && lowerOverlap) return true;
   const upperX = block.facing === 'east' ? [block.x, block.x + 0.5] : block.facing === 'west' ? [block.x - 0.5, block.x] : [block.x - 0.5, block.x + 0.5];
   const upperZ = block.facing === 'north' ? [block.z, block.z + 0.5] : block.facing === 'south' || !block.facing ? [block.z - 0.5, block.z] : [block.z - 0.5, block.z + 0.5];
   return overlaps(position.x - RADIUS, position.x + RADIUS, upperX[0], upperX[1])
     && overlaps(position.z - RADIUS, position.z + RADIUS, upperZ[0], upperZ[1])
-    && overlaps(position.y, position.y + height, block.y, block.y + 0.5);
+    && overlaps(position.y, position.y + height, upsideDown ? block.y - 0.5 : block.y, upsideDown ? block.y : block.y + 0.5);
 }
 
 function collides(blocks: ReadonlyMap<string, Voxel>, position: Vector, cabin?: CabinDefinition, height = HEIGHT) {

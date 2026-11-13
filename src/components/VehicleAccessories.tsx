@@ -136,11 +136,11 @@ function HarnessHorse({ entity, x, phase }: { entity: Entity; x: number; phase: 
 function planeWindowTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 16;
-  canvas.height = 20;
+  canvas.height = 16;
   const context = canvas.getContext('2d')!;
   for (let y = 0; y < canvas.height; y += 1) {
     for (let x = 0; x < canvas.width; x += 1) {
-      const radius = ((x - 7.5) / 7.5) ** 2 + ((y - 9.5) / 9.5) ** 2;
+      const radius = ((x - 7.5) / 7.5) ** 2 + ((y - 7.5) / 7.5) ** 2;
       if (radius > 1) continue;
       context.fillStyle = radius > 0.76 ? x + y < 17 ? '#c4d0d5' : '#84959f'
         : radius > 0.57 ? '#344652'
@@ -193,12 +193,12 @@ function PlaneDetails() {
   return (
     <group name="plane-livery">
       {[-1, 1].map((side) => <group key={side}>
-        <Label text="louisblox" position={[side * (surfaceAt(side, titleZ, titleY) + 0.06), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[4.2, 0.72]} color="#ffffff" background="#8b60cb" />
+        <Label text="louisblox" position={[side * (surfaceAt(side, titleZ, titleY) + 0.14), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[4.2, 0.72]} color="#f2c94c" background="#243447" />
         {Array.from({ length: 14 }, (_, index) => {
           const z = cabin.front + 2 + index * 1.7;
           const x = surfaceAt(side, z, y);
-          return <mesh key={index} name="plane-window" position={[side * (x + 0.07), y, z]} rotation={[0, side * Math.PI / 2, 0]}>
-            <planeGeometry args={[1.25, 1.1]} />
+          return <mesh key={index} name="plane-window" position={[side * (x + 0.16), y, z]} rotation={[0, side * Math.PI / 2, 0]}>
+            <planeGeometry args={[1.1, 1.1]} />
             <meshBasicMaterial map={windowTexture} transparent depthWrite={false} />
           </mesh>;
         })}

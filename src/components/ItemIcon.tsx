@@ -1,5 +1,5 @@
 import { getItemMeta, selectionInfo } from '../game/items';
-import type { SelectedKind } from '../game/items';
+import type { ItemKind, SelectedKind } from '../game/items';
 import { BlockKind } from '../game/voxel';
 import { isGlass, isStair, isTrafficSign, stairSource } from '../game/extraBlocks';
 import { getVitrailDesign, getVitrailIcon } from '../game/vitrailDesigns';
@@ -15,6 +15,19 @@ import carrotCropIcon from '../../assets/crop-icons/carrot.png';
 import cornCropIcon from '../../assets/crop-icons/corn.png';
 import tomatoCropIcon from '../../assets/crop-icons/tomato.png';
 import extinguisherUrl from '../../son/extincteur.png';
+import airplaneIconUrl from '../../assets/icons/airplane.png';
+import bayonetRifleIconUrl from '../../assets/icons/bayonet-rifle.png';
+import raceCarIconUrl from '../../assets/references/raceCar.png';
+import blueCarIconUrl from '../../assets/references/blueCar.png';
+import trainIconUrl from '../../assets/references/train.png';
+
+const photoIcons: Partial<Record<ItemKind, string>> = {
+  plane: airplaneIconUrl,
+  rifle_flintlock: bayonetRifleIconUrl,
+  car_red: raceCarIconUrl,
+  car_blue: blueCarIconUrl,
+  train: trainIconUrl,
+};
 
 const cropIcons: Partial<Record<BlockKind, string>> = {
   [BlockKind.Wheat]: wheatCropIcon,
@@ -72,6 +85,8 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
     return <img className={`block-swatch block-icon${brick ? ' block-icon-smooth' : ''}`} src={blockIcon(kind)} alt="" />;
   }
   const meta = getItemMeta(kind);
+  const photoIcon = photoIcons[kind as ItemKind];
+  if (photoIcon) return <img className="item-model-icon item-photo-icon" src={photoIcon} alt={info.name} />;
   if (kind === 'extinguisher') return <img className="item-model-icon" style={{ imageRendering: 'pixelated' }} src={extinguisherUrl} alt={info.name} />;
   if (meta.shape === 'shears') return <span className="item-icon item-shears" style={{ '--item-color': info.color } as React.CSSProperties} aria-hidden="true"><i /><b /><em /></span>;
   if (meta.shape === 'cake') return <span className="item-icon item-cake" style={{ '--item-color': info.color } as React.CSSProperties} aria-hidden="true"><i /><b /><em /></span>;

@@ -6,7 +6,7 @@ import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from './levels';
 import { useGameStore } from './store';
 import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, HorseRider, Player, PlayerBody, PlayerCollider, PlayerMount, PlayerPosition, PlayerState, Trader, TraderPosition, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
-import { EXTRA_BLOCKS, isCrop, isRail } from './extraBlocks';
+import { EXTRA_BLOCKS, isCrop, isGrassPlate, isRail } from './extraBlocks';
 import { turnToward } from './rotation';
 import { isCollidable, moveVoxelCharacter } from './systems/collisionSystem';
 import { syncVehicleMotion, syncVehicleSpawn } from './vehicleSync';
@@ -27,7 +27,7 @@ export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y
   const blocks = getBlockIndex(world);
   for (let y = Math.min(top ?? 80, Math.floor(fromY + 0.5)); y >= MIN_WORLD_Y; y -= 1) {
     const block = blocks.get(voxelKey(bx, y, bz));
-    if (block && !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
+    if (block && !isGrassPlate(block) && !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
   }
   return MIN_WORLD_Y + 0.5;
 }

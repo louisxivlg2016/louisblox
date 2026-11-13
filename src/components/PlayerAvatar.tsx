@@ -22,15 +22,12 @@ import { useEmoteStore } from '../game/emotes';
 import { useEatingStore } from '../game/eating';
 import { canWalkInVehicle } from '../game/vehicleTypes';
 import { appearanceHairColor, appearanceSkinColor } from '../game/appearance';
-import { ParachutePackModel } from './ParachuteModel';
 
 export function PlayerAvatar({ entity, preview = false }: { entity: Entity; preview?: boolean }) {
   const cameraMode = useGameStore((state) => state.cameraMode);
   const sleeping = useGameStore((state) => state.sleepProgress !== null);
   const equipped = useGameStore((state) => state.equippedArmor);
   const selected = useGameStore((state) => state.selected);
-  const hotbarSlots = useGameStore((state) => state.hotbarSlots);
-  const parachuteCount = useGameStore((state) => state.itemCounts.parachute ?? 0);
   const riding = useGameStore((state) => state.riding);
   const ridingRole = useGameStore((state) => state.ridingRole);
   const walkingCabin = canWalkInVehicle(riding, ridingRole ?? 'driver');
@@ -49,13 +46,9 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   const rightLeg = useRef<Group>(null);
   const headRef = useRef<Group>(null);
   const bodyMesh = useRef<Group>(null);
-  const parachute = useRef<Group>(null);
   const phase = useRef(0);
-  const hasParachute = parachuteCount > 0 || hotbarSlots.includes('parachute');
-  const showParachute = hasParachute && outfit !== 'pirate' && outfit !== 'corsair';
 
   useFrame((_, delta) => {
-    if (parachute.current) parachute.current.visible = showParachute;
     if (bodyMesh.current) bodyMesh.current.rotation.x = entity?.get(PlayerState)?.parachuting ? -Math.PI / 2 : 0;
     if (!entity) return;
     if (!preview) {
@@ -154,7 +147,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
         {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
         <group name="held-item" visible={!eating && !preview && !sleeping && held !== 'parachute'} position={heldItemPosition(held, hasFullCharacter(outfit, wig))} scale={typeof held === 'number' ? 0.5 : typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof held === 'number'
-            ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : isStair(held) ? <StairModel kind={held} /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
+            ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : isStair(held) ? <StairModel kind={held} followPlayer /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
             : <ItemModel kind={held} flipWeapons={hasFullCharacter(outfit, wig)} />}
         </group>
       </group>
@@ -201,7 +194,6 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
           <PixelPart position={[0.4, 1.34, 0]} size={[0.28, 0.2, 0.32]} color={armor} />
         </>
       )}
-      {showParachute && <group ref={parachute}><ParachutePackModel /></group>}
     </group>
   );
 }

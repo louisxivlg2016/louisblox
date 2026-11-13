@@ -17,9 +17,10 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
   const blocks = new Map<string, Voxel>();
   const minX = cx * 16;
   const minZ = cz * 16;
-  const put = (x: number, y: number, z: number, kind: BlockKind) => {
+  const put = (x: number, y: number, z: number, kind: BlockKind, facing?: Voxel['facing'], open?: boolean) => {
+    if (x < minX || x >= minX + 16 || z < minZ || z >= minZ + 16) return;
     if (Math.abs(x) > CITY_LIMIT || Math.abs(z) > CITY_LIMIT) return;
-    blocks.set(voxelKey(x, y, z), { x, y, z, kind });
+    blocks.set(voxelKey(x, y, z), { x, y, z, kind, ...(facing ? { facing } : {}), ...(open !== undefined ? { open } : {}) });
   };
 
   for (let x = minX; x < minX + 16; x++) {
@@ -39,16 +40,16 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
       const centerZ = bz * BLOCK_SIZE + 28;
       const church = !modern && (bx === 0 && bz === -1 || (Math.abs(bx) % 9 === 0 && Math.abs(bz) % 9 === 0 && (bx !== 0 || bz !== 0)));
       if (church) {
-        for (const block of churchBlocks(centerX, centerZ, GROUND + 1)) put(block.x, block.y, block.z, block.kind);
+        for (const block of churchBlocks(centerX, centerZ, GROUND + 1)) put(block.x, block.y, block.z, block.kind, block.facing, block.open);
         continue;
       }
       const variation = hash(bx, bz, seed);
       if (variation < 0.07) continue;
       const half = modern && variation < 0.35 ? 9 : 11;
-      const floors = modern ? variation < 0.35 ? 2 : 4 + Math.floor(variation * 5) : 3 + Math.floor(variation * 3);
+      const floors = modern ? variation < 0.35 ? 8 + Math.floor(variation * 4) : 12 + Math.floor(variation * 8) : 3 + Math.floor(variation * 3);
       const height = GROUND + floors * 4;
       const wall = modern ? BlockKind.ConcreteWhite : variation < 0.5 ? BlockKind.BeigeBrick : BlockKind.WhiteBrick;
-      const accent = modern ? [BlockKind.GlassCyan, BlockKind.GlassBlue, BlockKind.GlassMagenta][Math.floor(variation * 3)] : BlockKind.Glass;
+      const accent = BlockKind.Glass;
       for (let x = centerX - half; x <= centerX + half; x++) {
         for (let z = centerZ - half; z <= centerZ + half; z++) {
           const edgeX = Math.abs(x - centerX) === half;
@@ -60,11 +61,12 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
             if (doorway) continue;
             const window = localY % 4 >= 1 && localY % 4 <= 2 && ((edgeX ? z : x) - centerX + half) % (modern ? 2 : 3) === 1;
             const foundation = localY === 0;
-            put(x, y, z, foundation ? modern ? BlockKind.ConcreteGray : BlockKind.GrayBrick : window ? accent : wall);
+            const band = modern && localY % 4 === 3;
+            put(x, y, z, foundation ? modern ? BlockKind.ConcreteGray : BlockKind.GrayBrick : band ? BlockKind.ConcreteLightGray : window ? accent : wall);
           }
         }
       }
-      put(centerX, GROUND + 1, centerZ - half, modern ? BlockKind.DoorWhite : BlockKind.DoorBrown);
+      put(centerX, GROUND + 1, centerZ - half, modern ? BlockKind.DoorWhite : BlockKind.DoorBrown, 'south', false);
       put(centerX, GROUND + 3, centerZ - half, wall);
       for (const side of [-1, 1]) for (let y = GROUND + 1; y <= GROUND + 3; y++) put(centerX + side, y, centerZ - half, wall);
       if (modern) {
@@ -79,6 +81,8 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
               }
             }
           }
+          for (let y = height + 5; y <= height + 10; y++) put(centerX, y, centerZ, BlockKind.IronOre);
+          put(centerX, height + 11, centerZ, BlockKind.Candle);
         }
       } else {
         for (let tier = 0; tier < 4; tier++) {

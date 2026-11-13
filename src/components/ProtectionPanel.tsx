@@ -24,6 +24,10 @@ export function ProtectionPanel() {
         <>
           <label className="protection-option"><input type="checkbox" checked={protection.canBreak === true} onChange={(event) => updateProtection({ canBreak: event.target.checked })} /> Les autres joueurs peuvent casser des blocs</label>
           <label className="protection-option"><input type="checkbox" checked={protection.canPlace === true} onChange={(event) => updateProtection({ canPlace: event.target.checked })} /> Les autres joueurs peuvent poser des blocs</label>
+          <label className="protection-option"><input type="checkbox" checked={protection.allowDestructiveFire !== false} onChange={(event) => updateProtection({ allowDestructiveFire: event.target.checked })} /> Autoriser le feu rouge destructeur</label>
+          <label className="protection-option"><input type="checkbox" checked={protection.allowCampfire !== false} onChange={(event) => updateProtection({ allowCampfire: event.target.checked })} /> Autoriser le feu de camp non destructeur</label>
+          <label className="protection-option"><input type="checkbox" checked={protection.allowFloodingWater !== false} onChange={(event) => updateProtection({ allowFloodingWater: event.target.checked })} /> Autoriser l’eau avec inondation</label>
+          <label className="protection-option"><input type="checkbox" checked={protection.allowCalmWater !== false} onChange={(event) => updateProtection({ allowCalmWater: event.target.checked })} /> Autoriser l’eau calme sans inondation</label>
         </>
       )}
       {manage ? (

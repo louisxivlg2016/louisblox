@@ -54,7 +54,7 @@ function soloSpawn() {
   const radius = 11 + Math.random() * 8;
   return { x: Math.round(Math.cos(angle) * radius * 10) / 10, y: 8.51, z: Math.round(Math.sin(angle) * radius * 10) / 10 };
 }
-type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; canBreak?: boolean; canPlace?: boolean; bannedPlayerIds?: string[]; bannedPlayerNames?: Record<string, string> };
+type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; canBreak?: boolean; canPlace?: boolean; allowDestructiveFire?: boolean; allowCampfire?: boolean; allowFloodingWater?: boolean; allowCalmWater?: boolean; bannedPlayerIds?: string[]; bannedPlayerNames?: Record<string, string> };
 type TribeHome = { x: number; y: number; z: number; yaw: number; pitch: number };
 type Tribe = { id: string; name: string; ownerId: string; members: Array<{ playerId: string; name: string }>; home?: TribeHome };
 type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; worldName?: string; template?: WorldTemplate; customWorld?: CustomWorldDefinition; protection?: WorldProtection; tribes?: Tribe[]; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']>; deadAnimals?: string[]; deadTraders?: string[]; deathWorldId?: string };
@@ -299,6 +299,10 @@ function parseWorldProtection(value: unknown, ownerId: string): WorldProtection 
     allowedPlayerIds: [...new Set([ownerId, ...data.allowedPlayerIds])].slice(0, 50),
     canBreak: data.canBreak === true,
     canPlace: data.canPlace === true,
+    allowDestructiveFire: data.allowDestructiveFire !== false,
+    allowCampfire: data.allowCampfire !== false,
+    allowFloodingWater: data.allowFloodingWater !== false,
+    allowCalmWater: data.allowCalmWater !== false,
     bannedPlayerIds: banned,
     bannedPlayerNames,
   };
@@ -416,7 +420,7 @@ export class GameRoom extends DurableObject<Env> {
     this.publishWorld(publisher);
   }
 
-  private canEditAt(playerId: string, x: number, z: number, action: 'break' | 'place' | 'interact' = 'interact') {
+  private canEditAt(playerId: string, x: number, z: number, action: 'break' | 'place' | 'interact' = 'interact', kind?: number) {
     if (this.gameplayMode === 'pirates') return true;
     if (this.gameplayMode === 'football' || this.gameplayMode === 'maze') return false;
     const protection = this.protection;
@@ -425,7 +429,14 @@ export class GameRoom extends DurableObject<Env> {
     if (!protection?.enabled || Math.hypot(x - protection.centerX, z - protection.centerZ) > protection.radius) return true;
     if (protection.allowedPlayerIds.includes(playerId)) return true;
     if (action === 'break') return protection.canBreak === true;
-    if (action === 'place') return protection.canPlace === true;
+    if (action === 'place') {
+      if (protection.canPlace !== true) return false;
+      if (kind === BlockKind.Wildfire) return protection.allowDestructiveFire !== false;
+      if (kind === BlockKind.Campfire) return protection.allowCampfire !== false;
+      if (kind === BlockKind.Water) return protection.allowFloodingWater !== false;
+      if (kind === BlockKind.CalmWater) return protection.allowCalmWater !== false;
+      return true;
+    }
     return true;
   }
 
@@ -1129,7 +1140,7 @@ export class GameRoom extends DurableObject<Env> {
         const protectedKind = typeof current === 'object' && current !== null && current.protected === true ? current.kind : null;
         const removesProtection = protectedKind !== null && (edit === null || typeof edit === 'number' || edit.kind !== protectedKind || edit.protected !== true);
         const addsProtection = protectedKind === null && typeof edit === 'object' && edit !== null && edit.protected === true && this.protection?.ownerId !== attachment.playerId;
-        if (!removesProtection && !addsProtection && this.canEditAt(attachment.playerId, x, z, edit === null ? 'break' : 'place')) return true;
+        if (!removesProtection && !addsProtection && this.canEditAt(attachment.playerId, x, z, edit === null ? 'break' : 'place', edit === null ? undefined : typeof edit === 'number' ? edit : edit.kind)) return true;
         ws.send(JSON.stringify({ type: 'protection-denied', x, y, z }));
         return false;
       });
