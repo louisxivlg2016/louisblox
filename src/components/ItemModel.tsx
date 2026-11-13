@@ -547,5 +547,5 @@ export function ItemModel({ kind, held = false, flipWeapons = false }: ModelProp
   else if (vehicleKind) model = <VehicleAssetModel kind={vehicleKind} color={meta.color} preview />;
   else if (meta.shape) model = <GalleryGenericModel shape={meta.shape} color={meta.color} />;
   else model = <CarModel color={meta.color} />;
-  return <group scale={held ? 0.58 : 1} rotation={[0, heldWeaponYaw(kind, flipWeapons), 0]}>{model}</group>;
+  return <group scale={held ? 0.58 : 1} rotation={[0, heldWeaponYaw(kind, flipWeapons) + (kind === 'cannon' ? Math.PI : 0), 0]}>{model}</group>;
 }
