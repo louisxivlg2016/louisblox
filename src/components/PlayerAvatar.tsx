@@ -51,9 +51,10 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   const parachute = useRef<Group>(null);
   const phase = useRef(0);
   const hasParachute = parachuteCount > 0 || hotbarSlots.includes('parachute');
+  const showParachute = hasParachute && outfit !== 'pirate' && outfit !== 'corsair';
 
   useFrame((_, delta) => {
-    if (parachute.current) parachute.current.visible = hasParachute;
+    if (parachute.current) parachute.current.visible = showParachute;
     if (bodyMesh.current) bodyMesh.current.rotation.x = entity?.get(PlayerState)?.parachuting ? -Math.PI / 2 : 0;
     if (!entity) return;
     if (!preview) {
@@ -199,7 +200,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
           <PixelPart position={[0.4, 1.34, 0]} size={[0.28, 0.2, 0.32]} color={armor} />
         </>
       )}
-      {hasParachute && <group ref={parachute}><ParachutePackModel /></group>}
+      {showParachute && <group ref={parachute}><ParachutePackModel /></group>}
     </group>
   );
 }

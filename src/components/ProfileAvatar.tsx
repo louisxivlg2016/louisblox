@@ -24,6 +24,7 @@ import princessUrl from '../../assets/avatars/princess.webp';
 import knightUrl from '../../assets/avatars/knight.webp';
 import militaryUrl from '../../assets/avatars/military.webp';
 import pirateUrl from '../../assets/avatars/pirate.webp';
+import corsairUrl from '../../assets/avatars/corsair.webp';
 import footballerUrl from '../../assets/avatars/footballer.webp';
 import firefighterUrl from '../../assets/avatars/firefighter.webp';
 import policeUrl from '../../assets/avatars/police.webp';
@@ -49,7 +50,7 @@ export const PHOTO_AVATARS = {
   knight: { name: 'Chevalier', url: knightUrl },
   military: { name: 'Militaire', url: militaryUrl },
   pirate: { name: 'Pirate', url: pirateUrl },
-  corsair: { name: 'Pirate au bandeau', url: pirateUrl },
+  corsair: { name: 'Pirate au bandeau', url: corsairUrl },
   footballer: { name: 'Joueur de foot', url: footballerUrl },
   firefighter: { name: 'Pompier', url: firefighterUrl },
   police: { name: 'Policier', url: policeUrl },
@@ -103,7 +104,7 @@ export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
       {scrollable && !atBottom && <p className="profile-photo-scroll-hint">Fais défiler pour voir les autres profils ↓</p>}
       {photoKinds.map((kind) => (
         <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choisir ${PHOTO_AVATARS[kind].name}`} title={PHOTO_AVATARS[kind].name}>
-          <ProfileAvatar kind={kind} size={56} />
+          <ProfileAvatar kind={kind} size={96} />
           <span>{PHOTO_AVATARS[kind].name}</span>
         </button>
       ))}
