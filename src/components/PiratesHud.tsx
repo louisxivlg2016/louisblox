@@ -6,6 +6,7 @@ import { clearInput, releasePointerForOverlay, requestPlay } from '../game/input
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 import { MatchResultActions } from './MatchResultActions';
+import pirateShopButtonUrl from '../../assets/menu/pirate-shop-button.webp';
 
 export function PiratesHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
@@ -53,7 +54,7 @@ export function PiratesHud() {
           )}
         </div>
       )}
-      {team && !winner && <button className="pirate-shop-toggle" onClick={() => { releasePointerForOverlay(); setShopOpen(true); }}>Boutique pirate</button>}
+      {team && !winner && <button className="pirate-shop-toggle" aria-label="Boutique pirate" onClick={() => { releasePointerForOverlay(); setShopOpen(true); }}><img src={pirateShopButtonUrl} alt="" /></button>}
       {shopOpen && (
         <div className="pirate-shop-panel">
           <h2>Boutique pirate · {money} pièces</h2>

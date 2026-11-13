@@ -388,7 +388,8 @@
       .pirate-kit-list { display: grid !important; gap: 8px !important; }
       .pirate-kit-list button { display: grid; gap: 6px; text-align: left; background: #405b49; }
       .pirate-kit-list small { color: #d3e1ce; font-size: 11px; font-weight: 400; }
-      .pirate-shop-toggle { position: absolute; right: 20px; bottom: 122px; z-index: 18; padding: 10px 14px; color: #fff4b0; background: #5c4720; border: 2px solid #bc9d48; pointer-events: auto; font-weight: 700; }
+      .pirate-shop-toggle { position: absolute; right: 20px; bottom: 122px; z-index: 18; width: 150px; padding: 0; color: #fff4b0; background: transparent; border: 0; pointer-events: auto; font-weight: 700; }
+      .pirate-shop-toggle img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
       @media (pointer: coarse) { .pirate-shop-toggle { top: 152px; right: 12px; bottom: auto; } }
       .pirate-shop-panel { position: absolute; top: 50%; left: 50%; z-index: 46; display: grid; gap: 10px; width: min(420px, calc(100vw - 28px)); padding: 22px; transform: translate(-50%, -50%); color: #fff; background: rgba(25,31,25,.98); border: 3px solid #a18a48; pointer-events: auto; }
       .pirate-shop-panel h2 { margin: 0 0 8px; color: #f4d66d; font-size: 20px; }
@@ -1143,7 +1144,7 @@
         .emote-toggle img { height: 28px; object-fit: contain; }
         .teleport-toggle { right: 6px; bottom: 150px; width: 40px; height: 40px; padding: 2px; }
         .teleport-toggle img { height: 34px; object-fit: contain; }
-        .pirate-shop-toggle { top: 48px; right: 6px; bottom: auto; min-height: 34px; padding: 5px 8px; font-size: 10px; }
+        .pirate-shop-toggle { top: 48px; right: 6px; bottom: auto; width: 110px; min-height: 34px; padding: 0; font-size: 10px; }
         .chat-feed { left: 6px; bottom: 210px; max-width: 60vw; }
       }
     </style>
