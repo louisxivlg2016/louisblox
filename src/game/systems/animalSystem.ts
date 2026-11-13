@@ -136,6 +136,15 @@ function moveInDirection(world: World, kind: AnimalKind, position: Vector3, moti
     motion.grounded = true;
   } else {
     const ground = groundAt(world, x, z, position.y + MAX_CLIMB_RISE + 0.05);
+    const water = blockAt(world, x, SEA_LEVEL, z);
+    if (ground < SEA_LEVEL && isWaterBlock(water?.kind) && bodyClear(world, x, z, SEA_LEVEL + 0.35)) {
+      position.set(x, SEA_LEVEL + 0.35, z);
+      motion.velocityY = 0;
+      motion.grounded = true;
+      motion.yaw = yaw;
+      rememberSafePosition(world, entity, position);
+      return true;
+    }
     if (!walkableGround(world, x, z, ground) || ground > position.y + MAX_CLIMB_RISE || (position.y - ground > MAX_WALK_DOWN && motion.grounded) || !bodyClear(world, x, z, ground)) return false;
     position.x = x;
     position.z = z;
@@ -300,13 +309,13 @@ export function animalSystem(world: World, dt: number) {
       motion.yaw += Math.sin(entity * 17.31 + motion.phase) * 0.75;
       motion.turnIn = hit.panic > 0 ? 1.5 : 8 + (Math.sin(entity * 7.13 + motion.phase) + 1) * 3.5;
     }
-    if (!tamed && !motion.hunting && motion.avoid <= 0) {
+    if (!motion.hunting && motion.avoid <= 0) {
       for (const neighbor of neighbors) {
         if (neighbor.entity === entity || neighbor.stationary || !neighbor.entity.isAlive()) continue;
         const dx = position.x - neighbor.position.x;
         const dz = position.z - neighbor.position.z;
         const distanceSquared = dx * dx + dz * dz;
-        if (distanceSquared >= 0.9 * 0.9 || Math.abs(position.y - neighbor.position.y) > 2.2) continue;
+        if (distanceSquared >= 1.2 * 1.2 || Math.abs(position.y - neighbor.position.y) > 1.2) continue;
         const away = distanceSquared < 0.0001 ? entity * 2.39 : Math.atan2(dx, dz);
         motion.yaw = turnToward(motion.yaw, away + Math.sin(entity * 2.17) * 0.4, stepDt * 1.2);
         motion.turnIn = Math.max(motion.turnIn, 0.5);
@@ -327,6 +336,16 @@ export function animalSystem(world: World, dt: number) {
         moveAnimal(world, animal.kind, position, motion, stepDt, entity, 0, 0.3);
       }
     } else if (!stayClose) moveAnimal(world, animal.kind, position, motion, stepDt, entity, fire || defenseTarget ? 1 : motion.hunting ? 1 : hit.panic);
+    for (const neighbor of neighbors) {
+      if (neighbor.entity === entity || !neighbor.entity.isAlive()) continue;
+      const dx = position.x - neighbor.position.x;
+      const dz = position.z - neighbor.position.z;
+      const distanceSquared = dx * dx + dz * dz;
+      if (distanceSquared >= 0.95 * 0.95 || Math.abs(position.y - neighbor.position.y) > 1.2) continue;
+      const away = distanceSquared < 0.0001 ? entity * 2.39 : Math.atan2(dx, dz);
+      moveInDirection(world, animal.kind, position, motion, away, 4, stepDt, entity);
+      break;
+    }
     if (mesh.value) {
       mesh.value.position.copy(position);
       motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, stepDt * 6);

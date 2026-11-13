@@ -122,7 +122,7 @@ export function Hud() {
       )}
 
       {mode !== 'menu' && (
-        <div className="hotbar-wrap">
+        <div className={`hotbar-wrap${mode === 'pause' ? ' paused' : ''}`}>
           <div className="selected-name" role="status">
             {selectionInfo(selected).name}
             {selected === 'pistol_bomb' && ` · ${bombAmmo}/10${bombReloading ? ' · Recharge de 3 s…' : ''}`}

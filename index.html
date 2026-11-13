@@ -1123,11 +1123,13 @@
         .touch-knob { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
         .touch-actions, .plane-touch-actions { right: 12px; bottom: 94px; grid-template-columns: repeat(2, auto); gap: 6px; }
         .touch-button { min-width: 64px; min-height: 38px; padding: 5px 8px; font-size: 10px; border-radius: 6px; }
-        .hotbar-wrap { bottom: 8px; max-width: calc(100vw - 16px); }
-        .selected-name { margin-bottom: 4px; font-size: 10px; }
-        .hotbar { max-width: calc(100vw - 16px); flex-wrap: nowrap; gap: 3px; padding: 4px; overflow-x: auto; }
-        .hotbar-slot { flex: 0 0 42px; width: 42px; height: 42px; }
-        .block-swatch { width: 24px; height: 24px; }
+        .hotbar-wrap { bottom: 6px; max-width: calc(100vw - 12px); }
+        .hotbar-wrap.paused { z-index: 60; left: 0; width: 100%; max-width: none; transform: none; }
+        .hotbar-wrap.paused .selected-name { position: fixed; top: 10px; left: 50%; width: max-content; max-width: calc(100vw - 24px); margin: 0; padding: 6px 10px; transform: translateX(-50%); background: rgba(15, 19, 16, 0.8); }
+        .selected-name { margin-bottom: 3px; font-size: 9px; }
+        .hotbar { max-width: calc(100vw - 12px); flex-wrap: nowrap; gap: 2px; padding: 3px; overflow-x: auto; }
+        .hotbar-slot { flex: 0 0 34px; width: 34px; height: 34px; }
+        .block-swatch { width: 20px; height: 20px; }
         .tnt-icon { width: 30px; height: 30px; }
         .game-notice { bottom: 154px; max-width: 60vw; font-size: 10px; }
       }
@@ -1146,6 +1148,8 @@
         .teleport-toggle img { height: 34px; object-fit: contain; }
         .pirate-shop-toggle { top: 48px; right: 6px; bottom: auto; width: 110px; min-height: 34px; padding: 0; font-size: 10px; }
         .chat-feed { left: 6px; bottom: 210px; max-width: 60vw; }
+        .hotbar-wrap.paused { z-index: 60; left: 0; width: 100%; max-width: none; transform: none; }
+        .hotbar-wrap.paused .selected-name { position: fixed; top: 10px; left: 50%; width: max-content; max-width: calc(100vw - 24px); margin: 0; padding: 6px 10px; transform: translateX(-50%); background: rgba(15, 19, 16, 0.8); }
       }
     </style>
   </head>

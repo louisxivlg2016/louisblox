@@ -29,6 +29,7 @@ function heartTexture() {
 
 export function AnimalFriendship({ entity }: { entity: Entity }) {
   const tame = useTrait(entity, AnimalTame);
+  const love = useTrait(entity, AnimalLove);
   const particles = useRef<Group>(null);
   const hearts = useRef<Array<Sprite | null>>([]);
   const texture = useMemo(heartTexture, []);
@@ -77,12 +78,12 @@ export function AnimalFriendship({ entity }: { entity: Entity }) {
     });
   });
 
-  if (!tame?.tamed) return null;
+  if (!tame?.tamed && !love) return null;
   return (
     <>
-      <sprite position={[0, 3.8, 0]} scale={[3.6, 0.79, 1]} renderOrder={30}>
+      {tame?.tamed && <sprite position={[0, 3.8, 0]} scale={[3.6, 0.79, 1]} renderOrder={30}>
         <spriteMaterial map={label.map} transparent depthTest={false} depthWrite={false} toneMapped={false} />
-      </sprite>
+      </sprite>}
       <group ref={particles} visible={false}>
         {[0, 1, 2].map((index) => (
           <sprite key={index} ref={(heart) => { hearts.current[index] = heart; }} renderOrder={31}>

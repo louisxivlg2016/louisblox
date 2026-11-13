@@ -83,11 +83,13 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
 
   const mast = (z: number, top: number) => {
     for (let y = 10; y <= top; y++) put(center, y, z, BlockKind.Wood);
-    for (let y = 10; y <= top - 2; y++) {
+    for (let y = 10; y <= top + 1; y++) {
       put(center - 1, y, z, BlockKind.Ladder, 'west');
       put(center + 1, y, z, BlockKind.Ladder, 'east');
     }
-    for (let x = -2; x <= 2; x++) put(center + x, top + 1, z, x === 0 ? teamColor : BlockKind.ConcreteBlack);
+    for (let x = -2; x <= 2; x++) {
+      if (Math.abs(x) !== 1) put(center + x, top + 1, z, x === 0 ? teamColor : BlockKind.ConcreteBlack);
+    }
     put(center, top + 2, z, teamColor);
   };
   const sail = (z: number, bottom: number, height: number, width: number, skull: boolean) => {
@@ -95,14 +97,18 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
     for (let x = -width - 1; x <= width + 1; x++) {
       if (z !== 0 || Math.abs(x) > 1) put(center + x, top + 1, z, BlockKind.Wood);
     }
-    for (let x = -width; x <= width; x++) {
-      if (z === 0 && Math.abs(x) <= 1) continue;
-      const bulge = Math.round((1 - Math.abs(x) / (width + 1)) * 1.4);
-      for (let y = bottom; y <= top; y++) {
+    for (let y = bottom; y <= top; y++) {
+      const vertical = (y - bottom) / height;
+      const inset = y === bottom || y === top ? 1 : 0;
+      for (let x = -width + inset; x <= width - inset; x++) {
+        if (z === 0 && Math.abs(x) <= 1) continue;
+        const horizontal = 1 - Math.abs(x) / (width + 1);
+        const bulge = Math.round(horizontal * (0.6 + Math.sin(vertical * Math.PI) * 1.4));
         const skullPixel = skull && ((y === bottom + 4 && Math.abs(x) <= 2) || (y === bottom + 3 && Math.abs(x) <= 2) || (y === bottom + 2 && Math.abs(x) === 1) || (y === bottom + 1 && (x === -2 || x === 0 || x === 2)));
         const eyeHole = skull && y === bottom + 3 && Math.abs(x) === 1;
-        const border = Math.abs(x) === width || y === bottom || y === top;
-        put(center + x, y, z + bulge, skullPixel && !eyeHole ? BlockKind.ConcreteBlack : border || y === bottom + 1 ? teamColor : BlockKind.ConcreteWhite);
+        const border = Math.abs(x) === width - inset || y === bottom || y === top;
+        const stripe = (y - bottom) % 3 === 0;
+        put(center + x, y, z + bulge, skullPixel && !eyeHole ? BlockKind.ConcreteBlack : border || stripe ? teamColor : BlockKind.ConcreteWhite);
       }
     }
   };

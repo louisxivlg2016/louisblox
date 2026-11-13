@@ -5,6 +5,7 @@ import type { AnimalKind } from './animals';
 import type { SelectedKind } from './items';
 import { useGameStore } from './store';
 import { groundAt } from './vehicles';
+import { changeInventory } from './inventory';
 
 export const WILD_ANIMALS = new Set<AnimalKind>(['bear', 'wolf', 'snowWolf', 'snowBear', 'monkey', 'ocelot', 'giraffe', 'elephant', 'deer', 'snowDeer']);
 export const FEED_INTERVAL_MS = 30 * 60 * 1000;
@@ -117,6 +118,12 @@ export function canFeedAnimal(kind: AnimalKind, selected: SelectedKind) {
   return WILD_ANIMALS.has(kind) ? MEAT_FOOD.has(selected) : FARM_FOOD.has(selected);
 }
 
+export function animalFoodNotice(kind: AnimalKind) {
+  return WILD_ANIMALS.has(kind)
+    ? `${names[kind] ?? 'Cet animal'} mange de la viande crue ou cuite.`
+    : `${names[kind] ?? 'Cet animal'} mange du maïs, des pommes ou du blé.`;
+}
+
 export function feedAnimal(world: World, entity: Entity, selected: SelectedKind): 'fed' | 'handled' | false {
   initTaming(world);
   const kind = entity.get(Animal)?.kind;
@@ -124,7 +131,7 @@ export function feedAnimal(world: World, entity: Entity, selected: SelectedKind)
   if (!kind || !id) return false;
   const store = useGameStore.getState();
   if (!canFeedAnimal(kind, selected)) {
-    store.setNotice(WILD_ANIMALS.has(kind) ? `${names[kind] ?? 'Cet animal'} préfère la viande.` : `${names[kind] ?? 'Cet animal'} mange du maïs, une pomme ou du blé.`);
+    store.setNotice(animalFoodNotice(kind));
     return 'handled';
   }
   if (!hasFood(selected)) {
@@ -199,8 +206,8 @@ export function tamingSystem(world: World, _dt: number) {
     while (record.giftDay < today) {
       record.giftDay += 1;
       const store = useGameStore.getState();
-      if (record.kind === 'cow') store.setItemCount('milk', (useGameStore.getState().itemCounts.milk ?? 0) + 1);
-      if (record.kind === 'sheep') store.setItemCount('wool', (useGameStore.getState().itemCounts.wool ?? 0) + 1);
+      if (record.kind === 'cow') changeInventory('milk', 1);
+      if (record.kind === 'sheep') changeInventory('wool', 1);
       if (!record.babyBorn) {
         record.babyBorn = true;
         void spawnBaby(world, entity, record);

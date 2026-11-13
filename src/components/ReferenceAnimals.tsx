@@ -34,12 +34,14 @@ function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x'
   const previousPosition = useRef<Vector3 | null>(null);
   const renderYaw = useRef<number | null>(null);
   const phase = useRef(0);
+  const moving = useRef(false);
   useFrame((_, delta) => {
     const position = entity.get(AnimalPosition);
     const motion = entity.get(AnimalMotion);
     const mesh = entity.get(AnimalMesh)?.value;
     if (position && mesh) {
-      const moved = previousPosition.current ? position.distanceTo(previousPosition.current) : 0;
+      const moved = previousPosition.current ? Math.hypot(position.x - previousPosition.current.x, position.z - previousPosition.current.z) : 0;
+      moving.current = moved > 0.0005;
       if (!previousPosition.current) previousPosition.current = position.clone();
       else previousPosition.current.copy(position);
       const smoothing = 1 - Math.exp(-delta * 30);
@@ -55,9 +57,8 @@ function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x'
         mesh.rotation.y = renderYaw.current;
       }
     }
-    const moving = (motion?.speed ?? 0) > 0 && (motion?.idle ?? 0) <= 0;
-    if (moving) phase.current += delta * (bird ? 10 : 8) * (motion?.running ? 1.5 : 1);
-    const swing = moving ? Math.sin(phase.current) * (bird ? 0.35 : motion?.running ? 0.6 : 0.44) : 0;
+    if (moving.current) phase.current += delta * (bird ? 10 : 8) * (motion?.running ? 1.5 : 1);
+    const swing = moving.current ? Math.sin(phase.current) * (bird ? 0.42 : motion?.running ? 0.75 : 0.56) : 0;
     for (let index = 0; index < 4; index += 1) {
       const leg = mesh?.getObjectByName(`animal-leg-${index}`);
       if (!leg) continue;

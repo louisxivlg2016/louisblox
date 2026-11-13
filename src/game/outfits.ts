@@ -1,4 +1,4 @@
-export const OUTFIT_ORDER = ['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader'] as const;
+export const OUTFIT_ORDER = ['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'corsair', 'footballer', 'firefighter', 'police', 'soldier', 'trader'] as const;
 export type OutfitKind = (typeof OUTFIT_ORDER)[number];
 
 export const OUTFITS: Record<OutfitKind, { name: string; description: string; body: string; legs: string; color: string }> = {
@@ -11,6 +11,7 @@ export const OUTFITS: Record<OutfitKind, { name: string; description: string; bo
   louis14: { name: 'Louis XIV', description: 'Grande perruque bouclée et habit royal.', body: '#2d467f', legs: '#2a304c', color: '#4b3528' },
   louis15: { name: 'Louis XV', description: 'Petite perruque poudrée et habit élégant.', body: '#6681a6', legs: '#454d69', color: '#d7d0c3' },
   pirate: { name: 'Pirate', description: 'Tricorne, manteau rouge, ceinture et bottes de corsaire.', body: '#7d2937', legs: '#302935', color: '#8e303d' },
+  corsair: { name: 'Pirate au bandeau', description: 'Nouveau pirate Hunyuan avec bandeau rouge, cache-œil et chemise claire.', body: '#3b2d27', legs: '#302935', color: '#8e303d' },
   footballer: { name: 'Joueur de foot', description: 'Maillot bleu numéro 10, short blanc, chaussettes bleues et cheveux blonds.', body: '#2868b3', legs: '#f0f1eb', color: '#2868b3' },
   firefighter: { name: 'Pompier', description: 'Casque jaune et uniforme avec bandes réfléchissantes.', body: '#343d42', legs: '#293238', color: '#e4b93e' },
   police: { name: 'Policier', description: 'Casquette, chemise bleue, ceinturon et uniforme.', body: '#4777a7', legs: '#283a53', color: '#4777a7' },

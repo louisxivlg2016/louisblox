@@ -116,7 +116,8 @@ export function Game() {
   useEffect(() => setMusicMode(gameplayMode), [gameplayMode]);
   useEffect(() => {
     if (gameplayMode === 'battle' && outfit !== 'military') setOutfit('military');
-    if (gameplayMode === 'pirates' && outfit !== 'pirate') setOutfit('pirate');
+    if (gameplayMode === 'pirates' && outfit !== 'pirate' && outfit !== 'corsair') setOutfit('pirate');
+    if (gameplayMode === 'football' && outfit !== 'footballer') setOutfit('footballer');
   }, [gameplayMode, outfit, setOutfit]);
   if (!level) return null;
 

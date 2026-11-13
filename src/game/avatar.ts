@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { useCharacterStore } from './characterStore';
 
-export const PROFILE_AVATAR_KINDS = ['pixel', 'girl', 'girl-dark', 'girl-brown', 'girl-red', 'girl-black', 'boy', 'boy-dark', 'boy-brown', 'boy-red', 'boy-black', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader'] as const;
+export const PROFILE_AVATAR_KINDS = ['pixel', 'girl', 'girl-dark', 'girl-brown', 'girl-red', 'girl-black', 'boy', 'boy-dark', 'boy-brown', 'boy-red', 'boy-black', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'corsair', 'footballer', 'firefighter', 'police', 'soldier', 'trader'] as const;
 
 export const PROFILE_COLOR_PRESETS = {
   'girl-brown': { character: 'girl', hairColor: '#70452e', eyeColor: '#6b4a2d', eyebrowColor: '#3a271c', hairStyle: 'long' },

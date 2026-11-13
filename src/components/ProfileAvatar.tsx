@@ -49,6 +49,7 @@ export const PHOTO_AVATARS = {
   knight: { name: 'Chevalier', url: knightUrl },
   military: { name: 'Militaire', url: militaryUrl },
   pirate: { name: 'Pirate', url: pirateUrl },
+  corsair: { name: 'Pirate au bandeau', url: pirateUrl },
   footballer: { name: 'Joueur de foot', url: footballerUrl },
   firefighter: { name: 'Pompier', url: firefighterUrl },
   police: { name: 'Policier', url: policeUrl },
