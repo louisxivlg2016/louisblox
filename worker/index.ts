@@ -22,6 +22,7 @@ export type PlayerState = {
   moving: boolean;
   airborne?: boolean;
   parachuting?: boolean;
+  hasParachute?: boolean;
   mounted?: boolean;
   mountRole?: 'driver' | 'passenger';
   vehicleKind?: MountKind;
@@ -165,6 +166,7 @@ function parseState(value: unknown): PlayerState | null {
     moving: state.moving === true,
     airborne: state.airborne === true,
     parachuting: state.parachuting === true,
+    hasParachute: state.hasParachute === true,
     mounted: state.mounted === true,
     mountRole: state.mountRole === 'passenger' ? 'passenger' : state.mountRole === 'driver' ? 'driver' : undefined,
     vehicleKind: isVehicleKind(state.vehicleKind) || isAnimalMount(state.vehicleKind) ? state.vehicleKind : undefined,
@@ -327,6 +329,7 @@ export class GameRoom extends DurableObject<Env> {
     broadcast: (message) => this.broadcast(message),
     broadcastBattle: () => this.broadcastBattleState(),
     setEdit: (key, value) => this.worldEdits.set(key, value),
+    getEdit: (key) => this.worldEdits.get(key),
     save: () => this.saveWorld(),
   });
   private football = new FootballEngine({

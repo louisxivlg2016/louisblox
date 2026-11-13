@@ -17,6 +17,7 @@ type PirateRoom = {
   broadcast: (message: unknown) => void;
   broadcastBattle: () => void;
   setEdit: (key: string, value: number | null) => void;
+  getEdit: (key: string) => unknown;
   save: () => Promise<void>;
 };
 
@@ -158,9 +159,12 @@ export class PirateEngine {
     const objective = objectives[team];
     const distance = Math.hypot(point.x - objective.x, point.y - objective.y, point.z - objective.z);
     if (distance > (impact ? 3.5 : kind === 'melee' ? 6 : 90)) return;
-    const chest = PIRATE_CHEST_OFFSETS[6 - this.objectives[team]];
+    const exactChest = impact && PIRATE_CHEST_OFFSETS.some(([dx, dy, dz]) => objective.x + dx === impact.x && objective.y + dy === impact.y && objective.z + dz === impact.z);
+    if (kind === 'melee' && !exactChest) return;
+    const chest = exactChest ? [impact!.x - objective.x, impact!.y - objective.y, impact!.z - objective.z] : PIRATE_CHEST_OFFSETS[6 - this.objectives[team]];
     if (chest) {
       const key = `${objective.x + chest[0]},${objective.y + chest[1]},${objective.z + chest[2]}`;
+      if (this.room.getEdit(key) === null) return;
       this.room.setEdit(key, null);
       this.room.broadcast({ type: 'edits', edits: [[key, null]] });
     }

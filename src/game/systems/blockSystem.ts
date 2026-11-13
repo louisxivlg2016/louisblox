@@ -101,10 +101,14 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
 
     if (progress >= 1) {
       if (isPirateObjective(hit.x, hit.y, hit.z)) {
-        requestPirateObjectiveHit('melee');
+        requestPirateObjectiveHit('melee', { x: hit.x, y: hit.y, z: hit.z });
+        removeVoxel(world, hit);
+        playSound('breakWood', 0.5);
+        target.visible = false;
         target.miningKey = '';
         target.miningProgress = 0;
         store.setMiningProgress(0);
+        if (mesh) mesh.visible = false;
         return;
       }
       if (kind === BlockKind.Food) pickUpFood(world, hit);

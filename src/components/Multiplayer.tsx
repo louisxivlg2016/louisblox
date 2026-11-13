@@ -34,7 +34,7 @@ import { applyVehicleRemoval, applyVehicleSnapshot, isVehicleSnapshot, onVehicle
 import type { VehicleSnapshot } from '../game/vehicleSync';
 import { isAnimalMount } from '../game/vehicleTypes';
 import { appearanceSkinColor } from '../game/appearance';
-import { ParachuteModel, ParachutePackModel } from './ParachuteModel';
+import { ParachutePackModel } from './ParachuteModel';
 import { isOutfitKind, isWigSelection, OUTFITS, selectedWig } from '../game/outfits';
 import type { OutfitKind, WigSelection } from '../game/outfits';
 import { CharacterOutfit } from './CharacterOutfit';
@@ -150,7 +150,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
     const bodyYaw = state.bodyYaw ?? (state.mounted || state.moving ? state.yaw : group.current.rotation.y);
     const angle = Math.atan2(Math.sin(bodyYaw - group.current.rotation.y), Math.cos(bodyYaw - group.current.rotation.y));
     group.current.rotation.y += angle * amount;
-    const flightRotation = !state.mounted && state.emote === 'lie' ? -Math.PI / 2 : state.flying ? -Math.PI / 2 : 0;
+    const flightRotation = !state.mounted && state.emote === 'lie' || state.parachuting ? -Math.PI / 2 : state.flying ? -Math.PI / 2 : 0;
     group.current.rotation.x += (flightRotation - group.current.rotation.x) * amount;
     const waving = state.emote === 'wave';
     if (waving) phase.current += delta * 10;
@@ -206,13 +206,12 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
       <PlayerNameTag name={name} playerId={playerId} />
       {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit character={character} outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} appearance={current} avatar={avatar} />
-      {state.selected === 'parachute' && !state.parachuting && <ParachutePackModel />}
-      {state.parachuting && <ParachuteModel />}
+      {(state.hasParachute || state.selected === 'parachute') && <ParachutePackModel />}
       {team && <group name="battle-team-marker" userData={{ team }}><PixelPart position={[0, 1.42, -0.21]} size={[0.58, 0.1, 0.06]} color={battleTeamColor(team)} /></group>}
       <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={skin} /></group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={skin} />}
-        {state.selected !== undefined && (
+        {state.selected !== undefined && state.selected !== 'parachute' && (
           <group
             name="remote-held-item"
             position={heldItemPosition(state.selected, hasFullCharacter(outfit, wig))}
@@ -796,7 +795,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, bodyYaw: entity?.get(PlayerMesh)?.value?.rotation.y, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, parachuting: playerState.parachuting, mounted: Boolean(mounted), mountRole: entity?.get(PlayerMount)?.role, vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: world.queryFirst(Sleep) ? 'lie' : useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, bodyYaw: entity?.get(PlayerMesh)?.value?.rotation.y, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, parachuting: playerState.parachuting, hasParachute: useGameStore.getState().hotbarSlots.includes('parachute') || (useGameStore.getState().itemCounts.parachute ?? 0) > 0, mounted: Boolean(mounted), mountRole: entity?.get(PlayerMount)?.role, vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: world.queryFirst(Sleep) ? 'lie' : useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

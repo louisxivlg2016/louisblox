@@ -43,7 +43,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const seatedHeight = mounted && !isAnimalMount(mountKind) ? mountKind === 'car' ? -0.9 : -0.7 : 0;
   const lyingHeight = !mounted && !sleep && emote === 'lie' ? 0.18 : 0;
   if (avatar) {
-    avatar.rotation.x = sleep ? amount * Math.PI / 2 : !mounted && emote === 'lie' ? -Math.PI / 2 : -flightAmount * Math.PI / 2;
+    avatar.rotation.x = sleep ? amount * Math.PI / 2 : !mounted && (emote === 'lie' || state.parachuting) ? -Math.PI / 2 : -flightAmount * Math.PI / 2;
     avatar.rotation.z = 0;
     avatar.position.set(-Math.sin(sleep?.yaw ?? 0) * 1.1 * amount, -0.32 * amount + (sleep ? 0 : flightAmount) + seatedHeight + lyingHeight, -Math.cos(sleep?.yaw ?? 0) * 1.1 * amount);
   }
