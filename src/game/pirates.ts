@@ -12,12 +12,12 @@ export const PIRATE_WATER_Y = 4.5;
 export const PIRATE_OBJECTIVES = { red: { x: -16, y: 7, z: 0 }, blue: { x: 16, y: 7, z: 0 } } as const;
 
 export const PIRATE_KITS: Record<PirateKit, { name: string; description: string; hotbar: SelectedKind[] }> = {
-  defender: { name: 'Défenseur', description: 'Épée, murs et nourriture pour protéger le trésor.', hotbar: ['sword_iron', 'pistol_iron', BlockKind.OakPlanks, BlockKind.Stone, BlockKind.OakPlanks, 'cooked_meat', 'bow', 'pistol_bomb', BlockKind.Tnt, 'apple'] },
+  defender: { name: 'Défenseur', description: 'Épée, murs et nourriture pour protéger le trésor.', hotbar: ['sword_iron', 'parachute', BlockKind.OakPlanks, BlockKind.Stone, BlockKind.OakPlanks, 'cooked_meat', 'bow', 'pistol_bomb', BlockKind.Tnt, 'apple'] },
   gunner: { name: 'Artilleur', description: 'Canons, fusil et arc pour bombarder les autres navires.', hotbar: ['pistol_bomb', 'rifle_auto', 'bow', BlockKind.Tnt, 'cannon', BlockKind.OakPlanks, 'cooked_meat', 'sword_iron', BlockKind.Stone, 'apple'] },
   raider: { name: 'Abordeur', description: 'Pioche, épée et TNT pour construire et attaquer la cale.', hotbar: ['sword_diamond', 'pickaxe_diamond', BlockKind.Tnt, BlockKind.OakPlanks, 'pistol_bomb', 'bow', 'cooked_meat', BlockKind.Stone, BlockKind.OakPlanks, 'apple'] },
 };
 
-export const PIRATE_LOADOUT: SelectedKind[] = ['sword_diamond', 'pistol_bomb', 'rifle_auto', 'bow', 'cannon', 'pickaxe_diamond', 'pistol_iron', BlockKind.OakPlanks, 'cooked_meat', BlockKind.Tnt];
+export const PIRATE_LOADOUT: SelectedKind[] = ['sword_diamond', 'pistol_bomb', 'rifle_auto', 'bow', 'cannon', 'pickaxe_diamond', 'parachute', BlockKind.OakPlanks, 'cooked_meat', BlockKind.Tnt];
 
 export const PIRATE_SHOP = [
   { item: 'sword_diamond', name: 'Épée en diamant', cost: 12 },

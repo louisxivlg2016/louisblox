@@ -49,6 +49,8 @@ export const AnimalHit = trait({ time: 0, panic: 0, flashed: false, attackIn: 0,
 export const AnimalPosition = trait(() => new Vector3());
 export const AnimalMotion = trait({ yaw: 0, displayYaw: 0, turnIn: 0, phase: 0, running: false, speed: 0.5, idle: 0, velocityY: 0, grounded: true, avoid: 0, climbTarget: null as number | null, hunting: false, sightIn: 0 });
 export const AnimalMesh = trait(() => ({ value: null as import('three').Object3D | null }));
+export const AnimalTame = trait({ tamed: false, giftDay: 0, baby: false, babyBorn: false, friendship: 1, happiness: 100, lastFedAt: 0 });
+export const AnimalLove = trait({ time: 0 });
 
 export const Trader = trait({ homeX: 0, homeZ: 0, targetX: 0, targetZ: 0, destinationX: null as number | null, destinationZ: null as number | null, detourX: null as number | null, detourZ: null as number | null, detourIn: 0, arrived: false, phase: 0, walking: true, following: false, villager: false, health: 5, panic: 0, fireIn: 0, bedX: null as number | null, bedY: null as number | null, bedZ: null as number | null, sleeping: false, restaurantInvited: false, restaurantMeal: null as 'going' | 'eating' | null, restaurantMealTime: 0, restaurantMessage: '', restaurantStep: 0, bedDoorReached: false });
 export const TraderPosition = trait(() => new Vector3());
@@ -72,7 +74,7 @@ export const VehiclePosition = trait(() => new Vector3());
 export const VehicleMotion = trait({ speed: 0, yaw: 0, mounted: false, routeTime: 0, homeX: 0, homeY: 0, homeZ: 0, homeYaw: 0 });
 export const VehicleMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 export const VehicleHealth = trait({ value: 3, max: 3 });
-export const HorseRider = trait({ saddled: false, mounted: false, passenger: false, speed: 0 });
+export const HorseRider = trait({ saddled: false, mounted: false, passenger: false, speed: 0, velocityY: 0, grounded: true });
 export const Projectile = trait({ id: '', kind: 'arrow' as 'arrow' | 'bullet' | 'bomb', life: 8, damage: 1, remote: false, color: undefined as string | undefined });
 export const ProjectilePosition = trait(() => new Vector3());
 export const ProjectileVelocity = trait(() => new Vector3());

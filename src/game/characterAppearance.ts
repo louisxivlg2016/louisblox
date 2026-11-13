@@ -2,7 +2,7 @@ import { Box3, CanvasTexture, Color, NearestFilter, SRGBColorSpace, Vector3 } fr
 import type { BufferGeometry, Material } from 'three';
 import type { CharacterAppearance } from './appearance';
 
-type MaskRegion = 'skin' | 'hair' | 'eyes' | 'eyebrows' | 'uniform' | 'classic-boy-band';
+type MaskRegion = 'skin' | 'hair' | 'eyes' | 'eyebrows' | 'uniform' | 'sleeves' | 'forearms' | 'classic-boy-band';
 
 function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, width: number, height: number, flipY: boolean, princessHair = false, frontSign = 1) {
   const canvas = document.createElement('canvas');
@@ -32,6 +32,10 @@ function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, 
       ? horizontal && vertical > 0.34 && vertical < 0.76
       : region === 'uniform'
         ? vertical > 0.36 && vertical < 0.67
+      : region === 'sleeves'
+        ? arm && vertical >= 0.53
+      : region === 'forearms'
+        ? arm && vertical < 0.53
       : region === 'eyes'
         ? eyes
       : region === 'eyebrows'
@@ -92,7 +96,7 @@ function hairPixel(red: number, green: number, blue: number, allowGrayHair: bool
   const minimum = Math.min(red, green, blue);
   const brown = red > green * 1.06 && green > blue * 1.1 && red < 190 && blue < 110;
   const gray = allowGrayHair && maximum - minimum < 45 && maximum > 85;
-  const gold = red > 150 && green > 95 && blue < Math.min(red, green) * 0.62 && green > blue * 1.5;
+  const gold = red > 150 && green > 80 && red > green * 1.01 && green > blue * 1.35;
   if (gold) return allowGoldHair;
   return (brown || gray) && maximum > 30;
 }
@@ -173,6 +177,8 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   const uniformMask = uniform
     ? maskCanvas(geometry, bounds, 'uniform', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data
     : null;
+  const sleeveMask = outfit === 'footballer' ? maskCanvas(geometry, bounds, 'sleeves', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data : null;
+  const forearmMask = outfit === 'footballer' ? maskCanvas(geometry, bounds, 'forearms', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data : null;
   let eyebrowPixels = 0;
   let skinPixels = 0;
   for (let index = 0; index < pixels.data.length; index += 4) {
@@ -186,13 +192,17 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
       : outfit === 'footballer'
         ? brightness < 0.78
         : Math.max(red, green, blue) > 55 && red > green * 1.08 && green > blue * 1.07);
-    const target = skinMask[index + 3] > 0 && skinPixel(red, green, blue, outfit === 'firefighter')
+    const target = sleeveMask && sleeveMask[index + 3] > 0 && uniform
+      ? uniform
+      : forearmMask && forearmMask[index + 3] > 0 && skin
+        ? skin
+        : skinMask[index + 3] > 0 && skinPixel(red, green, blue, outfit === 'firefighter')
       ? skin
       : eyeMask[index + 3] > 0 && irisPixel(red, green, blue)
         ? eyes
         : eyebrowMask[index + 3] > 0 && eyebrowPixel(red, green, blue)
           ? eyebrows
-          : hairMask[index + 3] > 0 && hairPixel(red, green, blue, allowGrayHair, outfit === 'footballer') ? hair
+          : hairMask[index + 3] > 0 && !skinPixel(red, green, blue) && hairPixel(red, green, blue, allowGrayHair, outfit === 'footballer' || outfit === 'classic-girl') ? hair
             : uniformPixel ? uniform : null;
     if (!target) continue;
     if (target === eyebrows) eyebrowPixels += 1;

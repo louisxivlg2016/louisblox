@@ -8,6 +8,7 @@ import { absorbWithShield, attackMultiplier, defenceMultiplier, hasEffect } from
 import { getBlockIndex } from './chunks';
 import { moveVoxelCharacter } from './systems/collisionSystem';
 import { applyAnimalDeath, reportAnimalDeath } from './deathSync';
+import { alertAnimalSound } from './systems/animalSoundSystem';
 
 export function damagePlayer(world: World, amount: number, kind: 'physical' | 'fire' = 'physical') {
   const player = world.queryFirst(Player);
@@ -62,6 +63,7 @@ export function damageAnimal(world: World, target: Entity, amount: number, attac
   const animal = target.get(Animal);
   const position = target.get(AnimalPosition);
   if (!health || !animal || !position || target.get(HorseRider)?.mounted || target.get(HorseRider)?.passenger) return false;
+  if (amount > 0) alertAnimalSound(world, target);
   const remaining = health.value - amount * (attacker ? attackMultiplier() : 1);
   if (remaining > 0) {
     target.set(AnimalHealth, { value: remaining });

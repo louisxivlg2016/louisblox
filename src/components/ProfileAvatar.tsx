@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useAvatarStore } from '../game/avatar';
 import type { ProfileAvatarKind } from '../game/avatar';
 import type { CharacterAppearance } from '../game/appearance';
@@ -5,8 +6,14 @@ import type { CharacterKind } from '../game/characterStore';
 import type { OutfitKind, WigSelection } from '../game/outfits';
 import girlUrl from '../../assets/avatars/fille.webp';
 import girlDarkUrl from '../../assets/avatars/fille-noir.webp';
+import girlBrownUrl from '../../assets/avatars/fille-brune.webp';
+import girlRedUrl from '../../assets/avatars/fille-rousse.webp';
+import girlBlackUrl from '../../assets/avatars/fille-noire.webp';
 import boyUrl from '../../assets/avatars/garcon.webp';
 import boyDarkUrl from '../../assets/avatars/garcon-noir.webp';
+import boyBrownUrl from '../../assets/avatars/garcon-brun.webp';
+import boyRedUrl from '../../assets/avatars/garcon-roux.webp';
+import boyBlackUrl from '../../assets/avatars/garcon-cheveux-noirs.webp';
 import traderUrl from '../../assets/avatars/marchand.webp';
 import soldierUrl from '../../assets/avatars/soldat.webp';
 import louis14Url from '../../assets/avatars/louis14.webp';
@@ -24,8 +31,14 @@ import policeUrl from '../../assets/avatars/police.webp';
 export const PHOTO_AVATARS = {
   girl: { name: 'Fille', url: girlUrl },
   'girl-dark': { name: 'Fille peau foncée', url: girlDarkUrl },
+  'girl-brown': { name: 'Fille brune · yeux marron', url: girlBrownUrl },
+  'girl-red': { name: 'Fille rousse · yeux verts', url: girlRedUrl },
+  'girl-black': { name: 'Fille cheveux noirs · yeux bleus', url: girlBlackUrl },
   boy: { name: 'Garçon', url: boyUrl },
   'boy-dark': { name: 'Garçon peau foncé', url: boyDarkUrl },
+  'boy-brown': { name: 'Garçon brun · yeux verts', url: boyBrownUrl },
+  'boy-red': { name: 'Garçon roux · yeux bleus', url: boyRedUrl },
+  'boy-black': { name: 'Garçon cheveux noirs · yeux violets', url: boyBlackUrl },
   trader: { name: 'Marchand', url: traderUrl },
   soldier: { name: 'Soldat', url: soldierUrl },
   louis14: { name: 'Louis XIV', url: louis14Url },
@@ -54,21 +67,41 @@ export function ProfileAvatar({ kind, size = 58 }: {
   const current = kind ?? selected;
   const photoKind = current === 'pixel' || current === 'default' ? 'boy' : current;
   const photo = PHOTO_AVATARS[photoKind];
-  const newPortrait = ['girl', 'girl-dark', 'boy', 'boy-dark', 'trader', 'soldier'].includes(photoKind);
+  const newPortrait = ['girl', 'boy', 'trader', 'soldier'].includes(photoKind) || photoKind.startsWith('girl-') || photoKind.startsWith('boy-');
   return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}${newPortrait ? ' profile-photo-new' : ''}`} src={photo.url} width={size} height={size} alt={`Portrait ${photo.name}`} />;
 }
 
 export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
   const selected = useAvatarStore((state) => state.kind);
   const setKind = useAvatarStore((state) => state.setKind);
+  const picker = useRef<HTMLDivElement>(null);
+  const [scrollable, setScrollable] = useState(false);
+  const [atBottom, setAtBottom] = useState(false);
+  useEffect(() => {
+    const element = picker.current;
+    if (!element) return;
+    const update = () => {
+      setScrollable(element.scrollHeight > element.clientHeight + 1);
+      setAtBottom(element.scrollTop + element.clientHeight >= element.scrollHeight - 8);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    window.addEventListener('resize', update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, []);
   const choose = (kind: ProfileAvatarKind) => {
     setKind(kind);
     onClose();
   };
   return (
-    <div className="profile-photo-picker" role="group" aria-label="Choisir ma photo">
+    <div ref={picker} className="profile-photo-picker" role="group" aria-label={`Choisir ma photo, ${photoKinds.length} profils`} tabIndex={0} onScroll={(event) => { const element = event.currentTarget; setAtBottom(element.scrollTop + element.clientHeight >= element.scrollHeight - 8); }}>
+      {scrollable && !atBottom && <p className="profile-photo-scroll-hint">Fais défiler pour voir les autres profils ↓</p>}
       {photoKinds.map((kind) => (
-        <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choisir ${PHOTO_AVATARS[kind].name}`}>
+        <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choisir ${PHOTO_AVATARS[kind].name}`} title={PHOTO_AVATARS[kind].name}>
           <ProfileAvatar kind={kind} size={56} />
           <span>{PHOTO_AVATARS[kind].name}</span>
         </button>

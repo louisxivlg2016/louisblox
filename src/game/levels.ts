@@ -191,7 +191,7 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
     for (let z = minZ - 3; z < maxZ + 3; z += 1) {
       const height = heightAt(x, z, seed);
       if (biomeAt(x, z, seed) !== 'prairie' || height <= SEA_LEVEL + 1) continue;
-      if (hash(x, z, seed + 613) > 0.955) {
+      if (hash(x, z, seed + 613) > 0.988) {
         const crop = CROP_KINDS[Math.floor(hash(Math.floor(x / 4), Math.floor(z / 4), seed + 614) * CROP_KINDS.length)];
         put(x, height + 1, z, crop, false);
       }

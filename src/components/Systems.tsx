@@ -6,6 +6,8 @@ import { useGameStore } from '../game/store';
 import { recordPlaytime } from '../game/profile';
 import { animalCombatSystem } from '../game/systems/animalCombatSystem';
 import { animalSystem } from '../game/systems/animalSystem';
+import { animalInteractionSystem } from '../game/systems/animalInteractionSystem';
+import { animalSoundSystem } from '../game/systems/animalSoundSystem';
 import { blockSystem } from '../game/systems/blockSystem';
 import { bombSystem, explosionSystem } from '../game/systems/bombSystem';
 import { cameraSystem } from '../game/systems/cameraSystem';
@@ -45,13 +47,15 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       vehicleMovementSystem(world, dt);
       cameraSystem(world, camera, dt);
       const footballHandled = footballControlSystem(world, camera, dt, actions.tap, actions) || mazeControlSystem(world);
-      const tradeHandled = !sleeping && !footballHandled && tradeInteractionSystem(world, camera, actions.place + actions.harvest + actions.tap + actions.interact);
-      const itemHandled = !tradeHandled && !footballHandled && !sleeping && itemSystem(world, camera, delta, actions);
+      const animalHandled = !sleeping && !footballHandled && animalInteractionSystem(world, camera, actions.harvest, actions.tap);
+      const tradeHandled = !animalHandled && !sleeping && !footballHandled && tradeInteractionSystem(world, camera, actions.place + actions.harvest + actions.tap + actions.interact);
+      const itemHandled = !animalHandled && !tradeHandled && !footballHandled && !sleeping && itemSystem(world, camera, delta, actions);
       const vehicleHandled = !sleeping && !footballHandled && !itemHandled && vehicleInteractionSystem(world, camera, actions.place + actions.harvest);
       const cannonHandled = !sleeping && !footballHandled && vehicleWeaponSystem(world, camera, delta, actions.tap);
       const vehicleTarget = !sleeping && !footballHandled && (cannonHandled || vehicleCombatSystem(world, camera, dt, actions.tap));
       const animalTarget = !sleeping && !footballHandled && !vehicleTarget && animalCombatSystem(world, camera, dt, actions.tap);
-      animalSystem(world, Math.min(delta, 0.25));
+      animalSystem(world, Math.min(delta, 2));
+      animalSoundSystem(world, Math.min(delta, 0.25));
       traderSystem(world, Math.min(delta, 0.25));
       fishSystem(world, dt);
       meatDropSystem(world, dt);
@@ -64,7 +68,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       waterSystem(world, dt);
       sleepSystem(world, dt);
       if (effectSystem(world, dt)) invalidate();
-      const remainingActions = sleeping || footballHandled || vehicleHandled || tradeHandled || itemHandled ? { place: 0, harvest: 0 } : actions;
+      const remainingActions = sleeping || footballHandled || animalHandled || vehicleHandled || tradeHandled || itemHandled ? { place: 0, harvest: 0 } : actions;
       blockSystem(world, camera, dt, footballHandled || animalTarget || vehicleTarget || sleeping, remainingActions);
     } else {
       cameraSystem(world, camera, delta);

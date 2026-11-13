@@ -3,20 +3,23 @@ import { useFrame } from '@react-three/fiber';
 import { useQuery, useTrait, useWorld } from 'koota/react';
 import type { Entity } from 'koota';
 import { Mesh } from 'three';
-import { Animal, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerMount } from '../game/traits';
+import { Animal, AnimalMesh, AnimalPosition, AnimalTame, HorseRider } from '../game/traits';
 import { useRemotePlayerStore } from '../game/multiplayerStore';
-import { spawnAnimal } from '../game/animals';
-import { mountSnapshotsById } from '../game/mounts';
+import { syncRemoteMounts } from '../game/animalMountSync';
 import { AnimalGlb } from './AnimalGlb';
 import { SaddleModel } from './ItemModel';
-import { isAnimalDead } from '../game/deathSync';
+import { AnimalFriendship } from './AnimalFriendship';
 
 function AnimalView({ entity }: { entity: Entity }) {
-  const kind = entity.get(Animal)!.kind;
-  const position = entity.get(AnimalPosition)!;
+  const animal = entity.get(Animal);
+  const position = entity.get(AnimalPosition);
   const rider = useTrait(entity, HorseRider);
+  const tame = useTrait(entity, AnimalTame);
+  if (!animal || !position) return null;
+  const kind = animal.kind;
   return (
     <group
+      scale={tame?.baby ? 0.55 : 1}
       ref={(group) => {
         if (group && !group.userData.flashReady) {
           group.traverse((object) => {
@@ -34,7 +37,8 @@ function AnimalView({ entity }: { entity: Entity }) {
       <Suspense fallback={null}>
         <AnimalGlb entity={entity} kind={kind} />
       </Suspense>
-      {kind === 'horse' && rider?.saddled && <group name="horse-saddle" position={[0, 0.55, -0.15]} scale={0.85}><SaddleModel /></group>}
+      {kind === 'horse' && rider?.saddled && <group name="horse-saddle" position={[0, 0.4, -0.15]} scale={0.85}><SaddleModel /></group>}
+      <AnimalFriendship entity={entity} />
     </group>
   );
 }
@@ -43,44 +47,7 @@ function RemoteHorseSync() {
   const world = useWorld();
   const previous = useRef(new Set<Entity>());
   useFrame(() => {
-    const current = new Set<Entity>();
-    const localMount = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
-    const horses = [...world.query(Animal, AnimalId, AnimalPosition, AnimalMotion, AnimalMesh)];
-    for (const { snapshot, kind, role } of mountSnapshotsById(useRemotePlayerStore.getState().players).values()) {
-      if (isAnimalDead(snapshot.id)) continue;
-      let entity: Entity | undefined = horses.find((candidate) => candidate.get(AnimalId) === snapshot.id);
-      if (entity === localMount) continue;
-      if (!entity) {
-        entity = spawnAnimal(world, kind, snapshot.x, snapshot.y, snapshot.z, 0) ?? undefined;
-        if (!entity) continue;
-        entity.set(AnimalId, snapshot.id);
-        horses.push(entity);
-      }
-      current.add(entity);
-      const rider = entity.get(HorseRider);
-      if (rider) {
-        if (!rider.mounted) entity.set(HorseRider, { mounted: true, speed: 0 });
-        entity.set(HorseRider, { passenger: role === 'passenger' });
-        if (kind === 'horse' && !rider.saddled) entity.set(HorseRider, { saddled: true });
-      } else {
-        entity.add(HorseRider({ saddled: kind === 'horse', mounted: true, passenger: role === 'passenger' }));
-      }
-      const position = entity.get(AnimalPosition)!;
-      position.set(snapshot.x, snapshot.y, snapshot.z);
-      entity.set(AnimalMotion, { yaw: snapshot.yaw, displayYaw: snapshot.yaw + Math.PI });
-      const mesh = entity.get(AnimalMesh)?.value;
-      if (mesh) {
-        mesh.position.copy(position);
-        mesh.rotation.y = snapshot.yaw + Math.PI;
-      }
-    }
-    for (const entity of previous.current) {
-      if (current.has(entity) || entity === localMount || !entity.get(HorseRider)) continue;
-      const motion = entity.get(AnimalMotion);
-      if (motion) entity.set(AnimalMotion, { yaw: motion.displayYaw });
-      entity.set(HorseRider, { mounted: false, passenger: false, speed: 0 });
-    }
-    previous.current = current;
+    previous.current = syncRemoteMounts(world, useRemotePlayerStore.getState().players, previous.current);
   });
   return null;
 }

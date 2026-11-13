@@ -29,32 +29,33 @@ import traderUrl from '../../assets/models/full-trader.glb';
 const hunyuanAnimals = { cow: cowUrl, chicken: chickenUrl, sheep: sheepUrl, pig: pigUrl, horse: horseUrl, camel: camelUrl, duck: duckUrl, wolf: wolfUrl, snowWolf: snowWolfUrl, bear: bearUrl, snowBear: snowBearUrl, deer: deerUrl, snowDeer: snowDeerUrl, monkey: singeUrl, ocelot: ocelotUrl, giraffe: girafeUrl, elephant: elephantUrl };
 for (const model of [...Object.values(hunyuanAnimals), traderUrl]) useGLTF.preload(model);
 
-function useAnimalLegs(entity: Entity, bird = false) {
-  const last = useRef<{ x: number; z: number } | null>(null);
+function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0) {
   const renderPosition = useRef<Vector3 | null>(null);
+  const previousPosition = useRef<Vector3 | null>(null);
   const renderYaw = useRef<number | null>(null);
-  const walking = useRef(0);
   const phase = useRef(0);
   useFrame((_, delta) => {
     const position = entity.get(AnimalPosition);
     const motion = entity.get(AnimalMotion);
     const mesh = entity.get(AnimalMesh)?.value;
     if (position && mesh) {
-      const moved = last.current !== null && Math.hypot(position.x - last.current.x, position.z - last.current.z) > 0.0002;
-      walking.current = moved ? 0.12 : Math.max(0, walking.current - delta);
-      last.current = { x: position.x, z: position.z };
+      const moved = previousPosition.current ? position.distanceTo(previousPosition.current) : 0;
+      if (!previousPosition.current) previousPosition.current = position.clone();
+      else previousPosition.current.copy(position);
       const smoothing = 1 - Math.exp(-delta * 30);
       if (!renderPosition.current || renderPosition.current.distanceToSquared(position) > 16) renderPosition.current = position.clone();
       renderPosition.current.lerp(position, smoothing);
       mesh.position.copy(renderPosition.current);
+      mesh.userData.actualSpeed = delta > 0 ? moved / delta : 0;
       if (motion) {
         const currentYaw = renderYaw.current ?? motion.displayYaw;
-        const angle = Math.atan2(Math.sin(motion.displayYaw - currentYaw), Math.cos(motion.displayYaw - currentYaw));
+        const targetYaw = motion.displayYaw + yawOffset;
+        const angle = Math.atan2(Math.sin(targetYaw - currentYaw), Math.cos(targetYaw - currentYaw));
         renderYaw.current = currentYaw + angle * smoothing;
         mesh.rotation.y = renderYaw.current;
       }
     }
-    const moving = walking.current > 0 && (motion?.idle ?? 0) <= 0;
+    const moving = (motion?.speed ?? 0) > 0 && (motion?.idle ?? 0) <= 0;
     if (moving) phase.current += delta * (bird ? 10 : 8) * (motion?.running ? 1.5 : 1);
     const swing = moving ? Math.sin(phase.current) * (bird ? 0.35 : motion?.running ? 0.6 : 0.44) : 0;
     for (let index = 0; index < 4; index += 1) {
@@ -84,7 +85,7 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
     if (kind === 'camel') clone.position.y += 0.72;
     return clone;
   }, [scene, kind]);
-  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck');
+  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck', kind === 'giraffe' ? Math.PI : 0);
   return <group name={`reference-${kind}`} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 

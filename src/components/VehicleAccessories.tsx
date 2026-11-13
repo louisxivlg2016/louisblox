@@ -68,7 +68,7 @@ function EmergencyLights({ top = 2.94 }: { top?: number }) {
   );
 }
 
-function HunyuanVehicle({ kind, interior }: { kind: VehicleModelKind; interior: boolean }) {
+function HunyuanVehicle({ kind, interior, showOccupants }: { kind: VehicleModelKind; interior: boolean; showOccupants: boolean }) {
   const { scene } = useGLTF(vehicleModels[kind]);
   const { model, top } = useMemo(() => {
     const clone = scene.clone(true);
@@ -78,9 +78,9 @@ function HunyuanVehicle({ kind, interior }: { kind: VehicleModelKind; interior: 
       object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) {
-        if (interior) {
+        if (interior || showOccupants) {
           material.transparent = true;
-          material.opacity = 0.12;
+          material.opacity = interior ? 0.12 : 0.38;
           material.depthWrite = false;
         }
         if (!material.map) continue;
@@ -94,7 +94,7 @@ function HunyuanVehicle({ kind, interior }: { kind: VehicleModelKind; interior: 
     const bounds = new Box3().setFromObject(clone);
     clone.position.y -= bounds.min.y;
     return { model: clone, top: bounds.max.y - bounds.min.y };
-  }, [scene, kind, interior]);
+  }, [scene, kind, interior, showOccupants]);
   return <group name={`${kind}-reference-model`} userData={{ source: 'Hunyuan' }}><primitive object={model} />{kind === 'firetruck' && <EmergencyLights top={top} />}</group>;
 }
 
@@ -186,14 +186,14 @@ function PlaneDetails() {
     };
   }, [scene]);
   const cabin = CABINS.plane!;
-  const y = cabin.floor + 3.5;
+  const y = cabin.floor + 4.2;
   const titleY = cabin.floor + 7.1;
   const titleZ = cabin.front + 8;
   const windowTexture = useMemo(planeWindowTexture, []);
   return (
     <group name="plane-livery">
       {[-1, 1].map((side) => <group key={side}>
-        <Label text="louis blox" position={[side * (surfaceAt(side, titleZ, titleY) + 0.06), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[4.2, 0.72]} color="#ffffff" background="#8b60cb" />
+        <Label text="louisblox" position={[side * (surfaceAt(side, titleZ, titleY) + 0.06), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[4.2, 0.72]} color="#ffffff" background="#8b60cb" />
         {Array.from({ length: 14 }, (_, index) => {
           const z = cabin.front + 2 + index * 1.7;
           const x = surfaceAt(side, z, y);
@@ -207,10 +207,10 @@ function PlaneDetails() {
   );
 }
 
-export function VehicleAccessories({ entity, kind, interior = false }: { entity: Entity; kind: VehicleKind; interior?: boolean }) {
+export function VehicleAccessories({ entity, kind, interior = false, showOccupants = false }: { entity: Entity; kind: VehicleKind; interior?: boolean; showOccupants?: boolean }) {
   if (kind === 'plane') return <PlaneDetails />;
   if (kind in vehicleModels) return <>
-    <HunyuanVehicle kind={kind as VehicleModelKind} interior={interior} />
+    <HunyuanVehicle kind={kind as VehicleModelKind} interior={interior} showOccupants={showOccupants} />
     {kind === 'carriage' && <><HarnessHorse entity={entity} x={-0.8} phase={0} /><HarnessHorse entity={entity} x={0.8} phase={Math.PI} /></>}
   </>;
   return null;

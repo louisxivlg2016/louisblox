@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useWorld } from 'koota/react';
-import { CanvasTexture, NearestFilter, Sprite, SpriteMaterial, Vector3 } from 'three';
+import { Vector3 } from 'three';
+import type { Group } from 'three';
 import { playerIdentity } from '../game/playerIdentity';
 import { PlayerPosition } from '../game/traits';
 import { useTribeStore } from '../game/tribes';
@@ -11,47 +13,11 @@ export function PlayerNameTag({ name, playerId }: { name: string; playerId?: str
   const tribes = useTribeStore((state) => state.tribes);
   const [distance, setDistance] = useState<number | null>(null);
   const clock = useRef(0);
+  const other = useRef(new Vector3());
+  const tagObject = useRef<Group>(null);
   const selfId = playerIdentity();
   const tribe = playerId ? tribes.find((candidate) => candidate.members.some((member) => member.playerId === selfId) && candidate.members.some((member) => member.playerId === playerId)) : undefined;
-  const tag = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = tribe ? 128 : 96;
-    const context = canvas.getContext('2d')!;
-    context.fillStyle = 'rgba(12, 22, 32, 0.8)';
-    context.fillRect(4, 4, 504, canvas.height - 8);
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.lineWidth = 7;
-    context.strokeStyle = '#15202a';
-    context.font = 'bold 34px monospace';
-    context.strokeText(name.slice(0, 24), 256, tribe ? 35 : 49, 482);
-    context.fillStyle = '#ffffff';
-    context.fillText(name.slice(0, 24), 256, tribe ? 35 : 49, 482);
-    if (tribe) {
-      const subtitle = `${tribe.name} · ${distance ?? '…'} m`;
-      context.font = 'bold 28px monospace';
-      context.strokeStyle = '#1d3424';
-      context.strokeText(subtitle, 256, 88, 482);
-      context.fillStyle = '#b8e69f';
-      context.fillText(subtitle, 256, 88, 482);
-    }
-    const texture = new CanvasTexture(canvas);
-    texture.magFilter = NearestFilter;
-    texture.minFilter = NearestFilter;
-    texture.generateMipmaps = false;
-    const material = new SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
-    const sprite = new Sprite(material);
-    sprite.name = 'remote-player-name';
-    sprite.userData = { playerName: name, playerId, tribeName: tribe?.name ?? null, distance: tribe ? distance : null };
-    sprite.scale.set(2.7, tribe ? 0.68 : 0.51, 1);
-    sprite.renderOrder = 5;
-    return sprite;
-  }, [name, playerId, tribe?.id, tribe?.name, distance]);
-  useEffect(() => () => {
-    tag.material.map?.dispose();
-    tag.material.dispose();
-  }, [tag]);
+
   useFrame((_, delta) => {
     if (!tribe) {
       if (distance !== null) setDistance(null);
@@ -62,9 +28,25 @@ export function PlayerNameTag({ name, playerId }: { name: string; playerId?: str
     clock.current = 0;
     const player = world.queryFirst(PlayerPosition)?.get(PlayerPosition);
     if (!player) return;
-    const other = tag.getWorldPosition(new Vector3());
-    const next = Math.max(0, Math.round(Math.hypot(player.x - other.x, player.z - other.z)));
+    tagObject.current?.getWorldPosition(other.current);
+    const tag = other.current;
+    const next = Math.max(0, Math.round(Math.hypot(player.x - tag.x, player.z - tag.z)));
     if (next !== distance) setDistance(next);
   });
-  return <primitive object={tag} position={[0, 2.6, 0]} />;
+
+  return (
+    <group
+      name="remote-player-name"
+      userData={{ playerName: name, playerId, tribeName: tribe?.name ?? null, distance: tribe ? distance : null }}
+      position={[0, 2.6, 0]}
+      ref={tagObject}
+    >
+      <Html center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
+        <div style={{ minWidth: 120, padding: '7px 12px', color: '#fff', textAlign: 'center', whiteSpace: 'nowrap', background: 'rgba(12, 22, 32, 0.9)', border: '2px solid rgba(255,255,255,0.72)', fontFamily: 'monospace', fontWeight: 700, textShadow: '2px 2px 0 #15202a' }}>
+          <div style={{ fontSize: 18 }}>{name.slice(0, 24)}</div>
+          {tribe && <div style={{ marginTop: 4, color: '#b8e69f', fontSize: 15 }}>{tribe.name} · {distance ?? '…'} m</div>}
+        </div>
+      </Html>
+    </group>
+  );
 }

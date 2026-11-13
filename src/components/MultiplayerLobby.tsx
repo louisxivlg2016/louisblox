@@ -26,7 +26,7 @@ const STATUS_NAMES = {
   error: 'Connexion impossible',
 } as const;
 
-export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void> }) {
+export function MultiplayerLobby({ onPlay, onCreateRoom, createLabel = 'Nouveau salon', showWhenDisabled = false, idPrefix = 'multiplayer' }: { onPlay: () => void | Promise<void>; onCreateRoom?: (room: string, mode: import('../game/worldMode').GameplayMode | null) => void; createLabel?: string; showWhenDisabled?: boolean; idPrefix?: string }) {
   const enabled = useMultiplayerStore((state) => state.enabled);
   const savedName = useMultiplayerStore((state) => state.playerName);
   const savedRoom = useMultiplayerStore((state) => state.room);
@@ -45,13 +45,14 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
   const [joinMode, setJoinMode] = useState<GameplayMode | 'room'>(modeFromUrl);
   const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(null);
   const currentMode = useGameStore((state) => state.gameplayMode);
+  const fieldId = (name: string) => `${idPrefix}-${name}`;
   useEffect(() => setPlayerName(savedName), [savedName]);
   useEffect(() => {
     setServerEditing(showServer);
     return () => setServerEditing(false);
   }, [showServer, setServerEditing]);
   useEffect(() => {
-    if (!enabled || !room.trim()) return;
+    if ((!enabled && !showWhenDisabled) || !room.trim()) return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       fetchRoomInfo(room.trim(), showServer ? server : '', controller.signal)
@@ -114,9 +115,12 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
     if (resolving) return;
     setResolving(true);
     try {
-      if (await findAndJoin(room)) return;
       if (!canCreateWorld()) {
         useMultiplayerStore.getState().setStatus('error', 'Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes avant de créer un salon.');
+        return;
+      }
+      if (onCreateRoom) {
+        onCreateRoom(room.trim(), joinMode === 'room' ? null : joinMode);
         return;
       }
       const worldId = `salon-${crypto.randomUUID().slice(0, 8)}`;
@@ -153,14 +157,14 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
 
   return (
     <>
-      {enabled && (
+      {(enabled || showWhenDisabled) && (
         <form className="multiplayer-lobby" onSubmit={(event) => { event.preventDefault(); void join(); }}>
           <div className="multiplayer-fields">
-            <label htmlFor="multiplayer-name">Pseudo
-              <input id="multiplayer-name" value={playerName} onChange={(event) => setPlayerName(event.target.value)} maxLength={24} autoComplete="nickname" required />
+            <label htmlFor={fieldId('name')}>Pseudo
+              <input id={fieldId('name')} value={playerName} onChange={(event) => setPlayerName(event.target.value)} maxLength={24} autoComplete="nickname" required />
             </label>
-            <label htmlFor="multiplayer-room">Nom du salon
-              <input id="multiplayer-room" value={room} onChange={(event) => setRoom(event.target.value)} maxLength={48} autoCapitalize="none" autoCorrect="off" required />
+            <label htmlFor={fieldId('room')}>Nom du salon
+              <input id={fieldId('room')} value={room} onChange={(event) => setRoom(event.target.value)} maxLength={48} autoCapitalize="none" autoCorrect="off" required />
             </label>
           </div>
           <p className="multiplayer-hint">Le même nom de salon suffit pour jouer ensemble. Chaque joueur doit avoir un pseudo unique.</p>
@@ -169,15 +173,15 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
           </button>
           {showServer && (
             <>
-              <label htmlFor="multiplayer-server">Serveur personnalisé <span>(optionnel)</span>
-                <input id="multiplayer-server" value={server} onChange={(event) => setServer(event.target.value)} placeholder="wss://…workers.dev/ws" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+              <label htmlFor={fieldId('server')}>Serveur personnalisé <span>(optionnel)</span>
+                <input id={fieldId('server')} value={server} onChange={(event) => setServer(event.target.value)} placeholder="wss://…workers.dev/ws" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
               </label>
               <p className="multiplayer-hint">Laisse le serveur vide pour utiliser la connexion automatique. En local, il utilise le port 8787 de cet appareil.</p>
             </>
           )}
           <div className="multiplayer-mode">
-            <label htmlFor="multiplayer-mode">Mode
-              <select id="multiplayer-mode" value={joinMode} onChange={(event) => setJoinMode(event.target.value as GameplayMode | 'room')}>
+            <label htmlFor={fieldId('mode')}>Mode
+              <select id={fieldId('mode')} value={joinMode} onChange={(event) => setJoinMode(event.target.value as GameplayMode | 'room')}>
                 <option value="room">Garder le mode du salon</option>
                 {MODE_ORDER.map((mode) => <option key={mode} value={mode}>{GAMEPLAY_MODE_LABELS[mode]}</option>)}
               </select>
@@ -189,7 +193,7 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
           </div>
           <div className="multiplayer-actions">
             <button type="submit" className="multiplayer-join" disabled={resolving}>Rejoindre{joinTarget ? ` en ${GAMEPLAY_MODE_LABELS[joinTarget]}` : ''}</button>
-            <button type="button" className="multiplayer-new-room" onClick={() => void createRoom()} disabled={resolving || limitReached}>Nouveau salon</button>
+            <button type="button" className="multiplayer-new-room" onClick={() => void createRoom()} disabled={resolving || limitReached}>{createLabel}</button>
             <button type="button" className="multiplayer-delete-room" onClick={removeRoom}>Supprimer le salon</button>
           </div>
           {limitReached && <p className="multiplayer-error" role="alert">Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes pour libérer une place.</p>}
@@ -203,8 +207,8 @@ export function MultiplayerLobby({ onPlay }: { onPlay: () => void | Promise<void
               {players.map((player) => <li key={player.playerId}>{player.name}{player.self ? ' (toi)' : ''}</li>)}
             </ul>
           )}
-          <label htmlFor="multiplayer-invitation">Lien d’invitation
-            <input id="multiplayer-invitation" className="multiplayer-share" readOnly value={invitation.toString()} onFocus={(event) => event.currentTarget.select()} />
+          <label htmlFor={fieldId('invitation')}>Lien d’invitation
+            <input id={fieldId('invitation')} className="multiplayer-share" readOnly value={invitation.toString()} onFocus={(event) => event.currentTarget.select()} />
           </label>
         </form>
       )}

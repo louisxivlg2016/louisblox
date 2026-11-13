@@ -17,6 +17,7 @@ import { getItemMeta, isSword, isWoodBlock, miningSpeed } from '../items';
 import { changeInventory, hasInventory } from '../inventory';
 import { BlockTarget, Chunk, ChunkData, Player, PlayerPosition, TargetMesh } from '../traits';
 import { BLOCK_HARDNESS, BlockKind, isWaterBlock, raycastVoxel, voxelKey } from '../voxel';
+import type { VoxelHit } from '../voxel';
 import { miningMultiplier } from '../effects';
 import { fireProjectile } from './projectileSystem';
 import { isPirateObjective } from '../pirates';
@@ -85,7 +86,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
 
   const kind = hit?.block.kind;
   const ranged = typeof store.selected === 'string' && ['gun', 'bow'].includes(getItemMeta(store.selected).category);
-  const canMine = !ranged && !isWaterBlock(kind) && (store.gameplayMode === 'creative' || store.gameplayMode !== 'football' && store.gameplayMode !== 'maze' && ((store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
+  const canMine = hit?.block.protected !== true && !ranged && !isWaterBlock(kind) && (store.gameplayMode === 'creative' || store.gameplayMode !== 'football' && store.gameplayMode !== 'maze' && ((store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
     || (typeof store.selected === 'string' && (['pickaxe', 'shovel'].includes(getItemMeta(store.selected).category) || getItemMeta(store.selected).shape === 'shears'))));
   const mining = canMine && isMouseDown(0) && hit !== null && useGameStore.getState().mode === 'play';
   if (mining && hit && kind !== undefined) {
@@ -128,7 +129,6 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
 
   const actions = pendingActions ?? consumeActions();
   if (useGameStore.getState().mode !== 'play' || !hit) return;
-
   if ((actions.place > 0 || actions.harvest > 0) && isSign(hit.block.kind)) {
     useSignStore.getState().openSign(hit, hit.block.text ?? '', hit.block.kind);
     if (document.pointerLockElement) document.exitPointerLock();

@@ -15,7 +15,7 @@ export type ItemKind =
   | 'apple' | 'bread' | 'cake' | 'raw_meat' | 'cooked_meat' | 'berries'
   | 'corn' | 'cooked_corn' | 'wheat' | 'tomato' | 'carrot' | 'watermelon'
   | 'raw_chicken' | 'cooked_chicken' | 'raw_salmon' | 'cooked_salmon'
-  | 'cheese_slice' | 'cheese_wheel' | 'milk'
+  | 'cheese_slice' | 'cheese_wheel' | 'milk' | 'wool'
   | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb' | 'rifle_auto' | 'rifle_flintlock'
   | 'car_red' | 'car_blue' | 'plane' | 'train' | 'boat' | 'jeep' | 'police_car' | 'firetruck' | 'carriage' | 'cannon' | 'saddle' | 'parachute';
 export type SelectedKind = BlockKind | ItemKind | GalleryItemId;
@@ -76,6 +76,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   cheese_slice: item('Tranche de fromage', '#eac343', 'food', { healing: 2 }),
   cheese_wheel: item('Fromage entier', '#dcae35', 'food', { healing: 4 }),
   milk: item('Lait', '#e4e7e1', 'food', { healing: 2 }),
+  wool: item('Laine', '#eee8d8', 'resource'),
   berries: item('Baies', '#a74a82', 'food', { healing: 1 }),
   corn: item('Maïs', '#e5c442', 'food', { healing: 2 }),
   cooked_corn: item('Maïs cuit', '#dfb834', 'food', { healing: 3 }),

@@ -1,7 +1,6 @@
 import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Box3, CanvasTexture, Mesh, NearestFilter, SRGBColorSpace, Vector3 } from 'three';
-import type { Texture } from 'three';
+import { Box3, Mesh, NearestFilter, Vector3 } from 'three';
 import raceCarUrl from '../../assets/models/raceCar.glb';
 import blueCarUrl from '../../assets/models/blueCar.glb';
 import airplaneUrl from '../../assets/models/airplane.glb';
@@ -24,57 +23,7 @@ const dimensions = {
   train: [2.8, 3.2, 10.5],
 } as const;
 
-function blueCarTexture(source: Texture) {
-  const image = source.image as HTMLImageElement | HTMLCanvasElement | ImageBitmap;
-  const canvas = document.createElement('canvas');
-  canvas.width = image.width;
-  canvas.height = image.height;
-  const context = canvas.getContext('2d')!;
-  context.drawImage(image, 0, 0);
-  const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-  for (let index = 0; index < pixels.data.length; index += 4) {
-    const red = pixels.data[index];
-    if (red < pixels.data[index + 1] + 3 || red < pixels.data[index + 2] + 3) continue;
-    const brightness = Math.max(red, pixels.data[index + 1], pixels.data[index + 2]) / 255;
-    pixels.data[index] = 52 * brightness;
-    pixels.data[index + 1] = 124 * brightness;
-    pixels.data[index + 2] = 208 * brightness;
-  }
-  context.putImageData(pixels, 0, 0);
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  return texture;
-}
-
-function raceCarTexture(source: Texture, color: string) {
-  const image = source.image as HTMLImageElement | HTMLCanvasElement | ImageBitmap;
-  const canvas = document.createElement('canvas');
-  canvas.width = image.width;
-  canvas.height = image.height;
-  const context = canvas.getContext('2d')!;
-  context.drawImage(image, 0, 0);
-  const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-  const value = Number.parseInt(color.slice(1), 16);
-  const red = (value >> 16) & 255;
-  const green = (value >> 8) & 255;
-  const blue = value & 255;
-  for (let index = 0; index < pixels.data.length; index += 4) {
-    const r = pixels.data[index];
-    const g = pixels.data[index + 1];
-    const b = pixels.data[index + 2];
-    if (g < r * 1.08 || b < r * 1.08 || g + b < 110 || Math.abs(g - b) > 110) continue;
-    const brightness = Math.max(r, g, b) / 255;
-    pixels.data[index] = red * brightness;
-    pixels.data[index + 1] = green * brightness;
-    pixels.data[index + 2] = blue * brightness;
-  }
-  context.putImageData(pixels, 0, 0);
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  return texture;
-}
-
-function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'boat'; color: string; interior: boolean }) {
+function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane' | 'train' | 'boat'; color: string; interior: boolean; showOccupants: boolean }) {
   const modelKind = kind === 'car' && color.toLowerCase() === '#347cd0' ? 'blueCar' : kind === 'car' ? 'raceCar' : kind === 'plane' ? 'airplane' : 'train';
   const { scene } = useGLTF(models[modelKind]);
   const model = useMemo(() => {
@@ -85,14 +34,12 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'b
       object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) {
-        if (interior) {
+        if (interior || showOccupants) {
           material.transparent = true;
-          material.opacity = Math.min(material.opacity, kind === 'car' ? 0.03 : 0.18);
+          material.opacity = Math.min(material.opacity, interior ? kind === 'car' ? 0.03 : 0.18 : 0.38);
           material.depthWrite = false;
         }
         if (!material.map) continue;
-        if (modelKind === 'blueCar') material.map = blueCarTexture(material.map);
-        else if (modelKind === 'raceCar') material.map = raceCarTexture(material.map, color);
         material.map.magFilter = NearestFilter;
         material.map.minFilter = NearestFilter;
         material.map.generateMipmaps = false;
@@ -115,18 +62,18 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'b
     }
     clone.position.set(-center.x, -box.min.y * clone.scale.y, -center.z);
     return clone;
-  }, [scene, modelKind, interior, kind, color]);
+  }, [scene, modelKind, interior, kind, showOccupants]);
   return <primitive object={model} />;
 }
 
-export function VehicleGlb({ entity, kind, color, interior = false }: { entity: import('koota').Entity; kind: VehicleKind; color: string; interior?: boolean }) {
+export function VehicleGlb({ entity, kind, color, interior = false, showOccupants = false }: { entity: import('koota').Entity; kind: VehicleKind; color: string; interior?: boolean; showOccupants?: boolean }) {
   if (kind === 'boat') return <group scale={[1.2, 1.2, 1.45]}><BoatModel color={color} /></group>;
-  if (kind === 'police' || kind === 'firetruck') return <Suspense fallback={null}><VehicleAccessories entity={entity} kind={kind} interior={interior} /></Suspense>;
-  if (kind === 'jeep' || kind === 'carriage' || kind === 'cannon') return <VehicleAccessories entity={entity} kind={kind} interior={interior} />;
+  if (kind === 'police' || kind === 'firetruck') return <Suspense fallback={null}><VehicleAccessories entity={entity} kind={kind} interior={interior} showOccupants={showOccupants} /></Suspense>;
+  if (kind === 'jeep' || kind === 'carriage' || kind === 'cannon') return <VehicleAccessories entity={entity} kind={kind} interior={interior} showOccupants={showOccupants} />;
   return (
     <Suspense fallback={kind === 'car' ? <CarModel color={color} /> : null}>
-      {!interior || kind !== 'plane' ? <Model kind={kind} color={color} interior={interior} /> : null}
-      <VehicleAccessories entity={entity} kind={kind} />
+      {!interior || kind !== 'plane' ? <Model kind={kind} color={color} interior={interior} showOccupants={showOccupants} /> : null}
+      <VehicleAccessories entity={entity} kind={kind} showOccupants={showOccupants} />
     </Suspense>
   );
 }

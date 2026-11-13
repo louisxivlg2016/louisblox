@@ -1,5 +1,5 @@
 export type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern' | 'pirates' | 'football' | 'maze';
-export type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern';
+export type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern' | 'custom';
 
 export const isCityMode = (mode: GameplayMode) => mode === 'city-ancient' || mode === 'city-modern';
 export const isMinigameMode = (mode: GameplayMode) => mode === 'battle' || mode === 'pirates' || mode === 'football' || mode === 'maze';

@@ -20,6 +20,7 @@ import { fireProjectile } from './systems/projectileSystem';
 import { usePotion } from './effects';
 import { useEatingStore } from './eating';
 import { paintballColor } from './paintball';
+import { reportAnimalSpawn } from './animalSync';
 
 const caughtAnimals = new WeakMap<World, Map<string, AnimalKind>>();
 
@@ -298,12 +299,15 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     const target = findAnimalTarget(world, origin, direction, 5.5);
     if (target && !saved) {
       captured.set(selected, target.kind);
-      target.entity.destroy();
+      removeAnimal(world, target.entity);
       store.setNotice(`${target.kind} capturé. Utilise encore l’objet pour le relâcher.`);
     } else if (saved && ground >= SEA_LEVEL + 0.5) {
-      spawnAnimal(world, saved, x, ground, z, Math.floor(performance.now()));
-      captured.delete(selected);
-      store.setNotice(`${saved} relâché.`);
+      const released = spawnAnimal(world, saved, x, ground, z, Math.floor(performance.now()), `pet:${saved}:${crypto.randomUUID()}`);
+      if (released) {
+        reportAnimalSpawn(released);
+        captured.delete(selected);
+        store.setNotice(`${saved} relâché.`);
+      } else store.setNotice('Cet animal ne peut pas être relâché ici.');
     } else store.setNotice('Vise un animal pour le capturer, puis un endroit libre pour le relâcher.');
     return true;
   }

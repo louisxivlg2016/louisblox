@@ -6,6 +6,8 @@ import { FootballEngine } from './football';
 import { MazeEngine } from './maze';
 import { isAnimalMount, isVehicleKind } from '../src/game/vehicleTypes';
 import { BlockKind } from '../src/game/voxel';
+import { sanitizeCustomWorld } from '../src/game/worldCode';
+import type { CustomWorldDefinition } from '../src/game/worldCode';
 import type { MountKind, VehicleKind } from '../src/game/vehicleTypes';
 export { PlayerDirectory } from './directory';
 
@@ -39,10 +41,11 @@ type VoxelEdit = number | {
   text?: string;
   food?: string;
   meat?: string;
+  protected?: boolean;
 } | null;
 type EditEntry = [string, VoxelEdit];
 type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern' | 'pirates' | 'football' | 'maze';
-type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern';
+type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern' | 'custom';
 type BattleTeam = 'red' | 'blue' | `solo:${string}`;
 
 function soloSpawn() {
@@ -51,8 +54,9 @@ function soloSpawn() {
   return { x: Math.round(Math.cos(angle) * radius * 10) / 10, y: 8.51, z: Math.round(Math.sin(angle) * radius * 10) / 10 };
 }
 type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; canBreak?: boolean; canPlace?: boolean; bannedPlayerIds?: string[]; bannedPlayerNames?: Record<string, string> };
-type Tribe = { id: string; name: string; ownerId: string; members: Array<{ playerId: string; name: string }> };
-type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; worldName?: string; template?: WorldTemplate; protection?: WorldProtection; tribes?: Tribe[]; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']>; deadAnimals?: string[]; deadTraders?: string[]; deathWorldId?: string };
+type TribeHome = { x: number; y: number; z: number; yaw: number; pitch: number };
+type Tribe = { id: string; name: string; ownerId: string; members: Array<{ playerId: string; name: string }>; home?: TribeHome };
+type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; worldName?: string; template?: WorldTemplate; customWorld?: CustomWorldDefinition; protection?: WorldProtection; tribes?: Tribe[]; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']>; deadAnimals?: string[]; deadTraders?: string[]; deathWorldId?: string };
 
 function isDeathId(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0 && value.length <= 80;
@@ -101,7 +105,7 @@ const corsHeaders = {
 const facings = new Set(['north', 'south', 'east', 'west']);
 const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
-const profileAvatars = new Set(['pixel', 'girl', 'girl-dark', 'boy', 'boy-dark', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
+const profileAvatars = new Set(['pixel', 'girl', 'girl-dark', 'girl-brown', 'girl-red', 'girl-black', 'boy', 'boy-dark', 'boy-brown', 'boy-red', 'boy-black', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 const potionEffects = new Set(['speed', 'slowness', 'jump', 'doubleJump', 'haste', 'strength', 'weakness', 'defence', 'regeneration', 'poison', 'invisibility', 'heatResistance', 'knockback']);
 
 function parseHorse(value: unknown): PlayerState['horse'] {
@@ -124,7 +128,11 @@ function parseAnimalSnapshots(value: unknown) {
     if (typeof data.id !== 'string' || data.id.length === 0 || data.id.length > 80 || !animalKinds.has(data.kind as string)) return null;
     if (!['x', 'y', 'z', 'yaw', 'health', 'speed'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]))) return null;
     if (data.running !== undefined && typeof data.running !== 'boolean') return null;
-    snapshots.push({ id: data.id, kind: data.kind, x: data.x, y: data.y, z: data.z, yaw: data.yaw, health: data.health, speed: data.speed, running: data.running === true });
+    if (data.saddled !== undefined && typeof data.saddled !== 'boolean') return null;
+    if (data.tamed !== undefined && typeof data.tamed !== 'boolean') return null;
+    if (data.baby !== undefined && typeof data.baby !== 'boolean') return null;
+    if (['friendship', 'happiness', 'lastFedAt'].some((key) => data[key] !== undefined && (typeof data[key] !== 'number' || !Number.isFinite(data[key])))) return null;
+    snapshots.push({ id: data.id, kind: data.kind, x: data.x, y: data.y, z: data.z, yaw: data.yaw, health: data.health, speed: data.speed, running: data.running === true, saddled: data.saddled === true, tamed: data.tamed === true, baby: data.baby === true, friendship: data.friendship as number | undefined, happiness: data.happiness as number | undefined, lastFedAt: data.lastFedAt as number | undefined });
   }
   return snapshots;
 }
@@ -156,6 +164,7 @@ function parseState(value: unknown): PlayerState | null {
     flying: state.flying === true,
     moving: state.moving === true,
     airborne: state.airborne === true,
+    parachuting: state.parachuting === true,
     mounted: state.mounted === true,
     mountRole: state.mountRole === 'passenger' ? 'passenger' : state.mountRole === 'driver' ? 'driver' : undefined,
     vehicleKind: isVehicleKind(state.vehicleKind) || isAnimalMount(state.vehicleKind) ? state.vehicleKind : undefined,
@@ -197,6 +206,7 @@ function parseEdits(value: unknown): EditEntry[] | null {
     if (typeof data.text === 'string') result.text = data.text.replace(/\r/g, '').slice(0, 120);
     if (typeof data.food === 'string' && data.food.length > 0 && data.food.length <= 96) result.food = data.food;
     if (typeof data.meat === 'string' && ['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'zombie'].includes(data.meat)) result.meat = data.meat;
+    if (data.protected === true) result.protected = true;
     if (Array.isArray(data.items)) {
       result.items = data.items.slice(0, 64).filter((item): item is string | number => typeof item === 'string' && item.length <= 96 || typeof item === 'number' && Number.isFinite(item));
     }
@@ -300,6 +310,7 @@ export class GameRoom extends DurableObject<Env> {
   private vehicles = new Map<string, SharedVehicle>();
   private gameplayMode: GameplayMode = 'creative';
   private worldTemplate: WorldTemplate = 'nature';
+  private customWorld?: CustomWorldDefinition;
   private battleHealth = new Map<string, number>();
   private battleScores = { red: 0, blue: 0 };
   private playerScores = new Map<string, number>();
@@ -363,6 +374,7 @@ export class GameRoom extends DurableObject<Env> {
       this.worldEdits = new Map(stored?.edits ?? []);
       this.gameplayMode = stored?.gameplayMode ?? 'creative';
       this.worldTemplate = stored?.template ?? (this.gameplayMode === 'city-ancient' || this.gameplayMode === 'city-modern' ? this.gameplayMode : 'nature');
+      this.customWorld = this.worldTemplate === 'custom' ? sanitizeCustomWorld(stored?.customWorld) ?? undefined : undefined;
       this.deathWorldId = this.worldId;
       this.deadAnimals = new Set(stored?.deathWorldId === this.worldId ? (stored?.deadAnimals ?? []).filter(isDeathId) : []);
       this.deadTraders = new Set(stored?.deathWorldId === this.worldId ? (stored?.deadTraders ?? []).filter(isDeathId) : []);
@@ -375,7 +387,7 @@ export class GameRoom extends DurableObject<Env> {
 
   private worldSnapshot() {
     const edits = [...this.worldEdits].filter(([, edit]) => edit === null || (typeof edit === 'number' ? edit !== BlockKind.Water : edit.kind !== BlockKind.Water));
-    return { type: 'world', seed: this.worldSeed, edits, gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName ?? this.worldId, template: this.worldTemplate, protection: this.protection, deadAnimals: [...this.deadAnimals], deadTraders: [...this.deadTraders] };
+    return { type: 'world', seed: this.worldSeed, edits, gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName ?? this.worldId, template: this.worldTemplate, customWorld: this.customWorld, protection: this.protection, deadAnimals: [...this.deadAnimals], deadTraders: [...this.deadTraders] };
   }
 
   private publisherId?: string;
@@ -397,7 +409,7 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private async saveWorld(publisher?: PlayerAttachment) {
-    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName, template: this.worldTemplate, protection: this.protection, tribes: this.tribes, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot(), deadAnimals: [...this.deadAnimals], deadTraders: [...this.deadTraders], deathWorldId: this.deathWorldId } satisfies StoredWorld);
+    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName, template: this.worldTemplate, customWorld: this.customWorld, protection: this.protection, tribes: this.tribes, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot(), deadAnimals: [...this.deadAnimals], deadTraders: [...this.deadTraders], deathWorldId: this.deathWorldId } satisfies StoredWorld);
     this.publishWorld(publisher);
   }
 
@@ -546,6 +558,8 @@ export class GameRoom extends DurableObject<Env> {
     server.send(JSON.stringify({ type: 'vehicles', vehicles: [...this.vehicles.values()] }));
     server.send(JSON.stringify(this.battleSnapshot()));
     server.send(JSON.stringify(this.tribeSnapshot()));
+    const tribe = this.tribeWithPlayer(playerId);
+    if (tribe?.home) server.send(JSON.stringify({ type: 'tribe-home-spawn', home: tribe.home }));
     if (this.gameplayMode === 'pirates') server.send(JSON.stringify(this.pirates.message()));
     if (this.gameplayMode === 'football') server.send(JSON.stringify(this.football.message()));
     if (this.gameplayMode === 'maze') {
@@ -574,6 +588,7 @@ export class GameRoom extends DurableObject<Env> {
         wig: attachment.wig,
         avatar: attachment.avatar ?? 'pixel',
         appearance: attachment.appearance,
+        gameplayMode: this.gameplayMode,
         lastSeen: attachment.presenceAt,
       }),
     }));
@@ -651,6 +666,50 @@ export class GameRoom extends DurableObject<Env> {
       this.broadcast(this.tribeSnapshot());
       return;
     }
+    if (type === 'tribe-home-create') {
+      const tribe = this.tribeWithPlayer(attachment.playerId);
+      if (!tribe || tribe.ownerId !== attachment.playerId) return fail('Seul le chef peut créer la maison de la tribu.');
+      if (tribe.home) return fail('La maison de la tribu existe déjà. Tu peux t’y téléporter.');
+      const state = attachment.state;
+      if (!state) return fail('Déplace-toi une première fois avant de créer la maison.');
+      const centerX = Math.round(state.x);
+      const centerZ = Math.round(state.z);
+      const floorY = Math.round(state.y - 0.5);
+      const home = { x: centerX, y: floorY + 0.51, z: centerZ + 1.5, yaw: Math.PI, pitch: 0 };
+      const edits: EditEntry[] = [];
+      const put = (x: number, y: number, z: number, kind: BlockKind, facing?: 'north' | 'south' | 'east' | 'west') => edits.push([`${x},${y},${z}`, { kind, facing }]);
+      for (let x = centerX - 3; x <= centerX + 3; x++) {
+        for (let z = centerZ - 3; z <= centerZ + 3; z++) {
+          put(x, floorY, z, BlockKind.OakPlanks);
+          put(x, floorY + 4, z, BlockKind.PinePlanks);
+        }
+      }
+      for (let y = floorY + 1; y <= floorY + 3; y++) {
+        for (let x = centerX - 3; x <= centerX + 3; x++) {
+          for (let z = centerZ - 3; z <= centerZ + 3; z++) {
+            if (Math.abs(x - centerX) !== 3 && Math.abs(z - centerZ) !== 3) continue;
+            if (z === centerZ + 3 && x === centerX && y <= floorY + 2) continue;
+            const window = y === floorY + 2 && (Math.abs(x - centerX) === 3 && Math.abs(z - centerZ) === 1 || Math.abs(z - centerZ) === 3 && Math.abs(x - centerX) === 1);
+            put(x, y, z, window ? BlockKind.Glass : BlockKind.Wood);
+          }
+        }
+      }
+      put(centerX, floorY + 1, centerZ - 1, BlockKind.BedRed, 'south');
+      for (const [key, edit] of edits) this.worldEdits.set(key, edit);
+      tribe.home = home;
+      await this.saveWorld();
+      this.broadcast({ type: 'edits', edits });
+      this.broadcast(this.tribeSnapshot());
+      for (const member of tribe.members) this.sendToPlayer(member.playerId, { type: 'tribe-home-spawn', home });
+      this.sendToPlayer(attachment.playerId, { type: 'tribe-notice', message: 'La maison de ta tribu est construite. Tous les membres y arrivent.' });
+      return;
+    }
+    if (type === 'tribe-home-teleport') {
+      const tribe = this.tribeWithPlayer(attachment.playerId);
+      if (!tribe?.home) return fail('La tribu n’a pas encore de maison.');
+      ws.send(JSON.stringify({ type: 'tribe-home-spawn', home: tribe.home }));
+      return;
+    }
     if (type === 'tribe-invite') {
       const tribe = this.tribeWithPlayer(attachment.playerId);
       if (!tribe || tribe.ownerId !== attachment.playerId) return fail('Seul le chef de la tribu peut inviter.');
@@ -676,6 +735,7 @@ export class GameRoom extends DurableObject<Env> {
       await this.saveWorld();
       this.broadcast(this.tribeSnapshot());
       ws.send(JSON.stringify({ type: 'tribe-notice', message: `Tu as rejoint la tribu ${tribe.name}.` }));
+      if (tribe.home) ws.send(JSON.stringify({ type: 'tribe-home-spawn', home: tribe.home }));
       this.sendToPlayer(invitation.fromId, { type: 'tribe-notice', message: `${attachment.name} a rejoint ta tribu.` });
       return;
     }
@@ -1004,7 +1064,12 @@ export class GameRoom extends DurableObject<Env> {
         const mode = (data as { gameplayMode?: unknown }).gameplayMode;
         this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' || mode === 'pirates' || mode === 'football' || mode === 'maze' ? mode : 'creative';
         const template = (data as { template?: unknown }).template;
-        this.worldTemplate = template === 'city-ancient' || template === 'city-modern' ? template : 'nature';
+        this.worldTemplate = template === 'city-ancient' || template === 'city-modern' || template === 'custom' ? template : 'nature';
+        if (this.worldTemplate === 'custom') {
+          const customWorld = sanitizeCustomWorld((data as { customWorld?: unknown }).customWorld);
+          if (!customWorld) return;
+          this.customWorld = customWorld;
+        } else this.customWorld = undefined;
         if (this.gameplayMode === 'battle') this.protection = undefined;
         else if (newWorld && !this.protection) this.protection = parseWorldProtection((data as { protection?: unknown }).protection, attachment.playerId) ?? { ownerId: attachment.playerId, centerX: 0, centerZ: 0, radius: 500, enabled: true, allowedPlayerIds: [attachment.playerId], canBreak: false, canPlace: false, bannedPlayerIds: [] };
         if (this.gameplayMode === 'pirates') this.pirates.reset();
@@ -1038,6 +1103,8 @@ export class GameRoom extends DurableObject<Env> {
         if (this.gameplayMode === 'maze') this.maze.join(attachment);
       }
       attachment.worldInitAccepted = false;
+      attachment.presenceAt = 0;
+      this.publishPresence(attachment);
       ws.serializeAttachment(attachment);
       if ((data as { force?: unknown }).force === true) {
         this.vehicles.clear();
@@ -1054,7 +1121,12 @@ export class GameRoom extends DurableObject<Env> {
       if (!attachment || !edits || this.worldSeed === null) return;
       const permitted = edits.filter(([position, edit]) => {
         const [x, y, z] = position.split(',').map(Number);
-        if (this.canEditAt(attachment.playerId, x, z, edit === null ? 'break' : 'place')) return true;
+        const customBlock = this.customWorld?.blocks.find((block) => block.x === x && block.y === y && block.z === z);
+        const current = this.worldEdits.has(position) ? this.worldEdits.get(position) : customBlock ?? null;
+        const protectedKind = typeof current === 'object' && current !== null && current.protected === true ? current.kind : null;
+        const removesProtection = protectedKind !== null && (edit === null || typeof edit === 'number' || edit.kind !== protectedKind || edit.protected !== true);
+        const addsProtection = protectedKind === null && typeof edit === 'object' && edit !== null && edit.protected === true && this.protection?.ownerId !== attachment.playerId;
+        if (!removesProtection && !addsProtection && this.canEditAt(attachment.playerId, x, z, edit === null ? 'break' : 'place')) return true;
         ws.send(JSON.stringify({ type: 'protection-denied', x, y, z }));
         return false;
       });
@@ -1114,6 +1186,16 @@ export class GameRoom extends DurableObject<Env> {
       this.deathWorldId = this.worldId;
       this.broadcast({ type, id });
       await this.saveWorld();
+      return;
+    }
+    if (type === 'animal-spawn' || type === 'animal-tame') {
+      const animals = parseAnimalSnapshots([(data as { animal?: unknown }).animal]);
+      const animal = animals?.[0];
+      if (!animal || (animal.health as number) <= 0 || this.deadAnimals.has(animal.id as string)) return;
+      if (type === 'animal-tame') {
+        if (animal.tamed !== true) return;
+        this.broadcast({ type: 'animal-spawn', animal });
+      } else this.broadcast({ type: 'animal-spawn', animal }, ws);
       return;
     }
     if (type === 'animal-state') {

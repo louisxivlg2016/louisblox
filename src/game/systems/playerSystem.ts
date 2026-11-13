@@ -7,7 +7,7 @@ import { getSwimState, swimVerticalVelocity } from '../swimming';
 import { dismount, vehicleSeatPosition } from '../vehicles';
 import { isLadder } from '../extraBlocks';
 import { BlockKind, voxelKey } from '../voxel';
-import { AnimalMotion, AnimalPosition, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
+import { AnimalMotion, AnimalPosition, CamelLeash, HorseRider, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 import { moveVoxelCharacter } from './collisionSystem';
 import { BATTLE_LIMIT } from '../battleArena';
 import { useBattleStore } from '../battle';
@@ -86,7 +86,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     }
     if (isAnimalMount(mount.kind)) {
       const vehiclePosition = mount.vehicle.get(AnimalPosition);
-      const vehicleYaw = mount.vehicle.get(AnimalMotion)?.yaw ?? state.yaw;
+      const vehicleYaw = (mount.vehicle.get(AnimalMotion)?.yaw ?? state.yaw) + (mount.kind === 'camel' && mount.vehicle.get(CamelLeash)?.trader != null ? Math.PI : 0);
       if (vehiclePosition) {
         const offset = animalSeatOffset(mount.kind, mount.role, vehicleYaw);
         position.set(vehiclePosition.x + offset[0], vehiclePosition.y + offset[1], vehiclePosition.z + offset[2]);
@@ -96,7 +96,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     }
     body.setNextKinematicTranslation(position);
     velocity.set(0, 0, 0);
-    entity.set(PlayerState, { grounded: true, flying: false, yaw, pitch, parachuting: false });
+    entity.set(PlayerState, { grounded: isAnimalMount(mount.kind) ? mount.vehicle.get(HorseRider)?.grounded ?? true : true, flying: false, yaw, pitch, parachuting: false });
     updateHud(world, position, health, false, dt);
     return;
   }
@@ -127,7 +127,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   spaceWasDown.set(world, spaceDown);
   if (state.grounded) airJumps.set(world, 0);
   if (flying) velocity.y = (Number(spaceDown) - Number(isDown('KeyC'))) * FLY_SPEED;
-  else if (parachuting) velocity.y = Math.max(velocity.y, -1.25);
+  else if (parachuting) velocity.y = -4.5;
   else if (onLadder) velocity.y = spaceDown ? 3.8 : isDown('KeyC') ? -2.8 : Math.max(velocity.y, -0.8);
   else if (inWater) velocity.y = swimVerticalVelocity(swimming, velocity.y, isDown('KeyC'), spaceDown, position.y);
   else if (state.grounded && spaceDown) velocity.y = JUMP_SPEED * jumpMultiplier();

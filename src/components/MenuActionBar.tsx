@@ -1,6 +1,6 @@
 import soloUrl from '../../assets/menu/solo.webp';
 import multiplayerUrl from '../../assets/menu/multiplayer.webp';
-import createWorldUrl from '../../assets/menu/create-world.webp';
+import createWorldUrl from '../../assets/menu/world-code-tab.webp';
 import profileUrl from '../../assets/menu/profile.webp';
 
 export function MenuActionBar({ multiplayer, onSolo, onMultiplayer, onCreate, onProfile, createDisabled = false }: { multiplayer: boolean; onSolo: () => void; onMultiplayer: () => void; onCreate: () => void; onProfile: () => void; createDisabled?: boolean }) {

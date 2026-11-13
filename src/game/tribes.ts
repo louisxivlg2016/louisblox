@@ -1,13 +1,21 @@
 import { create } from 'zustand';
+import { useMultiplayerStore } from './multiplayerStore';
+import { useGameStore } from './store';
+import { playerIdentity } from './playerIdentity';
+import { teleportToHome } from './teleport';
+import { world } from './world';
 
 export type TribeMember = { playerId: string; name: string };
-export type Tribe = { id: string; name: string; ownerId: string; members: TribeMember[] };
+export type TribeHome = { x: number; y: number; z: number; yaw: number; pitch: number };
+export type Tribe = { id: string; name: string; ownerId: string; members: TribeMember[]; home?: TribeHome };
 export type TribeInvitation = { id: string; name: string; ownerId: string; ownerName: string };
 
 type TribeState = {
   tribes: Tribe[];
   invitations: TribeInvitation[];
   panelOpen: boolean;
+  homeSpawn: TribeHome | null;
+  homeArrived: boolean;
   error: string;
   notice: string;
   setPanelOpen: (open: boolean) => void;
@@ -17,6 +25,8 @@ export const useTribeStore = create<TribeState>((set) => ({
   tribes: [],
   invitations: [],
   panelOpen: false,
+  homeSpawn: null,
+  homeArrived: false,
   error: '',
   notice: '',
   setPanelOpen: (panelOpen) => set({ panelOpen }),
@@ -30,7 +40,7 @@ export function setTribeSocket(next: WebSocket | null) {
 
 export function clearTribes() {
   socket = null;
-  useTribeStore.setState({ tribes: [], invitations: [], panelOpen: false, error: '', notice: '' });
+  useTribeStore.setState({ tribes: [], invitations: [], panelOpen: false, homeSpawn: null, homeArrived: false, error: '', notice: '' });
 }
 
 export function sendTribe(type: string, data: Record<string, unknown> = {}) {
@@ -47,6 +57,13 @@ function text(value: unknown, max: number) {
   return typeof value === 'string' && value.trim().length > 0 && value.length <= max ? value.trim() : null;
 }
 
+function parseTribeHome(value: unknown): TribeHome | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const home = value as Record<string, unknown>;
+  if (!['x', 'y', 'z', 'yaw', 'pitch'].every((key) => typeof home[key] === 'number' && Number.isFinite(home[key]))) return undefined;
+  return { x: home.x as number, y: home.y as number, z: home.z as number, yaw: home.yaw as number, pitch: home.pitch as number };
+}
+
 function parseTribe(value: unknown): Tribe | null {
   if (!value || typeof value !== 'object') return null;
   const data = value as Record<string, unknown>;
@@ -61,13 +78,35 @@ function parseTribe(value: unknown): Tribe | null {
     const memberName = text(candidate.name, 24);
     return playerId && memberName ? [{ playerId, name: memberName }] : [];
   });
-  return members.length > 0 ? { id, name, ownerId, members } : null;
+  return members.length > 0 ? { id, name, ownerId, members, home: parseTribeHome(data.home) } : null;
 }
 
-export function receiveTribeMessage(data: { type?: unknown; tribes?: unknown; tribe?: unknown; message?: unknown }) {
+export function teleportToPendingTribeHome() {
+  const state = useTribeStore.getState();
+  const selfId = playerIdentity();
+  const home = state.homeSpawn ?? state.tribes.find((tribe) => tribe.home && tribe.members.some((member) => member.playerId === selfId))?.home;
+  if (!home) return false;
+  useTribeStore.setState({ homeSpawn: null });
+  const destination = teleportToHome(world, home);
+  if (destination) {
+    useTribeStore.setState({ homeArrived: true });
+    useGameStore.getState().setNotice('Tu es arrivé à la maison de ta tribu.');
+  }
+  return destination !== null;
+}
+
+export function receiveTribeMessage(data: { type?: unknown; tribes?: unknown; tribe?: unknown; home?: unknown; message?: unknown }) {
+  if (data.type === 'tribe-home-spawn') {
+    const home = parseTribeHome(data.home);
+    if (!home) return true;
+    useTribeStore.setState({ homeSpawn: home });
+    if (useMultiplayerStore.getState().worldReady) teleportToPendingTribeHome();
+    return true;
+  }
   if (data.type === 'tribe-state' && Array.isArray(data.tribes)) {
     const tribes = data.tribes.map(parseTribe).filter((tribe): tribe is Tribe => tribe !== null);
     useTribeStore.setState({ tribes, error: '' });
+    if (useMultiplayerStore.getState().worldReady && !useTribeStore.getState().homeArrived) teleportToPendingTribeHome();
     return true;
   }
   if (data.type === 'tribe-invite' && data.tribe && typeof data.tribe === 'object') {

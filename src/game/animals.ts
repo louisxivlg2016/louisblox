@@ -7,6 +7,7 @@ import { useGameStore } from './store';
 import { isInAnyRuinFootprint } from './ruins';
 import { spawnVillageResidents, tradeCityAt } from './villages';
 import { isAnimalDead, isTraderDead } from './deathSync';
+import { applyTameState } from './taming';
 
 function safeRoamSpawn(x: number, z: number, seed: number) {
   for (let radius = 0; radius <= 16; radius += 1) {
@@ -73,14 +74,13 @@ function hash(x: number, z: number, seed: number) {
   return ((value ^ (value >>> 16)) >>> 0) / 4294967295;
 }
 
-export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number, z: number, seed: number) {
-  const id = `${kind}:${x}:${z}`;
+export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number, z: number, seed: number, id = `${kind}:${x}:${z}`) {
   if (isAnimalDead(id)) return null;
   const existing = world.query(Animal, AnimalId).find((entity) => entity.get(AnimalId) === id);
   if (existing) return existing;
   const site = kind === 'duck' ? { x, y, z } : safeRoamSpawn(x, z, seed);
   const yaw = hash(x, z, seed + 41) * Math.PI * 2;
-  return world.spawn(
+  const entity = world.spawn(
     Animal({ kind }),
     AnimalId(id),
     AnimalHealth({ value: health[kind] }),
@@ -95,6 +95,8 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
     }),
     AnimalMesh(),
   );
+  applyTameState(world, entity);
+  return entity;
 }
 
 export function spawnTrader(world: World, x: number, z: number, seed: number, destinationSeed = seed) {
@@ -171,7 +173,7 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
     }
   }
 
-  if (hash(cx, cz, seed + 802) < 0.75) return entities;
+  if (hash(cx, cz, seed + 802) < 0.58) return entities;
   const biome = chunkBiome;
   const candidates = species[biome];
   const x = cx * 16 + 2 + Math.floor(hash(cx, cz, seed + 804) * 12);
@@ -180,6 +182,12 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
   if (height <= SEA_LEVEL + 1 || height > 24) return entities;
   const kind = candidates[Math.floor(hash(x, z, seed + 806) * candidates.length)];
   spawn(world, kind, x, height + 0.5, z, seed);
+  if (hash(cx, cz, seed + 807) > 0.82) {
+    const companionX = Math.min(cx * 16 + 14, x + 3);
+    const companionZ = Math.max(cz * 16 + 1, z - 2);
+    const companionHeight = heightAt(companionX, companionZ, seed);
+    if (companionHeight > SEA_LEVEL + 1 && companionHeight <= 24) spawn(world, kind, companionX, companionHeight + 0.5, companionZ, seed);
+  }
 
   return entities;
 }

@@ -38,6 +38,7 @@ type GameStore = {
   worldId: string;
   worldName: string;
   worldTemplate: import('./worldMode').WorldTemplate;
+  customWorld: import('./worldCode').CustomWorldDefinition | null;
   blockCount: number;
   apples: number;
   meat: Record<AnimalKind, number>;
@@ -75,7 +76,7 @@ type GameStore = {
   collectMeat: (kind: AnimalKind) => void;
   discardApple: () => void;
   discardMeat: (kind: AnimalKind) => void;
-  regenerate: (gameplayMode?: GameplayMode, worldId?: string, template?: import('./worldMode').WorldTemplate, worldName?: string) => void;
+  regenerate: (gameplayMode?: GameplayMode, worldId?: string, template?: import('./worldMode').WorldTemplate, worldName?: string, customWorld?: import('./worldCode').CustomWorldDefinition | null) => void;
   openWorld: (worldId: string, worldName: string) => void;
 };
 
@@ -113,6 +114,7 @@ export const useGameStore = create<GameStore>((set) => ({
   worldName: currentWorldName(),
   gameplayMode: 'creative',
   worldTemplate: 'nature',
+  customWorld: null,
   selected: BlockKind.Grass,
   hotbarSlots: [...HOTBAR_BLOCKS.slice(0, 10)],
   backpackItem: null,
@@ -191,7 +193,7 @@ export const useGameStore = create<GameStore>((set) => ({
   collectMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: state.meat[kind] + 1 } })),
   discardApple: () => set((state) => ({ apples: Math.max(0, state.apples - 1) })),
   discardMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: Math.max(0, state.meat[kind] - 1) } })),
-  regenerate: (gameplayMode = 'creative', worldId = `monde-${crypto.randomUUID().slice(0, 8)}`, template: import('./worldMode').WorldTemplate = 'nature', worldName?: string) => {
+  regenerate: (gameplayMode = 'creative', worldId = `monde-${crypto.randomUUID().slice(0, 8)}`, template: import('./worldMode').WorldTemplate = 'nature', worldName?: string, customWorld: import('./worldCode').CustomWorldDefinition | null = null) => {
     rememberWorld(worldId);
     set((state) => ({
       worldId,
@@ -199,6 +201,7 @@ export const useGameStore = create<GameStore>((set) => ({
       generation: state.generation + 1,
       gameplayMode,
       worldTemplate: gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : template,
+      customWorld,
       selected: gameplayMode === 'battle' ? 'pistol_iron' : gameplayMode === 'pirates' ? 'pistol_bomb' : gameplayMode === 'survival' || gameplayMode === 'football' || gameplayMode === 'maze' ? 'hand' : BlockKind.Grass,
       hotbarSlots: gameplayMode === 'battle'
         ? ['pistol_iron', 'rifle_auto', 'pistol_bomb', 'bow', 'sword_iron', ...HOTBAR_BLOCKS.slice(0, 5)]

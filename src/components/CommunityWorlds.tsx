@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { listPublicWorlds } from '../game/publicWorlds';
-import type { PublicWorld } from '../game/publicWorlds';
+import { listModePlayers, listPublicWorlds } from '../game/publicWorlds';
+import type { ModePlayer, PublicWorld } from '../game/publicWorlds';
 import { GAMEPLAY_MODE_LABELS, isMultiplayerOnlyMode } from '../game/worldMode';
 import type { GameplayMode } from '../game/worldMode';
 import { playerIdentity } from '../game/playerIdentity';
@@ -43,6 +43,20 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
     const timer = window.setInterval(load, 15000);
     return () => { active = false; window.clearInterval(timer); };
   }, [status]);
+  const [modePlayers, setModePlayers] = useState<ModePlayer[]>([]);
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const players = await listModePlayers(selectedMode).catch(() => [] as ModePlayer[]);
+      if (active) setModePlayers(players);
+    };
+    void load();
+    const timer = window.setInterval(load, 15000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [selectedMode, status]);
   useEffect(() => setLocalWorlds(listWorlds()), [worldId]);
 
   const openLocal = (world: WorldMeta) => {
@@ -92,6 +106,13 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
       {full && <p className="multiplayer-error" role="alert">Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un pour en créer un autre.</p>}
       {error && <p className="multiplayer-error" role="alert">{error}</p>}
       {deleteError && <p className="multiplayer-error" role="alert">{deleteError}</p>}
+      <section className="community-section mode-players-section">
+        <h3>Joueurs en {GAMEPLAY_MODE_LABELS[selectedMode]} <span>{modePlayers.length}</span></h3>
+        <div className="mode-player-list" aria-label={`Joueurs connectés en ${GAMEPLAY_MODE_LABELS[selectedMode]}`}>
+          {modePlayers.map((player) => <div className="mode-player-entry" key={player.playerId}><strong>{player.name}</strong><small>{player.room}</small></div>)}
+          {modePlayers.length === 0 && <p>Aucun joueur connecté dans ce mode pour le moment.</p>}
+        </div>
+      </section>
       <section className="community-section">
         <h3>Mondes des autres joueurs <span>{others.length}</span></h3>
         <div className="world-library-list">

@@ -15,6 +15,7 @@ import { UtilityBlocks } from './UtilityBlocks';
 import { SignBlocks } from './SignBlocks';
 import { isCrop, isDoor, isGlass, isSapling, isSign, isTrapdoor, isUtilityBlock } from '../game/extraBlocks';
 import { isPirateObjective } from '../game/pirates';
+import { AppleInstances } from './AppleInstances';
 import { BlockKind, isWaterBlock } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 
@@ -167,6 +168,7 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         <SaplingInstances key={kind} kind={kind} blocks={values} />
       ))}
       <VineInstances blocks={vineBlocks} />
+      <AppleInstances blocks={data.blocks} />
       <FoodBlocks blocks={data.blocks} />
       <Suspense fallback={<CropInstances blocks={cropBlocks} />}>
         <HunyuanCropInstances blocks={cropBlocks} />

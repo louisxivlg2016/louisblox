@@ -562,7 +562,7 @@ export function traderSystem(world: World, dt: number) {
       mesh.value.rotation.y = motion.displayYaw;
     }
     if (player && playerEntity?.get(PlayerMount)?.vehicle === entity) {
-      const offset = animalSeatOffset('camel', playerEntity.get(PlayerMount)?.role ?? 'driver', motion.yaw);
+      const offset = animalSeatOffset('camel', playerEntity.get(PlayerMount)?.role ?? 'driver', motion.yaw + Math.PI);
       player.set(position.x + offset[0], position.y + offset[1], position.z + offset[2]);
       playerEntity.get(PlayerBody)?.value?.setNextKinematicTranslation(player);
     }

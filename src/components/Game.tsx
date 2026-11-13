@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { useWorld } from 'koota/react';
@@ -109,12 +109,16 @@ export function Game() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   const outfit = useCharacterStore((state) => state.outfit);
   const setOutfit = useCharacterStore((state) => state.setOutfit);
-  const level = useMemo(() => loadLevel(world, generation, readWorldSave(worldId)), [world, generation, worldId]);
+  const [level, setLevel] = useState<import('../game/levels').LevelData | null>(null);
+  useLayoutEffect(() => {
+    setLevel(loadLevel(world, generation, readWorldSave(worldId)));
+  }, [world, generation, worldId]);
   useEffect(() => setMusicMode(gameplayMode), [gameplayMode]);
   useEffect(() => {
     if (gameplayMode === 'battle' && outfit !== 'military') setOutfit('military');
     if (gameplayMode === 'pirates' && outfit !== 'pirate') setOutfit('pirate');
   }, [gameplayMode, outfit, setOutfit]);
+  if (!level) return null;
 
   return (
     <>

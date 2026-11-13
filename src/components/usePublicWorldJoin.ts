@@ -43,7 +43,8 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
     setError('');
     setLoading(true);
     try {
-      const world = busiestPublicWorld(await listPublicWorlds(), mode);
+      const candidates = (await listPublicWorlds()).filter((world) => world.id !== room);
+      const world = busiestPublicWorld(candidates, mode);
       if (!world) {
         setError(`Aucun joueur en ligne en ${GAMEPLAY_MODE_LABELS[mode]} pour le moment. Choisis un monde dans la liste ou crée le tien.`);
         return false;
@@ -56,7 +57,7 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
     } finally {
       setLoading(false);
     }
-  }, [join]);
+  }, [join, room]);
 
   return { join, joinBusiest, pending: pendingRoom !== null || loading || status === 'connecting', error };
 }

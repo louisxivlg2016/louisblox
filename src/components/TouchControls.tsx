@@ -85,7 +85,7 @@ export function TouchControls() {
 
   return (
     <div className="mobile-controls">
-      <div className="touch-gesture-hint">{plane ? pilot ? 'Joystick : piloter · Glisser : caméra' : 'Passager de l’avion · Glisser : caméra' : football ? 'Appui court : tir · Glisser : caméra' : 'Appui court : poser · Glisser : caméra · Maintenir : casser'}</div>
+      <div className="touch-gesture-hint">{plane ? pilot ? 'Joystick : piloter · Glisser : caméra' : 'Passager de l’avion · Glisser : caméra' : football ? 'Appui court : tir · Glisser : caméra' : 'Appui court : poser, monter ou utiliser · Maintenir : casser · Glisser : caméra'}</div>
       <div
         ref={joystick}
         className="touch-joystick"
@@ -141,7 +141,7 @@ export function TouchControls() {
           </button>
         </>}
         {plane && <HoldButton code="KeyE" label={pilot ? 'Sortir' : 'Quitter l’avion'} />}
-        {!plane && riding && <HoldButton code="KeyE" label="Sortir du véhicule" />}
+        {!plane && riding && <HoldButton code="KeyE" label={riding === 'horse' || riding === 'camel' ? 'Descendre de l’animal' : 'Sortir du véhicule'} />}
         <button
           className="touch-button"
           onPointerDown={(event) => {

@@ -12,6 +12,8 @@ import { isReferenceFood, ReferenceFoodModel } from './ReferenceFoodModel';
 import { SaddleGlb } from './SaddleGlb';
 import { ParachuteModel } from './ParachuteModel';
 import { heldWeaponYaw } from '../game/itemPresentation';
+import { VehicleAssetModel } from './VehicleAssetModel';
+import type { VehicleKind } from '../game/vehicleTypes';
 
 type ModelProps = { kind: ItemKind | GalleryItemId; held?: boolean; flipWeapons?: boolean };
 type PartProps = { position: [number, number, number]; size: [number, number, number]; color: string; rotation?: [number, number, number] };
@@ -517,8 +519,16 @@ export function itemGripOffset(kind: ItemKind | GalleryItemId) {
   return 0;
 }
 
+function vehicleItemKind(kind: ModelProps['kind']): Exclude<VehicleKind, 'boat'> | null {
+  if (kind === 'car_red' || kind === 'car_blue') return 'car';
+  if (kind === 'plane' || kind === 'train' || kind === 'jeep' || kind === 'firetruck' || kind === 'carriage' || kind === 'cannon') return kind;
+  if (kind === 'police_car') return 'police';
+  return null;
+}
+
 export function ItemModel({ kind, held = false, flipWeapons = false }: ModelProps) {
   const meta = getItemMeta(kind);
+  const vehicleKind = vehicleItemKind(kind);
   if (kind === 'hand') return null;
   let model;
   if (isPaintballGun(kind)) model = <WeaponWithFallback kind="paintball" />;
@@ -534,7 +544,7 @@ export function ItemModel({ kind, held = false, flipWeapons = false }: ModelProp
   else if (meta.category === 'armor') model = <ArmorModel color={meta.color} />;
   else if (meta.category === 'saddle') model = <SaddleModel />;
   else if (meta.shape === 'boat' || meta.shape === 'hovercraft') model = <BoatModel color={meta.color} hovercraft={meta.shape === 'hovercraft'} />;
-  else if (kind === 'plane' || kind === 'train') model = <TransportItemModel kind={kind} color={meta.color} />;
+  else if (vehicleKind) model = <VehicleAssetModel kind={vehicleKind} color={meta.color} preview />;
   else if (meta.shape) model = <GalleryGenericModel shape={meta.shape} color={meta.color} />;
   else model = <CarModel color={meta.color} />;
   return <group scale={held ? 0.58 : 1} rotation={[0, heldWeaponYaw(kind, flipWeapons), 0]}>{model}</group>;

@@ -6,6 +6,7 @@ import type { WorldSave } from './chunks';
 import { useGameStore } from './store';
 import { isJoinOnlyRoom } from './roomJoin';
 import { Environment, Player, PlayerHealth, PlayerPosition, PlayerState } from './traits';
+import { sanitizeCustomWorld } from './worldCode';
 
 const LEGACY_SAVE_KEY = 'louisblox-save-v1';
 const WORLDS_KEY = 'louisblox-worlds-v1';
@@ -28,7 +29,7 @@ export function readWorldSave(worldId = DEFAULT_WORLD_ID): WorldSave | null {
     const raw = localStorage.getItem(worldKey(worldId)) ?? (worldId === DEFAULT_WORLD_ID ? localStorage.getItem(LEGACY_SAVE_KEY) : null);
     if (!raw) return null;
     const save = JSON.parse(raw) as WorldSave;
-    return save.version === 1 || save.version === 2 || save.version === 3 || save.version === 4 || save.version === 5 ? { ...save, worldId: save.worldId ?? worldId } : null;
+    return save.version === 1 || save.version === 2 || save.version === 3 || save.version === 4 || save.version === 5 ? { ...save, worldId: save.worldId ?? worldId, customWorld: sanitizeCustomWorld(save.customWorld) ?? undefined } : null;
   } catch {
     return null;
   }
@@ -96,6 +97,7 @@ export function createWorldSave(world: World): WorldSave | null {
     generation: store.generation,
     gameplayMode: store.gameplayMode,
     template: store.worldTemplate,
+    customWorld: store.customWorld ?? undefined,
     seed: getWorldSeed(world),
     player: { x: position.x, y: position.y, z: position.z, yaw: state.yaw, pitch: state.pitch, flying: state.flying },
     selected: store.selected,

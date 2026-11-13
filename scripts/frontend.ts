@@ -16,7 +16,7 @@ const server = Bun.serve({
     }
     if (pathname.split('/').includes('..') || pathname.includes('\0')) return new Response('Invalid path', { status: 400 });
     const file = Bun.file(`dist${pathname === '/' ? '/index.html' : pathname}`);
-    if (await file.exists()) return new Response(file);
+    if (await file.exists()) return new Response(file, { headers: pathname === '/' || pathname === '/index.html' ? { 'Cache-Control': 'no-store' } : undefined });
     return new Response('Not found', { status: 404 });
   },
 });

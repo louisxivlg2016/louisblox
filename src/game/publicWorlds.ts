@@ -32,10 +32,43 @@ export async function listPublicWorlds(): Promise<PublicWorld[]> {
       ownerId: world.ownerId,
       ownerName: world.ownerName,
       gameplayMode: world.gameplayMode,
-      template: world.template === 'city-ancient' || world.template === 'city-modern' ? world.template : 'nature',
+      template: world.template === 'city-ancient' || world.template === 'city-modern' || world.template === 'custom' ? world.template : 'nature',
       players: typeof world.players === 'number' ? world.players : 0,
       updatedAt: typeof world.updatedAt === 'number' ? world.updatedAt : 0,
     }];
+  });
+}
+
+export function countPlayersByMode(worlds: PublicWorld[], mode: GameplayMode, current: { ids: string[]; players: number }) {
+  let total = 0;
+  let currentIncluded = false;
+  for (const world of worlds) {
+    if (world.gameplayMode !== mode) continue;
+    if (current.ids.includes(world.id)) {
+      currentIncluded = true;
+      total += Math.max(world.players, current.players);
+    } else total += Math.max(0, world.players);
+  }
+  return total + (currentIncluded ? 0 : current.players);
+}
+
+export type ModePlayer = { playerId: string; name: string; room: string; gameplayMode: GameplayMode };
+
+export async function listModePlayers(mode: GameplayMode): Promise<ModePlayer[]> {
+  const url = new URL(resolveMultiplayerUrl());
+  url.protocol = url.protocol === 'wss:' ? 'https:' : 'http:';
+  url.pathname = '/players';
+  url.search = '';
+  url.searchParams.set('mode', mode);
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) return [];
+  const data = await response.json() as { players?: unknown };
+  if (!Array.isArray(data.players)) return [];
+  return data.players.flatMap((value): ModePlayer[] => {
+    if (!value || typeof value !== 'object') return [];
+    const player = value as Record<string, unknown>;
+    if (typeof player.playerId !== 'string' || typeof player.name !== 'string' || typeof player.room !== 'string' || player.gameplayMode !== mode) return [];
+    return [{ playerId: player.playerId, name: player.name, room: player.room, gameplayMode: mode }];
   });
 }
 

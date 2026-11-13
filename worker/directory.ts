@@ -1,5 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { matchesSearch, normalizeSearch } from '../src/game/search';
+import { isGameplayMode } from '../src/game/worldMode';
+import type { GameplayMode } from '../src/game/worldMode';
 
 export type Appearance = {
   skinColor: string;
@@ -21,6 +23,7 @@ export type SocialPlayer = {
   wig: string;
   avatar?: string;
   appearance: Appearance;
+  gameplayMode?: GameplayMode;
   lastSeen?: number;
 };
 
@@ -35,13 +38,13 @@ export const corsHeaders = {
 };
 
 export function json(value: unknown, status = 200) {
-  return new Response(JSON.stringify(value), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify(value), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 }
 
 const color = (value: unknown) => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
 const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
-const avatars = new Set(['pixel', 'girl', 'girl-dark', 'boy', 'boy-dark', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
+const avatars = new Set(['pixel', 'girl', 'girl-dark', 'girl-brown', 'girl-red', 'girl-black', 'boy', 'boy-dark', 'boy-brown', 'boy-red', 'boy-black', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 
 export function parseAppearance(value: unknown, character: 'boy' | 'girl' = 'boy'): Appearance {
   const data = value && typeof value === 'object' ? value as Record<string, unknown> : {};
@@ -73,6 +76,7 @@ export function parseSocialPlayer(value: unknown): SocialPlayer | null {
     wig: typeof data.wig === 'string' && wigs.has(data.wig) ? data.wig : 'auto',
     avatar: typeof data.avatar === 'string' && avatars.has(data.avatar) ? data.avatar : 'pixel',
     appearance: parseAppearance(data.appearance, character),
+    gameplayMode: isGameplayMode(data.gameplayMode) ? data.gameplayMode : undefined,
   };
 }
 
@@ -172,9 +176,12 @@ export class PlayerDirectory extends DurableObject<Env> {
     }
     if (url.pathname === '/players' && request.method === 'GET') {
       const query = normalizeSearch(url.searchParams.get('q') ?? '');
-      const players = query
-        ? [...this.knownPlayers.values()].filter((player) => matchesSearch(player.name, query))
-        : [...this.onlinePlayers.values()];
+      const mode = url.searchParams.get('mode');
+      const players = isGameplayMode(mode)
+        ? [...this.onlinePlayers.values()].filter((player) => player.gameplayMode === mode)
+        : query
+          ? [...this.knownPlayers.values()].filter((player) => matchesSearch(player.name, query))
+          : [...this.onlinePlayers.values()];
       return json({
         players: players
           .map((player) => ({ ...player, online: this.onlinePlayers.has(player.playerId) }))
@@ -252,7 +259,7 @@ export class PlayerDirectory extends DurableObject<Env> {
         ownerId: data.ownerId,
         ownerName: typeof data.ownerName === 'string' && data.ownerName.trim() ? data.ownerName.trim().slice(0, 24) : 'Créateur',
         gameplayMode: data.gameplayMode,
-        template: data.template === 'city-ancient' || data.template === 'city-modern' ? data.template : 'nature',
+        template: data.template === 'city-ancient' || data.template === 'city-modern' || data.template === 'custom' ? data.template : 'nature',
         players: typeof data.players === 'number' && Number.isFinite(data.players) ? Math.max(0, Math.floor(data.players)) : 0,
         updatedAt: now,
       };

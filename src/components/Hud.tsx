@@ -64,6 +64,7 @@ export function Hud() {
   const multiplayerReady = useMultiplayerStore((state) => state.enabled && state.status === 'online');
   const teamSelection = mode === 'pause' && multiplayerReady && ((gameplayMode === 'battle' && battleTeam === null) || (gameplayMode === 'pirates' && battleTeam === null) || (gameplayMode === 'football' && battleTeam === null));
   const sleepProgress = useGameStore((state) => state.sleepProgress);
+  const dayProgress = useGameStore((state) => state.environment.dayProgress);
   const teleportRequestOpen = useTeleportRequestStore((state) => state.incoming !== null);
   const selectBlock = useGameStore((state) => state.selectBlock);
   const setBackpack = useGameStore((state) => state.setBackpack);
@@ -155,7 +156,7 @@ export function Hud() {
       {sleepProgress !== null && (
         <div className="sleep-overlay" style={{ backgroundColor: `rgba(0, 0, 0, ${0.05 + sleepProgress * 0.35})` }}>
           <span className="sleep-zzz" aria-hidden="true">Z Z Z</span>
-          <p>{sleepProgress > 0.65 ? 'Le jour se lève…' : 'Tu dors…'}</p>
+          <p>{sleepProgress > 0.65 ? dayProgress >= 0.22 && dayProgress < 0.5 ? 'La nuit tombe…' : 'Le jour se lève…' : 'Tu dors…'}</p>
         </div>
       )}
     </div>

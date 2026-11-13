@@ -8,12 +8,13 @@ import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, HorseRide
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import { EXTRA_BLOCKS, isCrop, isRail } from './extraBlocks';
 import { turnToward } from './rotation';
-import { isCollidable } from './systems/collisionSystem';
+import { isCollidable, moveVoxelCharacter } from './systems/collisionSystem';
 import { syncVehicleMotion, syncVehicleSpawn } from './vehicleSync';
 import { CABINS, canWalkInVehicle, isAnimalMount } from './vehicleTypes';
 import { stopSirens } from './vehicleControls';
 import { findInteractionTarget } from './interactionTargets';
 import { useTradeStore } from './trading';
+import { animalSeatOffset } from './mounts';
 import type { Camera } from 'three';
 import type { MountKind, SeatRole, VehicleKind } from './vehicleTypes';
 export { PLANE_SCALE } from './vehicleTypes';
@@ -123,12 +124,11 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
     }
   } else {
     const rider = vehicle.get(HorseRider);
-    if (kind === 'horse' && (!rider?.saddled || role === 'passenger')) return false;
     if (rider?.mounted && rider.passenger) {
-      useGameStore.getState().setNotice('Ce chameau a déjà deux cavaliers.');
+      useGameStore.getState().setNotice(`Ce ${kind === 'horse' ? 'cheval' : 'chameau'} a déjà deux cavaliers.`);
       return false;
     }
-    const assignedRole = kind === 'camel' && role === 'driver' && rider?.mounted ? 'passenger' : role;
+    const assignedRole = role === 'driver' && rider?.mounted ? 'passenger' : role;
     if (rider) {
       if (assignedRole === 'driver' && rider.mounted || assignedRole === 'passenger' && rider.passenger) {
         useGameStore.getState().setNotice(assignedRole === 'driver' ? 'La place de conducteur est déjà prise.' : 'La place de passager est déjà prise.');
@@ -154,8 +154,8 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
   mount.cabinPosition = walkable ? new Vector3(...seatOffset(kind, role, 0)) : null;
   useGameStore.getState().setRiding(kind, role);
   useGameStore.getState().setNotice(
-    kind === 'horse' ? 'Cheval sellé · E : descendre'
-      : kind === 'camel' ? role === 'passenger' ? 'Passager du chameau · E : descendre' : guidedCamel ? 'Chameau attaché au marchand · Il guide le trajet · E : descendre' : 'Chameau · WASD / flèches : le guider · E : descendre'
+    kind === 'horse' ? role === 'passenger' ? 'Passager du cheval · E : descendre' : vehicle.get(HorseRider)?.saddled ? 'Cheval sellé · WASD : le guider · Espace : sauter · E : descendre' : 'Cheval sans selle · WASD / flèches : le guider · Espace : sauter · E : descendre'
+      : kind === 'camel' ? role === 'passenger' ? 'Passager du chameau · E : descendre' : guidedCamel ? 'Chameau attaché au marchand · Il guide le trajet · E : descendre' : 'Chameau · WASD / flèches : le guider · Espace : sauter · E : descendre'
         : walkable ? 'Passager · WASD / flèches : marcher dans le véhicule · E : descendre · Le véhicule reste arrêté sans conducteur.'
         : role === 'passenger' ? 'Passager · E : descendre · Le véhicule reste arrêté sans conducteur.'
           : kind === 'plane' ? 'WASD : piloter · Espace/C : monter/descendre · E : sortir'
@@ -226,11 +226,7 @@ export function vehicleInteractionSystem(world: World, camera: Camera, interact:
   const target = findInteractionTarget(world, camera, 'mount');
   if (!target) return false;
   if (isAnimalMount(target.kind)) {
-    if (target.kind === 'horse' && !target.entity.get(HorseRider)?.saddled) {
-      if (useGameStore.getState().selected === 'saddle') return false;
-      useGameStore.getState().setNotice('Choisis la selle dans le sac, vise le cheval puis appuie sur E.');
-      return true;
-    }
+    if (target.kind === 'horse' && !target.entity.get(HorseRider)?.saddled && useGameStore.getState().selected === 'saddle') return false;
     return mountEntity(world, target.entity, target.kind);
   }
   const vehicle = target.entity.get(Vehicle)!;
@@ -260,6 +256,27 @@ function moveMount(world: World, position: Vector3, yaw: number, speed: number, 
   }
   position.set(x, ground, z);
   return true;
+}
+
+function moveRiddenAnimal(world: World, position: Vector3, yaw: number, speed: number, dt: number, rider: { velocityY: number; grounded: boolean }, kind: 'horse' | 'camel', jump: boolean) {
+  if (jump && rider.grounded) {
+    rider.velocityY = 8.4;
+    rider.grounded = false;
+  } else rider.velocityY -= 24 * dt;
+  const next = position.clone();
+  const movement = moveVoxelCharacter(getBlockIndex(world), next, {
+    x: -Math.sin(yaw) * speed * dt,
+    y: rider.velocityY * dt,
+    z: -Math.cos(yaw) * speed * dt,
+  }, rider.grounded, undefined, kind === 'camel' ? 3.25 : 2.85);
+  const ground = groundAt(world, next.x, next.z, next.y + 0.05);
+  if (ground < SEA_LEVEL - 0.5 && next.y <= SEA_LEVEL + 0.5) return false;
+  const moved = Math.hypot(next.x - position.x, next.z - position.z) > 0.000001;
+  position.copy(next);
+  rider.grounded = movement.grounded;
+  if (movement.grounded && rider.velocityY < 0) rider.velocityY = -0.1;
+  if (movement.hitCeiling) rider.velocityY = Math.min(0, rider.velocityY);
+  return moved;
 }
 
 function movePlane(world: World, position: Vector3, yaw: number, speed: number, dt: number, vertical: number, landing: boolean) {
@@ -292,6 +309,7 @@ function moveBoat(world: World, position: Vector3, yaw: number, speed: number, d
 }
 
 const railCells = new WeakMap<object, string>();
+const mountSpaceWasDown = new WeakMap<World, boolean>();
 
 export function vehicleMovementSystem(world: World, dt: number) {
   const playerEntity = world.queryFirst(Player);
@@ -344,8 +362,16 @@ export function vehicleMovementSystem(world: World, dt: number) {
   });
 
   world.query(Animal, AnimalPosition, AnimalMotion, AnimalMesh, HorseRider).updateEach(([animal, position, motion, mesh, rider], entity) => {
-    const active = isAnimalMount(animal.kind) && mount?.vehicle === entity && mount.kind === animal.kind && state && (mount.role === 'driver' || !rider.mounted);
-    if (!active) return;
+    if (!isAnimalMount(animal.kind) || mount?.vehicle !== entity || mount.kind !== animal.kind || !state) return;
+    if (mount.role === 'passenger' && !rider.mounted) {
+      mount.role = 'driver';
+      mount.seat = 0;
+      rider.mounted = true;
+      rider.passenger = false;
+      useGameStore.getState().setRiding(animal.kind, 'driver');
+      useGameStore.getState().setNotice('Tu es maintenant devant, aux commandes · E : descendre');
+    }
+    if (mount.role !== 'driver') return;
     if (animal.kind === 'camel' && entity.get(CamelLeash)?.trader?.get(TraderPosition)) {
       rider.speed = 0;
       return;
@@ -354,11 +380,20 @@ export function vehicleMovementSystem(world: World, dt: number) {
     rider.speed += Math.max(-10 * dt, Math.min(10 * dt, target - rider.speed));
     motion.yaw = state.yaw;
     if (input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(rider.speed || 1);
-    if (!moveMount(world, position, motion.yaw, rider.speed, dt)) rider.speed = 0;
+    const spaceDown = isDown('Space');
+    const jump = spaceDown && !mountSpaceWasDown.get(world);
+    mountSpaceWasDown.set(world, spaceDown);
+    if (!moveRiddenAnimal(world, position, motion.yaw, rider.speed, dt, rider, animal.kind, jump)) rider.speed = 0;
     motion.displayYaw = turnToward(motion.displayYaw, motion.yaw + Math.PI, dt * 7);
     if (mesh.value) {
       mesh.value.position.copy(position);
       mesh.value.rotation.y = motion.displayYaw;
+    }
+    const player = playerEntity?.get(PlayerPosition);
+    if (player) {
+      const offset = animalSeatOffset(animal.kind, mount.role, motion.yaw);
+      player.set(position.x + offset[0], position.y + offset[1], position.z + offset[2]);
+      playerEntity?.get(PlayerBody)?.value?.setNextKinematicTranslation(player);
     }
   });
 }

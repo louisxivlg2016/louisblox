@@ -1,4 +1,5 @@
 import { isGameplayMode, isMinigameMode } from '../game/worldMode';
+import { sanitizeCustomWorld } from '../game/worldCode';
 import type { GameplayMode } from '../game/worldMode';
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
@@ -6,7 +7,7 @@ import { useWorld } from 'koota/react';
 import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Group } from 'three';
-import { applyVoxelEdits, getWorldSeed, groupVoxelEdits, loadLevel, onVoxelEdit, snapshotVehicles, snapshotWorldEdits, streamChunks } from '../game/chunks';
+import { applyVoxelEdits, getWorldSeed, groupVoxelEdits, isChunkLoaded, loadLevel, onVoxelEdit, snapshotVehicles, snapshotWorldEdits, streamChunks } from '../game/chunks';
 import type { ChunkEdit } from '../game/chunks';
 import { isPlayerSnapshot, resolveMultiplayerUrl } from '../game/multiplayer';
 import type { PlayerSnapshot } from '../game/multiplayer';
@@ -53,7 +54,7 @@ import { receiveAppleGift } from '../game/gifts';
 import { applyProtection, isWorldProtection, setProtectionSocket, useProtectionStore } from '../game/protection';
 import { clearMinigames, receiveMinigameMessage, setMinigameSocket } from '../game/minigameSync';
 import { applyAnimalSnapshots, applyFishSnapshots, isAnimalSnapshot, isFishSnapshot, setAnimalSocket } from '../game/animalSync';
-import { clearTribes, receiveTribeMessage, setTribeSocket } from '../game/tribes';
+import { clearTribes, receiveTribeMessage, setTribeSocket, teleportToPendingTribeHome } from '../game/tribes';
 import { applyAnimalDeath, applyDeathSnapshot, applyTraderDeath, isDeathId, setDeathSocket } from '../game/deathSync';
 
 type ServerMessage = {
@@ -83,14 +84,16 @@ type ServerMessage = {
   worldId?: unknown;
   worldName?: unknown;
   template?: unknown;
+  customWorld?: unknown;
   protection?: unknown;
   animals?: unknown;
+  animal?: unknown;
   fish?: unknown;
   id?: unknown;
   deadAnimals?: unknown;
   deadTraders?: unknown;
 };
-type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string; worldName?: string; template?: import('../game/worldMode').WorldTemplate; protection?: import('../game/protection').WorldProtection; deadAnimals?: string[]; deadTraders?: string[] };
+type WorldSnapshot = { seed: number | null; edits: Array<[string, ChunkEdit]>; gameplayMode?: import('../game/worldMode').GameplayMode; worldId?: string; worldName?: string; template?: import('../game/worldMode').WorldTemplate; customWorld?: import('../game/worldCode').CustomWorldDefinition; protection?: import('../game/protection').WorldProtection; deadAnimals?: string[]; deadTraders?: string[] };
 
 const requestedMode = new URLSearchParams(window.location.search).get('mode');
 let requestedRoomMode: GameplayMode | null = isGameplayMode(requestedMode) ? requestedMode : null;
@@ -103,7 +106,7 @@ export function requestRoomMode(mode: GameplayMode | null, force = true) {
 
 function sendWorldInitialization(socket: WebSocket, world: World, force: boolean) {
   const edits = snapshotWorldEdits(world).flatMap(([, entries]) => entries);
-  socket.send(JSON.stringify({ type: 'world-init', seed: getWorldSeed(world), edits: edits.slice(0, 256), gameplayMode: useGameStore.getState().gameplayMode, worldId: useGameStore.getState().worldId, worldName: useGameStore.getState().worldName, template: useGameStore.getState().worldTemplate, protection: useProtectionStore.getState().protection, force }));
+  socket.send(JSON.stringify({ type: 'world-init', seed: getWorldSeed(world), edits: edits.slice(0, 256), gameplayMode: useGameStore.getState().gameplayMode, worldId: useGameStore.getState().worldId, worldName: useGameStore.getState().worldName, template: useGameStore.getState().worldTemplate, customWorld: useGameStore.getState().customWorld ?? undefined, protection: useProtectionStore.getState().protection, force }));
   for (let index = 256; index < edits.length; index += 256) {
     socket.send(JSON.stringify({ type: 'world-init-edits', edits: edits.slice(index, index + 256) }));
   }
@@ -258,6 +261,7 @@ export function MultiplayerConnection() {
   const pendingSpawn = useRef<PlayerSnapshot | null>(null);
   const pendingVehicles = useRef(new Map<string, VehicleSnapshot>());
   const pendingEdits = useRef(new Map<string, ChunkEdit>());
+  const pendingRemoteEdits = useRef(new Map<string, ChunkEdit>());
   const applyingRemote = useRef(false);
   const worldInitSent = useRef(false);
   const enabled = useMultiplayerStore((state) => state.enabled);
@@ -284,6 +288,7 @@ export function MultiplayerConnection() {
     pendingSpawn.current = null;
     pendingVehicles.current.clear();
     pendingEdits.current.clear();
+    pendingRemoteEdits.current.clear();
     worldInitSent.current = false;
     clearTeleportRequests();
     clearChat();
@@ -414,10 +419,11 @@ export function MultiplayerConnection() {
       if (!saved) return;
       saved.gameplayMode = pending.gameplayMode ?? saved.gameplayMode ?? 'creative';
       saved.template = pending.template ?? saved.template ?? 'nature';
-      useGameStore.setState({ worldTemplate: saved.template });
+      saved.customWorld = saved.template === 'custom' ? sanitizeCustomWorld(pending.customWorld) ?? undefined : undefined;
+      useGameStore.setState({ worldTemplate: saved.template, customWorld: saved.customWorld ?? null });
       saved.protection = pending.protection;
       useProtectionStore.getState().setProtection(pending.protection ?? null);
-      const unchanged = saved.seed === pending.seed && saved.gameplayMode === useGameStore.getState().gameplayMode && JSON.stringify(saved.edits) === JSON.stringify(groupVoxelEdits(pending.edits));
+      const unchanged = saved.seed === pending.seed && saved.gameplayMode === useGameStore.getState().gameplayMode && saved.template === useGameStore.getState().worldTemplate && JSON.stringify(saved.customWorld ?? null) === JSON.stringify(useGameStore.getState().customWorld ?? null) && JSON.stringify(saved.edits) === JSON.stringify(groupVoxelEdits(pending.edits));
       if (!unchanged) {
         saved.seed = pending.seed;
         saved.edits = groupVoxelEdits(pending.edits);
@@ -446,6 +452,10 @@ export function MultiplayerConnection() {
       pendingWorld.current = null;
       if (!joinOnly) saveWorld(world);
       store.setWorldReady(true);
+      window.setTimeout(() => {
+        teleportToPendingTribeHome();
+        applyRemoteEdits();
+      }, 0);
       useBattleStore.setState({ ready: isMinigameMode(pending.gameplayMode ?? 'creative') });
       applyPendingVehicles();
       if (roomCreator) {
@@ -457,6 +467,22 @@ export function MultiplayerConnection() {
         }
       }
       pendingEdits.current.clear();
+    };
+    const applyRemoteEdits = () => {
+      const ready: Array<[string, ChunkEdit]> = [];
+      for (const [position, edit] of pendingRemoteEdits.current) {
+        const [x, , z] = position.split(',').map(Number);
+        if (!isChunkLoaded(world, x, z)) continue;
+        ready.push([position, edit]);
+        pendingRemoteEdits.current.delete(position);
+      }
+      if (ready.length === 0) return;
+      applyingRemote.current = true;
+      try {
+        applyVoxelEdits(world, ready, true);
+      } finally {
+        applyingRemote.current = false;
+      }
     };
     const flushEdits = () => {
       const current = socket.current;
@@ -514,7 +540,10 @@ export function MultiplayerConnection() {
           return;
         }
         if (receiveMinigameMessage(data)) return;
-        if (receiveTribeMessage(data)) return;
+        if (receiveTribeMessage(data)) {
+          applyRemoteEdits();
+          return;
+        }
         if ((data.type === 'animal-death' || data.type === 'trader-death') && isDeathId(data.id)) {
           const pending = pendingWorld.current;
           if (pending) {
@@ -523,6 +552,10 @@ export function MultiplayerConnection() {
             if (!deaths.includes(data.id)) pending[key] = [...deaths, data.id];
           } else if (data.type === 'animal-death') applyAnimalDeath(world, data.id);
           else applyTraderDeath(world, data.id);
+          return;
+        }
+        if (data.type === 'animal-spawn' && isAnimalSnapshot(data.animal)) {
+          applyAnimalSnapshots(world, [data.animal], true);
           return;
         }
         if (data.type === 'animal-state' && Array.isArray(data.animals)) {
@@ -605,7 +638,7 @@ export function MultiplayerConnection() {
           return;
         }
         if (data.type === 'world' && (data.seed === null || typeof data.seed === 'number') && Array.isArray(data.edits)) {
-          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: isGameplayMode(data.gameplayMode) ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined, worldName: typeof data.worldName === 'string' ? data.worldName : undefined, template: data.template === 'city-ancient' || data.template === 'city-modern' ? data.template : 'nature', protection: isWorldProtection(data.protection) ? data.protection : undefined, deadAnimals: Array.isArray(data.deadAnimals) ? data.deadAnimals.filter(isDeathId) : [], deadTraders: Array.isArray(data.deadTraders) ? data.deadTraders.filter(isDeathId) : [] };
+          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: isGameplayMode(data.gameplayMode) ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined, worldName: typeof data.worldName === 'string' ? data.worldName : undefined, template: data.template === 'city-ancient' || data.template === 'city-modern' || data.template === 'custom' ? data.template : 'nature', customWorld: sanitizeCustomWorld(data.customWorld) ?? undefined, protection: isWorldProtection(data.protection) ? data.protection : undefined, deadAnimals: Array.isArray(data.deadAnimals) ? data.deadAnimals.filter(isDeathId) : [], deadTraders: Array.isArray(data.deadTraders) ? data.deadTraders.filter(isDeathId) : [] };
           applyPendingWorld();
           return;
         }
@@ -615,13 +648,10 @@ export function MultiplayerConnection() {
             const latest = new Map(pendingWorld.current.edits);
             for (const [position, edit] of edits) latest.set(position, edit);
             pendingWorld.current.edits = [...latest];
+            return;
           }
-          applyingRemote.current = true;
-          try {
-            applyVoxelEdits(world, edits);
-          } finally {
-            applyingRemote.current = false;
-          }
+          for (const [position, edit] of edits) pendingRemoteEdits.current.set(position, edit);
+          applyRemoteEdits();
           return;
         }
         if (typeof data.playerId !== 'string') return;

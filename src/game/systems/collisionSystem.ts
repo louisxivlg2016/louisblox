@@ -16,16 +16,16 @@ export function isCollidable(block: Voxel | undefined) {
   return !(isDoor(block.kind) || isTrapdoor(block.kind)) || !block.open;
 }
 
-function collides(blocks: ReadonlyMap<string, Voxel>, position: Vector, cabin?: CabinDefinition) {
+function collides(blocks: ReadonlyMap<string, Voxel>, position: Vector, cabin?: CabinDefinition, height = HEIGHT) {
   if (cabin) {
     return Math.abs(position.x) + RADIUS > cabin.halfWidth
       || position.z - RADIUS < cabin.front || position.z + RADIUS > cabin.rear
-      || position.y < cabin.floor || position.y + HEIGHT > cabin.ceiling;
+      || position.y < cabin.floor || position.y + height > cabin.ceiling;
   }
   const minX = Math.ceil(position.x - RADIUS - 0.5 + EPSILON);
   const maxX = Math.floor(position.x + RADIUS + 0.5 - EPSILON);
   const minY = Math.ceil(position.y - 0.5 + EPSILON);
-  const maxY = Math.floor(position.y + HEIGHT + 0.5 - EPSILON);
+  const maxY = Math.floor(position.y + height + 0.5 - EPSILON);
   const minZ = Math.ceil(position.z - RADIUS - 0.5 + EPSILON);
   const maxZ = Math.floor(position.z + RADIUS + 0.5 - EPSILON);
   for (let x = minX; x <= maxX; x += 1) {
@@ -38,25 +38,29 @@ function collides(blocks: ReadonlyMap<string, Voxel>, position: Vector, cabin?: 
   return false;
 }
 
-function slide(blocks: ReadonlyMap<string, Voxel>, position: Vector, axis: Axis, amount: number, cabin?: CabinDefinition) {
+export function canOccupyVoxelCharacter(blocks: ReadonlyMap<string, Voxel>, position: Vector) {
+  return !collides(blocks, position);
+}
+
+function slide(blocks: ReadonlyMap<string, Voxel>, position: Vector, axis: Axis, amount: number, cabin?: CabinDefinition, height = HEIGHT) {
   if (amount === 0) return false;
   const start = position[axis];
   position[axis] = start + amount;
-  if (!collides(blocks, position, cabin)) return false;
+  if (!collides(blocks, position, cabin, height)) return false;
   let safe = 0;
   let blocked = 1;
   for (let iteration = 0; iteration < 12; iteration += 1) {
     const middle = (safe + blocked) / 2;
     position[axis] = start + amount * middle;
-    if (collides(blocks, position, cabin)) blocked = middle;
+    if (collides(blocks, position, cabin, height)) blocked = middle;
     else safe = middle;
   }
   position[axis] = start + amount * safe;
   return true;
 }
 
-function onGround(blocks: ReadonlyMap<string, Voxel>, position: Vector, cabin?: CabinDefinition) {
-  return collides(blocks, { ...position, y: position.y - 0.055 }, cabin);
+function onGround(blocks: ReadonlyMap<string, Voxel>, position: Vector, cabin?: CabinDefinition, height = HEIGHT) {
+  return collides(blocks, { ...position, y: position.y - 0.055 }, cabin, height);
 }
 
 export function moveVoxelCharacter(
@@ -65,6 +69,7 @@ export function moveVoxelCharacter(
   movement: Vector,
   canStep: boolean,
   cabin?: CabinDefinition,
+  height = HEIGHT,
 ) {
   const substeps = Math.max(1, Math.ceil(Math.max(Math.abs(movement.x), Math.abs(movement.y), Math.abs(movement.z)) / MAX_SUBSTEP));
   let grounded = false;
@@ -76,18 +81,18 @@ export function moveVoxelCharacter(
     const x = movement.x / substeps;
     const y = movement.y / substeps;
     const z = movement.z / substeps;
-    const hitX = slide(blocks, position, 'x', x, cabin);
-    const hitZ = slide(blocks, position, 'z', z, cabin);
+    const hitX = slide(blocks, position, 'x', x, cabin, height);
+    const hitZ = slide(blocks, position, 'z', z, cabin, height);
     const horizontalHit = hitX || hitZ;
     let climbed = false;
 
     if (canStep && y <= 0 && horizontalHit) {
       const candidate = { ...start, y: Math.round(start.y - 0.5) + 1.5 + EPSILON };
-      if (candidate.y - start.y <= 1.05 && !collides(blocks, candidate, cabin)) {
-        slide(blocks, candidate, 'x', x, cabin);
-        slide(blocks, candidate, 'z', z, cabin);
-        slide(blocks, candidate, 'y', -0.15, cabin);
-        if (!collides(blocks, candidate, cabin) && onGround(blocks, candidate, cabin)) {
+      if (candidate.y - start.y <= 1.05 && !collides(blocks, candidate, cabin, height)) {
+        slide(blocks, candidate, 'x', x, cabin, height);
+        slide(blocks, candidate, 'z', z, cabin, height);
+        slide(blocks, candidate, 'y', -0.15, cabin, height);
+        if (!collides(blocks, candidate, cabin, height) && onGround(blocks, candidate, cabin, height)) {
           Object.assign(position, candidate);
           climbed = true;
           stepped = true;
@@ -97,11 +102,11 @@ export function moveVoxelCharacter(
     }
 
     if (!climbed) {
-      const verticalHit = slide(blocks, position, 'y', y, cabin);
+      const verticalHit = slide(blocks, position, 'y', y, cabin, height);
       if (verticalHit && y < 0) grounded = true;
       if (verticalHit && y > 0) hitCeiling = true;
     }
   }
 
-  return { grounded: grounded || (movement.y <= 0 && onGround(blocks, position, cabin)), hitCeiling, stepped };
+  return { grounded: grounded || (movement.y <= 0 && onGround(blocks, position, cabin, height)), hitCeiling, stepped };
 }

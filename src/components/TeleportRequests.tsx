@@ -59,7 +59,7 @@ export function TeleportPanel() {
     <div className="teleport-panel">
       <div className="teleport-heading">
         <strong>Se téléporter</strong>
-        <button type="button" className="teleport-close" onClick={close} aria-label="Fermer la téléportation">Fermer <span aria-hidden="true">×</span></button>
+        <button type="button" className="teleport-close" onPointerDown={(event) => { if (event.pointerType === 'touch') { event.preventDefault(); event.stopPropagation(); close(); } }} onClick={close} aria-label="Fermer la téléportation">Fermer <span aria-hidden="true">×</span></button>
       </div>
       {DESTINATIONS.map((biome) => (
         <button key={biome} onClick={() => travel(biome)}>{BIOME_NAMES[biome]}</button>

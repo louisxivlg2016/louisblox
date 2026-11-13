@@ -8,8 +8,9 @@ import type { GameplayMode } from '../game/worldMode';
 import piratesUrl from '../../assets/menu/pirates.webp';
 import footballUrl from '../../assets/menu/football.webp';
 import mazeUrl from '../../assets/menu/maze.webp';
-import { MultiplayerLobby } from './MultiplayerLobby';
 import { MenuActionBar } from './MenuActionBar';
+import { listModePlayers } from '../game/publicWorlds';
+import type { ModePlayer } from '../game/publicWorlds';
 import { CreateWorldDialog } from './CreateWorldDialog';
 import { ProfileDialog } from './ProfileDialog';
 import { WorldLibrary } from './WorldLibrary';
@@ -80,14 +81,23 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     setPendingWorld(null);
     void onPlay();
   }, [pendingWorld, room, status, worldReady, onPlay]);
+  const [modePlayers, setModePlayers] = useState<Partial<Record<GameplayMode, ModePlayer[]>>>({});
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const entries = await Promise.all(MODE_CARDS.map(async (card) => [card.mode, await listModePlayers(card.mode).catch(() => [] as ModePlayer[])] as const));
+      if (active) setModePlayers(Object.fromEntries(entries));
+    };
+    void load();
+    const timer = window.setInterval(load, 15000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [status]);
   const full = !canCreateWorld();
   const create = (gameplayMode: GameplayMode, sharedOverride?: boolean, options?: import('./CreateWorldDialog').CreateWorldOptions) => {
-    if (!enabled && isMultiplayerOnlyMode(gameplayMode)) return;
-    if (enabled && isMinigameMode(gameplayMode) && status === 'online' && useGameStore.getState().gameplayMode === gameplayMode) {
-      requestRoomMode(null);
-      void onPlay();
-      return;
-    }
+    if (!enabled && isMultiplayerOnlyMode(gameplayMode) && options?.multiplayer !== true) return;
     if (full) return;
     if (enabled && isMinigameMode(gameplayMode)) {
       requestRoomMode(gameplayMode);
@@ -101,10 +111,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     const template = options?.template ?? (gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : 'nature');
     const names: Record<GameplayMode, string> = { survival: 'Survie avec tous les joueurs', creative: 'Créatif avec tous les joueurs', battle: 'Bataille', 'city-ancient': 'Ville ancienne · 10 km', 'city-modern': 'Ville moderne · 10 km', pirates: 'Pirates en équipe', football: 'Match de football', maze: 'Course Labyrinthe' };
     const worldName = options?.name.trim().slice(0, 48) || names[gameplayMode];
-    const worldId = normalizeRoomId(worldName);
+    const worldId = options?.multiplayer ? `salon-${crypto.randomUUID().slice(0, 8)}` : normalizeRoomId(worldName);
     if (options) useProtectionStore.getState().setProtection({ ...newProtection(), canBreak: options.canBreak, canPlace: options.canPlace });
     if (readWorldSave(worldId)) useGameStore.getState().openWorld(worldId, worldName);
-    else regenerate(gameplayMode, worldId, template, worldName);
+    else regenerate(gameplayMode, worldId, template, worldName, options?.customWorld);
     if (shared) useGameStore.setState({ worldName });
     if (shared) {
       setEnabled(true);
@@ -141,12 +151,14 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             </button>
             {MODE_CARDS.map((card) => {
               const locked = !enabled && isMultiplayerOnlyMode(card.mode);
+              const playerCount = modePlayers[card.mode]?.length ?? 0;
               return (
                 <div className="world-card-shell" key={card.mode}>
                   <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode)} disabled={pendingWorld !== null || locked} title={locked ? 'Active « Jouer en multijoueur » pour choisir ce mode' : undefined}>
                     <img src={card.image} alt={card.alt} />
                     <span className="world-card-label"><strong>{card.name}</strong><small>{locked ? 'Active le multijoueur pour jouer' : card.description(enabled)}</small></span>
                     <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{locked ? 'Multijoueur requis' : card.tag(enabled)}</span>
+                    <span className="world-mode-player-count" aria-label={`${playerCount} joueur${playerCount > 1 ? 's' : ''} en ${card.name}`}>{playerCount} joueur{playerCount > 1 ? 's' : ''}</span>
                   </button>
                 </div>
               );
@@ -155,8 +167,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           <MenuActionBar multiplayer={enabled} onSolo={() => setEnabled(false)} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} createDisabled={full} />
           {soloModeBlocked && <p className="multiplayer-error" role="status">Les modes Pirates et Football sont réservés au multijoueur.</p>}
           {full && <p className="multiplayer-error" role="alert">Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un dans Mes mondes pour en créer un autre.</p>}
-          {enabled && <section className="lobby-section"><MultiplayerLobby onPlay={onPlay} /></section>}
-          {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(options) => { setCreateOpen(false); create(options.mode, options.multiplayer, options); }} />}
+          {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(options) => { setCreateOpen(false); create(options.mode, options.multiplayer, options); }} onPlay={onPlay} />}
           {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
           {enabled && joinOpen && (
             <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setJoinOpen(false); }}>

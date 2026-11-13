@@ -7,14 +7,14 @@ import type { CharacterAppearance } from './appearance';
 import { appearanceSkinColor } from './appearance';
 import type { OutfitKind } from './outfits';
 
-type Part = 'body' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
+type Part = 'body' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg' | 'leftLowerLeg' | 'rightLowerLeg';
 type Rig = Partial<Record<Exclude<Part, 'body'>, Group>>;
 
 function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, material: Material, width: number, height: number, floor: number, legs: boolean, bounds: Box3, appearance?: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>, allowGrayHair = false, princessHair = false, outfit?: OutfitKind | 'classic-girl' | 'classic-boy') {
   const geometry = source.clone().applyMatrix4(matrix);
   const position = geometry.getAttribute('position');
   const index = geometry.index;
-  const indices: Record<Part, number[]> = { body: [], head: [], leftArm: [], rightArm: [], leftLeg: [], rightLeg: [] };
+  const indices: Record<Part, number[]> = { body: [], head: [], leftArm: [], rightArm: [], leftLeg: [], rightLeg: [], leftLowerLeg: [], rightLowerLeg: [] };
   const count = index?.count ?? position.count;
   for (let offset = 0; offset < count; offset += 3) {
     const a = index?.getX(offset) ?? offset;
@@ -26,10 +26,10 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     let part: Part = 'body';
     if (Math.abs(x) < width * 0.38 && y > floor + height * 0.68) part = 'head';
     else if (Math.abs(x) > width * 0.25 && y > floor + height * 0.28 && y < floor + height * 0.82) part = `${side}Arm`;
-    else if (legs && Math.abs(x) < width * 0.28 && y < floor + height * 0.48) part = `${side}Leg`;
+    else if (legs && Math.abs(x) < width * 0.28 && y < floor + height * 0.48) part = y < floor + height * 0.24 ? `${side}LowerLeg` : `${side}Leg`;
     indices[part].push(a, b, c);
   }
-  return { geometry, indices, material: appearance ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair, princessHair, outfit?.startsWith('classic-') ? 'default' : outfit) : material };
+  return { geometry, indices, material: appearance ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair, princessHair, outfit) : material };
 }
 
 function addPrincessHair(root: Group, width: number, height: number, depth: number, floor: number, offsetY: number, hairColor?: string) {
@@ -60,12 +60,12 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   const floor = bounds.min.y;
   const pieces: Array<ReturnType<typeof splitGeometry>> = [];
   scene.traverse((object) => {
-    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, outfit !== 'princess', bounds, appearance, outfit === 'louis15', outfit === 'princess', outfit));
+    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, outfit !== 'princess', bounds, appearance, outfit === 'louis15', outfit === 'princess' || outfit === 'classic-girl', outfit));
   });
   const root = new Group();
   const rig: Rig = {};
-  const names: Record<Part, string> = { body: 'body', head: 'head', leftArm: 'left-arm', rightArm: 'right-arm', leftLeg: 'left-leg', rightLeg: 'right-leg' };
-  const parts: Part[] = ['body', 'head', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg'];
+  const names: Record<Part, string> = { body: 'body', head: 'head', leftArm: 'left-arm', rightArm: 'right-arm', leftLeg: 'left-leg', rightLeg: 'right-leg', leftLowerLeg: 'left-knee', rightLowerLeg: 'right-knee' };
+  const parts: Part[] = ['body', 'head', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg', 'leftLowerLeg', 'rightLowerLeg'];
   for (const part of parts) {
     for (const piece of pieces) {
       const indices = piece.indices[part];
@@ -77,14 +77,16 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
         root.add(mesh);
       } else {
         const side = part.startsWith('left') ? -1 : 1;
-        const pivotY = floor + height * (part === 'head' ? 0.68 : part.endsWith('Arm') ? 0.7 : 0.48);
+        const lowerLeg = part.endsWith('LowerLeg');
+        const pivotY = floor + height * (part === 'head' ? 0.68 : part.endsWith('Arm') ? 0.7 : lowerLeg ? 0.24 : 0.48);
         const pivotX = part === 'head' ? 0 : side * width * (part.endsWith('Arm') ? 0.27 : 0.12);
         let pivot = rig[part];
         if (!pivot) {
           pivot = new Group();
           pivot.name = names[part];
-          pivot.position.set(pivotX, pivotY, 0);
-          root.add(pivot);
+          pivot.position.set(lowerLeg ? 0 : pivotX, lowerLeg ? -height * 0.24 : pivotY, 0);
+          const parent = lowerLeg ? part.startsWith('left') ? rig.leftLeg : rig.rightLeg : undefined;
+          (parent ?? root).add(pivot);
           rig[part] = pivot;
         }
         subset.translate(-pivotX, -pivotY, 0);
@@ -118,8 +120,10 @@ export function animateCharacterRig(root: Object3D, time: number, walking: boole
   turn(rig.leftArm, swing, delta);
   if (rig.rightArm && eating) rig.rightArm.rotation.x = 1.25 + bite * 0.65;
   else turn(rig.rightArm, -swing, delta);
-  turn(rig.leftLeg, -swing * 0.85, delta);
-  turn(rig.rightLeg, swing * 0.85, delta);
+  turn(rig.leftLeg, seated ? -Math.PI / 2 : -swing * 0.85, delta);
+  turn(rig.rightLeg, seated ? -Math.PI / 2 : swing * 0.85, delta);
+  turn(rig.leftLowerLeg, seated ? Math.PI / 2 : 0, delta);
+  turn(rig.rightLowerLeg, seated ? Math.PI / 2 : 0, delta);
 }
 
 export function attachCharacterHand(avatar: Object3D | null, hand: Group | null, fullCharacter: boolean) {

@@ -47,6 +47,7 @@ export type Voxel = {
   facing?: 'north' | 'south' | 'east' | 'west';
   food?: import('./items').SelectedKind;
   meat?: import('./animals').AnimalKind;
+  protected?: boolean;
 };
 
 export type VoxelHit = {
