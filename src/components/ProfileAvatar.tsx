@@ -70,7 +70,7 @@ export function ProfileAvatar({ kind, size = 58 }: {
   const photoKind = current === 'pixel' || current === 'default' ? 'boy' : current;
   const photo = PHOTO_AVATARS[photoKind];
   const newPortrait = ['girl', 'boy', 'trader', 'soldier'].includes(photoKind) || photoKind.startsWith('girl-') || photoKind.startsWith('boy-');
-  return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}${newPortrait ? ' profile-photo-new' : ''}`} src={photo.url} width={size} height={size} alt={`Portrait ${photo.name}`} />;
+  return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}${newPortrait ? ' profile-photo-new' : ''}${photoKind === 'boy-dark' ? ' profile-photo-large' : ''}`} src={photo.url} width={size} height={size} alt={`Portrait ${photo.name}`} />;
 }
 
 export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
@@ -104,7 +104,7 @@ export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
       {scrollable && !atBottom && <p className="profile-photo-scroll-hint">Fais défiler pour voir les autres profils ↓</p>}
       {photoKinds.map((kind) => (
         <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choisir ${PHOTO_AVATARS[kind].name}`} title={PHOTO_AVATARS[kind].name}>
-          <ProfileAvatar kind={kind} size={96} />
+          <ProfileAvatar kind={kind} size={kind === 'boy-dark' ? 96 : 56} />
           <span>{PHOTO_AVATARS[kind].name}</span>
         </button>
       ))}
