@@ -1116,6 +1116,36 @@
       .tribe-leave { margin-top: 14px; }
       .tribe-notice { padding: 8px; color: #d8efbd; background: rgba(105, 132, 73, 0.16); }
       @media (max-width: 650px) { .tribe-toggle { left: 12px; top: 70px; min-height: 48px; } }
+      @media (pointer: coarse) {
+        .touch-gesture-hint { display: none; }
+        .touch-joystick { left: 12px; bottom: 92px; width: 104px; height: 104px; }
+        .touch-knob { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
+        .touch-actions, .plane-touch-actions { right: 12px; bottom: 94px; grid-template-columns: repeat(2, auto); gap: 6px; }
+        .touch-button { min-width: 64px; min-height: 38px; padding: 5px 8px; font-size: 10px; border-radius: 6px; }
+        .hotbar-wrap { bottom: 8px; max-width: calc(100vw - 16px); }
+        .selected-name { margin-bottom: 4px; font-size: 10px; }
+        .hotbar { max-width: calc(100vw - 16px); flex-wrap: nowrap; gap: 3px; padding: 4px; overflow-x: auto; }
+        .hotbar-slot { flex: 0 0 42px; width: 42px; height: 42px; }
+        .block-swatch { width: 24px; height: 24px; }
+        .tnt-icon { width: 30px; height: 30px; }
+        .game-notice { bottom: 154px; max-width: 60vw; font-size: 10px; }
+      }
+      @media (max-width: 650px) {
+        .backpack-toggle { top: 6px; right: 64px; left: auto; width: 50px; padding: 0; transform: none; }
+        .shop-toggle { top: 6px; right: 6px; left: auto; width: 50px; padding: 0; transform: none; }
+        .backpack-toggle img, .shop-toggle img { max-height: 34px; object-fit: contain; }
+        .battle-scoreboard.pirate-scoreboard { top: 6px; gap: 5px; max-width: calc(100vw - 180px); padding: 5px 7px; font-size: 9px; }
+        .pirate-scoreboard strong { display: none; }
+        .tribe-toggle { top: 6px; left: 6px; min-height: 34px; padding: 5px 8px; font-size: 10px; }
+        .chat-toggle { top: 48px; bottom: auto; left: 6px; width: 36px; min-height: 34px; padding: 2px; border-width: 2px; }
+        .chat-toggle img { max-height: 28px; }
+        .emote-toggle { top: 48px; bottom: auto; left: 48px; width: 36px; height: 34px; padding: 2px; }
+        .emote-toggle img { height: 28px; object-fit: contain; }
+        .teleport-toggle { right: 6px; bottom: 150px; width: 40px; height: 40px; padding: 2px; }
+        .teleport-toggle img { height: 34px; object-fit: contain; }
+        .pirate-shop-toggle { top: 48px; right: 6px; bottom: auto; min-height: 34px; padding: 5px 8px; font-size: 10px; }
+        .chat-feed { left: 6px; bottom: 210px; max-width: 60vw; }
+      }
     </style>
   </head>
   <body>

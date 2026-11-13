@@ -63,6 +63,7 @@ export function TouchControls() {
   const plane = riding === 'plane';
   const pilot = useGameStore((state) => state.ridingRole === 'driver');
   const cannon = riding === 'cannon' && pilot;
+  const flying = useGameStore((state) => state.flying);
 
   const moveJoystick = (event: ReactPointerEvent<HTMLDivElement>) => {
     const rect = joystick.current!.getBoundingClientRect();
@@ -122,9 +123,9 @@ export function TouchControls() {
               requestFlightToggle();
             }}
           >
-            Vol
+            Vol : {flying ? 'ON' : 'OFF'}
           </button>
-          <HoldButton code="KeyC" label="Descendre" />
+          <HoldButton code="KeyC" label="Bas" />
         </>}
         {plane && pilot && <>
           <HoldButton code="Space" label="Décoller / Monter" />

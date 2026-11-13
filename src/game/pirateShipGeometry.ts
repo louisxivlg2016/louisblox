@@ -20,7 +20,7 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
       }
     }
     for (let x = -deckWidth; x <= deckWidth; x++) {
-      if (x !== 0 || z !== 0) put(center + x, 9, z, BlockKind.OakPlanks);
+      if ((x !== 0 || z !== 0) && !(x === 2 && z >= 1 && z <= 4)) put(center + x, 9, z, BlockKind.OakPlanks);
     }
     if (Math.abs(z) < 16) {
       for (const side of [-1, 1]) {
@@ -67,6 +67,12 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
   }
 
   for (let y = 5; y <= 9; y++) put(center, y, 0, BlockKind.Ladder, 'south');
+  for (let step = 0; step < 5; step++) {
+    for (let y = 5; y <= 5 + step; y++) put(center + 2, y, 4 - step, BlockKind.OakPlanks);
+  }
+  for (let step = 0; step < 5; step++) {
+    for (let y = 9; y <= 10 + step; y++) put(center + 2, y, -5 + step, BlockKind.OakPlanks);
+  }
   for (const side of [-1, 1]) {
     for (const z of [-5, 5]) put(center + side, 5, z, BlockKind.OakPlanks);
     for (const z of [-6, 0, 6]) {
@@ -86,8 +92,11 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
   };
   const sail = (z: number, bottom: number, height: number, width: number, skull: boolean) => {
     const top = bottom + height;
-    for (let x = -width - 1; x <= width + 1; x++) put(center + x, top + 1, z, BlockKind.Wood);
+    for (let x = -width - 1; x <= width + 1; x++) {
+      if (z !== 0 || Math.abs(x) > 1) put(center + x, top + 1, z, BlockKind.Wood);
+    }
     for (let x = -width; x <= width; x++) {
+      if (z === 0 && Math.abs(x) <= 1) continue;
       const bulge = Math.round((1 - Math.abs(x) / (width + 1)) * 1.4);
       for (let y = bottom; y <= top; y++) {
         const skullPixel = skull && ((y === bottom + 4 && Math.abs(x) <= 2) || (y === bottom + 3 && Math.abs(x) <= 2) || (y === bottom + 2 && Math.abs(x) === 1) || (y === bottom + 1 && (x === -2 || x === 0 || x === 2)));
@@ -105,6 +114,7 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
   sail(0, 14, 6, 5, true);
   mast(15, 23);
   sail(15, 14, 6, 4, false);
+  put(center + 2, 14, 0, BlockKind.OakPlanks);
 
   for (const [dx, dy, dz] of PIRATE_CHEST_OFFSETS) put(center + dx, 7 + dy, dz, BlockKind.Chest, 'south');
 
