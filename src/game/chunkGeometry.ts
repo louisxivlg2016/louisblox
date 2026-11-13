@@ -1,7 +1,7 @@
 import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { brickTexture, texture } from './textures';
-import { EXTRA_BLOCK_META, isCrop, isDoor, isGlass, isSapling, isSign, isTrapdoor, isUtilityBlock } from './extraBlocks';
+import { EXTRA_BLOCK_META, isCrop, isDoor, isGlass, isSapling, isSign, isStair, isTrapdoor, isUtilityBlock } from './extraBlocks';
 import { getVitrailDesign, getVitrailTexture } from './vitrailDesigns';
 import type { ExtraBlockKind } from './extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
@@ -116,7 +116,7 @@ function usesSeparateModel(kind: BlockKind) {
 }
 
 function computeSeparateModel(kind: BlockKind) {
-  return kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || kind === BlockKind.Food || kind === BlockKind.JungleVine || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isUtilityBlock(kind) || isSign(kind);
+  return kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || kind === BlockKind.Food || kind === BlockKind.JungleVine || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isStair(kind) || isUtilityBlock(kind) || isSign(kind);
 }
 
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {

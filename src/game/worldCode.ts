@@ -59,6 +59,7 @@ export const EDITOR_BLOCK_CATEGORIES: EditorBlockCategory[] = [
   { id: 'plants', name: 'Arbres et cultures', kinds: [BlockKind.Wood, BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple, BlockKind.Cactus, BlockKind.OakSapling, BlockKind.PineSapling, BlockKind.AutumnSapling, BlockKind.Corn, BlockKind.Wheat, BlockKind.Tomato, BlockKind.Carrot, BlockKind.Watermelon] },
   { id: 'wood', name: 'Bois et briques', kinds: [BlockKind.OakPlanks, BlockKind.PinePlanks, BlockKind.AutumnPlanks, BlockKind.BeigeBrick, BlockKind.WhiteBrick, BlockKind.GrayBrick] },
   { id: 'concrete', name: 'Béton', kinds: Array.from({ length: 16 }, (_, index) => (BlockKind.ConcreteWhite + index) as BlockKind) },
+  { id: 'stairs', name: 'Escaliers', kinds: Array.from({ length: 34 }, (_, index) => (BlockKind.StairOak + index) as BlockKind) },
   { id: 'glass', name: 'Verre, eau et glace', kinds: [BlockKind.Glass, ...Array.from({ length: 16 }, (_, index) => (BlockKind.GlassWhite + index) as BlockKind), BlockKind.Water, BlockKind.CalmWater, BlockKind.Ice] },
   { id: 'doors', name: 'Portes et trappes', kinds: Array.from({ length: 32 }, (_, index) => (BlockKind.DoorWhite + index) as BlockKind) },
   { id: 'furniture', name: 'Maison et décoration', kinds: [BlockKind.Chest, BlockKind.Furnace, BlockKind.Ladder, BlockKind.Sign, BlockKind.Candle, BlockKind.Tnt, BlockKind.Campfire, BlockKind.Wildfire, BlockKind.Food, ...Array.from({ length: 17 }, (_, index) => (BlockKind.Bed + index) as BlockKind)] },

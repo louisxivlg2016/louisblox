@@ -5,6 +5,8 @@ import type { Group } from 'three';
 import { DroppedItem, DroppedItemPosition } from '../game/traits';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { ItemModel } from './ItemModel';
+import { StairModel } from './StairModel';
+import { isStair } from '../game/extraBlocks';
 
 function DroppedItemView({ entity }: { entity: import('koota').Entity }) {
   const group = useRef<Group>(null);
@@ -18,7 +20,7 @@ function DroppedItemView({ entity }: { entity: import('koota').Entity }) {
   });
   return (
     <group ref={group} scale={entity.get(DroppedItem)?.mined ? 0.22 : 0.45}>
-      {typeof kind === 'number' ? <mesh args={[blockGeometry, blockMaterials[kind]]} /> : <ItemModel kind={kind} />}
+      {typeof kind === 'number' ? isStair(kind) ? <StairModel kind={kind} /> : <mesh args={[blockGeometry, blockMaterials[kind]]} /> : <ItemModel kind={kind} />}
     </group>
   );
 }

@@ -728,6 +728,10 @@
       .menu-brand small { display: block; margin-top: 4px; color: #9eabc8; font-size: 10px; }
       .profile-card { display: flex; align-items: center; gap: 10px; min-height: 74px; padding: 8px; background: #35415f; border: 2px solid #53607e; }
       .profile-avatar-button { flex: 0 0 auto; padding: 0; background: none; border: 0; cursor: pointer; }
+      .stair-block-icon { position: relative; display: block; overflow: visible; }
+      .stair-block-icon img { position: absolute; width: 68%; height: 68%; object-fit: cover; border: 1px solid rgba(20, 20, 20, .45); image-rendering: pixelated; }
+      .stair-icon-lower { left: 0; bottom: 0; clip-path: polygon(0 20%, 65% 20%, 65% 45%, 100% 45%, 100% 100%, 0 100%); }
+      .stair-icon-upper { top: 0; right: 0; }
       .profile-photo { display: block; flex: 0 0 auto; object-fit: cover; border: 2px solid #151b29; image-rendering: pixelated; }
       .profile-photo-footballer, .profile-photo-new { transform: none; }
       .profile-photo-picker { position: relative; z-index: 42; display: grid; flex-shrink: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; max-height: max(220px, calc(100dvh - 340px)); padding: 8px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: #d2a442 #202a43; background: #293653; border: 2px solid #53607e; }

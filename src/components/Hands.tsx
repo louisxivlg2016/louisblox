@@ -13,7 +13,8 @@ import { BlockKind } from '../game/voxel';
 import { ItemModel, isWeaponItem, itemGripOffset } from './ItemModel';
 import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
-import { isUtilityBlock } from '../game/extraBlocks';
+import { isStair, isUtilityBlock, stairSource } from '../game/extraBlocks';
+import { StairModel } from './StairModel';
 
 function createSkinTexture(base: string) {
   const canvas = document.createElement('canvas');
@@ -58,7 +59,7 @@ export function Hands() {
   const sleeping = useGameStore((state) => state.sleepProgress !== null);
   const skinColor = useCharacterStore((state) => state.appearance.skinColor);
   const skinTexture = useMemo(() => createSkinTexture(skinColor), [skinColor]);
-  const selectedBlock = typeof selected === 'number' ? selected : BlockKind.Grass;
+  const selectedBlock = typeof selected === 'number' ? isStair(selected) ? stairSource(selected) as BlockKind : selected : BlockKind.Grass;
   const heldMaterials = useMemo(() => blockMaterials[selectedBlock].map((material) => {
     const clone = material.clone() as MeshLambertMaterial;
     clone.fog = false;
@@ -91,6 +92,8 @@ export function Hands() {
           </group>
         ) : isUtilityBlock(selected) ? (
           <group position={[0.46, -0.3, -1]} scale={0.32}><UtilityBlockModel kind={selected} withLight={false} held /></group>
+        ) : isStair(selected) ? (
+          <group position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.32}><StairModel kind={selected} materials={heldMaterials} renderOrder={11} /></group>
         ) : (
           <mesh args={[blockGeometry, heldMaterials]} position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.16} renderOrder={11} frustumCulled={false} />
         )

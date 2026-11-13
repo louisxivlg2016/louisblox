@@ -4,7 +4,7 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isBed, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isRail, isSapling, isSign, isTrafficSign, isTrapdoor, signFacing } from '../extraBlocks';
+import { isBed, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isRail, isSapling, isSign, isStair, isTrafficSign, isTrapdoor, signFacing } from '../extraBlocks';
 import { useSignStore } from '../signs';
 import { startSleep } from './sleepSystem';
 import { openChest, openFurnace } from '../containers';
@@ -218,11 +218,12 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       }
       const facing = isLadder(kind)
         ? hit.normal.x === 1 ? 'east' : hit.normal.x === -1 ? 'west' : hit.normal.z === 1 ? 'south' : 'north'
+        : isStair(kind) ? Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'east' : 'west' : direction.z > 0 ? 'north' : 'south'
         : isSign(kind) || isTrafficSign(kind) ? signFacing(direction, hit.normal)
           : kind === BlockKind.TrafficLight
             ? Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'south' : 'north'
             : Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
-      const placed = addVoxel(world, x, y, z, kind, undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
+      const placed = addVoxel(world, x, y, z, kind, undefined, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
       if (placed) playSound('placeBlock', 0.45);
       if (placed && store.gameplayMode === 'survival') changeInventory(kind, -1);
       if (kind === BlockKind.Tnt) {

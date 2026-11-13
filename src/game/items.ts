@@ -1,5 +1,5 @@
 import { BLOCK_INFO, BlockKind } from './voxel';
-import { isBed, isChest, isDoor, isLadder, isSign, isTrapdoor } from './extraBlocks';
+import { isBed, isChest, isDoor, isLadder, isSign, isStair, isTrapdoor, stairSource } from './extraBlocks';
 import { GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
 import type { GalleryItemId } from './galleryCatalog';
 export type { GalleryItemId } from './galleryCatalog';
@@ -177,18 +177,21 @@ export function isSword(kind: SelectedKind) {
 }
 
 export function isWoodBlock(kind: BlockKind) {
+  const source = isStair(kind) ? stairSource(kind) : undefined;
   return kind === BlockKind.Wood || kind >= BlockKind.OakPlanks && kind <= BlockKind.AutumnPlanks
+    || source === BlockKind.Wood || source !== undefined && source >= BlockKind.OakPlanks && source <= BlockKind.AutumnPlanks
     || isDoor(kind) || isTrapdoor(kind) || isChest(kind) || isLadder(kind) || isSign(kind) || isBed(kind);
 }
 
 export function miningSpeed(selection: SelectedKind, block: BlockKind) {
   if (typeof selection === 'number' || block === BlockKind.Bedrock) return 1;
   const meta = getItemMeta(selection);
-  const hardBlock = block === BlockKind.Stone || block === BlockKind.CoalOre || block === BlockKind.IronOre
-    || block === BlockKind.GoldOre || block === BlockKind.DiamondOre || block === BlockKind.Ice
-    || (block >= BlockKind.BeigeBrick && block <= BlockKind.ConcreteBlack);
-  const softBlock = block === BlockKind.Grass || block === BlockKind.Dirt || block === BlockKind.Sand
-    || block === BlockKind.Snow || block === BlockKind.AutumnGrass || block === BlockKind.ForestGrass || block === BlockKind.JungleGrass;
+  const material = isStair(block) ? stairSource(block) as BlockKind : block;
+  const hardBlock = material === BlockKind.Stone || material === BlockKind.CoalOre || material === BlockKind.IronOre
+    || material === BlockKind.GoldOre || material === BlockKind.DiamondOre || material === BlockKind.Ice
+    || (material >= BlockKind.BeigeBrick && material <= BlockKind.ConcreteBlack);
+  const softBlock = material === BlockKind.Grass || material === BlockKind.Dirt || material === BlockKind.Sand
+    || material === BlockKind.Snow || material === BlockKind.AutumnGrass || material === BlockKind.ForestGrass || material === BlockKind.JungleGrass;
   const woodBlock = isWoodBlock(block);
   const foliage = block === BlockKind.Leaves || block === BlockKind.PineLeaves || block === BlockKind.AutumnLeaves || block === BlockKind.JungleLeaves || block === BlockKind.JungleVine;
   return (meta.category === 'pickaxe' && meta.shape !== 'axe' && hardBlock) || (meta.category === 'shovel' && softBlock)

@@ -23,7 +23,7 @@ import { getItemMeta } from '../game/items';
 import { ItemModel, PixelPart, heldItemPosition } from './ItemModel';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { BlockKind } from '../game/voxel';
-import { isUtilityBlock } from '../game/extraBlocks';
+import { isStair, isUtilityBlock } from '../game/extraBlocks';
 import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
 import { PlayerNameTag } from './PlayerNameTag';
@@ -35,6 +35,7 @@ import type { VehicleSnapshot } from '../game/vehicleSync';
 import { isAnimalMount } from '../game/vehicleTypes';
 import { appearanceSkinColor } from '../game/appearance';
 import { ParachutePackModel } from './ParachuteModel';
+import { StairModel } from './StairModel';
 import { isOutfitKind, isWigSelection, OUTFITS, selectedWig } from '../game/outfits';
 import type { OutfitKind, WigSelection } from '../game/outfits';
 import { CharacterOutfit } from './CharacterOutfit';
@@ -220,7 +221,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
           >
             {typeof state.selected === 'string'
               ? <ItemModel kind={state.selected} flipWeapons={hasFullCharacter(outfit, wig)} />
-              : state.selected === BlockKind.Tnt ? <BombModel /> : state.selected === BlockKind.Candle ? <CandleModel /> : state.selected === BlockKind.Campfire || state.selected === BlockKind.Wildfire ? <CampfireModel destructive={state.selected === BlockKind.Wildfire} /> : isUtilityBlock(state.selected) ? <UtilityBlockModel kind={state.selected} withLight={false} /> : <mesh args={[blockGeometry, blockMaterials[state.selected]]} />}
+              : state.selected === BlockKind.Tnt ? <BombModel /> : state.selected === BlockKind.Candle ? <CandleModel /> : state.selected === BlockKind.Campfire || state.selected === BlockKind.Wildfire ? <CampfireModel destructive={state.selected === BlockKind.Wildfire} /> : isUtilityBlock(state.selected) ? <UtilityBlockModel kind={state.selected} withLight={false} /> : isStair(state.selected) ? <StairModel kind={state.selected} /> : <mesh args={[blockGeometry, blockMaterials[state.selected]]} />}
           </group>
         )}
       </group>

@@ -1,4 +1,4 @@
-import { isCrop, isDoor, isLadder, isRail, isTrapdoor } from '../extraBlocks';
+import { isCrop, isDoor, isLadder, isRail, isStair, isTrapdoor } from '../extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import type { Voxel } from '../voxel';
 import type { CabinDefinition } from '../vehicleTypes';
@@ -16,6 +16,19 @@ export function isCollidable(block: Voxel | undefined) {
   return !(isDoor(block.kind) || isTrapdoor(block.kind)) || !block.open;
 }
 
+function stairCollides(block: Voxel, position: Vector, height: number) {
+  const overlaps = (minA: number, maxA: number, minB: number, maxB: number) => minA < maxB - EPSILON && maxA > minB + EPSILON;
+  const xOverlap = overlaps(position.x - RADIUS, position.x + RADIUS, block.x - 0.5, block.x + 0.5);
+  const zOverlap = overlaps(position.z - RADIUS, position.z + RADIUS, block.z - 0.5, block.z + 0.5);
+  const lowerOverlap = overlaps(position.y, position.y + height, block.y - 0.5, block.y);
+  if (xOverlap && zOverlap && lowerOverlap) return true;
+  const upperX = block.facing === 'east' ? [block.x, block.x + 0.5] : block.facing === 'west' ? [block.x - 0.5, block.x] : [block.x - 0.5, block.x + 0.5];
+  const upperZ = block.facing === 'north' ? [block.z, block.z + 0.5] : block.facing === 'south' || !block.facing ? [block.z - 0.5, block.z] : [block.z - 0.5, block.z + 0.5];
+  return overlaps(position.x - RADIUS, position.x + RADIUS, upperX[0], upperX[1])
+    && overlaps(position.z - RADIUS, position.z + RADIUS, upperZ[0], upperZ[1])
+    && overlaps(position.y, position.y + height, block.y, block.y + 0.5);
+}
+
 function collides(blocks: ReadonlyMap<string, Voxel>, position: Vector, cabin?: CabinDefinition, height = HEIGHT) {
   if (cabin) {
     return Math.abs(position.x) + RADIUS > cabin.halfWidth
@@ -31,7 +44,13 @@ function collides(blocks: ReadonlyMap<string, Voxel>, position: Vector, cabin?: 
   for (let x = minX; x <= maxX; x += 1) {
     for (let y = minY; y <= maxY; y += 1) {
       for (let z = minZ; z <= maxZ; z += 1) {
-        if (isCollidable(blocks.get(voxelKey(x, y, z)))) return true;
+        const block = blocks.get(voxelKey(x, y, z));
+        if (!isCollidable(block)) continue;
+        if (block && isStair(block.kind)) {
+          if (stairCollides(block, position, height)) return true;
+          continue;
+        }
+        return true;
       }
     }
   }
@@ -87,17 +106,19 @@ export function moveVoxelCharacter(
     let climbed = false;
 
     if (canStep && y <= 0 && horizontalHit) {
-      const candidate = { ...start, y: Math.round(start.y - 0.5) + 1.5 + EPSILON };
-      if (candidate.y - start.y <= 1.05 && !collides(blocks, candidate, cabin, height)) {
+      const candidateHeights = [...new Set([Math.round((start.y - 0.5) * 2) / 2 + 1 + EPSILON, Math.round(start.y - 0.5) + 1.5 + EPSILON])];
+      for (const candidateY of candidateHeights) {
+        const candidate = { ...start, y: candidateY };
+        if (candidate.y - start.y > 1.05 || collides(blocks, candidate, cabin, height)) continue;
         slide(blocks, candidate, 'x', x, cabin, height);
         slide(blocks, candidate, 'z', z, cabin, height);
         slide(blocks, candidate, 'y', -0.15, cabin, height);
-        if (!collides(blocks, candidate, cabin, height) && onGround(blocks, candidate, cabin, height)) {
-          Object.assign(position, candidate);
-          climbed = true;
-          stepped = true;
-          grounded = true;
-        }
+        if (collides(blocks, candidate, cabin, height) || !onGround(blocks, candidate, cabin, height)) continue;
+        Object.assign(position, candidate);
+        climbed = true;
+        stepped = true;
+        grounded = true;
+        break;
       }
     }
 

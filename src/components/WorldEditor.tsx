@@ -11,6 +11,8 @@ import { CUSTOM_WORLD_MAX_BLOCKS, CUSTOM_WORLD_MAX_Y, CUSTOM_WORLD_RADIUS, EDITO
 import type { CustomTerrain } from '../game/worldCode';
 import { ItemIcon } from './ItemIcon';
 import { EditorPlayer } from './EditorPlayer';
+import { StairModel } from './StairModel';
+import { isStair } from '../game/extraBlocks';
 
 const ALL_BLOCKS = [...new Set(Object.values(BlockKind).filter((kind) => typeof kind === 'number' && kind in BLOCK_INFO))] as BlockKind[];
 const matrix = new Matrix4();
@@ -42,6 +44,11 @@ function BlockInstanceGroup({ kind, values, erase, onInteract }: { kind: BlockKi
     mesh.current.instanceMatrix.needsUpdate = true;
     mesh.current.computeBoundingSphere();
   }, [values]);
+  if (isStair(kind)) return values.map((target) => (
+    <group key={`${target.block.x},${target.block.y},${target.block.z}`} onClick={(event) => { if (event.delta > 5) return; event.stopPropagation(); onInteract(target, event.face?.normal ?? { x: 0, y: 1, z: 0 }, erase); }} onPointerDown={(event) => { if (event.button !== 2) return; event.stopPropagation(); onInteract(target, event.face?.normal ?? { x: 0, y: 1, z: 0 }, true); }}>
+      <StairModel kind={kind} facing={target.block.facing} position={[target.block.x, target.block.y, target.block.z]} />
+    </group>
+  ));
   return (
     <instancedMesh
       ref={mesh}
@@ -158,7 +165,7 @@ export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, 
       setMessage(`La construction est limitée à ${CUSTOM_WORLD_MAX_BLOCKS} blocs.`);
       return;
     }
-    update([...next, { x, y, z, kind, ...(protectedPlacement ? { protected: true } : {}) }]);
+    update([...next, { x, y, z, kind, ...(isStair(kind) ? { facing: 'south' } : {}), ...(protectedPlacement ? { protected: true } : {}) }]);
     setMessage(`${BLOCK_INFO[kind].name} posé en ${x}, ${y}, ${z}${protectedPlacement ? ' · incassable' : ''}.`);
   };
   const interact = ({ block, base }: PreviewBlock, normal: { x: number; y: number; z: number }, remove: boolean) => {
