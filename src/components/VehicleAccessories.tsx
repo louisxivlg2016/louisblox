@@ -187,13 +187,13 @@ function PlaneDetails() {
   }, [scene]);
   const cabin = CABINS.plane!;
   const y = cabin.floor + 4.2;
-  const titleY = cabin.floor + 7.1;
-  const titleZ = cabin.front + 8;
+  const titleY = cabin.floor + 6.6;
+  const titleZ = cabin.front + 12;
   const windowTexture = useMemo(planeWindowTexture, []);
   return (
     <group name="plane-livery">
       {[-1, 1].map((side) => <group key={side}>
-        <Label text="louisblox" position={[side * (surfaceAt(side, titleZ, titleY) + 0.14), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[4.2, 0.72]} color="#f2c94c" background="#243447" />
+        <Label text="louisblox" position={[side * (surfaceAt(side, titleZ, titleY) + 0.22), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[5, 0.9]} color="#f2c94c" />
         {Array.from({ length: 14 }, (_, index) => {
           const z = cabin.front + 2 + index * 1.7;
           const x = surfaceAt(side, z, y);
