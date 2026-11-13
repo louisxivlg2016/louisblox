@@ -71,7 +71,7 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
     for (let y = 5; y <= 5 + step; y++) put(center + 2, y, 4 - step, BlockKind.OakPlanks);
   }
   for (let step = 0; step < 5; step++) {
-    for (let y = 9; y <= 10 + step; y++) put(center + 2, y, -5 + step, BlockKind.OakPlanks);
+    for (const side of [-1, 1]) for (let y = 9; y <= 10 + step; y++) put(center + side * 2, y, -5 + step, BlockKind.OakPlanks);
   }
   for (const side of [-1, 1]) {
     for (const z of [-5, 5]) put(center + side, 5, z, BlockKind.OakPlanks);
@@ -114,7 +114,7 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
   sail(0, 14, 6, 5, true);
   mast(15, 23);
   sail(15, 14, 6, 4, false);
-  put(center + 2, 14, 0, BlockKind.OakPlanks);
+  for (const side of [-1, 1]) put(center + side * 2, 14, 0, BlockKind.OakPlanks);
 
   for (const [dx, dy, dz] of PIRATE_CHEST_OFFSETS) put(center + dx, 7 + dy, dz, BlockKind.Chest, 'south');
 

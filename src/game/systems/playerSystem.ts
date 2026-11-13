@@ -112,8 +112,20 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const swimming = getSwimState(blocks, position);
   const inWater = !flying && swimming.inWater;
   const parachuting = useGameStore.getState().selected === 'parachute' && !flying && !state.grounded && !inWater && velocity.y < 0;
-  const ladderAt = (y: number) => blocks.get(voxelKey(Math.round(position.x), Math.round(y), Math.round(position.z)))?.kind === BlockKind.Ladder;
-  const onLadder = !flying && (ladderAt(position.y) || ladderAt(position.y + 0.75) || ladderAt(position.y + 1.5));
+  const ladderAt = (y: number) => {
+    for (const height of [y, y + 0.75, y + 1.5]) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        for (let dz = -1; dz <= 1; dz += 1) {
+          const block = blocks.get(voxelKey(Math.round(position.x) + dx, Math.round(height), Math.round(position.z) + dz));
+          if (block?.kind !== BlockKind.Ladder) continue;
+          if (Math.hypot(position.x - block.x, position.z - block.z) <= 1.25) return block;
+        }
+      }
+    }
+    return null;
+  };
+  const ladder = flying ? null : ladderAt(position.y);
+  const onLadder = ladder !== null;
   const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1) * movementMultiplier();
   const emote = useEmoteStore.getState().current;
   if ((forward !== 0 || strafe !== 0 || flying) && emote !== null) resetEmote();
@@ -123,6 +135,16 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   velocity.z = (-Math.cos(yaw) * normalizedForward - Math.sin(yaw) * normalizedStrafe) * speed;
 
   const spaceDown = isDown('Space');
+  if (ladder && spaceDown) {
+    const dx = ladder.x - position.x;
+    const dz = ladder.z - position.z;
+    const distance = Math.hypot(dx, dz);
+    if (distance > 0.01) {
+      const approach = Math.min(speed, distance / Math.max(dt, 0.001));
+      velocity.x = dx / distance * approach;
+      velocity.z = dz / distance * approach;
+    }
+  }
   const spacePressed = spaceDown && !spaceWasDown.get(world);
   spaceWasDown.set(world, spaceDown);
   if (state.grounded) airJumps.set(world, 0);
