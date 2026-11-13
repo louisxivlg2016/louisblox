@@ -29,7 +29,7 @@ import traderUrl from '../../assets/models/full-trader.glb';
 const hunyuanAnimals = { cow: cowUrl, chicken: chickenUrl, sheep: sheepUrl, pig: pigUrl, horse: horseUrl, camel: camelUrl, duck: duckUrl, wolf: wolfUrl, snowWolf: snowWolfUrl, bear: bearUrl, snowBear: snowBearUrl, deer: deerUrl, snowDeer: snowDeerUrl, monkey: singeUrl, ocelot: ocelotUrl, giraffe: girafeUrl, elephant: elephantUrl };
 for (const model of [...Object.values(hunyuanAnimals), traderUrl]) useGLTF.preload(model);
 
-function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0) {
+function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x' | 'z' = 'x') {
   const renderPosition = useRef<Vector3 | null>(null);
   const previousPosition = useRef<Vector3 | null>(null);
   const renderYaw = useRef<number | null>(null);
@@ -62,7 +62,7 @@ function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0) {
       const leg = mesh?.getObjectByName(`animal-leg-${index}`);
       if (!leg) continue;
       const target = swing * (index === 0 || index === 3 ? 1 : -1);
-      if (yawOffset !== 0) {
+      if (legAxis === 'z') {
         leg.rotation.x = 0;
         leg.rotation.z += (target - leg.rotation.z) * (1 - Math.exp(-delta * 12));
       } else {
@@ -93,7 +93,7 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
     if (kind === 'camel') clone.position.y += 0.72;
     return clone;
   }, [scene, kind]);
-  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck', kind === 'giraffe' ? Math.PI / 2 : 0);
+  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck', kind === 'giraffe' ? Math.PI / 2 : kind === 'ocelot' ? Math.PI : 0, kind === 'giraffe' ? 'z' : 'x');
   return <group name={`reference-${kind}`} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 

@@ -51,6 +51,7 @@ export const AnimalMotion = trait({ yaw: 0, displayYaw: 0, turnIn: 0, phase: 0, 
 export const AnimalMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 export const AnimalTame = trait({ tamed: false, giftDay: 0, baby: false, babyBorn: false, friendship: 1, happiness: 100, lastFedAt: 0 });
 export const AnimalLove = trait({ time: 0 });
+export const AnimalHome = trait({ x: 0, y: 0, z: 0, radius: 1.25 });
 
 export const Trader = trait({ homeX: 0, homeZ: 0, targetX: 0, targetZ: 0, destinationX: null as number | null, destinationZ: null as number | null, detourX: null as number | null, detourZ: null as number | null, detourIn: 0, arrived: false, phase: 0, walking: true, following: false, villager: false, health: 5, panic: 0, fireIn: 0, bedX: null as number | null, bedY: null as number | null, bedZ: null as number | null, sleeping: false, restaurantInvited: false, restaurantMeal: null as 'going' | 'eating' | null, restaurantMealTime: 0, restaurantMessage: '', restaurantStep: 0, bedDoorReached: false });
 export const TraderPosition = trait(() => new Vector3());

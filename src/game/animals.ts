@@ -1,13 +1,14 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
-import { biomeAt, heightAt, safeSpawnAt, SEA_LEVEL } from './levels';
+import { biomeAt, heightAt, MAX_BUILD_Y, MIN_WORLD_Y, safeSpawnAt, SEA_LEVEL } from './levels';
 import type { Biome, WaterTile } from './levels';
-import { Animal, AnimalHealth, AnimalHit, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Trader, TraderMesh, TraderPosition } from './traits';
+import { Animal, AnimalHealth, AnimalHit, AnimalHome, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Trader, TraderMesh, TraderPosition } from './traits';
 import { useGameStore } from './store';
 import { isInAnyRuinFootprint } from './ruins';
 import { spawnVillageResidents, tradeCityAt } from './villages';
 import { isAnimalDead, isTraderDead } from './deathSync';
 import { applyTameState } from './taming';
+import { groundAt } from './vehicles';
 
 function safeRoamSpawn(x: number, z: number, seed: number) {
   for (let radius = 0; radius <= 16; radius += 1) {
@@ -29,6 +30,31 @@ function safeRoamSpawn(x: number, z: number, seed: number) {
     if (best) return { ...best, onLand: true };
   }
   return safeSpawnAt(x, z, seed);
+}
+
+function monkeyTreeSpawn(world: World, x: number, z: number, seed: number) {
+  const occupied = world.query(AnimalHome).map((entity) => entity.get(AnimalHome)!);
+  for (let radius = 0; radius <= 32; radius += 1) {
+    let best: { x: number; y: number; z: number; tree: boolean } | null = null;
+    let bestDistance = Infinity;
+    for (let dx = -radius; dx <= radius; dx += 1) {
+      for (let dz = -radius; dz <= radius; dz += 1) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
+        const px = Math.round(x) + dx;
+        const pz = Math.round(z) + dz;
+        const height = heightAt(px, pz, seed);
+        if (height <= SEA_LEVEL + 1 || biomeAt(px, pz, seed) !== 'jungle' || hash(px, pz, seed + 91) < 0.9 || occupied.some((home) => home.x === px && home.z === pz)) continue;
+        const distance = dx * dx + dz * dz;
+        if (distance >= bestDistance) continue;
+        const trunkHeight = 12 + Math.floor(hash(px, pz, seed + 37) * 6);
+        const canopyGround = groundAt(world, px, pz, MAX_BUILD_Y);
+        best = { x: px, y: canopyGround > MIN_WORLD_Y + 0.5 ? canopyGround + 1.01 : height + trunkHeight + 3.01, z: pz, tree: true };
+        bestDistance = distance;
+      }
+    }
+    if (best) return best;
+  }
+  return { ...safeRoamSpawn(x, z, seed), tree: false };
 }
 
 export type AnimalKind =
@@ -78,7 +104,7 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
   if (isAnimalDead(id)) return null;
   const existing = world.query(Animal, AnimalId).find((entity) => entity.get(AnimalId) === id);
   if (existing) return existing;
-  const site = kind === 'duck' ? { x, y, z } : safeRoamSpawn(x, z, seed);
+  const site = kind === 'duck' ? { x, y, z } : kind === 'monkey' ? monkeyTreeSpawn(world, x, z, seed) : safeRoamSpawn(x, z, seed);
   const yaw = hash(x, z, seed + 41) * Math.PI * 2;
   const entity = world.spawn(
     Animal({ kind }),
@@ -95,6 +121,7 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
     }),
     AnimalMesh(),
   );
+  if ('tree' in site && site.tree) entity.add(AnimalHome({ x: site.x, y: site.y - 0.51, z: site.z, radius: 1.25 }));
   applyTameState(world, entity);
   return entity;
 }

@@ -7,7 +7,7 @@ import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { isWaterBlock, voxelKey } from '../voxel';
 import type { AnimalKind } from '../animals';
-import { Animal, AnimalHit, AnimalLove, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
+import { Animal, AnimalHit, AnimalHome, AnimalLove, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
 import { damageAnimal, damagePlayer } from '../combat';
 import { findDefenseTarget, isTamedAnimal, tamingSystem, WILD_ANIMALS } from '../taming';
 import { canSeePlayer } from '../hostility';
@@ -165,7 +165,7 @@ function moveAroundObstacle(world: World, kind: AnimalKind, position: Vector3, m
   return false;
 }
 
-function moveAnimalStep(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0) {
+function moveAnimalStep(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0, speedOverride?: number) {
   if (!isLoaded(world, position.x, position.z) && !recoverSafePosition(world, kind, position, entity) && !rescueAnimal(world, kind, position, entity)) return true;
   if (motion.climbTarget === null && !bodyClear(world, position.x, position.z, position.y)) {
     const ground = groundAt(world, position.x, position.z, position.y + MAX_CLIMB_RISE + 0.05);
@@ -178,7 +178,7 @@ function moveAnimalStep(world: World, kind: AnimalKind, position: Vector3, motio
   motion.avoid = Math.max(0, motion.avoid - dt);
   motion.running = panic > 0;
   const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : motion.speed;
-  const normalSpeed = Math.max(baseSpeed, kind === 'duck' ? 0.65 : 2.4);
+  const normalSpeed = speedOverride ?? Math.max(baseSpeed, kind === 'duck' ? 0.65 : 2.4);
   const chaseSpeed = kind === 'duck' ? 1.4 : kind === 'zombie' ? 5.4 : 6.8;
   const speed = panic > 0 ? chaseSpeed : normalSpeed;
   if (moveAroundObstacle(world, kind, position, motion, speed, dt, entity)) return true;
@@ -187,11 +187,11 @@ function moveAnimalStep(world: World, kind: AnimalKind, position: Vector3, motio
   return true;
 }
 
-export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0) {
+export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0, speedOverride?: number) {
   const steps = Math.max(1, Math.ceil(dt / 0.05));
   const stepDt = dt / steps;
   for (let step = 0; step < steps; step += 1) {
-    if (!moveAnimalStep(world, kind, position, motion, stepDt, entity, panic)) return false;
+    if (!moveAnimalStep(world, kind, position, motion, stepDt, entity, panic, speedOverride)) return false;
   }
   return true;
 }
@@ -315,7 +315,18 @@ export function animalSystem(world: World, dt: number) {
     }
 
     const stayClose = !fire && tamed && (defenseTarget ? targetDistanceSquared < 2.2 * 2.2 : distanceSquared < 2.8 * 2.8);
-    if (!stayClose) moveAnimal(world, animal.kind, position, motion, stepDt, entity, fire || defenseTarget ? 1 : motion.hunting ? 1 : hit.panic);
+    const home = entity.get(AnimalHome);
+    if (home && !tamed) {
+      const angle = entity * 0.73 + motion.phase * 0.3;
+      const radius = Math.min(0.75, home.radius);
+      const dx = home.x + Math.sin(angle) * radius - position.x;
+      const dz = home.z + Math.cos(angle) * radius - position.z;
+      const distance = Math.hypot(dx, dz);
+      if (distance > 0.02) {
+        motion.yaw = Math.atan2(dx, dz);
+        moveAnimal(world, animal.kind, position, motion, stepDt, entity, 0, 0.3);
+      }
+    } else if (!stayClose) moveAnimal(world, animal.kind, position, motion, stepDt, entity, fire || defenseTarget ? 1 : motion.hunting ? 1 : hit.panic);
     if (mesh.value) {
       mesh.value.position.copy(position);
       motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, stepDt * 6);

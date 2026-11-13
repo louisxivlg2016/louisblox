@@ -38,11 +38,12 @@ export function App() {
                 const maze = await import('../game/mazeClient');
                 const taming = await import('../game/taming');
                 const tribes = await import('../game/tribes');
+                const animals = await import('../game/animals');
                 const pirates = await import('../game/piratesClient');
                 const targeting = await import('../game/interactionTargets');
                 const Three = await import('three');
                 const voxels = await import('../game/voxel');
-                return { pirates: pirates.usePirateStore, tribe: tribes.useTribeStore, teleportToPendingTribeHome: tribes.teleportToPendingTribeHome, choosePirateKit: pirates.choosePirateKit, maze: maze.useMazeStore, audio, biomeAt, BlockKind, voxelKey, world, gl, camera, r3f, Three, character: useCharacterStore, store: useGameStore, multiplayer: useMultiplayerStore, remote: useRemotePlayerStore, battle: useBattleStore, protection: useProtectionStore, football: football.useFootballStore, effects: effects.useEffectStore, effectSystem: effects.effectSystem, hasActiveEffects: effects.hasActiveEffects, sirens: vehicleControls.useVehicleControls, isDown, mining: () => isMouseDown(0), ...animalSync, ...fish, ...animalMovement, ...taming, ...traits, ...chunks, ...vehicles, ...ruins, ...collision, ...vehicleTypes, ...vehicleWeapon, ...targeting, raycastVoxel: voxels.raycastVoxel, buildChunkGeometry };
+                return { pirates: pirates.usePirateStore, tribe: tribes.useTribeStore, teleportToPendingTribeHome: tribes.teleportToPendingTribeHome, spawnAnimal: animals.spawnAnimal, choosePirateKit: pirates.choosePirateKit, maze: maze.useMazeStore, audio, biomeAt, BlockKind, voxelKey, world, gl, camera, r3f, Three, character: useCharacterStore, store: useGameStore, multiplayer: useMultiplayerStore, remote: useRemotePlayerStore, battle: useBattleStore, protection: useProtectionStore, football: football.useFootballStore, effects: effects.useEffectStore, effectSystem: effects.effectSystem, hasActiveEffects: effects.hasActiveEffects, sirens: vehicleControls.useVehicleControls, isDown, mining: () => isMouseDown(0), ...animalSync, ...fish, ...animalMovement, ...taming, ...traits, ...chunks, ...vehicles, ...ruins, ...collision, ...vehicleTypes, ...vehicleWeapon, ...targeting, raycastVoxel: voxels.raycastVoxel, buildChunkGeometry };
               },
             });
           }}
