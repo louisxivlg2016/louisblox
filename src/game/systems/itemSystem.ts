@@ -56,7 +56,7 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
       const z = hit.z + hit.normal.z;
       if (y >= MIN_WORLD_Y && y <= MAX_BUILD_Y && !blocks.has(voxelKey(x, y, z)) && addVoxel(world, x, y, z, BlockKind.CalmWater)) {
         if (!alwaysEmpty) changeHeldBucket('water_bucket', 'bucket');
-        store.setNotice(alwaysEmpty ? 'Eau posée. Le seau reste toujours vide.' : 'Eau posée. Le seau est vide.');
+        store.setNotice(alwaysEmpty ? 'Eau posée. Le seau reste toujours vide.' : 'Tout le contenu du seau est vidé : 1 bloc d’eau calme, sans inondation.');
         return true;
       }
     }

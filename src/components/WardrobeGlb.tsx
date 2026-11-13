@@ -21,7 +21,7 @@ export function hasWardrobeModel(kind: OutfitKind) {
   return costumeModels[kind] !== undefined;
 }
 
-function Model({ url, width, height, depth, centerY, tint = null }: { url: string; width: number; height: number; depth: number; centerY: number; tint?: string | null }) {
+function Model({ url, width, height, depth, centerY, centerZ = 0, tint = null }: { url: string; width: number; height: number; depth: number; centerY: number; centerZ?: number; tint?: string | null }) {
   const { scene } = useGLTF(url);
   const model = useMemo(() => {
     const clone = scene.clone(true);
@@ -44,9 +44,9 @@ function Model({ url, width, height, depth, centerY, tint = null }: { url: strin
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
     clone.scale.set(width / Math.max(size.x, 0.001), height / Math.max(size.y, 0.001), depth / Math.max(size.z, 0.001));
-    clone.position.set(-center.x * clone.scale.x, centerY - center.y * clone.scale.y, -center.z * clone.scale.z);
+    clone.position.set(-center.x * clone.scale.x, centerY - center.y * clone.scale.y, centerZ - center.z * clone.scale.z);
     return clone;
-  }, [url, width, height, depth, centerY, tint]);
+  }, [url, width, height, depth, centerY, centerZ, tint]);
   return <primitive object={model} />;
 }
 
@@ -54,7 +54,7 @@ export function WigGlb({ kind, color = null }: { kind: WigKind; color?: string |
   const large = kind === 'louis14';
   return (
     <Suspense fallback={null}>
-      <Model url={wigModels[kind]} width={large ? 0.68 : 0.6} height={large ? 0.88 : 0.5} depth={large ? 0.64 : 0.57} centerY={large ? 1.58 : 1.79} />
+      <Model url={wigModels[kind]} width={large ? 0.68 : 0.6} height={large ? 0.88 : 0.5} depth={large ? 0.64 : 0.57} centerY={large ? 1.58 : 1.66} centerZ={large ? 0.18 : 0.08} />
     </Suspense>
   );
 }

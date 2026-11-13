@@ -4,9 +4,12 @@ import { ProtectionPanel } from './ProtectionPanel';
 import { sendTribe, useTribeStore } from '../game/tribes';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { playerIdentity } from '../game/playerIdentity';
+import { usePlaneTitleStore } from '../game/planeTitle';
 
 export function SettingsPanel() {
   const [name, setName] = useState('Ma tribu');
+  const planeTitle = usePlaneTitleStore((state) => state.title);
+  const setPlaneTitle = usePlaneTitleStore((state) => state.setTitle);
   const online = useMultiplayerStore((state) => state.status === 'online');
   const tribes = useTribeStore((state) => state.tribes);
   const invitations = useTribeStore((state) => state.invitations);
@@ -22,6 +25,11 @@ export function SettingsPanel() {
         <p>Retrouve ici les informations du monde et les touches de jeu.</p>
       </div>
       <WorldStats />
+      <section className="settings-tribe" aria-label="Titre de l’avion">
+        <h3>Titre de l’avion</h3>
+        <label htmlFor="plane-title">Texte doré sur la carlingue</label>
+        <input id="plane-title" aria-label="Titre de l’avion" value={planeTitle} onChange={(event) => setPlaneTitle(event.target.value)} maxLength={24} />
+      </section>
       <section className="settings-tribe" aria-label="Ma tribu">
         <h3>Tribu</h3>
         {tribe ? <><p>Tu es dans la tribu <strong>{tribe.name}</strong>.</p><button type="button" className="secondary-button" onClick={manageTribe}>Gérer ma tribu</button></> : (

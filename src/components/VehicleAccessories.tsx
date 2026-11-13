@@ -9,6 +9,7 @@ import { VehicleMotion } from '../game/traits';
 import { CABINS, PLANE_SCALE, type VehicleKind } from '../game/vehicleTypes';
 import airplaneUrl from '../../assets/models/airplane.glb';
 import { useVehicleControls } from '../game/vehicleControls';
+import { usePlaneTitleStore } from '../game/planeTitle';
 import policeCarUrl from '../../assets/models/police-car.glb';
 import fireTruckUrl from '../../assets/models/fire-truck.glb';
 import jeepUrl from '../../assets/models/reference-jeep.glb';
@@ -158,6 +159,7 @@ function planeWindowTexture() {
 }
 
 function PlaneDetails() {
+  const title = usePlaneTitleStore((state) => state.title);
   const { scene } = useGLTF(airplaneUrl);
   const surfaceAt = useMemo(() => {
     const model = scene.clone(true);
@@ -188,12 +190,12 @@ function PlaneDetails() {
   const cabin = CABINS.plane!;
   const y = cabin.floor + 4.2;
   const titleY = cabin.floor + 6.6;
-  const titleZ = cabin.front + 12;
+  const titleZ = cabin.front + 16;
   const windowTexture = useMemo(planeWindowTexture, []);
   return (
     <group name="plane-livery">
       {[-1, 1].map((side) => <group key={side}>
-        <Label text="louisblox" position={[side * (surfaceAt(side, titleZ, titleY) + 0.22), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[5, 0.9]} color="#f2c94c" />
+        <Label text={title} position={[side * (surfaceAt(side, titleZ, titleY) + 0.22), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[6.2, 1.1]} color="#f2c94c" />
         {Array.from({ length: 14 }, (_, index) => {
           const z = cabin.front + 2 + index * 1.7;
           const x = surfaceAt(side, z, y);
