@@ -104,7 +104,7 @@ export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
       {scrollable && !atBottom && <p className="profile-photo-scroll-hint">Fais défiler pour voir les autres profils ↓</p>}
       {photoKinds.map((kind) => (
         <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choisir ${PHOTO_AVATARS[kind].name}`} title={PHOTO_AVATARS[kind].name}>
-          <ProfileAvatar kind={kind} size={kind === 'boy-dark' ? 96 : 56} />
+          <ProfileAvatar kind={kind} size={kind === 'boy-dark' ? 96 : 44} />
           <span>{PHOTO_AVATARS[kind].name}</span>
         </button>
       ))}
