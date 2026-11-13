@@ -168,6 +168,10 @@ export function initInput() {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return;
       event.preventDefault();
       const state = useGameStore.getState();
+      if (state.gameplayMode === 'pirates') {
+        window.dispatchEvent(new Event('louisblox:pirate-shop-toggle'));
+        return;
+      }
       if (state.shopOpen) {
         state.setShopOpen(false);
         void requestPlay();

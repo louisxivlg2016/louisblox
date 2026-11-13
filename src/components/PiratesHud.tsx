@@ -31,6 +31,16 @@ export function PiratesHud() {
     setShopOpen(false);
     releasePointerForOverlay();
   }, [gameplayMode, mode, winner]);
+  useEffect(() => {
+    if (gameplayMode !== 'pirates') return;
+    const toggle = () => setShopOpen((current) => {
+      if (current) void requestPlay();
+      else releasePointerForOverlay();
+      return !current;
+    });
+    window.addEventListener('louisblox:pirate-shop-toggle', toggle);
+    return () => window.removeEventListener('louisblox:pirate-shop-toggle', toggle);
+  }, [gameplayMode]);
   if (gameplayMode !== 'pirates' || !enabled) return null;
   const selectTeam = (next: 'red' | 'blue' | 'auto') => {
     if (!chooseBattleTeam(next)) return;
