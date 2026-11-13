@@ -60,7 +60,15 @@ function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0) {
     const swing = moving ? Math.sin(phase.current) * (bird ? 0.35 : motion?.running ? 0.6 : 0.44) : 0;
     for (let index = 0; index < 4; index += 1) {
       const leg = mesh?.getObjectByName(`animal-leg-${index}`);
-      if (leg) leg.rotation.x += (swing * (index === 0 || index === 3 ? 1 : -1) - leg.rotation.x) * (1 - Math.exp(-delta * 12));
+      if (!leg) continue;
+      const target = swing * (index === 0 || index === 3 ? 1 : -1);
+      if (yawOffset !== 0) {
+        leg.rotation.x = 0;
+        leg.rotation.z += (target - leg.rotation.z) * (1 - Math.exp(-delta * 12));
+      } else {
+        leg.rotation.z = 0;
+        leg.rotation.x += (target - leg.rotation.x) * (1 - Math.exp(-delta * 12));
+      }
     }
   });
 }
@@ -85,7 +93,7 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
     if (kind === 'camel') clone.position.y += 0.72;
     return clone;
   }, [scene, kind]);
-  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck', kind === 'giraffe' ? Math.PI : 0);
+  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck', kind === 'giraffe' ? Math.PI / 2 : 0);
   return <group name={`reference-${kind}`} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
