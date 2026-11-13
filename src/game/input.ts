@@ -118,18 +118,6 @@ export function initInput() {
     }
     if (event.code === 'Tab') {
       event.preventDefault();
-      const state = useGameStore.getState();
-      if (state.container) {
-        state.closeContainer();
-        void requestPlay();
-      } else if (state.backpackOpen) {
-        state.setBackpack(false);
-        void requestPlay();
-      } else if (state.mode === 'play') {
-        state.setBackpack(true);
-        state.setMode('pause');
-        if (document.pointerLockElement) document.exitPointerLock();
-      }
       return;
     }
     if (event.code === 'KeyZ' && !event.repeat) {
