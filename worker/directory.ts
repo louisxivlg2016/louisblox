@@ -42,7 +42,7 @@ export function json(value: unknown, status = 200) {
 }
 
 const color = (value: unknown) => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
-const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
+const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'corsair', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
 const avatars = new Set(['pixel', 'girl', 'girl-dark', 'girl-brown', 'girl-red', 'girl-black', 'boy', 'boy-dark', 'boy-brown', 'boy-red', 'boy-black', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 

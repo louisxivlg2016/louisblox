@@ -2,7 +2,7 @@ import { Box3, CanvasTexture, Color, NearestFilter, SRGBColorSpace, Vector3 } fr
 import type { BufferGeometry, Material } from 'three';
 import type { CharacterAppearance } from './appearance';
 
-type MaskRegion = 'skin' | 'hair' | 'eyes' | 'eyebrows' | 'uniform' | 'sleeves' | 'forearms' | 'classic-boy-band';
+type MaskRegion = 'skin' | 'skin-soft' | 'hair' | 'eyes' | 'eyebrows' | 'uniform' | 'sleeves' | 'forearms' | 'classic-boy-band';
 
 function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, width: number, height: number, flipY: boolean, princessHair = false, frontSign = 1) {
   const canvas = document.createElement('canvas');
@@ -42,6 +42,8 @@ function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, 
         ? eyebrows
         : region === 'hair'
           ? horizontal && (vertical > 0.67 || lowerStrand) && !eyes
+          : region === 'skin-soft'
+            ? (head && vertical < 0.82 && !lowerStrand) || arm || leg
           : head || arm || leg;
     if (!visible) continue;
     context.beginPath();
@@ -87,7 +89,7 @@ function detectFaceFront(geometry: BufferGeometry, bounds: Box3, pixels: Uint8Cl
 }
 
 function skinPixel(red: number, green: number, blue: number, relaxed = false) {
-  if (relaxed) return red > 60 && green > 32 && blue > 18 && red > green * 1.04 && green > blue * 1.08 && red < green * 2.05 && green < blue * 1.85;
+  if (relaxed) return red > 45 && green > 25 && blue > 16 && red > green * 0.98 && green > blue * 1.03 && red < green * 2.4 && green < blue * 2.2;
   return red > 115 && green > 65 && blue > 55 && red > green * 1.06 && green > blue * 1.1 && red - green < 125 && green - blue < 105;
 }
 
@@ -164,14 +166,15 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
   const frontSign = detectFaceFront(geometry, bounds, pixels.data, canvas.width, canvas.height, material.map.flipY);
   const skinMask = maskCanvas(geometry, bounds, 'skin', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
+  const softSkinMask = maskCanvas(geometry, bounds, 'skin-soft', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
   const hairMask = maskCanvas(geometry, bounds, 'hair', canvas.width, canvas.height, material.map.flipY, princessHair, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
   const eyeMask = maskCanvas(geometry, bounds, 'eyes', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
   const eyebrowMask = maskCanvas(geometry, bounds, 'eyebrows', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
   material.userData.faceFrontSign = frontSign;
-  const skin = appearance.originalSkinColor ? null : new Color(appearance.skinColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const hair = appearance.originalHairColor || outfit === 'trader' || outfit === 'firefighter' ? null : new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const skin = appearance.originalSkinColor || outfit === 'knight' ? null : new Color(appearance.skinColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const hair = appearance.originalHairColor || outfit === 'knight' || outfit === 'trader' || outfit === 'firefighter' ? null : new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const eyes = outfit === 'louis15' ? null : new Color(appearance.eyeColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const eyebrows = outfit === 'firefighter' || outfit === 'trader' ? null : new Color(appearance.eyebrowColor ?? appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const eyebrows = outfit === 'knight' || outfit === 'firefighter' || outfit === 'trader' ? null : new Color(appearance.eyebrowColor ?? appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const uniformColor = appearance.clothingColor ?? (outfit === 'pirate' ? '#b6373b' : outfit === 'footballer' ? '#2868b3' : null);
   const uniform = uniformColor ? new Color(uniformColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace) : null;
   const uniformMask = uniform
@@ -196,7 +199,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
       ? uniform
       : forearmMask && forearmMask[index + 3] > 0 && skin
         ? skin
-        : skinMask[index + 3] > 0 && skinPixel(red, green, blue, outfit === 'firefighter')
+        : skinMask[index + 3] > 0 && (skinPixel(red, green, blue) || softSkinMask[index + 3] > 0 && skinPixel(red, green, blue, true))
       ? skin
       : eyeMask[index + 3] > 0 && irisPixel(red, green, blue)
         ? eyes

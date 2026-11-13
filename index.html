@@ -704,6 +704,9 @@
       .multiplayer-lobby .multiplayer-share { color: #a9bda5; font-size: 10px; }
       .multiplayer-hud.online { color: #a6d897; }
       .multiplayer-hud.error { color: #efaba1; }
+      .world-limit-notice { position: fixed; top: 16px; left: 50%; z-index: 90; display: grid; gap: 6px; width: min(440px, calc(100vw - 24px)); padding: 16px 20px; transform: translateX(-50%); color: #fff4cf; text-align: center; background: rgba(112, 48, 31, .98); border: 3px solid #e3b454; box-shadow: 0 6px 24px rgba(0,0,0,.45); pointer-events: none; }
+      .world-limit-notice strong { font-size: 17px; }
+      .world-limit-notice span { font-size: 12px; line-height: 1.45; }
       .menu-panel .primary-button:disabled { opacity: 0.5; cursor: not-allowed; filter: none; transform: none; }
       @media (max-width: 650px) {
         .menu-panel.multiplayer-menu { padding: 22px 18px; }
@@ -860,6 +863,9 @@
       .appearance-section h3 { margin: 0; font-size: 13px; }
       .appearance-section p { margin: 0; color: #b8c9bc; font-size: 11px; }
       .appearance-options { display: flex; flex-wrap: wrap; gap: 7px; }
+      .appearance-controls { margin: 0; padding: 0; border: 0; }
+      .appearance-controls:disabled button { opacity: .4; cursor: not-allowed; }
+      .appearance-locked-note { margin: 8px 0 12px; padding: 10px 12px; color: #fff0bd; background: rgba(116, 83, 32, .55); border: 1px solid #c5a44e; font-size: 11px; line-height: 1.4; }
       .appearance-options button { min-width: 34px; min-height: 34px; padding: 6px 9px; color: #fff; font-size: 10px; background: #2b3e39; border: 2px solid #61716b; cursor: pointer; }
       .appearance-options button.active { border-color: #f2cc62; }
       .color-swatch { width: 32px; height: 32px; padding: 0 !important; border-color: rgba(255,255,255,.4) !important; }
@@ -1017,6 +1023,8 @@
       }
       @media (max-width: 650px) {
         .menu-sidebar { padding: 12px 10px; }
+        .menu-action-bar { bottom: 6px; gap: 6px; padding: 6px; }
+        .menu-action-button img { height: 52px; }
         .world-browser { padding: 14px 10px; }
         .world-cards { grid-template-columns: 1fr; gap: 14px; }
         .world-card img { height: 180px; }
@@ -1124,8 +1132,6 @@
         .touch-actions, .plane-touch-actions { right: 12px; bottom: 94px; grid-template-columns: repeat(2, auto); gap: 6px; }
         .touch-button { min-width: 64px; min-height: 38px; padding: 5px 8px; font-size: 10px; border-radius: 6px; }
         .hotbar-wrap { bottom: 6px; max-width: calc(100vw - 12px); }
-        .hotbar-wrap.paused { z-index: 60; left: 0; width: 100%; max-width: none; transform: none; }
-        .hotbar-wrap.paused .selected-name { position: fixed; top: 10px; left: 50%; width: max-content; max-width: calc(100vw - 24px); margin: 0; padding: 6px 10px; transform: translateX(-50%); background: rgba(15, 19, 16, 0.8); }
         .selected-name { margin-bottom: 3px; font-size: 9px; }
         .hotbar { max-width: calc(100vw - 12px); flex-wrap: nowrap; gap: 2px; padding: 3px; overflow-x: auto; }
         .hotbar-slot { flex: 0 0 34px; width: 34px; height: 34px; }
@@ -1134,22 +1140,21 @@
         .game-notice { bottom: 154px; max-width: 60vw; font-size: 10px; }
       }
       @media (max-width: 650px) {
-        .backpack-toggle { top: 6px; right: 64px; left: auto; width: 50px; padding: 0; transform: none; }
-        .shop-toggle { top: 6px; right: 6px; left: auto; width: 50px; padding: 0; transform: none; }
-        .backpack-toggle img, .shop-toggle img { max-height: 34px; object-fit: contain; }
+        .backpack-toggle { top: 6px; right: 76px; left: auto; width: 64px; padding: 0; transform: none; }
+        .shop-toggle { top: 6px; right: 6px; left: auto; width: 64px; padding: 0; transform: none; }
+        .backpack-toggle img, .shop-toggle img { max-height: 46px; object-fit: contain; }
         .battle-scoreboard.pirate-scoreboard { top: 6px; gap: 5px; max-width: calc(100vw - 180px); padding: 5px 7px; font-size: 9px; }
         .pirate-scoreboard strong { display: none; }
         .tribe-toggle { top: 6px; left: 6px; min-height: 34px; padding: 5px 8px; font-size: 10px; }
-        .chat-toggle { top: 48px; bottom: auto; left: 6px; width: 36px; min-height: 34px; padding: 2px; border-width: 2px; }
-        .chat-toggle img { max-height: 28px; }
-        .emote-toggle { top: 48px; bottom: auto; left: 48px; width: 36px; height: 34px; padding: 2px; }
-        .emote-toggle img { height: 28px; object-fit: contain; }
-        .teleport-toggle { right: 6px; bottom: 150px; width: 40px; height: 40px; padding: 2px; }
-        .teleport-toggle img { height: 34px; object-fit: contain; }
-        .pirate-shop-toggle { top: 48px; right: 6px; bottom: auto; width: 110px; min-height: 34px; padding: 0; font-size: 10px; }
+        .chat-toggle { top: 58px; bottom: auto; left: 6px; width: 52px; min-height: 46px; padding: 3px; border-width: 2px; }
+        .chat-toggle img { max-height: 38px; }
+        .emote-toggle { top: 58px; bottom: auto; left: 64px; width: 52px; height: 46px; padding: 3px; }
+        .emote-toggle img { height: 38px; object-fit: contain; }
+        .teleport-toggle { top: 116px; right: 6px; bottom: auto; width: 56px; height: 56px; padding: 3px; }
+        .teleport-toggle img { height: 46px; object-fit: contain; }
+        .pirate-shop-toggle { top: 58px; right: 6px; bottom: auto; width: 130px; height: 46px; min-height: 46px; padding: 0; font-size: 10px; }
+        .pirate-shop-toggle img { width: 100%; height: 46px; object-fit: contain; }
         .chat-feed { left: 6px; bottom: 210px; max-width: 60vw; }
-        .hotbar-wrap.paused { z-index: 60; left: 0; width: 100%; max-width: none; transform: none; }
-        .hotbar-wrap.paused .selected-name { position: fixed; top: 10px; left: 50%; width: max-content; max-width: calc(100vw - 24px); margin: 0; padding: 6px 10px; transform: translateX(-50%); background: rgba(15, 19, 16, 0.8); }
       }
     </style>
   </head>

@@ -96,7 +96,7 @@ export function Hud() {
           <div className="crosshair" aria-hidden="true"><i /><b /></div>
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
           {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label="Sac à dos"><img src={backpackButtonUrl} alt="" /></button>}
-          <button className="shop-toggle" onClick={openShop} aria-label="Boutique"><img src={shopButtonUrl} alt="" /></button>
+          {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label="Boutique"><img src={shopButtonUrl} alt="" /></button>}
           {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label="Téléportation · T"><img src={teleportButtonUrl} alt="Téléportation · T" /></button>}
           {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label="Ouvrir ma tribu">TRIBU{tribeInvitations > 0 ? ` · ${tribeInvitations}` : ''}</button>}
           <div className="action-hint">{gameplayMode === 'football' ? 'Clic gauche : tir · E : tir puissant · T : tacler · G : passer' : <>Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</>}</div>
@@ -121,8 +121,8 @@ export function Hud() {
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />
       )}
 
-      {mode !== 'menu' && (
-        <div className={`hotbar-wrap${mode === 'pause' ? ' paused' : ''}`}>
+      {mode === 'play' && (
+        <div className="hotbar-wrap">
           <div className="selected-name" role="status">
             {selectionInfo(selected).name}
             {selected === 'pistol_bomb' && ` · ${bombAmmo}/10${bombReloading ? ' · Recharge de 3 s…' : ''}`}

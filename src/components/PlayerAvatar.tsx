@@ -21,7 +21,7 @@ import { useEmoteStore } from '../game/emotes';
 import { useEatingStore } from '../game/eating';
 import { canWalkInVehicle } from '../game/vehicleTypes';
 import { appearanceHairColor, appearanceSkinColor } from '../game/appearance';
-import { ParachuteModel } from './ParachuteModel';
+import { ParachuteModel, ParachutePackModel } from './ParachuteModel';
 
 export function PlayerAvatar({ entity, preview = false }: { entity: Entity; preview?: boolean }) {
   const cameraMode = useGameStore((state) => state.cameraMode);
@@ -195,6 +195,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
           <PixelPart position={[0.4, 1.34, 0]} size={[0.28, 0.2, 0.32]} color={armor} />
         </>
       )}
+      {selected === 'parachute' && !entity.get(PlayerState)?.parachuting && <ParachutePackModel />}
       <group ref={parachute} visible={false}><ParachuteModel /></group>
     </group>
   );

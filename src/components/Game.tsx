@@ -30,6 +30,7 @@ import { FootballBall } from './FootballBall';
 import { FootballReferee } from './FootballReferee';
 import { PirateWorld } from './PirateWorld';
 import { ExtinguisherSprays } from './ExtinguisherSpray';
+import { PIRATE_LOADOUT } from '../game/pirates';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -114,6 +115,9 @@ export function Game() {
     setLevel(loadLevel(world, generation, readWorldSave(worldId)));
   }, [world, generation, worldId]);
   useEffect(() => setMusicMode(gameplayMode), [gameplayMode]);
+  useEffect(() => {
+    if (gameplayMode === 'pirates') useGameStore.setState({ hotbarSlots: [...PIRATE_LOADOUT], selected: PIRATE_LOADOUT[0] });
+  }, [gameplayMode]);
   useEffect(() => {
     if (gameplayMode === 'battle' && outfit !== 'military') setOutfit('military');
     if (gameplayMode === 'pirates' && outfit !== 'pirate' && outfit !== 'corsair') setOutfit('pirate');

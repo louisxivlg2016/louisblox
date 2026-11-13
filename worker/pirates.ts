@@ -24,7 +24,16 @@ const objectives: Record<Team, { x: number; y: number; z: number }> = {
   red: { x: -16, y: 7, z: 0 },
   blue: { x: 16, y: 7, z: 0 },
 };
-const prices: Record<string, number> = { sword_diamond: 12, bow: 6, pistol_bomb: 10, Tnt: 5, OakPlanks: 3, apple: 2 };
+const prices: Record<string, number> = { sword_diamond: 12, bow: 6, pistol_bomb: 10, Tnt: 5, OakPlanks: 3, apple: 2, parachute: 20, mystery: 500 };
+const mysteryRewards = [
+  { item: 'sword_diamond', amount: 1 },
+  { item: 'bow', amount: 1 },
+  { item: 'pistol_bomb', amount: 1 },
+  { item: 'Tnt', amount: 3 },
+  { item: 'OakPlanks', amount: 8 },
+  { item: 'parachute', amount: 1 },
+  { item: 'pickaxe_diamond', amount: 1 },
+] as const;
 
 function spawn(team: Team) {
   return { x: team === 'red' ? -18 : 18, y: 8.51, z: 3 };
@@ -110,7 +119,12 @@ export class PirateEngine {
     for (const team of ['red', 'blue'] as const) {
       if (this.objectives[team] > 0) continue;
       const players = this.room.players().filter(({ attachment }) => attachment.team === team);
-      if (players.every(({ attachment }) => this.eliminated.has(attachment.playerId))) this.winner = team === 'red' ? 'blue' : 'red';
+      if (players.every(({ attachment }) => this.eliminated.has(attachment.playerId))) {
+        this.winner = team === 'red' ? 'blue' : 'red';
+        for (const { attachment } of this.room.players()) {
+          if (attachment.team === this.winner) this.coins.set(attachment.playerId, (this.coins.get(attachment.playerId) ?? 0) + 100);
+        }
+      }
     }
   }
 
@@ -220,7 +234,10 @@ export class PirateEngine {
       const coins = this.coins.get(player.playerId) ?? 0;
       if (!cost || coins < cost) return true;
       this.coins.set(player.playerId, coins - cost);
-      socket.send(JSON.stringify({ type: 'pirates-inventory', item, amount: 1, coins: this.coins.get(player.playerId) }));
+      const random = new Uint32Array(1);
+      crypto.getRandomValues(random);
+      const reward = item === 'mystery' ? mysteryRewards[random[0] % mysteryRewards.length] : { item, amount: 1 };
+      socket.send(JSON.stringify({ type: 'pirates-inventory', item: reward.item, amount: reward.amount, coins: this.coins.get(player.playerId) }));
       this.update();
       return true;
     }

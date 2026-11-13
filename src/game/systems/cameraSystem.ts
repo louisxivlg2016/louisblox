@@ -64,10 +64,10 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const cameraMode = useGameStore.getState().cameraMode;
   const walkingCabin = Boolean(mount?.kind && canWalkInVehicle(mount.kind, mount.role));
   const center = mount?.vehicle?.get(VehiclePosition) ?? position;
-  const distance = mount?.kind && !isAnimalMount(mount.kind) ? vehicleViewDistance(mount.kind) : 6;
+  const distance = mount?.kind && !isAnimalMount(mount.kind) ? vehicleViewDistance(mount.kind) : 3;
   const exteriorPlane = mount?.kind === 'plane' && cameraMode !== 'first';
-  const height = exteriorPlane ? 22 : Math.max(0.6, Math.min(5.5, 2.4 - Math.sin(state.pitch) * 3));
-  const targetHeight = exteriorPlane ? 14 : 1.3;
+  const height = exteriorPlane ? 22 : Math.max(0.8, Math.min(3.2, 1.8 - Math.sin(state.pitch) * 1.5));
+  const targetHeight = exteriorPlane ? 14 : 0.4;
   if (camera instanceof PerspectiveCamera && camera.far !== (exteriorPlane ? 500 : 130)) {
     camera.far = exteriorPlane ? 500 : 130;
     if ('updateProjectionMatrix' in camera) camera.updateProjectionMatrix();

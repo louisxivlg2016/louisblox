@@ -1,12 +1,15 @@
+import { useEffect } from 'react';
 import { clearBattle } from '../game/battle';
 import { clearMinigames } from '../game/minigameSync';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 import { canCreateWorld } from '../game/save';
+import { releasePointerForOverlay } from '../game/input';
 
 export function MatchResultActions() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   const full = !canCreateWorld();
+  useEffect(() => { releasePointerForOverlay(); }, []);
   const replay = () => {
     if (full) {
       useGameStore.getState().setNotice('Tu as déjà 20 mondes. Supprimes-en un pour pouvoir rejouer dans un nouveau monde.');

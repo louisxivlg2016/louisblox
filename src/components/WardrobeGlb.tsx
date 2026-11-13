@@ -13,7 +13,6 @@ import louis14Url from '../../assets/models/costume-louis14-v2.glb';
 import louis15Url from '../../assets/models/costume-louis15-v2.glb';
 import capeKingUrl from '../../assets/models/cape-king.glb';
 import capeLouis14Url from '../../assets/models/cape-louis14.glb';
-import { PixelPart } from './ItemModel';
 
 const wigModels: Record<WigKind, string> = { louis14: wigLouis14Url, louis15: wigLouis15Url };
 const costumeModels: Partial<Record<OutfitKind, string>> = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url };
@@ -54,9 +53,7 @@ export function WigGlb({ kind, color = null }: { kind: WigKind; color?: string |
   const large = kind === 'louis14';
   return (
     <Suspense fallback={null}>
-      {large && <PixelPart position={[0, 1.98, 0]} size={[0.53, 0.14, 0.53]} color={color ?? '#3c2a20'} />}
-      {large && <PixelPart position={[0, 1.68, 0.24]} size={[0.46, 0.5, 0.12]} color={color ?? '#4b3528'} />}
-      <Model url={wigModels[kind]} width={large ? 0.68 : 0.6} height={large ? 0.88 : 0.5} depth={large ? 0.64 : 0.57} centerY={large ? 1.8 : 1.91} tint={color} />
+      <Model url={wigModels[kind]} width={large ? 0.68 : 0.6} height={large ? 0.88 : 0.5} depth={large ? 0.64 : 0.57} centerY={large ? 1.8 : 1.91} />
     </Suspense>
   );
 }

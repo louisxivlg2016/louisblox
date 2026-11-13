@@ -8,8 +8,8 @@ const client = new CommonClient('hunyuan.intl.tencentcloudapi.com', '2023-09-01'
   region: 'ap-singapore',
   profile: { httpProfile: { endpoint: 'hunyuan.intl.tencentcloudapi.com', reqTimeout: 60 } },
 });
-const statePath = '.tmp/hunyuan-footballer-job.json';
-const raw = '.tmp/hunyuan-footballer/raw.glb';
+const statePath = '.tmp/hunyuan-footballer-normal-job.json';
+const raw = '.tmp/hunyuan-footballer/normal-v2.glb';
 const output = 'assets/models/full-footballer.glb';
 await mkdir('.tmp/hunyuan-footballer', { recursive: true });
 const state = await Bun.file(statePath).exists() ? await Bun.file(statePath).json() : {};
@@ -20,7 +20,7 @@ if (!state.jobId) {
   for (let attempt = 0; attempt < 36; attempt += 1) {
     try {
       const result = await client.request('SubmitHunyuanTo3DRapidJob', {
-        Prompt: 'Full body blocky voxel soccer player in T-pose, arms straight out, royal blue short sleeve jersey with white number 10 front and back, white shorts, blue knee socks, black soccer cleats, blond hair, legs and feet visible, game avatar',
+        Prompt: 'Full body blocky voxel soccer player, normal proportion arms and legs, arms relaxed slightly away from body, straight legs close together, blue short sleeve jersey number 10, white shorts, blue socks, black cleats, blond hair, no ball, no props, no base, game avatar',
         ResultFormat: 'GLB',
         EnablePBR: false,
       });

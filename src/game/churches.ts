@@ -35,6 +35,7 @@ export function churchBlocks(centerX: number, centerZ: number, baseY: number, we
     }
   }
   put(centerX, baseY, centerZ - 13, BlockKind.DoorBrown);
+  for (const side of [-1, 1]) for (let y = baseY; y <= baseY + 2; y++) put(centerX + side, y, centerZ - 13, wall);
 
   for (const offset of [-9, -3, 3, 9]) {
     for (const side of [-1, 1]) {
@@ -66,7 +67,7 @@ export function churchBlocks(centerX: number, centerZ: number, baseY: number, we
     for (const side of [-1, 1]) {
       for (let x = 3; x <= 5; x++) {
         put(centerX + side * x, baseY, centerZ + z, BlockKind.PinePlanks);
-        put(centerX + side * x, baseY + 1, centerZ + z + 1, BlockKind.OakPlanks);
+        put(centerX + side * x, baseY + 1, centerZ + z - 1, BlockKind.OakPlanks);
       }
     }
   }
@@ -86,32 +87,33 @@ export function churchBlocks(centerX: number, centerZ: number, baseY: number, we
     }
   }
 
-  const towerX = centerX - 5;
   const towerZ = centerZ - 15;
-  for (let dx = -2; dx <= 2; dx++) {
-    for (let dz = -2; dz <= 2; dz++) {
-      if (Math.abs(dx) !== 2 && Math.abs(dz) !== 2) continue;
-      for (let y = baseY; y <= baseY + 18; y++) {
-        const belfry = y >= baseY + 15 && y <= baseY + 17 && (dx === 0 || dz === 0);
-        const door = dz === -2 && dx === 0 && y <= baseY + 2;
-        if (!belfry && !door) put(towerX + dx, y, towerZ + dz, y === baseY + 13 || y === baseY + 18 ? trim : wall);
+  for (const towerX of [centerX - 5, centerX + 5]) {
+    for (let dx = -2; dx <= 2; dx++) {
+      for (let dz = -2; dz <= 2; dz++) {
+        if (Math.abs(dx) !== 2 && Math.abs(dz) !== 2) continue;
+        for (let y = baseY; y <= baseY + 18; y++) {
+          const belfry = y >= baseY + 15 && y <= baseY + 17 && (dx === 0 || dz === 0);
+          const door = dz === -2 && dx === 0 && y <= baseY + 2;
+          if (!belfry && !door) put(towerX + dx, y, towerZ + dz, y === baseY + 13 || y === baseY + 18 ? trim : wall);
+        }
       }
     }
-  }
-  put(towerX, baseY, towerZ - 2, BlockKind.DoorBrown);
-  for (let y = baseY + 6; y <= baseY + 8; y++) put(towerX, y, towerZ - 2, BlockKind.GlassBlue);
-  put(towerX, baseY + 16, towerZ, BlockKind.GoldOre);
-  put(towerX, baseY + 17, towerZ, BlockKind.OakPlanks);
-  for (let tier = 0; tier < 5; tier++) {
-    const radius = 3 - Math.floor(tier / 2);
-    for (let dx = -radius; dx <= radius; dx++) {
-      for (let dz = -radius; dz <= radius; dz++) put(towerX + dx, baseY + 19 + tier, towerZ + dz, roof);
+    put(towerX, baseY, towerZ - 2, BlockKind.DoorBrown);
+    for (let y = baseY + 6; y <= baseY + 8; y++) put(towerX, y, towerZ - 2, BlockKind.GlassBlue);
+    put(towerX, baseY + 16, towerZ, BlockKind.GoldOre);
+    put(towerX, baseY + 17, towerZ, BlockKind.OakPlanks);
+    for (let tier = 0; tier < 5; tier++) {
+      const radius = 3 - Math.floor(tier / 2);
+      for (let dx = -radius; dx <= radius; dx++) {
+        for (let dz = -radius; dz <= radius; dz++) put(towerX + dx, baseY + 19 + tier, towerZ + dz, roof);
+      }
     }
-  }
-  for (let y = baseY + 24; y <= baseY + 27; y++) put(towerX, y, towerZ, BlockKind.OakPlanks);
-  for (const side of [-1, 1]) put(towerX + side, baseY + 26, towerZ, BlockKind.OakPlanks);
-  for (let z = towerZ - 4; z <= towerZ - 3; z++) {
-    for (let x = towerX - 2; x <= towerX + 2; x++) put(x, floorY, z, BlockKind.GrayBrick);
+    for (let y = baseY + 24; y <= baseY + 27; y++) put(towerX, y, towerZ, BlockKind.OakPlanks);
+    for (const side of [-1, 1]) put(towerX + side, baseY + 26, towerZ, BlockKind.OakPlanks);
+    for (let z = towerZ - 4; z <= towerZ - 3; z++) {
+      for (let x = towerX - 2; x <= towerX + 2; x++) put(x, floorY, z, BlockKind.GrayBrick);
+    }
   }
   return [...blocks.values()];
 }

@@ -9,8 +9,7 @@ import piratesUrl from '../../assets/menu/pirates.webp';
 import footballUrl from '../../assets/menu/football.webp';
 import mazeUrl from '../../assets/menu/maze.webp';
 import { MenuActionBar } from './MenuActionBar';
-import { listModePlayers } from '../game/publicWorlds';
-import type { ModePlayer } from '../game/publicWorlds';
+import { countPlayersByMode, listPublicWorlds } from '../game/publicWorlds';
 import { CreateWorldDialog } from './CreateWorldDialog';
 import { ProfileDialog } from './ProfileDialog';
 import { WorldLibrary } from './WorldLibrary';
@@ -81,12 +80,13 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     setPendingWorld(null);
     void onPlay();
   }, [pendingWorld, room, status, worldReady, onPlay]);
-  const [modePlayers, setModePlayers] = useState<Partial<Record<GameplayMode, ModePlayer[]>>>({});
+  const [modePlayerCounts, setModePlayerCounts] = useState<Partial<Record<GameplayMode, number>>>({});
   useEffect(() => {
     let active = true;
     const load = async () => {
-      const entries = await Promise.all(MODE_CARDS.map(async (card) => [card.mode, await listModePlayers(card.mode).catch(() => [] as ModePlayer[])] as const));
-      if (active) setModePlayers(Object.fromEntries(entries));
+      const worlds = await listPublicWorlds().catch(() => []);
+      const entries = MODE_CARDS.map((card) => [card.mode, countPlayersByMode(worlds, card.mode, { ids: [], players: 0 })] as const);
+      if (active) setModePlayerCounts(Object.fromEntries(entries));
     };
     void load();
     const timer = window.setInterval(load, 15000);
@@ -140,7 +140,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
         <aside className="menu-sidebar">
           <div className="menu-brand"><img className="menu-brand-icon" src={gameIconUrl} alt="LouisBlox" /><div><strong>LOUISBLOX</strong><small>Joue, construis, partage.</small></div></div>
           <FriendsPanel onPlay={onPlay} />
-          <button className="sidebar-shop" onClick={onShop}><img src={shopUrl} alt="" /><span>Ouvrir la boutique</span></button>
+          {!['pirates', 'football', 'maze', 'battle'].includes(currentMode) && <button className="sidebar-shop" onClick={onShop}><img src={shopUrl} alt="" /><span>Ouvrir la boutique</span></button>}
         </aside>
         <main className="world-browser">
           <div className="world-browser-header"><div><p className="eyebrow">TON AVENTURE</p><h1>{paused ? 'PARTIE EN PAUSE' : 'Choisis ton monde'}<span className="creator-label">JEU DU CRÉATEUR</span></h1></div><div className="world-entry-actions">{enabled && <button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={pendingWorld !== null}>Rejoindre</button>}{paused && <button className="primary-button resume-button" onClick={onPlay} disabled={soloModeBlocked} title={soloModeBlocked ? 'Active le multijoueur pour reprendre cette partie' : undefined}>Reprendre</button>}</div></div>
@@ -151,7 +151,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             </button>
             {MODE_CARDS.map((card) => {
               const locked = !enabled && isMultiplayerOnlyMode(card.mode);
-              const playerCount = modePlayers[card.mode]?.length ?? 0;
+              const playerCount = modePlayerCounts[card.mode] ?? 0;
               return (
                 <div className="world-card-shell" key={card.mode}>
                   <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode)} disabled={pendingWorld !== null || locked} title={locked ? 'Active « Jouer en multijoueur » pour choisir ce mode' : undefined}>
@@ -166,7 +166,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           </div>
           <MenuActionBar multiplayer={enabled} onSolo={() => setEnabled(false)} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} createDisabled={full} />
           {soloModeBlocked && <p className="multiplayer-error" role="status">Les modes Pirates et Football sont réservés au multijoueur.</p>}
-          {full && <p className="multiplayer-error" role="alert">Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un dans Mes mondes pour en créer un autre.</p>}
+          {full && <div className="world-limit-notice" role="alert"><strong>Limite de {MAX_WORLDS} mondes atteinte</strong><span>Ouvre « Mes mondes » et supprimes-en un avant de créer ou de rejouer une partie.</span></div>}
           {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(options) => { setCreateOpen(false); create(options.mode, options.multiplayer, options); }} onPlay={onPlay} />}
           {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
           {enabled && joinOpen && (

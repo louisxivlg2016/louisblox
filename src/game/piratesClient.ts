@@ -95,10 +95,18 @@ export function receivePirateInventory(value: unknown) {
   const data = value as Record<string, unknown>;
   if (typeof data.item !== 'string' || typeof data.amount !== 'number' || !Number.isInteger(data.amount) || data.amount < 1 || data.amount > 64) return;
   const store = useGameStore.getState();
-  store.setItemCount(data.item as import('./items').ItemKind, (store.itemCounts[data.item] ?? 0) + data.amount);
+  const item = data.item as import('./items').ItemKind;
+  store.setItemCount(item, (store.itemCounts[item] ?? 0) + data.amount);
+  if (store.gameplayMode === 'pirates') {
+    const selectedIndex = Math.max(0, store.hotbarSlots.indexOf(store.selected));
+    const hotbarSlots = [...store.hotbarSlots];
+    hotbarSlots[selectedIndex] = item;
+    useGameStore.setState({ hotbarSlots, selected: item });
+  }
   const localId = useBattleStore.getState().localPlayerId;
   if (localId && typeof data.coins === 'number') usePirateStore.setState((state) => ({ coins: { ...state.coins, [localId]: Math.max(0, Math.floor(data.coins as number)) } }));
-  store.setNotice(`${data.item} ajouté à ton inventaire.`);
+  const names: Record<string, string> = { pistol_bomb: 'Lance-bombes', Tnt: 'TNT', OakPlanks: 'Planches de bois', pickaxe_diamond: 'Pioche en diamant', parachute: 'Parachute', sword_diamond: 'Épée en diamant', bow: 'Arc', apple: 'Pomme' };
+  store.setNotice(`${names[item] ?? item} ajouté à ta case sélectionnée.`);
 }
 
 export function damagePirateObjectivesInRadius(position: Vector3, radius: number) {

@@ -64,6 +64,11 @@ export function smallChurchBlocks(site: Site, seed: number): Voxel[] {
   put(centerX, floorY + 11, centerZ + 3, BlockKind.Wood);
   put(centerX - 1, floorY + 10, centerZ + 3, BlockKind.Wood);
   put(centerX + 1, floorY + 10, centerZ + 3, BlockKind.Wood);
+  for (const side of [-1, 1]) {
+    for (let y = floorY + 1; y <= floorY + 7; y++) put(centerX + side * 3, y, centerZ + 3, BlockKind.WhiteBrick);
+    put(centerX + side * 3, floorY + 8, centerZ + 3, BlockKind.PinePlanks);
+    put(centerX + side * 3, floorY + 9, centerZ + 3, BlockKind.Wood);
+  }
   return [...blocks.values()];
 }
 

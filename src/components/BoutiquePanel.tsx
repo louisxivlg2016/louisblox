@@ -52,6 +52,8 @@ export function BoutiquePanel() {
           </div>
         </div>
         <div className="appearance-section">
+          {outfit === 'knight' && <p className="appearance-locked-note" role="status">Le casque du chevalier garde la peau, les cheveux et les sourcils d’origine.</p>}
+          <fieldset className="appearance-controls" disabled={outfit === 'knight'}>
           <h3>Coiffure</h3>
           <div className="appearance-options">
             <button className={appearance.hairStyle === 'short' ? 'active' : ''} onClick={() => setAppearance({ hairStyle: 'short' })}>Cheveux courts</button>
@@ -76,6 +78,7 @@ export function BoutiquePanel() {
               {HAIR_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.eyebrowColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ eyebrowColor: color })} aria-label={`Sourcils ${color}`} />)}
             </div>
           </>}
+          </fieldset>
           {outfit !== 'louis15' && <>
             <h3>Couleur des yeux</h3>
             <div className="appearance-options">{EYE_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.eyeColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ eyeColor: color })} aria-label={`Yeux ${color}`} />)}</div>
