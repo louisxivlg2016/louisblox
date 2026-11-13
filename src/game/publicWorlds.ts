@@ -25,6 +25,7 @@ export async function listPublicWorlds(): Promise<PublicWorld[]> {
   return data.worlds.flatMap((value): PublicWorld[] => {
     if (!value || typeof value !== 'object') return [];
     const world = value as Record<string, unknown>;
+    if (typeof world.updatedAt !== 'number' || world.updatedAt + 120000 < Date.now()) return [];
     if (typeof world.id !== 'string' || typeof world.name !== 'string' || typeof world.ownerId !== 'string' || typeof world.ownerName !== 'string' || !isGameplayMode(world.gameplayMode)) return [];
     return [{
       id: world.id,

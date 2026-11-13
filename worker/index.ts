@@ -1249,7 +1249,10 @@ export class GameRoom extends DurableObject<Env> {
       if (changed) this.broadcastBattleState();
     }
     this.broadcast({ type: 'state', playerId: attachment.playerId, state }, ws);
-    if (Date.now() - attachment.presenceAt > 60000) this.publishPresence(attachment);
+    if (Date.now() - attachment.presenceAt > 60000) {
+      this.publishPresence(attachment);
+      this.publishWorld();
+    }
   }
 
   private vehicleDrivers = new Map<string, string>();

@@ -43,7 +43,7 @@ function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, 
         : region === 'hair'
           ? horizontal && (vertical > 0.67 || lowerStrand) && !eyes
           : region === 'skin-soft'
-            ? (head && vertical < 0.82 && !lowerStrand) || arm || leg
+            ? head && vertical < 0.78 && !lowerStrand
           : head || arm || leg;
     if (!visible) continue;
     context.beginPath();
@@ -182,6 +182,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
     : null;
   const sleeveMask = outfit === 'footballer' ? maskCanvas(geometry, bounds, 'sleeves', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data : null;
   const forearmMask = outfit === 'footballer' ? maskCanvas(geometry, bounds, 'forearms', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data : null;
+  const softSkinAllowed = !['knight', 'military', 'firefighter', 'police', 'soldier'].includes(outfit ?? '');
   let eyebrowPixels = 0;
   let skinPixels = 0;
   for (let index = 0; index < pixels.data.length; index += 4) {
@@ -199,14 +200,14 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
       ? uniform
       : forearmMask && forearmMask[index + 3] > 0 && skin
         ? skin
-        : skinMask[index + 3] > 0 && (skinPixel(red, green, blue) || softSkinMask[index + 3] > 0 && skinPixel(red, green, blue, true))
-      ? skin
-      : eyeMask[index + 3] > 0 && irisPixel(red, green, blue)
-        ? eyes
-        : eyebrowMask[index + 3] > 0 && eyebrowPixel(red, green, blue)
-          ? eyebrows
-          : hairMask[index + 3] > 0 && !skinPixel(red, green, blue) && hairPixel(red, green, blue, allowGrayHair, outfit === 'footballer' || outfit === 'classic-girl') ? hair
-            : uniformPixel ? uniform : null;
+        : eyeMask[index + 3] > 0 && irisPixel(red, green, blue)
+          ? eyes
+          : eyebrowMask[index + 3] > 0 && eyebrowPixel(red, green, blue)
+            ? eyebrows
+            : skinMask[index + 3] > 0 && (skinPixel(red, green, blue) || softSkinMask[index + 3] > 0 && (softSkinAllowed || skinPixel(red, green, blue, true)))
+              ? skin
+              : hairMask[index + 3] > 0 && !skinPixel(red, green, blue) && hairPixel(red, green, blue, allowGrayHair, outfit === 'footballer' || outfit === 'classic-girl') ? hair
+                : uniformPixel ? uniform : null;
     if (!target) continue;
     if (target === eyebrows) eyebrowPixels += 1;
     if (target === skin) skinPixels += 1;

@@ -247,7 +247,7 @@ export class PlayerDirectory extends DurableObject<Env> {
       return json({ sent: true, delivered });
     }
     if (url.pathname === '/worlds' && request.method === 'GET') {
-      return json({ worlds: [...this.sharedWorlds.values()].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 100) });
+      return json({ worlds: [...this.sharedWorlds.values()].filter((world) => world.updatedAt + 120000 >= now).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 100) });
     }
     if (url.pathname === '/world' && request.method === 'POST') {
       const data = await request.json() as Record<string, unknown>;

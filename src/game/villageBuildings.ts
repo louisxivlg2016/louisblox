@@ -43,6 +43,7 @@ export function smallChurchBlocks(site: Site, seed: number): Voxel[] {
     }
   }
   put(centerX, floorY + 1, centerZ + 4, BlockKind.DoorBrown, { facing: 'north' });
+  put(centerX, floorY + 2, centerZ + 4, BlockKind.BeigeBrick);
   for (const dz of [-2, 1]) {
     put(centerX - 3, floorY + 2, centerZ + dz, BlockKind.GlassBlue);
     put(centerX + 3, floorY + 2, centerZ + dz, BlockKind.GlassYellow);
@@ -89,6 +90,7 @@ export function restaurantBlocks(site: Site, seed: number): Voxel[] {
     }
   }
   put(centerX - 3, floorY + 1, centerZ, BlockKind.DoorBrown, { facing: 'east' });
+  put(centerX - 3, floorY + 2, centerZ, BlockKind.OakPlanks);
   for (const dz of [-2, 2]) {
     put(centerX - 3, floorY + 2, centerZ + dz, BlockKind.GlassYellow);
     put(centerX + 3, floorY + 2, centerZ + dz, BlockKind.Glass);

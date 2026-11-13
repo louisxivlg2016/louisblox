@@ -8,7 +8,7 @@ type Put = (x: number, y: number, z: number, kind: BlockKind, overwrite?: boolea
 type Remove = (x: number, y: number, z: number) => void;
 
 const layouts = {
-  church: { width: 15, depth: 39, height: 16, ox: 12, oz: 12 },
+  church: { width: 23, depth: 39, height: 16, ox: 12, oz: 12 },
   palace: { width: 25, depth: 23, height: 10, ox: 42, oz: 42 },
   fort: { width: 29, depth: 29, height: 11, ox: 42, oz: 12 },
 } as const;

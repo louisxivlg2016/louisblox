@@ -18,16 +18,16 @@ export function churchBlocks(centerX: number, centerZ: number, baseY: number, we
   const roof = BlockKind.PinePlanks;
   const floorY = baseY - 1;
 
-  for (let x = centerX - 8; x <= centerX + 8; x++) {
+  for (let x = centerX - 11; x <= centerX + 11; x++) {
     for (let z = centerZ - 13; z <= centerZ + 13; z++) {
       if (weathered) for (let y = baseY - 12; y < floorY; y++) put(x, y, z, BlockKind.GrayBrick);
       put(x, floorY, z, x === centerX ? BlockKind.WhiteBrick : BlockKind.OakPlanks);
     }
   }
 
-  for (let x = centerX - 8; x <= centerX + 8; x++) {
+  for (let x = centerX - 11; x <= centerX + 11; x++) {
     for (let z = centerZ - 13; z <= centerZ + 13; z++) {
-      if (Math.abs(x - centerX) !== 8 && Math.abs(z - centerZ) !== 13) continue;
+      if (Math.abs(x - centerX) !== 11 && Math.abs(z - centerZ) !== 13) continue;
       for (let y = baseY; y <= baseY + 8; y++) {
         const doorway = z === centerZ - 13 && Math.abs(x - centerX) <= 1 && y <= baseY + 2;
         if (!doorway) put(x, y, z, y === baseY || y === baseY + 8 ? trim : wall, 0.025);
@@ -35,6 +35,7 @@ export function churchBlocks(centerX: number, centerZ: number, baseY: number, we
     }
   }
   put(centerX, baseY, centerZ - 13, BlockKind.DoorBrown);
+  put(centerX, baseY + 2, centerZ - 13, wall);
   for (const side of [-1, 1]) for (let y = baseY; y <= baseY + 2; y++) put(centerX + side, y, centerZ - 13, wall);
 
   for (const offset of [-9, -3, 3, 9]) {
@@ -43,7 +44,7 @@ export function churchBlocks(centerX: number, centerZ: number, baseY: number, we
         for (let dz = -1; dz <= 1; dz++) {
           if (dy === 3 && dz !== 0) continue;
           const kind = dy === 2 && dz === 0 ? BlockKind.GlassYellow : dz === 0 ? BlockKind.GlassBlue : (offset + dy) % 2 === 0 ? BlockKind.GlassRed : BlockKind.GlassLightBlue;
-          put(centerX + side * 8, baseY + 3 + dy, centerZ + offset + dz, kind);
+          put(centerX + side * 11, baseY + 3 + dy, centerZ + offset + dz, kind);
         }
       }
     }
@@ -58,14 +59,14 @@ export function churchBlocks(centerX: number, centerZ: number, baseY: number, we
   }
 
   for (const z of [-9, -3, 3, 9]) {
-    for (const x of [-6, 6]) {
+    for (const x of [-8, 8]) {
       put(centerX + x, baseY, centerZ + z, BlockKind.GrayBrick);
       for (let y = baseY + 1; y <= baseY + 8; y++) put(centerX + x, y, centerZ + z, trim);
     }
   }
   for (const z of [-8, -4, 0, 4]) {
     for (const side of [-1, 1]) {
-      for (let x = 3; x <= 5; x++) {
+      for (let x = 3; x <= 7; x++) {
         put(centerX + side * x, baseY, centerZ + z, BlockKind.PinePlanks);
         put(centerX + side * x, baseY + 1, centerZ + z - 1, BlockKind.OakPlanks);
       }
@@ -79,8 +80,8 @@ export function churchBlocks(centerX: number, centerZ: number, baseY: number, we
   for (let y = baseY + 3; y <= baseY + 6; y++) put(centerX, y, centerZ + 11, BlockKind.OakPlanks);
   for (const x of [-1, 1]) put(centerX + x, baseY + 5, centerZ + 11, BlockKind.OakPlanks);
 
-  for (let dx = -9; dx <= 9; dx++) {
-    const roofY = baseY + 9 + (9 - Math.abs(dx));
+  for (let dx = -12; dx <= 12; dx++) {
+    const roofY = baseY + 9 + (12 - Math.abs(dx));
     for (let z = centerZ - 14; z <= centerZ + 14; z++) put(centerX + dx, roofY, z, roof, 0.045);
     for (const side of [-1, 1]) {
       for (let y = baseY + 9; y < roofY; y++) put(centerX + dx, y, centerZ + side * 13, wall, 0.025);
@@ -88,7 +89,7 @@ export function churchBlocks(centerX: number, centerZ: number, baseY: number, we
   }
 
   const towerZ = centerZ - 15;
-  for (const towerX of [centerX - 5, centerX + 5]) {
+  for (const towerX of [centerX - 8, centerX + 8]) {
     for (let dx = -2; dx <= 2; dx++) {
       for (let dz = -2; dz <= 2; dz++) {
         if (Math.abs(dx) !== 2 && Math.abs(dz) !== 2) continue;
@@ -100,6 +101,7 @@ export function churchBlocks(centerX: number, centerZ: number, baseY: number, we
       }
     }
     put(towerX, baseY, towerZ - 2, BlockKind.DoorBrown);
+    put(towerX, baseY + 2, towerZ - 2, wall);
     for (let y = baseY + 6; y <= baseY + 8; y++) put(towerX, y, towerZ - 2, BlockKind.GlassBlue);
     put(towerX, baseY + 16, towerZ, BlockKind.GoldOre);
     put(towerX, baseY + 17, towerZ, BlockKind.OakPlanks);

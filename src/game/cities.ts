@@ -65,6 +65,7 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
         }
       }
       put(centerX, GROUND + 1, centerZ - half, modern ? BlockKind.DoorWhite : BlockKind.DoorBrown);
+      put(centerX, GROUND + 3, centerZ - half, wall);
       for (const side of [-1, 1]) for (let y = GROUND + 1; y <= GROUND + 3; y++) put(centerX + side, y, centerZ - half, wall);
       if (modern) {
         for (let x = centerX - half; x <= centerX + half; x++) {

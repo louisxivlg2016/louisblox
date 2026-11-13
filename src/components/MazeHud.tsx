@@ -5,6 +5,7 @@ import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { canManageProtection } from '../game/protection';
 import { MatchResultActions } from './MatchResultActions';
+import { releasePointerForOverlay } from '../game/input';
 
 export function MazeHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
@@ -25,6 +26,9 @@ export function MazeHud() {
     const timer = window.setInterval(() => refresh((value) => value + 1), 250);
     return () => window.clearInterval(timer);
   }, [gameplayMode]);
+  useEffect(() => {
+    if (gameplayMode === 'maze') releasePointerForOverlay();
+  }, [gameplayMode, phase]);
   if (gameplayMode !== 'maze' || mode === 'menu') return null;
   const referee = canManageProtection() || !enabled;
   const elapsed = phase === 'finished' ? finishMs : startedAt ? Date.now() - startedAt : 0;
