@@ -1,9 +1,9 @@
 import type { World } from 'koota';
-import { Vector3 } from 'three';
+import { Raycaster, Vector3 } from 'three';
 import type { Camera } from 'three';
 import { isMouseButtonDown, stopMining } from '../input';
 import { useGameStore } from '../store';
-import { Player, PlayerMount, PlayerPosition, Vehicle, VehicleHealth, VehiclePosition } from '../traits';
+import { Player, PlayerMount, PlayerPosition, Vehicle, VehicleHealth, VehicleMesh, VehiclePosition } from '../traits';
 import { destroyVehicle } from '../vehicleSync';
 import type { VehicleKind } from '../vehicleTypes';
 
@@ -23,19 +23,30 @@ export function vehicleCombatSystem(world: World, camera: Camera, dt: number, to
   camera.getWorldDirection(direction);
   const mounted = playerEntity?.get(PlayerMount)?.vehicle;
   let target: { entity: import('koota').Entity; kind: VehicleKind; id: string; health: number } | null = null;
-  let closest = 8;
+  let closest = 12;
+  const raycaster = new Raycaster(origin, direction);
 
-  for (const entity of world.query(Vehicle, VehiclePosition, VehicleHealth)) {
+  for (const entity of world.query(Vehicle, VehiclePosition, VehicleHealth, VehicleMesh)) {
     if (entity === mounted) continue;
     const vehicle = entity.get(Vehicle)!;
     const position = entity.get(VehiclePosition)!;
-    const maxDistance = vehicle.kind === 'car' ? 5.5 : 8;
-    const height = vehicle.kind === 'car' ? 1.1 : vehicle.kind === 'plane' ? 2 : vehicle.kind === 'boat' ? 0.55 : 1.5;
-    const radius = vehicle.kind === 'car' ? 1.8 : vehicle.kind === 'plane' ? 4 : vehicle.kind === 'boat' ? 1.8 : 3.5;
-    offset.set(position.x, position.y + height, position.z).sub(origin);
-    const distance = offset.dot(direction);
-    if (distance < 0 || distance >= closest || distance > maxDistance) continue;
-    if (offset.lengthSq() - distance * distance > radius * radius) continue;
+    const maxDistance = vehicle.kind === 'car' ? 5.5 : vehicle.kind === 'plane' ? 12 : 8;
+    const mesh = entity.get(VehicleMesh)?.value;
+    let distance: number | undefined;
+    if (mesh?.visible) {
+      mesh.updateWorldMatrix(true, true);
+      raycaster.far = Math.min(maxDistance, closest);
+      distance = raycaster.intersectObject(mesh, true)[0]?.distance;
+    }
+    if (distance === undefined) {
+      const height = vehicle.kind === 'car' ? 1.1 : vehicle.kind === 'plane' ? 2 : vehicle.kind === 'boat' ? 0.55 : 1.5;
+      const radius = vehicle.kind === 'car' ? 1.8 : vehicle.kind === 'plane' ? 42 : vehicle.kind === 'boat' ? 1.8 : 3.5;
+      offset.set(position.x, position.y + height, position.z).sub(origin);
+      const centerDistance = offset.dot(direction);
+      if (centerDistance < 0 || offset.lengthSq() - centerDistance * centerDistance > radius * radius) continue;
+      distance = centerDistance;
+    }
+    if (distance >= closest || distance > maxDistance) continue;
     closest = distance;
     target = { entity, kind: vehicle.kind, id: vehicle.id, health: entity.get(VehicleHealth)!.value };
   }
