@@ -24,7 +24,7 @@ const CITY_DESTINATIONS = {
     { name: 'Plage', x: 28, y: 5.51, z: 195 },
   ],
   ancient: [
-    { name: 'Église', x: 28, y: 5.51, z: -50 },
+    { name: 'Église', x: 28, y: 5.51, z: -56 },
     { name: 'Quartier historique', x: 0, y: 5.51, z: 28 },
     { name: 'Place centrale', x: 0, y: 5.51, z: 0 },
   ],

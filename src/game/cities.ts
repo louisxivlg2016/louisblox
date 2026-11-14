@@ -30,7 +30,9 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
   for (let x = minX; x < minX + 16; x++) {
     for (let z = minZ; z < minZ + 16; z++) {
       if (Math.abs(x) > CITY_LIMIT || Math.abs(z) > CITY_LIMIT) continue;
-      const road = ((x % BLOCK_SIZE) + BLOCK_SIZE) % BLOCK_SIZE < 8 || ((z % BLOCK_SIZE) + BLOCK_SIZE) % BLOCK_SIZE < 8;
+      const cellX = ((x % BLOCK_SIZE) + BLOCK_SIZE) % BLOCK_SIZE;
+      const cellZ = ((z % BLOCK_SIZE) + BLOCK_SIZE) % BLOCK_SIZE;
+      const road = cellX < 8 || cellZ < 8;
       const sea = modern && z >= 208;
       const beach = modern && z >= 144;
       const surface = road ? modern ? BlockKind.ConcreteBlack : hash(x, z, seed + 43) > 0.82 ? BlockKind.Stone : BlockKind.GrayBrick : modern ? BlockKind.ConcreteLightGray : BlockKind.BeigeBrick;
@@ -39,6 +41,12 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
         put(x, y, z, kind);
       }
       if (sea) addWater(x, z);
+      const treeRow = !modern && ((cellX === 10 || cellX === 40) && ((z % 12) + 12) % 12 === 0 || (cellZ === 10 || cellZ === 40) && ((x % 12) + 12) % 12 === 0);
+      if (treeRow) {
+        for (let y = GROUND + 1; y <= GROUND + 3; y++) put(x, y, z, BlockKind.Wood);
+        for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) put(x + dx, GROUND + 4, z + dz, BlockKind.Leaves);
+        put(x, GROUND + 5, z, BlockKind.Leaves);
+      }
     }
   }
 
@@ -53,38 +61,40 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
         for (const block of churchBlocks(centerX, centerZ, GROUND + 1)) put(block.x, block.y, block.z, block.kind, block.facing, block.open);
         continue;
       }
-      if (modern && centerZ >= 144) {
-        if (centerZ === 172) {
+      if (modern && centerZ >= 96) {
+        if (centerZ === 124 || centerZ === 172) {
           const halfX = 7;
           const halfZ = 5;
           for (let x = centerX - halfX; x <= centerX + halfX; x++) {
             for (let z = centerZ - halfZ; z <= centerZ + halfZ; z++) {
               put(x, GROUND + 1, z, BlockKind.OakPlanks);
               put(x, GROUND + 6, z, BlockKind.ConcreteLightGray);
+              put(x, GROUND + 10, z, BlockKind.ConcreteLightGray);
               const edgeX = Math.abs(x - centerX) === halfX;
               const edgeZ = Math.abs(z - centerZ) === halfZ;
               if (!edgeX && !edgeZ) continue;
-              for (let y = GROUND + 2; y <= GROUND + 5; y++) {
-                const doorway = z === centerZ - halfZ && x === centerX && y <= GROUND + 3;
+              for (let y = GROUND + 2; y <= GROUND + 9; y++) {
+                const doorway = z === centerZ + halfZ && x === centerX && y <= GROUND + 3;
                 if (doorway) continue;
-                const frame = edgeX && edgeZ || y === GROUND + 5;
+                const frame = edgeX && edgeZ || y === GROUND + 6 || y === GROUND + 9;
                 const window = (edgeX ? z : x) % 3 !== 0;
                 put(x, y, z, frame ? BlockKind.ConcreteWhite : window ? BlockKind.Glass : BlockKind.ConcreteWhite);
               }
             }
           }
-          put(centerX, GROUND + 2, centerZ - halfZ, BlockKind.DoorWhite, 'south', false);
+          put(centerX, GROUND + 2, centerZ + halfZ, BlockKind.DoorWhite, 'north', false);
           for (let x = centerX - 4; x <= centerX + 4; x++) {
             for (let z = centerZ + 9; z <= centerZ + 14; z++) {
+              put(x, GROUND - 1, z, BlockKind.CalmWater);
               put(x, GROUND, z, BlockKind.CalmWater);
               addWater(x, z);
             }
           }
           for (let x = centerX - 5; x <= centerX + 5; x++) {
-            for (const z of [centerZ + 8, centerZ + 15]) put(x, GROUND, z, BlockKind.ConcreteWhite);
+            for (const z of [centerZ + 8, centerZ + 15]) for (const y of [GROUND - 1, GROUND]) put(x, y, z, BlockKind.ConcreteWhite);
           }
           for (let z = centerZ + 9; z <= centerZ + 14; z++) {
-            for (const x of [centerX - 5, centerX + 5]) put(x, GROUND, z, BlockKind.ConcreteWhite);
+            for (const x of [centerX - 5, centerX + 5]) for (const y of [GROUND - 1, GROUND]) put(x, y, z, BlockKind.ConcreteWhite);
           }
           for (const side of [-1, 1]) {
             const palmX = centerX + side * 10;
@@ -111,13 +121,12 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
             const localY = y - GROUND - 1;
             const doorway = z === centerZ - half && Math.abs(x - centerX) <= 1 && y <= GROUND + 3;
             if (doorway) continue;
-            const window = localY % 4 >= 1 && localY % 4 <= 2 && ((edgeX ? z : x) - centerX + half) % (modern ? 2 : 3) === 1;
+            const window = localY % 4 >= 1 && localY % 4 <= 2 && ((edgeX ? z : x) - centerX + half) % 2 === 1;
             const foundation = localY === 0;
             const facade = ((edgeX ? z : x) - centerX + half);
             const stoneBand = !modern && (localY % 4 === 3 || edgeX && edgeZ || facade % 5 === 0);
-            const balcony = !modern && localY % 4 === 1 && facade % 3 === 1;
             const frame = modern && (localY % 4 === 0 || facade % 6 === 0);
-            put(x, y, z, modern ? frame ? BlockKind.ConcreteGray : accent : foundation ? BlockKind.GrayBrick : balcony ? BlockKind.IronOre : stoneBand ? BlockKind.BeigeBrick : window ? accent : wall);
+            put(x, y, z, modern ? frame ? BlockKind.ConcreteGray : accent : foundation ? BlockKind.GrayBrick : stoneBand ? BlockKind.BeigeBrick : window ? accent : wall);
           }
         }
       }
