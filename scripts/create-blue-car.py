@@ -26,7 +26,7 @@ gray = material('Bumpers and wheel hubs', '#737e88')
 red = material('Rear lights', '#e43d35')
 glass = material('Windshield', '#bdeafa', 0.28)
 
-def box(name, position, size, mat, bevel=0.035):
+def box(name, position, size, mat, bevel=0):
     bpy.ops.mesh.primitive_cube_add(size=1, location=position)
     obj = bpy.context.object
     obj.name = name
@@ -40,7 +40,7 @@ def box(name, position, size, mat, bevel=0.035):
     return obj
 
 def cylinder(name, position, radius, depth, mat):
-    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=radius, depth=depth, location=position, rotation=(0, pi / 2, 0))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=radius, depth=depth, location=position, rotation=(0, pi / 2, 0))
     obj = bpy.context.object
     obj.name = name
     obj.data.materials.append(mat)

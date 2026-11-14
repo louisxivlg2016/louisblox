@@ -26,8 +26,8 @@ const models = {
 };
 
 const dimensions = {
-  raceCar: [3, 2.6, 5.5],
-  blueCar: [3.6, 3.4, 6.6],
+  raceCar: [2.6, 2.2, 4.8],
+  blueCar: [2.6, 2.2, 4.8],
   airplane: [7.2 * PLANE_SCALE, 2.5 * PLANE_SCALE, 8.2 * PLANE_SCALE],
   train: [2.8, 3.2, 10.5],
 } as const;

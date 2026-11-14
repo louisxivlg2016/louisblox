@@ -346,7 +346,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
       }
     } else if (vehicle.kind === 'boat') {
       if (motion.speed !== 0 && !moveBoat(world, position, motion.yaw, motion.speed, dt)) motion.speed = 0;
-    } else if (motion.speed !== 0 && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' ? 2.55 : vehicle.kind === 'car' ? vehicle.color.toLowerCase() === '#347cd0' ? 3.45 : 2.65 : vehicle.kind === 'firetruck' ? 3.5 : 1.55)) {
+    } else if (motion.speed !== 0 && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' ? 2.55 : vehicle.kind === 'car' ? 2.3 : vehicle.kind === 'firetruck' ? 3.5 : 1.55)) {
       motion.speed = 0;
     }
     if (vehicle.kind === 'train') {
