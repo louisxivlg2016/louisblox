@@ -8,6 +8,7 @@ import { PlaneTitleEditor } from './PlaneTitleEditor';
 import backpackButtonUrl from '../../assets/ui/backpack-button.webp';
 import shopButtonUrl from '../../assets/ui/shop-button.webp';
 import teleportButtonUrl from '../../assets/ui/teleport-button.webp';
+import tribeButtonUrl from '../../assets/menu/tribe-button.webp';
 import { Backpack } from './Backpack';
 import { BoutiquePanel } from './BoutiquePanel';
 import { ContainerPanel } from './ContainerPanel';
@@ -99,7 +100,7 @@ export function Hud() {
           {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label="Sac à dos"><img src={backpackButtonUrl} alt="" /></button>}
           {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label="Boutique"><img src={shopButtonUrl} alt="" /></button>}
           {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label="Téléportation · T"><img src={teleportButtonUrl} alt="Téléportation · T" /></button>}
-          {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label="Ouvrir ma tribu">TRIBU{tribeInvitations > 0 ? ` · ${tribeInvitations}` : ''}</button>}
+          {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label="Ouvrir ma tribu"><img src={tribeButtonUrl} alt="TRIBU" />{tribeInvitations > 0 && <span className="tribe-invitation-count">{tribeInvitations}</span>}</button>}
           <div className="action-hint">{gameplayMode === 'football' ? 'Clic gauche : tir · E : tir puissant · T : tacler · G : passer' : <>Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</>}</div>
           {notice && <div className="game-notice">{notice}</div>}
           <EffectsHud />
