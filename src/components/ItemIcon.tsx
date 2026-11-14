@@ -20,6 +20,7 @@ import bayonetRifleIconUrl from '../../assets/icons/bayonet-rifle.png';
 import raceCarIconUrl from '../../assets/icons/vehicle-race-car.png';
 import blueCarIconUrl from '../../assets/icons/vehicle-blue-car.png';
 import trainIconUrl from '../../assets/icons/vehicle-train.png';
+import metroIconUrl from '../../assets/icons/vehicle-metro.png';
 
 const photoIcons: Partial<Record<ItemKind, string>> = {
   plane: airplaneIconUrl,
@@ -27,6 +28,7 @@ const photoIcons: Partial<Record<ItemKind, string>> = {
   car_red: raceCarIconUrl,
   car_blue: blueCarIconUrl,
   train: trainIconUrl,
+  metro: metroIconUrl,
 };
 
 const cropIcons: Partial<Record<BlockKind, string>> = {

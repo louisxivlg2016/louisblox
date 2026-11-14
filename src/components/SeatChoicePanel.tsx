@@ -6,7 +6,7 @@ import { world } from '../game/world';
 import { canWalkInVehicle } from '../game/vehicleTypes';
 import type { VehicleKind } from '../game/vehicleTypes';
 
-const names: Record<VehicleKind, string> = { car: 'Voiture', plane: 'Avion', train: 'Train', boat: 'Bateau', jeep: 'Jeep', police: 'Voiture de police', firetruck: 'Camion de pompier', carriage: 'Calèche', cannon: 'Canon' };
+const names: Record<VehicleKind, string> = { car: 'Voiture', plane: 'Avion', train: 'Train', metro: 'Métro', boat: 'Bateau', jeep: 'Jeep', police: 'Voiture de police', firetruck: 'Camion de pompier', carriage: 'Calèche', cannon: 'Canon' };
 
 export function SeatChoicePanel() {
   const choice = useGameStore((state) => state.seatChoice);

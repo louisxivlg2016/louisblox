@@ -83,7 +83,7 @@ export function recipeFor(kind: SelectedKind): Recipe | null {
   if (meta.category === 'vehicle') {
     if (kind === 'boat' || shape === 'boat') return recipe(kind, 1, [[BlockKind.OakPlanks, 5]]);
     if (kind === 'plane') return recipe(kind, 1, [[BlockKind.IronOre, 16], [BlockKind.OakPlanks, 8]]);
-    if (kind === 'train') return recipe(kind, 1, [[BlockKind.IronOre, 20], [BlockKind.OakPlanks, 12], [BlockKind.Rail, 12]]);
+    if (kind === 'train' || kind === 'metro') return recipe(kind, 1, [[BlockKind.IronOre, 20], [BlockKind.OakPlanks, 12], [BlockKind.Rail, 12]]);
     if (shape === 'hovercraft') return recipe(kind, 1, [[BlockKind.IronOre, 12], [BlockKind.DiamondOre, 2], [BlockKind.OakPlanks, 6]]);
     return recipe(kind, 1, [[BlockKind.IronOre, 6], [BlockKind.OakPlanks, 4]]);
   }

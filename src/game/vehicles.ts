@@ -48,7 +48,7 @@ export function spawnVehicle(world: World, kind: VehicleKind, x: number, y: numb
     VehicleMesh(),
     VehicleHealth(),
   );
-  if (kind === 'train') {
+  if (kind === 'train' || kind === 'metro') {
     for (let offset = 0; offset < 24; offset += 1) ensureTrainTrack(world, x - Math.sin(yaw) * offset, z - Math.cos(yaw) * offset, yaw, y + 4);
   }
   syncVehicleSpawn(world, entity);
@@ -346,10 +346,10 @@ export function vehicleMovementSystem(world: World, dt: number) {
       }
     } else if (vehicle.kind === 'boat') {
       if (motion.speed !== 0 && !moveBoat(world, position, motion.yaw, motion.speed, dt)) motion.speed = 0;
-    } else if (motion.speed !== 0 && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' ? 2.55 : vehicle.kind === 'car' ? 2.3 : vehicle.kind === 'firetruck' ? 3.5 : 1.55)) {
+    } else if (motion.speed !== 0 && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' || vehicle.kind === 'metro' ? 2.55 : vehicle.kind === 'car' ? 2.3 : vehicle.kind === 'firetruck' ? 3.5 : 1.55)) {
       motion.speed = 0;
     }
-    if (vehicle.kind === 'train') {
+    if (vehicle.kind === 'train' || vehicle.kind === 'metro') {
       const cell = `${Math.round(position.x)},${Math.round(position.z)}`;
       if (railCells.get(motion) !== cell) {
         railCells.set(motion, cell);

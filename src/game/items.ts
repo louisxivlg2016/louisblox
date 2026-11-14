@@ -17,7 +17,7 @@ export type ItemKind =
   | 'raw_chicken' | 'cooked_chicken' | 'raw_salmon' | 'cooked_salmon'
   | 'cheese_slice' | 'cheese_wheel' | 'milk' | 'wool'
   | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb' | 'rifle_auto' | 'rifle_flintlock'
-  | 'car_red' | 'car_blue' | 'plane' | 'train' | 'boat' | 'jeep' | 'police_car' | 'firetruck' | 'carriage' | 'cannon' | 'saddle' | 'parachute';
+  | 'car_red' | 'car_blue' | 'plane' | 'train' | 'metro' | 'boat' | 'jeep' | 'police_car' | 'firetruck' | 'carriage' | 'cannon' | 'saddle' | 'parachute';
 export type SelectedKind = BlockKind | ItemKind | GalleryItemId;
 export type ItemMeta = {
   name: string;
@@ -95,6 +95,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   car_blue: item('Voiture bleue avec cabine', '#347cd0', 'vehicle'),
   plane: item('Avion de passagers', '#d9e4eb', 'vehicle', { shape: 'plane' }),
   train: item('Train de passagers', '#a73b38', 'vehicle', { shape: 'train' }),
+  metro: item('Train de métro', '#a73b38', 'vehicle', { shape: 'train' }),
   boat: item('Bateau à deux places', '#9b6b3f', 'vehicle', { shape: 'boat' }),
   jeep: item('Jeep militaire', '#777b43', 'vehicle', { shape: 'jeep' }),
   police_car: item('Voiture de police', '#e2e7e7', 'vehicle', { shape: 'police' }),

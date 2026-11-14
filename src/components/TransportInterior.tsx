@@ -101,7 +101,7 @@ export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
   passengerSeat: number | null;
 }) {
   if (kind === 'plane') return <PlaneInterior driverPresent={driverPresent} />;
-  if (kind === 'train') return <TrainInterior driverPresent={driverPresent} passengerSeat={passengerSeat} />;
+  if (kind === 'train' || kind === 'metro') return <TrainInterior driverPresent={driverPresent} passengerSeat={passengerSeat} />;
   if (kind === 'carriage') return null;
   if (kind === 'boat') {
     return <><Seat position={[0, 0.45, -0.72]} /><Seat position={[0, 0.45, 0.72]} /><PixelPart position={[-0.9, 0.45, 0.4]} size={[0.1, 0.1, 2.4]} color="#9a7042" rotation={[0, -0.35, 0]} /></>;

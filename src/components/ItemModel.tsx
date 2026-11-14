@@ -521,7 +521,7 @@ export function itemGripOffset(kind: ItemKind | GalleryItemId) {
 
 function vehicleItemKind(kind: ModelProps['kind']): Exclude<VehicleKind, 'boat'> | null {
   if (kind === 'car_red' || kind === 'car_blue') return 'car';
-  if (kind === 'plane' || kind === 'train' || kind === 'jeep' || kind === 'firetruck' || kind === 'carriage' || kind === 'cannon') return kind;
+  if (kind === 'plane' || kind === 'train' || kind === 'metro' || kind === 'jeep' || kind === 'firetruck' || kind === 'carriage' || kind === 'cannon') return kind;
   if (kind === 'police_car') return 'police';
   return null;
 }

@@ -5,6 +5,7 @@ import raceCarUrl from '../../assets/models/raceCar.glb';
 import blueCarUrl from '../../assets/models/blueCar.glb';
 import airplaneUrl from '../../assets/models/airplane.glb';
 import trainUrl from '../../assets/models/train.glb';
+import metroUrl from '../../assets/models/metro.glb';
 import policeCarUrl from '../../assets/models/police-car.glb';
 import fireTruckUrl from '../../assets/models/fire-truck.glb';
 import jeepUrl from '../../assets/models/reference-jeep.glb';
@@ -18,6 +19,7 @@ const models = {
   blueCar: blueCarUrl,
   airplane: airplaneUrl,
   train: trainUrl,
+  metro: metroUrl,
   police: policeCarUrl,
   firetruck: fireTruckUrl,
   jeep: jeepUrl,
@@ -30,6 +32,7 @@ const dimensions = {
   blueCar: [2.6, 2.2, 4.8],
   airplane: [7.2 * PLANE_SCALE, 2.5 * PLANE_SCALE, 8.2 * PLANE_SCALE],
   train: [3, 4.2, 8.5],
+  metro: [3, 4.2, 8.5],
 } as const;
 
 type AssetKind = Exclude<VehicleKind, 'boat'>;
@@ -53,7 +56,7 @@ function Asset({ kind, color, preview }: { kind: AssetKind; color: string; previ
       }
     });
     if (modelKind in dimensions) {
-      const quarterTurn = modelKind === 'train';
+      const quarterTurn = modelKind === 'train' || modelKind === 'metro';
       if (modelKind === 'raceCar' || modelKind === 'blueCar') clone.rotation.y = Math.PI / 2;
       if (modelKind === 'airplane') clone.rotation.y = -Math.PI / 2;
       const box = new Box3().setFromObject(clone);
