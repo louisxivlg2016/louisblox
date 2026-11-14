@@ -1147,21 +1147,37 @@
         .game-notice { bottom: 154px; max-width: 60vw; font-size: 10px; }
       }
       @media (max-width: 650px) {
-        .backpack-toggle { top: 4px; right: 90px; left: auto; width: 84px; padding: 0; transform: none; }
-        .shop-toggle { top: 4px; right: 6px; left: auto; width: 84px; padding: 0; transform: none; }
+        .backpack-toggle { top: 4px; right: 252px; left: auto; width: 84px; padding: 0; transform: none; }
+        .shop-toggle { top: 4px; right: 162px; left: auto; width: 84px; padding: 0; transform: none; }
         .backpack-toggle img, .shop-toggle img { height: 56px; object-fit: contain; }
         .battle-scoreboard.pirate-scoreboard { top: 6px; gap: 5px; max-width: calc(100vw - 180px); padding: 5px 7px; font-size: 9px; }
         .pirate-scoreboard strong { display: none; }
         .tribe-toggle { top: 4px; left: 6px; min-height: 44px; padding: 6px 10px; font-size: 11px; }
         .chat-toggle { top: 60px; bottom: auto; left: 6px; width: 64px; min-height: 52px; padding: 3px; border-width: 2px; }
         .chat-toggle img { max-height: 44px; }
-        .emote-toggle { top: 60px; bottom: auto; left: 76px; width: 64px; height: 52px; padding: 3px; }
-        .emote-toggle img { height: 44px; object-fit: contain; }
-        .teleport-toggle { top: 116px; right: 6px; bottom: auto; width: 68px; height: 68px; padding: 3px; }
-        .teleport-toggle img { height: 58px; object-fit: contain; }
+        .emote-toggle { top: 4px; right: 84px; bottom: auto; left: auto; width: 72px; height: 64px; padding: 3px; }
+        .emote-toggle img { height: 54px; object-fit: contain; }
+        .teleport-toggle { top: 4px; right: 6px; bottom: auto; width: 76px; height: 72px; padding: 3px; }
+        .teleport-toggle img { height: 62px; object-fit: contain; }
+        main:has(.pirate-scoreboard) .emote-toggle { top: 60px; right: 156px; }
+        .maze-referee-controls { right: 8px; bottom: 220px; max-width: 150px; gap: 5px; }
+        .maze-referee-controls button { padding: 6px; font-size: 10px; }
+        .pirate-winner .match-result-actions { position: relative; top: 8px; gap: 8px; margin-top: 10px; }
+        .pirate-winner .match-result-actions button { min-width: 96px; padding: 8px; font-size: 11px; }
         .pirate-shop-toggle { top: 60px; right: 6px; bottom: auto; width: 150px; height: 52px; min-height: 52px; padding: 0; font-size: 10px; }
         .pirate-shop-toggle img { width: 100%; height: 52px; object-fit: contain; }
         .chat-feed { left: 6px; bottom: 210px; max-width: 60vw; }
+      }
+      @media (pointer: coarse) and (min-width: 651px) and (max-width: 1100px) {
+        .hotbar-slot { flex-basis: 64px; width: 64px; height: 64px; }
+        .block-swatch { width: 36px; height: 36px; }
+      }
+      @media (max-width: 360px) {
+        .backpack-toggle { right: 218px; width: 70px; }
+        .shop-toggle { right: 142px; width: 70px; }
+        .emote-toggle { right: 76px; width: 62px; height: 58px; }
+        .teleport-toggle { width: 66px; height: 66px; }
+        .tribe-toggle { top: 124px; }
       }
     </style>
   </head>
