@@ -24,18 +24,18 @@ useGLTF.preload(horseUrl);
 
 function labelTexture(text: string, color = '#ffffff', background?: string) {
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 64;
+  canvas.width = 512;
+  canvas.height = 128;
   const context = canvas.getContext('2d')!;
   if (background) {
     context.fillStyle = background;
-    context.fillRect(0, 0, 256, 64);
+    context.fillRect(0, 0, 512, 128);
   }
   context.fillStyle = color;
-  context.font = 'bold 38px monospace';
+  context.font = 'bold 76px monospace';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.fillText(text, 128, 34);
+  context.fillText(text, 256, 68);
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
   texture.magFilter = NearestFilter;
@@ -195,9 +195,9 @@ function PlaneDetails() {
   return (
     <group name="plane-livery">
       {[-1, 1].map((side) => <group key={side}>
-        <Label text={title} position={[side * (surfaceAt(side, titleZ, titleY) + 0.22), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[8.5, 1.5]} color="#f2c94c" onClick={() => usePlaneTitleStore.getState().setEditorOpen(true)} />
-        {Array.from({ length: 14 }, (_, index) => {
-          const z = cabin.front + 2 + index * 1.7;
+        <Label text={title} position={[side * (surfaceAt(side, titleZ, titleY) + 0.55), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[12, 2.4]} color="#f2c94c" onClick={() => usePlaneTitleStore.getState().setEditorOpen(true)} />
+        {Array.from({ length: 32 }, (_, index) => {
+          const z = cabin.front + 2 + index * 1.65;
           const x = surfaceAt(side, z, y);
           return <mesh key={index} name="plane-window" position={[side * (x + 0.16), y, z]} rotation={[0, side * Math.PI / 2, 0]}>
             <planeGeometry args={[1.1, 1.1]} />
