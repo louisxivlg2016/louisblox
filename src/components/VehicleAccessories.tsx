@@ -1,16 +1,13 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { Box3, CanvasTexture, DoubleSide, Mesh, NearestFilter, Raycaster, SRGBColorSpace, Vector2, Vector3 } from 'three';
+import { Box3, Mesh, NearestFilter, Vector3 } from 'three';
 import type { Group } from 'three';
 import type { Entity } from 'koota';
 import { PixelPart } from './ItemModel';
 import { VehicleMotion } from '../game/traits';
-import { CABINS, PLANE_SCALE, type VehicleKind } from '../game/vehicleTypes';
-import airplaneUrl from '../../assets/models/airplane.glb';
+import type { VehicleKind } from '../game/vehicleTypes';
 import { useVehicleControls } from '../game/vehicleControls';
-import { usePlaneTitleStore } from '../game/planeTitle';
-import { useGameStore } from '../game/store';
 import policeCarUrl from '../../assets/models/police-car.glb';
 import fireTruckUrl from '../../assets/models/fire-truck.glb';
 import jeepUrl from '../../assets/models/reference-jeep.glb';
@@ -22,34 +19,6 @@ const vehicleModels = { police: policeCarUrl, firetruck: fireTruckUrl, jeep: jee
 type VehicleModelKind = keyof typeof vehicleModels;
 for (const model of Object.values(vehicleModels)) useGLTF.preload(model);
 useGLTF.preload(horseUrl);
-
-function labelTexture(text: string, color = '#ffffff', background?: string) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 128;
-  const context = canvas.getContext('2d')!;
-  if (background) {
-    context.fillStyle = background;
-    context.fillRect(0, 0, 512, 128);
-  }
-  context.fillStyle = color;
-  context.font = 'bold 76px monospace';
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
-  context.fillText(text, 256, 68);
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  texture.magFilter = NearestFilter;
-  texture.minFilter = NearestFilter;
-  texture.generateMipmaps = false;
-  return texture;
-}
-
-function Label({ text, position, rotation = [0, 0, 0], size = [2, 0.5], color = '#ffffff', background, onClick }: { text: string; position: [number, number, number]; rotation?: [number, number, number]; size?: [number, number]; color?: string; background?: string; onClick?: () => void }) {
-  const texture = useMemo(() => labelTexture(text, color, background), [text, color, background]);
-  return <mesh name="plane-title-label" position={position} rotation={rotation} onClick={onClick}><planeGeometry args={size} /><meshBasicMaterial map={texture} transparent depthWrite={false} /></mesh>;
-}
-
 
 function EmergencyLights({ top = 2.94 }: { top?: number }) {
   const enabled = useVehicleControls((state) => state.firetruck);
@@ -135,66 +104,8 @@ function HarnessHorse({ entity, x, phase }: { entity: Entity; x: number; phase: 
   return <group ref={group} position={[x, 0.12, -4.1]} rotation={[0, Math.PI, 0]} name="harness-horse" userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
-function PlaneDetails() {
-  const title = usePlaneTitleStore((state) => state.title);
-  const { scene } = useGLTF(airplaneUrl);
-  const camera = useThree((state) => state.camera);
-  const livery = useRef<Group>(null);
-  useEffect(() => {
-    const raycaster = new Raycaster();
-    const center = new Vector2();
-    const edit = (event: KeyboardEvent) => {
-      if (event.code !== 'KeyE' || event.repeat || useGameStore.getState().mode !== 'play' || !livery.current) return;
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLElement && event.target.isContentEditable) return;
-      raycaster.setFromCamera(center, camera);
-      if (!raycaster.intersectObject(livery.current, true).some((hit) => hit.object.name === 'plane-title-label')) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      usePlaneTitleStore.getState().setEditorOpen(true);
-    };
-    window.addEventListener('keydown', edit, true);
-    return () => window.removeEventListener('keydown', edit, true);
-  }, [camera]);
-  const surfaceAt = useMemo(() => {
-    const model = scene.clone(true);
-    model.rotation.y = Math.PI / 2;
-    const bounds = new Box3().setFromObject(model);
-    const size = bounds.getSize(new Vector3());
-    const center = bounds.getCenter(new Vector3());
-    model.scale.set(7.2 * PLANE_SCALE / Math.max(size.x, 0.001), 2.5 * PLANE_SCALE / Math.max(size.y, 0.001), 8.2 * PLANE_SCALE / Math.max(size.z, 0.001));
-    center.multiply(model.scale);
-    model.position.set(-center.x, -bounds.min.y * model.scale.y, -center.z);
-    model.traverse((object) => {
-      if (!(object instanceof Mesh)) return;
-      object.material = Array.isArray(object.material) ? object.material.map((material) => {
-        const clone = material.clone();
-        clone.side = DoubleSide;
-        return clone;
-      }) : object.material.clone();
-    });
-    model.updateMatrixWorld(true);
-    const cabin = CABINS.plane!;
-    const raycaster = new Raycaster();
-    return (side: number, z: number, y: number) => {
-      raycaster.set(new Vector3(0, y, z), new Vector3(side, 0, 0));
-      const hit = raycaster.intersectObject(model, true)[0];
-      return hit ? Math.abs(hit.point.x) : cabin.halfWidth + 0.1;
-    };
-  }, [scene]);
-  const cabin = CABINS.plane!;
-  const titleY = cabin.floor + 7.5;
-  const titleZ = cabin.front + 4;
-  return (
-    <group ref={livery} name="plane-livery">
-      {[-1, 1].map((side) => <group key={side}>
-        <Label text={title} position={[side * (surfaceAt(side, titleZ, titleY) + 0.55), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[12, 2.4]} color="#f2c94c" onClick={() => usePlaneTitleStore.getState().setEditorOpen(true)} />
-      </group>)}
-    </group>
-  );
-}
-
 export function VehicleAccessories({ entity, kind, interior = false, showOccupants = false }: { entity: Entity; kind: VehicleKind; interior?: boolean; showOccupants?: boolean }) {
-  if (kind === 'plane') return <PlaneDetails />;
+  if (kind === 'plane') return null;
   if (kind in vehicleModels) return <>
     <HunyuanVehicle kind={kind as VehicleModelKind} interior={interior} showOccupants={showOccupants} />
     {kind === 'carriage' && <><HarnessHorse entity={entity} x={-0.8} phase={0} /><HarnessHorse entity={entity} x={0.8} phase={Math.PI} /></>}
