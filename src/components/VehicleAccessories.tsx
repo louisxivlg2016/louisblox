@@ -44,9 +44,9 @@ function labelTexture(text: string, color = '#ffffff', background?: string) {
   return texture;
 }
 
-function Label({ text, position, rotation = [0, 0, 0], size = [2, 0.5], color = '#ffffff', background }: { text: string; position: [number, number, number]; rotation?: [number, number, number]; size?: [number, number]; color?: string; background?: string }) {
+function Label({ text, position, rotation = [0, 0, 0], size = [2, 0.5], color = '#ffffff', background, onClick }: { text: string; position: [number, number, number]; rotation?: [number, number, number]; size?: [number, number]; color?: string; background?: string; onClick?: () => void }) {
   const texture = useMemo(() => labelTexture(text, color, background), [text, color, background]);
-  return <mesh position={position} rotation={rotation}><planeGeometry args={size} /><meshBasicMaterial map={texture} transparent depthWrite={false} /></mesh>;
+  return <mesh name="plane-title-label" position={position} rotation={rotation} onClick={onClick}><planeGeometry args={size} /><meshBasicMaterial map={texture} transparent depthWrite={false} /></mesh>;
 }
 
 
@@ -189,13 +189,13 @@ function PlaneDetails() {
   }, [scene]);
   const cabin = CABINS.plane!;
   const y = cabin.floor + 4.2;
-  const titleY = cabin.floor + 6.6;
-  const titleZ = cabin.front + 16;
+  const titleY = cabin.floor + 6.3;
+  const titleZ = cabin.front + 4;
   const windowTexture = useMemo(planeWindowTexture, []);
   return (
     <group name="plane-livery">
       {[-1, 1].map((side) => <group key={side}>
-        <Label text={title} position={[side * (surfaceAt(side, titleZ, titleY) + 0.22), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[6.2, 1.1]} color="#f2c94c" />
+        <Label text={title} position={[side * (surfaceAt(side, titleZ, titleY) + 0.22), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[6.2, 1.1]} color="#f2c94c" onClick={() => usePlaneTitleStore.getState().setEditorOpen(true)} />
         {Array.from({ length: 14 }, (_, index) => {
           const z = cabin.front + 2 + index * 1.7;
           const x = surfaceAt(side, z, y);

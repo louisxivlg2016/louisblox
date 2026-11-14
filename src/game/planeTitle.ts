@@ -12,9 +12,13 @@ function initialTitle() {
 
 export const usePlaneTitleStore = create<{
   title: string;
+  editorOpen: boolean;
   setTitle: (title: string) => void;
+  setEditorOpen: (open: boolean) => void;
 }>((set) => ({
   title: initialTitle(),
+  editorOpen: false,
+  setEditorOpen: (editorOpen) => set({ editorOpen }),
   setTitle: (value) => {
     const title = value.trim().slice(0, 24) || 'louisblox';
     try {

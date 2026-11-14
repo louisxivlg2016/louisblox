@@ -4,6 +4,7 @@ import { useBombLauncherStore } from '../game/weaponAmmo';
 import { selectionInfo } from '../game/items';
 import { ItemIcon } from './ItemIcon';
 import { PaintballPalette } from './PaintballPalette';
+import { PlaneTitleEditor } from './PlaneTitleEditor';
 import backpackButtonUrl from '../../assets/ui/backpack-button.webp';
 import shopButtonUrl from '../../assets/ui/shop-button.webp';
 import teleportButtonUrl from '../../assets/ui/teleport-button.webp';
@@ -116,6 +117,7 @@ export function Hud() {
       <MazeHud />
       <EmotePanel />
       <PaintballPalette />
+      <PlaneTitleEditor />
 
       {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && !tradeOpen && !homeOpen && !tribeOpen && (
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />
