@@ -33,7 +33,7 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
       const road = ((x % BLOCK_SIZE) + BLOCK_SIZE) % BLOCK_SIZE < 8 || ((z % BLOCK_SIZE) + BLOCK_SIZE) % BLOCK_SIZE < 8;
       const sea = modern && z >= 208;
       const beach = modern && z >= 144;
-      const surface = road ? hash(x, z, seed + 43) > 0.82 ? BlockKind.Stone : BlockKind.GrayBrick : modern ? BlockKind.ConcreteLightGray : BlockKind.BeigeBrick;
+      const surface = road ? modern ? BlockKind.ConcreteBlack : hash(x, z, seed + 43) > 0.82 ? BlockKind.Stone : BlockKind.GrayBrick : modern ? BlockKind.ConcreteLightGray : BlockKind.BeigeBrick;
       for (let y = 0; y <= GROUND; y++) {
         const kind = y === 0 ? BlockKind.Bedrock : sea && y === GROUND ? BlockKind.CalmWater : (sea || beach) && y >= GROUND - 1 ? BlockKind.Sand : y === GROUND ? surface : BlockKind.Stone;
         put(x, y, z, kind);
@@ -113,9 +113,11 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
             if (doorway) continue;
             const window = localY % 4 >= 1 && localY % 4 <= 2 && ((edgeX ? z : x) - centerX + half) % (modern ? 2 : 3) === 1;
             const foundation = localY === 0;
-            const timber = !modern && (localY % 4 === 3 || edgeX && edgeZ || ((edgeX ? z : x) - centerX + half) % 5 === 0);
-            const frame = modern && (localY % 4 === 0 || ((edgeX ? z : x) - centerX + half) % 6 === 0);
-            put(x, y, z, modern ? frame ? BlockKind.ConcreteGray : accent : foundation ? BlockKind.GrayBrick : timber ? BlockKind.Wood : window ? accent : wall);
+            const facade = ((edgeX ? z : x) - centerX + half);
+            const stoneBand = !modern && (localY % 4 === 3 || edgeX && edgeZ || facade % 5 === 0);
+            const balcony = !modern && localY % 4 === 1 && facade % 3 === 1;
+            const frame = modern && (localY % 4 === 0 || facade % 6 === 0);
+            put(x, y, z, modern ? frame ? BlockKind.ConcreteGray : accent : foundation ? BlockKind.GrayBrick : balcony ? BlockKind.IronOre : stoneBand ? BlockKind.BeigeBrick : window ? accent : wall);
           }
         }
       }
@@ -145,9 +147,13 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
           const radius = half - tier;
           for (let x = centerX - radius; x <= centerX + radius; x++) {
             for (let z = centerZ - radius; z <= centerZ + radius; z++) {
-              if (Math.abs(x - centerX) === radius || Math.abs(z - centerZ) === radius || tier === 3) put(x, height + tier, z, BlockKind.PinePlanks);
+              if (Math.abs(x - centerX) === radius || Math.abs(z - centerZ) === radius || tier === 3) put(x, height + tier, z, BlockKind.ConcreteBlack);
             }
           }
+        }
+        for (const offset of [-6, 0, 6]) {
+          put(centerX + offset, height + 1, centerZ - half + 1, BlockKind.WhiteBrick);
+          put(centerX + offset, height + 2, centerZ - half + 1, BlockKind.Glass);
         }
         for (const offset of [-6, 6]) {
           for (let y = height + 3; y <= height + 5; y++) put(centerX + offset, y, centerZ + 4, BlockKind.GrayBrick);
