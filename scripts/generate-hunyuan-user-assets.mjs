@@ -21,6 +21,12 @@ const assets = [
     raw: '.tmp/hunyuan-user-assets/airplane.glb',
     output: 'assets/models/airplane.glb',
   },
+  {
+    name: 'train',
+    image: '.tmp/train-reference.jpeg',
+    raw: '.tmp/hunyuan-user-assets/train.glb',
+    output: 'assets/models/train.glb',
+  },
 ];
 const only = process.argv.indexOf('--only');
 const requested = new Set(only >= 0 ? (process.argv[only + 1] ?? '').split(',') : assets.map((asset) => asset.name));

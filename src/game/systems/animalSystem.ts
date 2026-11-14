@@ -1,8 +1,8 @@
 import type { Entity, World } from 'koota';
 import { Mesh, Vector3 } from 'three';
-import { getBlockIndex, isChunkLoaded } from '../chunks';
+import { getBlockIndex, getWorldSeed, isChunkLoaded } from '../chunks';
 import { isCrop } from '../extraBlocks';
-import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
+import { heightAt, MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { isWaterBlock, voxelKey } from '../voxel';
@@ -76,6 +76,7 @@ function recoverSafePosition(world: World, kind: AnimalKind, position: Vector3, 
   const saved = safePositions.get(world)?.get(entity);
   if (!saved || saved.distanceToSquared(position) < 0.0001 || !isLoaded(world, saved.x, saved.z)) return false;
   const ground = groundAt(world, saved.x, saved.z, saved.y + 0.2);
+  if (kind === 'zombie' && ground > heightAt(Math.round(saved.x), Math.round(saved.z), getWorldSeed(world)) + 1.05) return false;
   if (!walkableGround(world, saved.x, saved.z, ground) || !bodyClear(world, saved.x, saved.z, ground)) return false;
   position.set(saved.x, ground, saved.z);
   return true;
@@ -89,6 +90,7 @@ function rescueAnimal(world: World, kind: AnimalKind, position: Vector3, entity:
     const z = position.z + dz * direction;
     if (!isLoaded(world, x, z)) continue;
     const ground = groundAt(world, x, z, position.y + 2.2);
+    if (kind === 'zombie' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) continue;
     if (!walkableGround(world, x, z, ground) || ground > position.y + 2.2 || position.y - ground > 4 || !bodyClear(world, x, z, ground)) continue;
     position.set(x, ground, z);
     return true;
@@ -136,6 +138,7 @@ function moveInDirection(world: World, kind: AnimalKind, position: Vector3, moti
     motion.grounded = true;
   } else {
     const ground = groundAt(world, x, z, position.y + MAX_CLIMB_RISE + 0.05);
+    if (kind === 'zombie' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) return false;
     const water = blockAt(world, x, SEA_LEVEL, z);
     if (ground < SEA_LEVEL && isWaterBlock(water?.kind) && bodyClear(world, x, z, SEA_LEVEL + 0.35)) {
       position.set(x, SEA_LEVEL + 0.35, z);
@@ -188,7 +191,7 @@ function moveAnimalStep(world: World, kind: AnimalKind, position: Vector3, motio
   motion.running = panic > 0;
   const baseSpeed = kind === 'duck' ? motion.speed * 0.35 : motion.speed;
   const normalSpeed = speedOverride ?? Math.max(baseSpeed, kind === 'duck' ? 0.65 : 2.4);
-  const chaseSpeed = kind === 'duck' ? 1.4 : kind === 'zombie' ? 5.4 : 6.8;
+  const chaseSpeed = kind === 'duck' ? 1.4 : kind === 'zombie' ? 2.2 : 6.8;
   const speed = panic > 0 ? chaseSpeed : normalSpeed;
   if (moveAroundObstacle(world, kind, position, motion, speed, dt, entity)) return true;
   if (rescueAnimal(world, kind, position, entity) && moveAroundObstacle(world, kind, position, motion, speed, dt, entity)) return true;

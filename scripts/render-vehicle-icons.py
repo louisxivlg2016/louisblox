@@ -6,7 +6,7 @@ assets = [
     ('assets/models/airplane.glb', 'assets/icons/vehicle-airplane.png', 0.65),
     ('assets/models/raceCar.glb', 'assets/icons/vehicle-race-car.png', 0.65),
     ('assets/models/blueCar.glb', 'assets/icons/vehicle-blue-car.png', 0.65),
-    ('assets/models/train.glb', 'assets/icons/vehicle-train.png', 0.65),
+    ('assets/models/train.glb', 'assets/icons/vehicle-train.png', -0.65),
     ('assets/models/full-footballer.glb', '.tmp/hunyuan-footballer-preview.png', 0.0),
 ]
 
@@ -25,8 +25,8 @@ for source, output, angle in assets:
     minimum = Vector(tuple(min(point[index] for point in points) for index in range(3)))
     maximum = Vector(tuple(max(point[index] for point in points) for index in range(3)))
     center = (minimum + maximum) / 2
-    root.location = -center
     root.scale = (2 / max(maximum - minimum),) * 3
+    root.location = Vector(tuple(-center[index] * root.scale[index] for index in range(3)))
     root.rotation_euler.z = angle
     target = Vector((0, 0, 0))
     bpy.ops.object.camera_add(location=(3.4, -6.5, 2.8))

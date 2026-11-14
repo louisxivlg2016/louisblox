@@ -94,5 +94,6 @@ export const RainMaterial = trait(() => ({ value: null as import('three').Shader
 export const SnowMaterial = trait(() => ({ value: null as import('three').ShaderMaterial | null }));
 
 export const DroppedItem = trait({ kind: 'hand' as import('./items').SelectedKind, age: 0, mined: false });
+export const DroppedItemId = trait(() => '' as string);
 export const DroppedItemPosition = trait(() => new Vector3());
 export const DroppedItemVelocity = trait(() => new Vector3());

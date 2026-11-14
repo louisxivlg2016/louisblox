@@ -949,6 +949,18 @@ export class GameRoom extends DurableObject<Env> {
       this.sendToPlayer(targetId, { type, requestId, from: attachment.playerId, name: attachment.name });
       return;
     }
+    if (type === 'dropped-item-spawn') {
+      const item = (data as { item?: unknown }).item as { id?: unknown; kind?: unknown; x?: unknown; y?: unknown; z?: unknown; vx?: unknown; vy?: unknown; vz?: unknown } | undefined;
+      if (!item || typeof item.id !== 'string' || item.id.length < 1 || item.id.length > 80 || typeof item.kind !== 'string' && typeof item.kind !== 'number' || ![item.x, item.y, item.z, item.vx, item.vy, item.vz].every((value) => typeof value === 'number' && Number.isFinite(value))) return;
+      this.broadcast({ type, item }, ws);
+      return;
+    }
+    if (type === 'dropped-item-pickup') {
+      const id = (data as { id?: unknown }).id;
+      if (typeof id !== 'string' || id.length < 1 || id.length > 80) return;
+      this.broadcast({ type, id }, ws);
+      return;
+    }
     if (type === 'projectile-spawn' || type === 'projectile-state') {
       if (this.gameplayMode === 'football' || this.gameplayMode === 'maze') return;
       const projectile = parseProjectile((data as { projectile?: unknown }).projectile);

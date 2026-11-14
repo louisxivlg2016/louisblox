@@ -3,7 +3,8 @@ import { Vector3 } from 'three';
 import { world } from './world';
 import { changeInventory, hasInventory, inventoryKey } from './inventory';
 import { useGameStore } from './store';
-import { DroppedItem, DroppedItemPosition, DroppedItemVelocity, Player, PlayerPosition, PlayerState } from './traits';
+import { DroppedItem, DroppedItemId, DroppedItemPosition, DroppedItemVelocity, Player, PlayerPosition, PlayerState } from './traits';
+import { sendDroppedItemPickup, sendDroppedItemSpawn } from './droppedItemSync';
 import { getBlockIndex } from './chunks';
 import { isCollidable } from './systems/collisionSystem';
 import { BLOCK_INFO } from './voxel';
@@ -19,11 +20,14 @@ export function dropSelectedItem() {
   const position = player?.get(PlayerPosition);
   if (!player || !position) return;
   const yaw = player.get(PlayerState)?.yaw ?? 0;
+  const id = crypto.randomUUID();
   world.spawn(
     DroppedItem({ kind, age: 0 }),
+    DroppedItemId(id),
     DroppedItemPosition(new Vector3(position.x, position.y + 1.25, position.z)),
     DroppedItemVelocity(new Vector3(-Math.sin(yaw) * 3.4, 3.5, -Math.cos(yaw) * 3.4)),
   );
+  sendDroppedItemSpawn({ id, kind, x: position.x, y: position.y + 1.25, z: position.z, vx: -Math.sin(yaw) * 3.4, vy: 3.5, vz: -Math.cos(yaw) * 3.4 });
   changeInventory(kind, -1);
   state.setNotice(`${typeof kind === 'number' ? BLOCK_INFO[kind].name : 'Objet'} jeté. Rapproche-toi pour le ramasser.`);
 }
@@ -46,6 +50,8 @@ export function droppedItemSystem(gameWorld: World, dt: number) {
       return;
     }
     if (player && item.age > (item.mined ? 0.18 : 0.8) && position.distanceToSquared(player) < (item.mined ? 1.1 * 1.1 : 2.5 * 2.5)) {
+      const id = entity.get(DroppedItemId);
+      if (id) sendDroppedItemPickup(id);
       changeInventory(item.kind, 1);
       entity.destroy();
       return;

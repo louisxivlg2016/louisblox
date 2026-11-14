@@ -170,6 +170,10 @@
       .weather-info.rain { color: #9dcbff; }
       .weather-info.snow { color: #fff; }
       .hotbar-wrap { position: absolute; z-index: 10; left: 50%; bottom: 24px; width: max-content; max-width: calc(100vw - 24px); transform: translateX(-50%); text-align: center; }
+      .survival-health { display: flex; align-items: center; justify-content: center; gap: 7px; width: 230px; margin: 0 auto 6px; color: #fff; font-size: 11px; font-weight: 700; text-shadow: 1px 1px 0 #111; }
+      .survival-health > div { width: 160px; height: 13px; padding: 2px; background: #281c1c; border: 1px solid #e6d6d6; }
+      .survival-health i { display: block; height: 100%; background: #d9413d; transition: width .2s; }
+      @media (max-width: 650px) { .survival-health { width: 180px; gap: 5px; font-size: 9px; } .survival-health > div { width: 116px; height: 11px; } }
       .selected-name { margin-bottom: 9px; color: #fff; font-size: 12px; font-weight: 700; text-shadow: 2px 2px 0 #111; }
       .hotbar { display: flex; flex-wrap: nowrap; justify-content: center; gap: 4px; max-width: 720px; padding: 5px; background: rgba(15, 19, 16, 0.8); border: 2px solid rgba(255, 255, 255, 0.35); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35); }
       .hotbar-slot {

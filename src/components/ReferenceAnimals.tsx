@@ -94,7 +94,7 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
     if (kind === 'camel') clone.position.y += 0.72;
     return clone;
   }, [scene, kind]);
-  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck', kind === 'giraffe' ? Math.PI / 2 : kind === 'ocelot' ? Math.PI : 0, kind === 'giraffe' ? 'z' : 'x');
+  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck', kind === 'giraffe' ? -Math.PI / 2 : kind === 'elephant' || kind === 'monkey' || kind === 'ocelot' ? Math.PI : 0, kind === 'giraffe' ? 'z' : 'x');
   return <group name={`reference-${kind}`} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 

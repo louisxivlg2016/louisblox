@@ -56,6 +56,7 @@ import { clearMinigames, receiveMinigameMessage, setMinigameSocket } from '../ga
 import { applyAnimalSnapshots, applyFishSnapshots, isAnimalSnapshot, isFishSnapshot, setAnimalSocket } from '../game/animalSync';
 import { clearTribes, receiveTribeMessage, setTribeSocket, teleportToPendingTribeHome } from '../game/tribes';
 import { applyAnimalDeath, applyDeathSnapshot, applyTraderDeath, isDeathId, setDeathSocket } from '../game/deathSync';
+import { onDroppedItemSync, receiveDroppedItem, setDroppedItemSocket } from '../game/droppedItemSync';
 
 type ServerMessage = {
   type?: unknown;
@@ -502,6 +503,10 @@ export function MultiplayerConnection() {
       const current = socket.current;
       if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify(message));
     });
+    const unsubscribeDroppedItems = onDroppedItemSync((snapshot) => {
+      const current = socket.current;
+      if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify({ type: 'dropped-item-spawn', item: snapshot }));
+    });
     store.setStatus('connecting');
 
     const connect = async () => {
@@ -525,6 +530,7 @@ export function MultiplayerConnection() {
       setAnimalSocket(next);
       setDeathSocket(next);
       setTribeSocket(next);
+      setDroppedItemSocket(next);
       next.onopen = () => store.setStatus('online');
       next.onmessage = (event) => {
         if (typeof event.data !== 'string') return;
@@ -534,6 +540,7 @@ export function MultiplayerConnection() {
         } catch {
           return;
         }
+        if (receiveDroppedItem(world, data)) return;
         if (data.type === 'room-deleted') {
           leaveDeletedRoom(next);
           return;
@@ -806,6 +813,8 @@ export function MultiplayerConnection() {
       unsubscribe();
       unsubscribeVehicles();
       unsubscribeProjectiles();
+      unsubscribeDroppedItems();
+      setDroppedItemSocket(null);
       const current = socket.current;
       socket.current = null;
       setProtectionSocket(null);

@@ -62,6 +62,7 @@ export function Hud() {
   const tribeOpen = useTribeStore((state) => state.panelOpen);
   const tribeInvitations = useTribeStore((state) => state.invitations.length);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
+  const lives = useGameStore((state) => state.lives);
   const battleTeam = useBattleStore((state) => state.team);
   const multiplayerReady = useMultiplayerStore((state) => state.enabled && state.status === 'online');
   const teamSelection = mode === 'pause' && multiplayerReady && ((gameplayMode === 'battle' && battleTeam === null) || (gameplayMode === 'pirates' && battleTeam === null) || (gameplayMode === 'football' && battleTeam === null));
@@ -126,6 +127,7 @@ export function Hud() {
 
       {mode === 'play' && (
         <div className="hotbar-wrap">
+          {gameplayMode === 'survival' && <div className="survival-health" aria-label={`${lives} vies sur 10`}><span>Vies</span><div><i style={{ width: `${Math.max(0, Math.min(100, lives * 10))}%` }} /></div><strong>{lives}/10</strong></div>}
           <div className="selected-name" role="status">
             {selectionInfo(selected).name}
             {selected === 'pistol_bomb' && ` · ${bombAmmo}/10${bombReloading ? ' · Recharge de 3 s…' : ''}`}
@@ -135,7 +137,11 @@ export function Hud() {
               <button
                 key={`${kind ?? 'vide'}-${index}`}
                 className={`hotbar-slot ${selected === kind ? 'selected' : ''}`}
-                onClick={() => { if (kind !== null) selectBlock(kind); }}
+                onClick={() => {
+                  if (kind === null) return;
+                  if (window.matchMedia('(pointer: coarse)').matches && selected === kind) void import('../game/droppedItems').then(({ dropSelectedItem }) => dropSelectedItem());
+                  else selectBlock(kind);
+                }}
                 disabled={kind === null}
                 aria-label={`${index + 1} : ${kind === null ? 'vide' : selectionInfo(kind).name}`}
               >

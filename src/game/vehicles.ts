@@ -381,7 +381,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
       rider.speed = 0;
       return;
     }
-    const target = input.forward * (input.forward < 0 ? 2.2 : animal.kind === 'camel' ? 6.8 : 8.2);
+    const target = input.forward * (input.forward < 0 ? 2.2 : animal.kind === 'camel' ? 10.5 : 12);
     rider.speed += Math.max(-10 * dt, Math.min(10 * dt, target - rider.speed));
     motion.yaw = state.yaw;
     if (input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(rider.speed || 1);

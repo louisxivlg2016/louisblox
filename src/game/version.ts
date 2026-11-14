@@ -16,7 +16,8 @@ export function watchBuildVersion() {
       checking = false;
     }
   };
-  window.setInterval(check, 60000);
+  window.setInterval(check, 15000);
+  window.addEventListener('focus', check);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) void check();
   });

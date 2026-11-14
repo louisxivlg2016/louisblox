@@ -1,6 +1,6 @@
 import type { Entity, World } from 'koota';
 import type { Vector3 } from 'three';
-import { Animal, AnimalHealth, AnimalId, AnimalLove, AnimalTame, AnimalPosition, CamelLeash, Environment } from './traits';
+import { Animal, AnimalHealth, AnimalId, AnimalLove, AnimalTame, AnimalPosition, CamelLeash, Environment, HorseRider } from './traits';
 import type { AnimalKind } from './animals';
 import type { SelectedKind } from './items';
 import { useGameStore } from './store';
@@ -192,7 +192,7 @@ export function tamingSystem(world: World, _dt: number) {
     const id = entity.get(AnimalId)!;
     const saved = records.get(world);
     const record = saved?.get(id);
-    if (!tame.tamed || !record) continue;
+    if (!tame.tamed || !record || entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) continue;
     if (now - record.lastFedAt >= FEED_INTERVAL_MS) {
       saved!.delete(id);
       entity.remove(AnimalTame);

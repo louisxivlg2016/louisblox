@@ -11,7 +11,7 @@ export function canSeePlayer(world: World, position: Vector3, player: Vector3) {
   origin.y += 1.1;
   direction.copy(player).sub(origin);
   const distance = direction.length();
-  if (distance > 16 || distance < 0.001) return false;
+  if (distance > 10 || distance < 0.001) return false;
   direction.normalize();
   const obstruction = raycastVoxel(getBlockIndex(world), origin, direction, distance);
   return !obstruction || obstruction.distance > distance - 0.75;
