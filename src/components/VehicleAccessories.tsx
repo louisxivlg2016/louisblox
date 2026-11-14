@@ -195,7 +195,7 @@ function PlaneDetails() {
   return (
     <group name="plane-livery">
       {[-1, 1].map((side) => <group key={side}>
-        <Label text={title} position={[side * (surfaceAt(side, titleZ, titleY) + 0.22), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[6.2, 1.1]} color="#f2c94c" onClick={() => usePlaneTitleStore.getState().setEditorOpen(true)} />
+        <Label text={title} position={[side * (surfaceAt(side, titleZ, titleY) + 0.22), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[8.5, 1.5]} color="#f2c94c" onClick={() => usePlaneTitleStore.getState().setEditorOpen(true)} />
         {Array.from({ length: 14 }, (_, index) => {
           const z = cabin.front + 2 + index * 1.7;
           const x = surfaceAt(side, z, y);
