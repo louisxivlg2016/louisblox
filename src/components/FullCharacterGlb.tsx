@@ -6,7 +6,7 @@ import { removeClassicBoyBand } from '../game/characterAppearance';
 import type { Object3D } from 'three';
 import { animateCharacterRig, createCharacterRig } from '../game/characterRig';
 import type { Ref, ReactNode } from 'react';
-import { selectedWig, type OutfitKind, type WigSelection } from '../game/outfits';
+import { type OutfitKind, type WigSelection } from '../game/outfits';
 import { world } from '../game/world';
 import { useEatingStore } from '../game/eating';
 import { Player, PlayerMount, PlayerState, PlayerVelocity } from '../game/traits';
@@ -36,8 +36,8 @@ import { PoliceSunglasses } from './PoliceSunglasses';
 type FullCharacterModel = Exclude<OutfitKind, 'default'> | 'classic-girl' | 'classic-boy';
 const models: Partial<Record<FullCharacterModel, string>> = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, corsair: corsairUrl, footballer: footballerUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
 
-export function hasFullCharacter(outfit: OutfitKind, wig: WigSelection = 'auto') {
-  return outfit !== 'default' || selectedWig(outfit, wig) === null;
+export function hasFullCharacter(_outfit: OutfitKind, _wig: WigSelection = 'auto') {
+  return true;
 }
 
 function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance, headAccessory, profileAvatar = 'pixel' }: { outfit: FullCharacterModel; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance; headAccessory?: ReactNode; profileAvatar?: import('../game/avatar').ProfileAvatarKind }) {
@@ -125,7 +125,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
   return (
     <group ref={group} name="full-character" userData={metadata}>
       <primitive object={character} scale={scale} rotation={[0, Math.PI, 0]} />
-      {headAccessory && head ? createPortal(<group name="costume-wig" position={[0, -head.position.y, 0]}>{headAccessory}</group>, head) : null}
+      {headAccessory && head ? createPortal(<group name="costume-wig" position={[0, -head.position.y - (outfit.startsWith('classic-') ? 0.48 : 0), 0]}>{headAccessory}</group>, head) : null}
       {outfit === 'police' && head ? createPortal(<PoliceSunglasses />, head) : null}
     </group>
   );

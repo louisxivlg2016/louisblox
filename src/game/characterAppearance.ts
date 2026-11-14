@@ -4,7 +4,7 @@ import type { CharacterAppearance } from './appearance';
 
 type MaskRegion = 'skin' | 'skin-soft' | 'hair' | 'eyes' | 'eyebrows' | 'uniform' | 'sleeves' | 'forearms' | 'classic-boy-band';
 
-function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, width: number, height: number, flipY: boolean, princessHair = false, frontSign = 1) {
+function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, width: number, height: number, flipY: boolean, princessHair = false, frontSign = 1, eyeBottom = 0.69, eyeTop = 0.697) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -25,7 +25,7 @@ function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, 
     const head = horizontal && vertical > 0.68;
     const arm = Math.abs(x) > size.x * 0.25 && vertical > 0.28 && vertical < 0.82;
     const leg = horizontal && vertical < 0.48;
-    const eyes = z * frontSign > 0 && Math.abs(x) < size.x * 0.22 && vertical > 0.655 && vertical < 0.697;
+    const eyes = z * frontSign > 0 && Math.abs(x) > size.x * 0.035 && Math.abs(x) < size.x * 0.14 && vertical > eyeBottom && vertical < eyeTop;
     const eyebrows = z * frontSign > 0 && Math.abs(x) > size.x * 0.025 && Math.abs(x) < size.x * 0.25 && vertical > 0.68 && vertical < 0.735;
     const lowerStrand = princessHair && z * frontSign > 0 && Math.abs(x) > size.x * 0.13 && Math.abs(x) < size.x * 0.33 && vertical > 0.38 && vertical < 0.7;
     const visible = region === 'classic-boy-band'
@@ -168,8 +168,23 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   const skinMask = maskCanvas(geometry, bounds, 'skin', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
   const softSkinMask = maskCanvas(geometry, bounds, 'skin-soft', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
   const hairMask = maskCanvas(geometry, bounds, 'hair', canvas.width, canvas.height, material.map.flipY, princessHair, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
-  const eyeMask = maskCanvas(geometry, bounds, 'eyes', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
+  const eyeMask = maskCanvas(geometry, bounds, 'eyes', canvas.width, canvas.height, material.map.flipY, false, frontSign, outfit === 'princess' ? 0.79 : 0.69, outfit === 'princess' ? 0.85 : outfit === 'classic-girl' ? 0.72 : 0.697).getImageData(0, 0, canvas.width, canvas.height).data;
+  const eyeAreaMask = maskCanvas(geometry, bounds, 'eyes', canvas.width, canvas.height, material.map.flipY, false, frontSign, outfit === 'princess' ? 0.7 : 0.655, outfit === 'princess' ? 0.87 : 0.697).getImageData(0, 0, canvas.width, canvas.height).data;
   const eyebrowMask = maskCanvas(geometry, bounds, 'eyebrows', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
+  const eyeDetails = new Uint8Array(canvas.width * canvas.height);
+  const eyeRadius = Math.max(2, Math.round(canvas.width / 85));
+  for (let index = 0; index < pixels.data.length; index += 4) {
+    if (eyeAreaMask[index + 3] === 0 || Math.min(pixels.data[index], pixels.data[index + 1], pixels.data[index + 2]) < 110) continue;
+    const x = index / 4 % canvas.width;
+    const y = Math.floor(index / 4 / canvas.width);
+    for (let dy = -eyeRadius; dy <= eyeRadius; dy += 1) {
+      for (let dx = -eyeRadius; dx <= eyeRadius; dx += 1) {
+        const px = x + dx;
+        const py = y + dy;
+        if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) eyeDetails[py * canvas.width + px] = 1;
+      }
+    }
+  }
   material.userData.faceFrontSign = frontSign;
   const skin = appearance.originalSkinColor || outfit === 'knight' ? null : new Color(appearance.skinColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const hair = appearance.originalHairColor || outfit === 'knight' || outfit === 'trader' || outfit === 'firefighter' ? null : new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
@@ -201,7 +216,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
         ? skin
         : skinMask[index + 3] > 0 && (skinPixel(red, green, blue) || softSkinMask[index + 3] > 0 && skinPixel(red, green, blue, true))
       ? skin
-      : eyeMask[index + 3] > 0 && irisPixel(red, green, blue)
+      : eyeMask[index + 3] > 0 && (outfit === 'princess' || outfit === 'classic-girl' || outfit === 'footballer' || outfit === 'police' || eyeDetails[index / 4] > 0) && irisPixel(red, green, blue)
         ? eyes
         : eyebrowMask[index + 3] > 0 && eyebrowPixel(red, green, blue)
           ? eyebrows

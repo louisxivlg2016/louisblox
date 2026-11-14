@@ -103,6 +103,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   }
   if (outfit === 'princess') addPrincessHair(rig.head ?? root, width, height, bounds.max.z - bounds.min.z, floor, rig.head ? -(floor + height * 0.68) : 0, appearance?.hairColor);
   root.userData.rig = rig;
+  root.userData.sourceBounds = { min: bounds.min.toArray(), max: bounds.max.toArray() };
   const center = bounds.getCenter(new Vector3());
   root.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
   return root;
