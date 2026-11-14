@@ -80,7 +80,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
       const headYaw = Math.atan2(Math.sin(state.yaw - bodyYaw), Math.cos(state.yaw - bodyYaw));
       headRef.current.rotation.order = 'YXZ';
       headRef.current.rotation.y += (headYaw - headRef.current.rotation.y) * amount;
-      const pitch = outfit === 'soldier' ? 0 : hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch;
+      const pitch = hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch;
       headRef.current.rotation.x += (pitch - headRef.current.rotation.x) * amount;
       if (outfit === 'soldier') headRef.current.rotation.z = 0;
     }

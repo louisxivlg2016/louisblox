@@ -169,7 +169,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
       const headYaw = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
       headRef.current.rotation.order = 'YXZ';
       headRef.current.rotation.y += (headYaw - headRef.current.rotation.y) * amount;
-      headRef.current.rotation.x = outfit === 'soldier' ? 0 : hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch;
+      headRef.current.rotation.x = hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch;
       if (outfit === 'soldier') headRef.current.rotation.z = 0;
     }
     updateBattleTargetPose(playerId, group.current.position, group.current.rotation.y, group.current.rotation.x < -Math.PI / 4);
