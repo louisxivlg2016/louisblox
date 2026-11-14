@@ -70,7 +70,7 @@ export function ProfileAvatar({ kind, size = 58 }: {
   const photoKind = current === 'pixel' || current === 'default' ? 'boy' : current;
   const photo = PHOTO_AVATARS[photoKind];
   const newPortrait = ['girl', 'boy', 'trader', 'soldier'].includes(photoKind) || photoKind.startsWith('girl-') || photoKind.startsWith('boy-');
-  return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}${newPortrait ? ' profile-photo-new' : ''}${photoKind === 'boy-dark' ? ' profile-photo-large' : ''}`} src={photo.url} width={size} height={size} alt={`Portrait ${photo.name}`} />;
+  return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}${newPortrait ? ' profile-photo-new' : ''}`} src={photo.url} width={size} height={size} alt={`Portrait ${photo.name}`} />;
 }
 
 export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
