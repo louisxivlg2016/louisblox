@@ -4,10 +4,8 @@ import { useGLTF } from '@react-three/drei';
 import { Box3, Mesh, NearestFilter, Vector3 } from 'three';
 import type { Group } from 'three';
 import type { Entity } from 'koota';
-import { PixelPart } from './ItemModel';
 import { VehicleMotion } from '../game/traits';
 import type { VehicleKind } from '../game/vehicleTypes';
-import { useVehicleControls } from '../game/vehicleControls';
 import policeCarUrl from '../../assets/models/police-car.glb';
 import fireTruckUrl from '../../assets/models/fire-truck.glb';
 import jeepUrl from '../../assets/models/reference-jeep.glb';
@@ -20,28 +18,9 @@ type VehicleModelKind = keyof typeof vehicleModels;
 for (const model of Object.values(vehicleModels)) useGLTF.preload(model);
 useGLTF.preload(horseUrl);
 
-function EmergencyLights({ top = 2.94 }: { top?: number }) {
-  const enabled = useVehicleControls((state) => state.firetruck);
-  const red = useRef<Group>(null);
-  const blue = useRef<Group>(null);
-  useFrame(({ clock }) => {
-    const alternate = Math.floor(clock.elapsedTime * 5) % 2 === 0;
-    if (red.current) red.current.visible = !enabled || alternate;
-    if (blue.current) blue.current.visible = !enabled || !alternate;
-  });
-  return (
-    <group name="emergency-lights" position={[0, top - 2.94, 0]}>
-      <PixelPart position={[0, 2.77, -1.35]} size={[1.75, 0.14, 0.48]} color="#3a444c" />
-      <group ref={red} name="red-beacon"><PixelPart position={[-0.55, 2.96, -1.35]} size={[0.56, 0.27, 0.43]} color="#e83e35" /></group>
-      <group ref={blue} name="blue-beacon"><PixelPart position={[0.55, 2.96, -1.35]} size={[0.56, 0.27, 0.43]} color="#3875ef" /></group>
-      <PixelPart position={[0, 2.94, -1.35]} size={[0.3, 0.22, 0.42]} color="#e9edf0" />
-    </group>
-  );
-}
-
 function HunyuanVehicle({ kind, interior, showOccupants }: { kind: VehicleModelKind; interior: boolean; showOccupants: boolean }) {
   const { scene } = useGLTF(vehicleModels[kind]);
-  const { model, top } = useMemo(() => {
+  const model = useMemo(() => {
     const clone = scene.clone(true);
     clone.name = `${kind}-generated-model`;
     clone.traverse((object) => {
@@ -61,12 +40,22 @@ function HunyuanVehicle({ kind, interior, showOccupants }: { kind: VehicleModelK
         material.map.needsUpdate = true;
       }
     });
-    clone.rotation.y = kind === 'carriage' || kind === 'cannon' ? -Math.PI / 2 : kind === 'jeep' || kind === 'firetruck' ? Math.PI : Math.PI / 2;
+    clone.rotation.y = kind === 'carriage' || kind === 'cannon' ? -Math.PI / 2 : kind === 'jeep' || kind === 'firetruck' || kind === 'police' ? Math.PI : Math.PI / 2;
     const bounds = new Box3().setFromObject(clone);
-    clone.position.y -= bounds.min.y;
-    return { model: clone, top: bounds.max.y - bounds.min.y };
+    const targetLength = kind === 'police' ? 4.8 : kind === 'firetruck' ? 6.5 : null;
+    if (targetLength !== null) {
+      const size = bounds.getSize(new Vector3());
+      const center = bounds.getCenter(new Vector3());
+      const scale = targetLength / Math.max(size.x, size.y, size.z, 0.001);
+      clone.scale.setScalar(scale);
+      center.multiplyScalar(scale).applyAxisAngle(new Vector3(0, 1, 0), clone.rotation.y);
+      clone.position.set(-center.x, -bounds.min.y * scale, -center.z);
+    } else {
+      clone.position.y -= bounds.min.y;
+    }
+    return clone;
   }, [scene, kind, interior, showOccupants]);
-  return <group name={`${kind}-reference-model`} userData={{ source: 'Hunyuan' }}><primitive object={model} />{kind === 'firetruck' && <EmergencyLights top={top} />}</group>;
+  return <group name={`${kind}-reference-model`} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
 function HarnessHorse({ entity, x, phase }: { entity: Entity; x: number; phase: number }) {

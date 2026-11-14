@@ -46,19 +46,19 @@ function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane'
         material.map.needsUpdate = true;
       }
     });
-    const quarterTurn = modelKind === 'metro';
+    const uniformScale = modelKind === 'metro';
     if (modelKind === 'raceCar' || modelKind === 'blueCar') clone.rotation.y = Math.PI / 2;
     if (modelKind === 'airplane') clone.rotation.y = Math.PI / 2;
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
     const [width, height, length] = dimensions[modelKind];
-    const [localWidth, localLength] = quarterTurn ? [length, width] : [width, length];
-    clone.scale.set(quarterTurn ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : localWidth / Math.max(size.x, 0.001), quarterTurn ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : height / Math.max(size.y, 0.001), quarterTurn ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : localLength / Math.max(size.z, 0.001));
+    const [localWidth, localLength] = uniformScale ? [length, width] : [width, length];
+    clone.scale.set(uniformScale ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : localWidth / Math.max(size.x, 0.001), uniformScale ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : height / Math.max(size.y, 0.001), uniformScale ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : localLength / Math.max(size.z, 0.001));
     center.multiply(clone.scale);
-    if (quarterTurn) {
-      center.applyAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
-      clone.rotation.y = Math.PI / 2;
+    if (uniformScale) {
+      center.applyAxisAngle(new Vector3(0, 1, 0), Math.PI);
+      clone.rotation.y = Math.PI;
     }
     clone.position.set(-center.x, -box.min.y * clone.scale.y, -center.z);
     return clone;
