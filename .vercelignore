@@ -5,3 +5,5 @@ dist/
 .git/
 .env
 .env.*
+android-app/android/
+android-app/build/
