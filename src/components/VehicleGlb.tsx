@@ -20,7 +20,7 @@ const dimensions = {
   raceCar: [2.6, 2.2, 4.8],
   blueCar: [2.6, 2.2, 4.8],
   airplane: [7.2 * PLANE_SCALE, 2.5 * PLANE_SCALE, 8.2 * PLANE_SCALE],
-  train: [2.8, 3.2, 10.5],
+  train: [3, 4.2, 8.5],
 } as const;
 
 function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane' | 'train' | 'boat'; color: string; interior: boolean; showOccupants: boolean }) {
