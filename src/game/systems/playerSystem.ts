@@ -198,11 +198,9 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     next.z = spawn.z;
   }
   if (health && health.value <= 0) {
-    if (!invalidPosition) {
-      next.x = position.x;
-      next.y = position.y;
-      next.z = position.z;
-    }
+    next.x = spawn.x;
+    next.y = spawn.y;
+    next.z = spawn.z;
     velocity.set(0, 0, 0);
     entity.set(PlayerHealth, { value: health.max, absorbed: 0 });
   } else if (invalidPosition) {
