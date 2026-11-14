@@ -107,7 +107,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   parachute: item('Parachute', '#d94b45', 'resource', { shape: 'parachute' }),
 };
 
-export const ITEM_ORDER = Object.keys(ITEM_META) as ItemKind[];
+export const ITEM_ORDER = Object.keys(ITEM_META).filter((kind) => kind !== 'train') as ItemKind[];
 export const DEFAULT_ITEM_COUNTS: Record<ItemKind, number> = Object.fromEntries(
   ITEM_ORDER.map((kind) => [kind, kind === 'bread' ? 12 : kind === 'cooked_meat' ? 6 : kind === 'berries' ? 16 : 1]),
 ) as Record<ItemKind, number>;
