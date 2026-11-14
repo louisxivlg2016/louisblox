@@ -119,7 +119,7 @@ export function initInput() {
     if (event.code === 'Tab') {
       event.preventDefault();
       const state = useGameStore.getState();
-      if (state.gameplayMode !== 'creative' && state.gameplayMode !== 'survival') return;
+      if (!['creative', 'survival', 'city-ancient', 'city-modern'].includes(state.gameplayMode)) return;
       if (state.container) {
         state.closeContainer();
         void requestPlay();
