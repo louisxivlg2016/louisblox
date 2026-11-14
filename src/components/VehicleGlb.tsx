@@ -48,7 +48,7 @@ function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane'
     });
     const quarterTurn = modelKind === 'train';
     if (modelKind === 'raceCar' || modelKind === 'blueCar') clone.rotation.y = Math.PI / 2;
-    if (modelKind === 'airplane') clone.rotation.y = -Math.PI / 2;
+    if (modelKind === 'airplane') clone.rotation.y = Math.PI / 2;
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());

@@ -181,7 +181,7 @@ function PlaneDetails() {
   }, [camera]);
   const surfaceAt = useMemo(() => {
     const model = scene.clone(true);
-    model.rotation.y = -Math.PI / 2;
+    model.rotation.y = Math.PI / 2;
     const bounds = new Box3().setFromObject(model);
     const size = bounds.getSize(new Vector3());
     const center = bounds.getCenter(new Vector3());

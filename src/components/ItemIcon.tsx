@@ -15,11 +15,11 @@ import carrotCropIcon from '../../assets/crop-icons/carrot.png';
 import cornCropIcon from '../../assets/crop-icons/corn.png';
 import tomatoCropIcon from '../../assets/crop-icons/tomato.png';
 import extinguisherUrl from '../../son/extincteur.png';
-import airplaneIconUrl from '../../assets/icons/airplane.png';
+import airplaneIconUrl from '../../assets/icons/vehicle-airplane.png';
 import bayonetRifleIconUrl from '../../assets/icons/bayonet-rifle.png';
-import raceCarIconUrl from '../../assets/references/raceCar.png';
-import blueCarIconUrl from '../../assets/references/blueCar.png';
-import trainIconUrl from '../../assets/references/train.png';
+import raceCarIconUrl from '../../assets/icons/vehicle-race-car.png';
+import blueCarIconUrl from '../../assets/icons/vehicle-blue-car.png';
+import trainIconUrl from '../../assets/icons/vehicle-train.png';
 
 const photoIcons: Partial<Record<ItemKind, string>> = {
   plane: airplaneIconUrl,
