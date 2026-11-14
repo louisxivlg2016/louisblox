@@ -54,7 +54,7 @@ function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane'
     const center = box.getCenter(new Vector3());
     const [width, height, length] = dimensions[modelKind];
     const [localWidth, localLength] = quarterTurn ? [length, width] : [width, length];
-    clone.scale.set(localWidth / Math.max(size.x, 0.001), height / Math.max(size.y, 0.001), localLength / Math.max(size.z, 0.001));
+    clone.scale.set(quarterTurn ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : localWidth / Math.max(size.x, 0.001), quarterTurn ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : height / Math.max(size.y, 0.001), quarterTurn ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : localLength / Math.max(size.z, 0.001));
     center.multiply(clone.scale);
     if (quarterTurn) {
       center.applyAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
