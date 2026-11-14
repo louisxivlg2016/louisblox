@@ -135,30 +135,6 @@ function HarnessHorse({ entity, x, phase }: { entity: Entity; x: number; phase: 
   return <group ref={group} position={[x, 0.12, -4.1]} rotation={[0, Math.PI, 0]} name="harness-horse" userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
-function planeWindowTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 16;
-  canvas.height = 16;
-  const context = canvas.getContext('2d')!;
-  for (let y = 0; y < canvas.height; y += 1) {
-    for (let x = 0; x < canvas.width; x += 1) {
-      const radius = ((x - 7.5) / 7.5) ** 2 + ((y - 7.5) / 7.5) ** 2;
-      if (radius > 1) continue;
-      context.fillStyle = radius > 0.76 ? x + y < 17 ? '#c4d0d5' : '#84959f'
-        : radius > 0.57 ? '#344652'
-          : x >= 4 && x <= 5 && y >= 4 && y <= 6 || x >= 10 && x <= 11 && y >= 14 && y <= 15 ? '#b2d8e6'
-            : y < 10 ? '#567b95' : '#2a465f';
-      context.fillRect(x, y, 1, 1);
-    }
-  }
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  texture.magFilter = NearestFilter;
-  texture.minFilter = NearestFilter;
-  texture.generateMipmaps = false;
-  return texture;
-}
-
 function PlaneDetails() {
   const title = usePlaneTitleStore((state) => state.title);
   const { scene } = useGLTF(airplaneUrl);
@@ -206,22 +182,12 @@ function PlaneDetails() {
     };
   }, [scene]);
   const cabin = CABINS.plane!;
-  const y = cabin.floor + 4.2;
   const titleY = cabin.floor + 7.5;
   const titleZ = cabin.front + 4;
-  const windowTexture = useMemo(planeWindowTexture, []);
   return (
     <group ref={livery} name="plane-livery">
       {[-1, 1].map((side) => <group key={side}>
         <Label text={title} position={[side * (surfaceAt(side, titleZ, titleY) + 0.55), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[12, 2.4]} color="#f2c94c" onClick={() => usePlaneTitleStore.getState().setEditorOpen(true)} />
-        {Array.from({ length: 32 }, (_, index) => {
-          const z = cabin.front + 2 + index * 1.65;
-          const x = surfaceAt(side, z, y);
-          return <mesh key={index} name="plane-window" position={[side * (x + 0.16), y, z]} rotation={[0, side * Math.PI / 2, 0]}>
-            <planeGeometry args={[1.1, 1.1]} />
-            <meshBasicMaterial map={windowTexture} transparent depthWrite={false} />
-          </mesh>;
-        })}
       </group>)}
     </group>
   );
