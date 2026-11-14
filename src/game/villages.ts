@@ -125,7 +125,6 @@ export function generateVillageBlocks(cx: number, cz: number, seed: number): Vox
       }
     }
     put(centerX, floorY + 1, centerZ + 2, BlockKind.DoorBrown, { facing: 'north' });
-    put(centerX, floorY + 2, centerZ + 2, BlockKind.OakPlanks);
     put(centerX - 1, floorY + 1, centerZ - 1, BlockKind.Bed, { facing: 'south' });
     put(centerX + 1, floorY + 1, centerZ - 1, BlockKind.BedWhite, { facing: 'south' });
     put(centerX + 1, floorY + 1, centerZ, BlockKind.Chest);
