@@ -1,7 +1,7 @@
-import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { Box3, CanvasTexture, DoubleSide, Mesh, NearestFilter, Raycaster, SRGBColorSpace, Vector3 } from 'three';
+import { Box3, CanvasTexture, DoubleSide, Mesh, NearestFilter, Raycaster, SRGBColorSpace, Vector2, Vector3 } from 'three';
 import type { Group } from 'three';
 import type { Entity } from 'koota';
 import { PixelPart } from './ItemModel';
@@ -10,6 +10,7 @@ import { CABINS, PLANE_SCALE, type VehicleKind } from '../game/vehicleTypes';
 import airplaneUrl from '../../assets/models/airplane.glb';
 import { useVehicleControls } from '../game/vehicleControls';
 import { usePlaneTitleStore } from '../game/planeTitle';
+import { useGameStore } from '../game/store';
 import policeCarUrl from '../../assets/models/police-car.glb';
 import fireTruckUrl from '../../assets/models/fire-truck.glb';
 import jeepUrl from '../../assets/models/reference-jeep.glb';
@@ -161,6 +162,23 @@ function planeWindowTexture() {
 function PlaneDetails() {
   const title = usePlaneTitleStore((state) => state.title);
   const { scene } = useGLTF(airplaneUrl);
+  const camera = useThree((state) => state.camera);
+  const livery = useRef<Group>(null);
+  useEffect(() => {
+    const raycaster = new Raycaster();
+    const center = new Vector2();
+    const edit = (event: KeyboardEvent) => {
+      if (event.code !== 'KeyE' || event.repeat || useGameStore.getState().mode !== 'play' || !livery.current) return;
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLElement && event.target.isContentEditable) return;
+      raycaster.setFromCamera(center, camera);
+      if (!raycaster.intersectObject(livery.current, true).some((hit) => hit.object.name === 'plane-title-label')) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      usePlaneTitleStore.getState().setEditorOpen(true);
+    };
+    window.addEventListener('keydown', edit, true);
+    return () => window.removeEventListener('keydown', edit, true);
+  }, [camera]);
   const surfaceAt = useMemo(() => {
     const model = scene.clone(true);
     model.rotation.y = -Math.PI / 2;
@@ -189,11 +207,11 @@ function PlaneDetails() {
   }, [scene]);
   const cabin = CABINS.plane!;
   const y = cabin.floor + 4.2;
-  const titleY = cabin.floor + 6.3;
+  const titleY = cabin.floor + 7.5;
   const titleZ = cabin.front + 4;
   const windowTexture = useMemo(planeWindowTexture, []);
   return (
-    <group name="plane-livery">
+    <group ref={livery} name="plane-livery">
       {[-1, 1].map((side) => <group key={side}>
         <Label text={title} position={[side * (surfaceAt(side, titleZ, titleY) + 0.55), titleY, titleZ]} rotation={[0, side * Math.PI / 2, 0]} size={[12, 2.4]} color="#f2c94c" onClick={() => usePlaneTitleStore.getState().setEditorOpen(true)} />
         {Array.from({ length: 32 }, (_, index) => {

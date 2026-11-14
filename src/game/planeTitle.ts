@@ -4,9 +4,10 @@ const STORAGE_KEY = 'louisblox-plane-title';
 
 function initialTitle() {
   try {
-    return localStorage.getItem(STORAGE_KEY)?.trim().slice(0, 24) || 'louisblox';
+    const saved = localStorage.getItem(STORAGE_KEY)?.trim().slice(0, 24);
+    return saved && saved !== 'louisblox' ? saved : 'Louisblox';
   } catch {
-    return 'louisblox';
+    return 'Louisblox';
   }
 }
 
@@ -20,7 +21,7 @@ export const usePlaneTitleStore = create<{
   editorOpen: false,
   setEditorOpen: (editorOpen) => set({ editorOpen }),
   setTitle: (value) => {
-    const title = value.trim().slice(0, 24) || 'louisblox';
+    const title = value.trim().slice(0, 24) || 'Louisblox';
     try {
       localStorage.setItem(STORAGE_KEY, title);
     } catch {
