@@ -82,6 +82,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   }, [pendingWorld, room, status, worldReady, onPlay]);
   const [modePlayerCounts, setModePlayerCounts] = useState<Partial<Record<GameplayMode, number>>>({});
   useEffect(() => {
+    if (!enabled) {
+      setModePlayerCounts({});
+      return;
+    }
     let active = true;
     const load = async () => {
       const worlds = await listPublicWorlds().catch(() => []);
@@ -94,7 +98,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
       active = false;
       window.clearInterval(timer);
     };
-  }, [status]);
+  }, [enabled, status]);
   const full = !canCreateWorld();
   const create = (gameplayMode: GameplayMode, sharedOverride?: boolean, options?: import('./CreateWorldDialog').CreateWorldOptions) => {
     if (!enabled && isMultiplayerOnlyMode(gameplayMode) && options?.multiplayer !== true) return;
@@ -158,7 +162,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
                     <img src={card.image} alt={card.alt} />
                     <span className="world-card-label"><strong>{card.name}</strong><small>{locked ? 'Active le multijoueur pour jouer' : card.description(enabled)}</small></span>
                     <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{locked ? 'Multijoueur requis' : card.tag(enabled)}</span>
-                    <span className="world-mode-player-count" aria-label={`${playerCount} joueur${playerCount > 1 ? 's' : ''} en ${card.name}`}>{playerCount} joueur{playerCount > 1 ? 's' : ''}</span>
+                    {enabled && <span className="world-mode-player-count" aria-label={`${playerCount} joueur${playerCount > 1 ? 's' : ''} en ${card.name}`}>{playerCount} joueur{playerCount > 1 ? 's' : ''}</span>}
                   </button>
                 </div>
               );
