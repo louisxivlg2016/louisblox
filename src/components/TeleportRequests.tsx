@@ -17,6 +17,18 @@ const RUINS: Array<{ type: RuinType; name: string }> = [
   { type: 'palace', name: 'Palais en ruines' },
   { type: 'fort', name: 'Château fort en ruines' },
 ];
+const CITY_DESTINATIONS = {
+  modern: [
+    { name: 'Gratte-ciel de verre', x: 28, y: 5.51, z: 0 },
+    { name: 'Villas avec piscine', x: 28, y: 5.51, z: 160 },
+    { name: 'Plage', x: 28, y: 5.51, z: 195 },
+  ],
+  ancient: [
+    { name: 'Église', x: 28, y: 5.51, z: -50 },
+    { name: 'Quartier historique', x: 0, y: 5.51, z: 28 },
+    { name: 'Place centrale', x: 0, y: 5.51, z: 0 },
+  ],
+} as const;
 
 export function TeleportPanel() {
   const open = useGameStore((state) => state.teleportOpen);
@@ -27,9 +39,11 @@ export function TeleportPanel() {
   const outgoing = useTeleportRequestStore((state) => state.outgoing);
   const notice = useTeleportRequestStore((state) => state.notice);
   const worldId = useGameStore((state) => state.worldId);
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
   const homes = useHomeStore((state) => state.homes[worldId] ?? NO_HOMES);
   const setHomeOpen = useHomeStore((state) => state.setOpen);
   if (!open) return null;
+  const cityDestinations = gameplayMode === 'city-modern' ? CITY_DESTINATIONS.modern : gameplayMode === 'city-ancient' ? CITY_DESTINATIONS.ancient : null;
 
   const travel = (biome: Biome) => {
     teleportToBiome(world, biome);
@@ -38,6 +52,11 @@ export function TeleportPanel() {
   };
   const travelToRuin = (type: RuinType) => {
     teleportToRuin(world, type);
+    setOpen(false);
+    void requestPlay();
+  };
+  const travelToCity = (destination: { x: number; y: number; z: number }) => {
+    teleportToHome(world, { ...destination, yaw: 0, pitch: 0 });
     setOpen(false);
     void requestPlay();
   };
@@ -61,12 +80,16 @@ export function TeleportPanel() {
         <strong>Se téléporter</strong>
         <button type="button" className="teleport-close" onPointerDown={(event) => { if (event.pointerType === 'touch') { event.preventDefault(); event.stopPropagation(); close(); } }} onClick={close} aria-label="Fermer la téléportation">Fermer <span aria-hidden="true">×</span></button>
       </div>
-      {DESTINATIONS.map((biome) => (
-        <button key={biome} onClick={() => travel(biome)}>{BIOME_NAMES[biome]}</button>
-      ))}
-      {RUINS.map((ruin) => (
-        <button key={ruin.type} onClick={() => travelToRuin(ruin.type)}>{ruin.name}</button>
-      ))}
+      {cityDestinations ? cityDestinations.map((destination) => (
+        <button key={destination.name} onClick={() => travelToCity(destination)}>{destination.name}</button>
+      )) : <>
+        {DESTINATIONS.map((biome) => (
+          <button key={biome} onClick={() => travel(biome)}>{BIOME_NAMES[biome]}</button>
+        ))}
+        {RUINS.map((ruin) => (
+          <button key={ruin.type} onClick={() => travelToRuin(ruin.type)}>{ruin.name}</button>
+        ))}
+      </>}
       <div className="home-destinations">
         <strong>Mes maisons ({homes.length} / {MAX_HOMES})</strong>
         {homes.map((home) => <button key={home.id} className="home-destination" onClick={() => travelHome(home)}>{home.name}</button>)}
