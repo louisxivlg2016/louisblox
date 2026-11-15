@@ -7,7 +7,7 @@ import { useProfileStore } from '../game/profile';
 import { OUTFITS } from '../game/outfits';
 
 function playtime(seconds: number) {
-  if (seconds < 60) return `${seconds} seconde${seconds > 1 ? 's' : ''}`;
+  if (seconds < 60) return `${seconds} second${seconds > 1 ? 's' : ''}`;
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   return hours > 0 ? `${hours} h ${minutes} min` : `${minutes} min`;
@@ -21,31 +21,31 @@ export function ProfileDialog({ onClose }: { onClose: () => void }) {
   const appearance = useCharacterStore((state) => state.appearance);
   const seconds = useProfileStore((state) => state.seconds);
   const createdAt = useProfileStore((state) => state.createdAt);
-  const createdLabel = new Date(createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const createdLabel = new Date(createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
   return (
-    <MenuDialog title="Mon profil" onClose={onClose} className="profile-dialog">
-      <div className="world-library-heading"><h2>Mon profil</h2></div>
+    <MenuDialog title="My Profile" onClose={onClose} className="profile-dialog">
+      <div className="world-library-heading"><h2>My Profile</h2></div>
       <div className="profile-overview">
         <div className="profile-summary">
           <ProfileAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={192} />
           <div className="profile-identity">
             <h3>{name}</h3>
             <dl className="profile-details">
-              <div><dt>Compte créé le</dt><dd>{createdLabel}</dd></div>
-              <div><dt>Temps de jeu</dt><dd>{playtime(seconds)}</dd></div>
-              <div><dt>Personnage</dt><dd>{character === 'girl' ? 'Fille' : 'Garçon'}</dd></div>
-              <div><dt>Tenue actuelle</dt><dd>{OUTFITS[outfit].name}</dd></div>
-              <div><dt>Coiffure</dt><dd>{appearance.hairStyle === 'long' ? 'Cheveux longs' : 'Cheveux courts'}</dd></div>
+              <div><dt>Account created on</dt><dd>{createdLabel}</dd></div>
+              <div><dt>Playtime</dt><dd>{playtime(seconds)}</dd></div>
+              <div><dt>Character</dt><dd>{character === 'girl' ? 'Girl' : 'Boy'}</dd></div>
+              <div><dt>Current Outfit</dt><dd>{OUTFITS[outfit].name}</dd></div>
+              <div><dt>Hairstyle</dt><dd>{appearance.hairStyle === 'long' ? 'Long hair' : 'Short hair'}</dd></div>
             </dl>
-            <div className="profile-colors" aria-label="Couleurs du personnage">
-              <span><i className="profile-color" style={{ backgroundColor: appearance.hairColor }} />Cheveux</span>
-              <span><i className="profile-color" style={{ backgroundColor: appearance.eyeColor }} />Yeux</span>
-              <span><i className="profile-color" style={{ backgroundColor: appearance.eyebrowColor ?? appearance.hairColor }} />Sourcils</span>
+            <div className="profile-colors" aria-label="Character colors">
+              <span><i className="profile-color" style={{ backgroundColor: appearance.hairColor }} />Hair</span>
+              <span><i className="profile-color" style={{ backgroundColor: appearance.eyeColor }} />Eyes</span>
+              <span><i className="profile-color" style={{ backgroundColor: appearance.eyebrowColor ?? appearance.hairColor }} />Eyebrows</span>
             </div>
           </div>
         </div>
-        <section className="profile-costume" aria-label="Tenue actuelle en 3D">
-          <h3>Tenue actuelle</h3>
+        <section className="profile-costume" aria-label="Current outfit in 3D">
+          <h3>Current Outfit</h3>
           <strong>{OUTFITS[outfit].name}</strong>
           <p>{OUTFITS[outfit].description}</p>
           <BoutiqueAvatarPreview />

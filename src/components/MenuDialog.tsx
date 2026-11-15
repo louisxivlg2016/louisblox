@@ -18,7 +18,7 @@ export function MenuDialog({ title, onClose, children, className = '' }: { title
         <button
           className="world-library-close"
           type="button"
-          aria-label={`Fermer ${title}`}
+          aria-label={`Close ${title}`}
           onPointerDown={(event) => {
             event.preventDefault();
             event.stopPropagation();

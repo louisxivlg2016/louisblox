@@ -10,9 +10,9 @@ type ActiveEffect = { until: number; nextTick?: number };
 type Shield = { until: number; value: number };
 
 export const EFFECT_NAMES: Record<PotionEffect, string> = {
-  speed: 'Vitesse', slowness: 'Lenteur', jump: 'Super saut', doubleJump: 'Double saut', haste: 'Hâte',
-  strength: 'Force', weakness: 'Faiblesse', defence: 'Défense', regeneration: 'Régénération', poison: 'Poison',
-  invisibility: 'Invisibilité', heatResistance: 'Résistance au feu', knockback: 'Recul renforcé',
+  speed: 'Speed', slowness: 'Slowness', jump: 'Super Jump', doubleJump: 'Double Jump', haste: 'Haste',
+  strength: 'Strength', weakness: 'Weakness', defence: 'Defense', regeneration: 'Regeneration', poison: 'Poison',
+  invisibility: 'Invisibility', heatResistance: 'Fire Resistance', knockback: 'Knockback',
 };
 
 const negativeEffects = new Set<PotionEffect>(['slowness', 'weakness', 'poison']);
@@ -159,28 +159,28 @@ export function usePotion(world: World, name: string) {
   if (value === 'water bottle' || value === 'milk potion') {
     if (value === 'water bottle') useEffectStore.getState().clearNegative();
     else useEffectStore.getState().reset();
-    return { used: true, message: value === 'water bottle' ? 'Les effets négatifs sont supprimés.' : 'Le lait supprime tous les effets.' };
+    return { used: true, message: value === 'water bottle' ? 'Negative effects removed.' : 'Milk removes all effects.' };
   }
   if (value === 'instant healing potion') {
     const healed = healPlayer(world, 6);
-    return { used: true, message: healed ? 'Soin instantané : +6 vies.' : 'Soin instantané : toutes tes vies sont déjà récupérées.' };
+    return { used: true, message: healed ? 'Instant healing: +6 lives.' : 'Instant healing: your lives are already full.' };
   }
   if (value === 'instant damage potion') {
     harmPlayer(world, 3);
-    return { used: true, message: 'Potion de dégâts : -3 vies.' };
+    return { used: true, message: 'Damage potion: -3 lives.' };
   }
-  const timed = (kind: PotionEffect, duration: number, message = `${EFFECT_NAMES[kind]} pendant ${duration} secondes.`) => {
+  const timed = (kind: PotionEffect, duration: number, message = `${EFFECT_NAMES[kind]} for ${duration} seconds.`) => {
     useEffectStore.getState().activate(kind, duration);
     store.setNotice(message);
     return { used: true, message };
   };
-  if (value === 'regeneration potion') return timed('regeneration', 20, 'Régénération : +1 vie toutes les 2 secondes pendant 20 secondes.');
+  if (value === 'regeneration potion') return timed('regeneration', 20, 'Regeneration: +1 life every 2 seconds for 20 seconds.');
   if (value === 'strength potion') return timed('strength', 60);
   if (value === 'weakness potion') return timed('weakness', 30);
   if (value === 'defence potion') return timed('defence', 60);
   if (value === 'sheild potion') {
     activateShield();
-    return { used: true, message: 'Bouclier : absorbe 4 points de dégâts pendant 60 secondes.' };
+    return { used: true, message: 'Shield: absorbs 4 damage points for 60 seconds.' };
   }
   if (value === 'speed potion') return timed('speed', 60);
   if (value === 'slowness potion') return timed('slowness', 30);
@@ -188,25 +188,25 @@ export function usePotion(world: World, name: string) {
   if (value === 'double jump potion') return timed('doubleJump', 45);
   if (value === 'haste potion') return timed('haste', 60);
   if (value === 'invisibility potion') return timed('invisibility', 45);
-  if (value === 'poison potion') return timed('poison', 15, 'Poison : -1 vie toutes les 2 secondes, sans descendre sous 1 vie.');
+  if (value === 'poison potion') return timed('poison', 15, 'Poison: -1 life every 2 seconds, without dropping below 1 life.');
   if (value === 'heat resistance potion') return timed('heatResistance', 60);
   if (value === 'knockback potion') return timed('knockback', 45);
   if (value === 'brain rot potion') {
     useEffectStore.getState().activate('weakness', 20);
     useEffectStore.getState().activate('slowness', 20);
-    return { used: true, message: 'Cerveau embrumé : faiblesse et lenteur pendant 20 secondes.' };
+    return { used: true, message: 'Brain fog: weakness and slowness for 20 seconds.' };
   }
   if (value === 'aura xp potion') {
     useEffectStore.getState().activate('strength', 30);
     useEffectStore.getState().activate('regeneration', 20);
-    return { used: true, message: 'Aura : force pendant 30 secondes et régénération pendant 20 secondes.' };
+    return { used: true, message: 'Aura: strength for 30 seconds and regeneration for 20 seconds.' };
   }
   if (value === 'chaos potion') {
     const choices: PotionEffect[] = ['speed', 'jump', 'strength', 'regeneration', 'invisibility'];
     const kind = choices[Math.floor(Math.random() * choices.length)];
-    return timed(kind, 30, `Chaos : ${EFFECT_NAMES[kind]} pendant 30 secondes.`);
+    return timed(kind, 30, `Chaos: ${EFFECT_NAMES[kind]} for 30 seconds.`);
   }
-  return { used: false, message: `${name} n’a pas d’effet à boire.` };
+  return { used: false, message: `${name} has no drinking effect.` };
 }
 
 export function isPotionEffect(value: unknown): value is PotionEffect {

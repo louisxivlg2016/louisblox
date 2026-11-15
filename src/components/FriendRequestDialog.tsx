@@ -27,30 +27,30 @@ export function FriendRequestDialog() {
       await acceptFriendRequest(request);
       addFriend(player);
       removeRequest(request.requestId);
-      useGameStore.getState().setNotice(`${player.name} est maintenant ton ami.`);
+      useGameStore.getState().setNotice(`${player.name} is now your friend.`);
       void requestPlay();
     } catch (error) {
-      useGameStore.getState().setNotice(error instanceof Error ? error.message : 'Invitation impossible.');
+      useGameStore.getState().setNotice(error instanceof Error ? error.message : 'Unable to send invitation.');
     } finally {
       setPending(false);
     }
   };
   const refuse = () => {
     removeRequest(request.requestId);
-    useGameStore.getState().setNotice(`Invitation de ${player.name} refusée.`);
+    useGameStore.getState().setNotice(`Invitation from ${player.name} declined.`);
     void requestPlay();
   };
 
   return (
     <div className="menu-backdrop friend-request-backdrop">
       <section className="menu-panel friend-request-panel" role="dialog" aria-modal="true" aria-labelledby="friend-request-title">
-        <p className="eyebrow">DEMANDE D’AMI</p>
+        <p className="eyebrow">FRIEND REQUEST</p>
         <ProfileAvatar kind={player.outfit === 'default' ? 'pixel' : player.outfit} character={player.character} outfit={player.outfit} wig={player.wig} appearance={player.appearance} size={76} />
         <h2 id="friend-request-title">{player.name}</h2>
-        <p>souhaite devenir ton ami.</p>
+        <p>wants to be your friend.</p>
         <div className="teleport-request-actions">
-          <button className="primary-button" disabled={pending} aria-label={`Accepter ${player.name}`} onClick={accept}>{pending ? 'Acceptation…' : 'Accepter'}</button>
-          <button className="secondary-button" disabled={pending} aria-label={`Refuser ${player.name}`} onClick={refuse}>Refuser</button>
+          <button className="primary-button" disabled={pending} aria-label={`Accept ${player.name}`} onClick={accept}>{pending ? 'Accepting…' : 'Accept'}</button>
+          <button className="secondary-button" disabled={pending} aria-label={`Decline ${player.name}`} onClick={refuse}>Decline</button>
         </div>
       </section>
     </div>

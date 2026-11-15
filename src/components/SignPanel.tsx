@@ -22,10 +22,10 @@ export function SignPanel() {
   };
   return (
     <div className="backpack-backdrop">
-      <section className="book-panel backpack-panel" role="dialog" aria-modal="true" aria-label={paris ? 'Écrire sur la plaque de rue' : 'Écrire sur le panneau'}>
+      <section className="book-panel backpack-panel" role="dialog" aria-modal="true" aria-label={paris ? 'Edit street sign' : 'Edit sign'}>
         <div className="backpack-header">
-          <h2>{paris ? 'Plaque de rue' : 'Panneau'}</h2>
-          <button type="button" className="secondary-button" onClick={close}>Fermer</button>
+          <h2>{paris ? 'Street Sign' : 'Sign'}</h2>
+          <button type="button" className="secondary-button" onClick={close}>Close</button>
         </div>
         <form onSubmit={(event) => {
           event.preventDefault();
@@ -33,11 +33,11 @@ export function SignPanel() {
           void requestPlay();
         }}>
           <label className="book-field">
-            {paris ? 'Texte de la plaque' : 'Texte du panneau'}
-            <textarea ref={textRef} autoFocus defaultValue={editing.text} rows={6} maxLength={MAX_SIGN_LENGTH} onInput={(event) => setLength(event.currentTarget.value.length)} placeholder={paris ? '4e arrondissement\nRue de la Paix' : 'Écris quelque chose…'} />
+            {paris ? 'Street sign text' : 'Sign text'}
+            <textarea ref={textRef} autoFocus defaultValue={editing.text} rows={6} maxLength={MAX_SIGN_LENGTH} onInput={(event) => setLength(event.currentTarget.value.length)} placeholder={paris ? '4th arrondissement\nPeace Street' : 'Write something…'} />
           </label>
-          <p className="boutique-hint">{length} / {MAX_SIGN_LENGTH} caractères · le texte est sauvegardé et partagé.</p>
-          <button type="submit" className="primary-button">{paris ? 'Enregistrer la plaque' : 'Enregistrer le panneau'}</button>
+          <p className="boutique-hint">{length} / {MAX_SIGN_LENGTH} characters · text is saved and shared.</p>
+          <button type="submit" className="primary-button">{paris ? 'Save street sign' : 'Save sign'}</button>
         </form>
       </section>
     </div>

@@ -44,12 +44,12 @@ const cropIcons: Partial<Record<BlockKind, string>> = {
 const iconCache = new Map<BlockKind, string>();
 const trafficSignLabels: Partial<Record<BlockKind, { label: string; className?: string }>> = {
   [BlockKind.StopSign]: { label: 'STOP', className: 'stop' },
-  [BlockKind.YieldSign]: { label: 'CÉDEZ' },
+  [BlockKind.YieldSign]: { label: 'YIELD' },
   [BlockKind.NoEntrySign]: { label: 'INTERDIT', className: 'no-entry' },
   [BlockKind.OneWaySign]: { label: 'UNIQUE' },
   [BlockKind.SpeedLimitSign]: { label: '50', className: 'speed' },
-  [BlockKind.PedestrianSign]: { label: 'PIÉTON' },
-  [BlockKind.SchoolSign]: { label: 'ÉCOLE' },
+  [BlockKind.PedestrianSign]: { label: 'WALK' },
+  [BlockKind.SchoolSign]: { label: 'SCHOOL' },
   [BlockKind.ParkingSign]: { label: 'P', className: 'parking' },
   [BlockKind.DirectionSign]: { label: '➜', className: 'direction' },
   [BlockKind.DangerSign]: { label: '!', className: 'danger' },

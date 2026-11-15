@@ -40,26 +40,26 @@ export function FootballHud() {
   const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
   return (
     <>
-      <div className="battle-scoreboard football-scoreboard" aria-label="Score du match de football">
-        <span className="battle-red">Rouge · {score.red}</span>
-        <strong>{winner ? 'MATCH TERMINÉ' : overtime ? 'BUT EN OR' : `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`}</strong>
-        <span className="battle-blue">Bleu · {score.blue}</span>
+      <div className="battle-scoreboard football-scoreboard" aria-label="Football match score">
+        <span className="battle-red">Red · {score.red}</span>
+        <strong>{winner ? 'FULL TIME' : overtime ? 'GOLDEN GOAL' : `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`}</strong>
+        <span className="battle-blue">Blue · {score.blue}</span>
       </div>
       {!team && <div className="battle-team-picker football-picker">
-        {!ready ? <strong>Préparation du stade…</strong> : <>
-          <strong>Choisis ton équipe de football</strong><span>5 minutes · rouge contre bleu</span>
-          <div><button className="battle-red" onClick={() => selectTeam('red')}>Rouge</button><button className="battle-blue" onClick={() => selectTeam('blue')}>Bleu</button></div>
-          <button className="battle-solo" onClick={() => selectTeam('auto')}>Équipe automatique</button>
+        {!ready ? <strong>Preparing stadium…</strong> : <>
+          <strong>Choose your football team</strong><span>5 minutes · red versus blue</span>
+          <div><button className="battle-red" onClick={() => selectTeam('red')}>Red</button><button className="battle-blue" onClick={() => selectTeam('blue')}>Blue</button></div>
+          <button className="battle-solo" onClick={() => selectTeam('auto')}>Automatic team</button>
         </>}
       </div>}
       {team && mode === 'play' && <div className="football-notice" role="status">
         <strong>{notice}</strong>
-        {phase === 'countdown' && <span>Départ dans {Math.max(0, Math.ceil((phaseUntil - Date.now()) / 1000))}</span>}
-        {phase === 'penalty' && <span>Penalty {penaltyTeam === 'red' ? 'rouge' : 'bleu'} · le tireur et le gardien se placent</span>}
-        {isFootballFrozen() && phase !== 'finished' && <span>Attends le coup de sifflet</span>}
-        <small>Clic gauche : tir · E : tir puissant · T ou clic droit : tacler · G : passer</small>
+        {phase === 'countdown' && <span>Kickoff in {Math.max(0, Math.ceil((phaseUntil - Date.now()) / 1000))}</span>}
+        {phase === 'penalty' && <span>Penalty for {penaltyTeam === 'red' ? 'red' : 'blue'} · shooter and goalkeeper get ready</span>}
+        {isFootballFrozen() && phase !== 'finished' && <span>Wait for the whistle</span>}
+        <small>Left click: shoot · E: power shot · T or right click: tackle · G: pass</small>
       </div>}
-      {winner && <div className="pirate-winner">Victoire de l’équipe {winner === 'red' ? 'rouge' : 'bleue'} !<MatchResultActions /></div>}
+      {winner && <div className="pirate-winner">The {winner === 'red' ? 'red' : 'blue'} team wins!<MatchResultActions /></div>}
     </>
   );
 }

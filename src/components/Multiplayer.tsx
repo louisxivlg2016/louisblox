@@ -249,7 +249,7 @@ export function RemoteAvatars() {
   const wigs = useRemotePlayerStore((state) => state.wigs);
   const appearances = useRemotePlayerStore((state) => state.appearances);
   const roster = useMultiplayerStore((state) => state.players);
-  return Object.entries(players).map(([playerId, state]) => <RemoteAvatar key={playerId} playerId={playerId} name={roster.find((player) => player.playerId === playerId)?.name ?? 'Joueur'} state={state} character={characters[playerId] ?? 'boy'} outfit={outfits[playerId] ?? 'default'} wig={wigs[playerId] ?? 'auto'} appearance={appearances[playerId]} />);
+  return Object.entries(players).map(([playerId, state]) => <RemoteAvatar key={playerId} playerId={playerId} name={roster.find((player) => player.playerId === playerId)?.name ?? 'Player'} state={state} character={characters[playerId] ?? 'boy'} outfit={outfits[playerId] ?? 'default'} wig={wigs[playerId] ?? 'auto'} appearance={appearances[playerId]} />);
 }
 
 export function MultiplayerConnection() {
@@ -331,7 +331,7 @@ export function MultiplayerConnection() {
       closing.onclose = null;
       closing.close();
       store.setEnabled(false);
-      store.setStatus('offline', 'Le salon a été supprimé.');
+      store.setStatus('offline', 'The room has been deleted.');
     };
     const syncRoster = () => {
       store.setPlayers([
@@ -358,7 +358,7 @@ export function MultiplayerConnection() {
         if (joinOnly) {
           pendingWorld.current = null;
           store.setEnabled(false);
-          store.setStatus('error', 'Ce salon n’existe pas encore. Ton ami doit le créer avant que tu puisses le rejoindre.');
+          store.setStatus('error', 'This room does not exist yet. Your friend must create it before you can join.');
           socket.current?.close();
           return;
         }
@@ -366,7 +366,7 @@ export function MultiplayerConnection() {
         if (!existing && !canCreateWorld(room)) {
           pendingWorld.current = null;
           store.setEnabled(false);
-          store.setStatus('error', 'Tu as déjà 20 mondes. Supprimes-en un avant de créer un salon.');
+          store.setStatus('error', 'You already have 20 worlds. Delete one before creating a room.');
           socket.current?.close();
           return;
         }
@@ -514,7 +514,7 @@ export function MultiplayerConnection() {
         await registerSelfProfile();
       } catch (error) {
         if (!disposed) {
-          const message = error instanceof Error && error.message.toLowerCase().includes('pseudo') ? error.message : 'Impossible de contacter le serveur multijoueur. Vérifie ta connexion ou réessaie plus tard.';
+          const message = error instanceof Error && error.message.toLowerCase().includes('pseudo') ? error.message : 'Unable to contact the multiplayer server. Check your connection or try again later.';
           store.setStatus('error', message);
         }
         return;
@@ -636,7 +636,7 @@ export function MultiplayerConnection() {
           return;
         }
         if (data.type === 'protection-denied') {
-          useGameStore.getState().setNotice('Territoire protégé : tu n’as pas l’autorisation de modifier ces blocs.');
+          useGameStore.getState().setNotice('Protected territory: you are not allowed to modify these blocks.');
           return;
         }
         if (data.type === 'protection') {
@@ -662,7 +662,7 @@ export function MultiplayerConnection() {
         }
         if (typeof data.playerId !== 'string') return;
         if (data.type === 'join') {
-          const name = typeof data.name === 'string' ? data.name : 'Joueur';
+          const name = typeof data.name === 'string' ? data.name : 'Player';
           if (Array.isArray(data.players)) {
             localPlayerId.current = data.playerId;
             setBattleLocalPlayer(data.playerId);
@@ -675,7 +675,7 @@ export function MultiplayerConnection() {
             const avatars: Record<string, ProfileAvatarKind> = {};
             for (const player of data.players as Array<{ playerId?: unknown; name?: unknown; character?: unknown; state?: unknown; outfit?: unknown; wig?: unknown; appearance?: unknown; avatar?: unknown }>) {
               if (!player || typeof player.playerId !== 'string') continue;
-              roster.current.set(player.playerId, typeof player.name === 'string' ? player.name : 'Joueur');
+              roster.current.set(player.playerId, typeof player.name === 'string' ? player.name : 'Player');
               characters[player.playerId] = player.character === 'girl' ? 'girl' : 'boy';
               outfits[player.playerId] = isOutfitKind(player.outfit) ? player.outfit : 'default';
               wigs[player.playerId] = isWigSelection(player.wig) ? player.wig : 'auto';
@@ -713,7 +713,7 @@ export function MultiplayerConnection() {
           useRemotePlayerStore.setState((current) => ({ appearances: { ...current.appearances, [data.playerId as string]: sanitizeAppearance(data.appearance, character) } }));
         } else if (data.type === 'state' && isPlayerSnapshot(data.state)) {
           if (!roster.current.has(data.playerId)) {
-            roster.current.set(data.playerId, 'Joueur');
+            roster.current.set(data.playerId, 'Player');
             syncRoster();
           }
           const state = data.state;
@@ -746,7 +746,7 @@ export function MultiplayerConnection() {
         if (event.code === 4003) {
           if (socket.current === next) socket.current = null;
           store.setEnabled(false);
-          store.setStatus('error', 'Tu as été exclu de ce monde. Le créateur peut te réadmettre : rejoins ensuite ce salon.');
+          store.setStatus('error', 'You have been banned from this world. The owner can readmit you: join this room again afterward.');
           useGameStore.setState({ mode: 'menu' });
           return;
         }

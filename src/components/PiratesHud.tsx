@@ -50,30 +50,30 @@ export function PiratesHud() {
   const money = localPlayerId ? coins[localPlayerId] ?? 0 : 0;
   return (
     <>
-      <div className="battle-scoreboard pirate-scoreboard" aria-label="Objectifs des bateaux">
-        <span className="battle-red">Rouge · {objectives.red}</span><strong>TRÉSORS</strong><span className="battle-blue">Bleu · {objectives.blue}</span><span className="pirate-coins">Or · {money}</span>
+      <div className="battle-scoreboard pirate-scoreboard" aria-label="Ship objectives">
+        <span className="battle-red">Red · {objectives.red}</span><strong>TREASURES</strong><span className="battle-blue">Blue · {objectives.blue}</span><span className="pirate-coins">Gold · {money}</span>
       </div>
       {!team && (
         <div className="battle-team-picker pirate-picker">
-          {!ready ? <strong>Préparation des navires…</strong> : (
+          {!ready ? <strong>Preparing ships…</strong> : (
             <>
-              <strong>Choisis ton équipage</strong><span>Le mode automatique équilibre les deux bateaux.</span>
-              <div><button className="battle-red" onClick={() => selectTeam('red')}>Rouge</button><button className="battle-blue" onClick={() => selectTeam('blue')}>Bleu</button></div>
-              <button className="battle-solo" onClick={() => selectTeam('auto')}>Équipe automatique</button>
+              <strong>Choose your crew</strong><span>Automatic mode balances the two ships.</span>
+              <div><button className="battle-red" onClick={() => selectTeam('red')}>Red</button><button className="battle-blue" onClick={() => selectTeam('blue')}>Blue</button></div>
+              <button className="battle-solo" onClick={() => selectTeam('auto')}>Automatic team</button>
             </>
           )}
         </div>
       )}
-      {team && !winner && <button className="pirate-shop-toggle" aria-label="Boutique pirate" onClick={() => { releasePointerForOverlay(); setShopOpen(true); }}><img src={pirateShopButtonUrl} alt="" /></button>}
+      {team && !winner && <button className="pirate-shop-toggle" aria-label="Pirate shop" onClick={() => { releasePointerForOverlay(); setShopOpen(true); }}><img src={pirateShopButtonUrl} alt="" /></button>}
       {shopOpen && (
         <div className="pirate-shop-panel">
-          <h2>Boutique pirate · {money} pièces</h2>
-          {PIRATE_SHOP.map((entry) => <button key={entry.item} disabled={money < entry.cost} onClick={() => buyPirateItem(entry.item)}>{entry.name} · {entry.cost} pièces</button>)}
-          <button className="primary-button" onClick={() => { setShopOpen(false); void requestPlay(); }}>Retour au navire</button>
+          <h2>Pirate shop · {money} coins</h2>
+          {PIRATE_SHOP.map((entry) => <button key={entry.item} disabled={money < entry.cost} onClick={() => buyPirateItem(entry.item)}>{entry.name} · {entry.cost} coins</button>)}
+          <button className="primary-button" onClick={() => { setShopOpen(false); void requestPlay(); }}>Return to ship</button>
         </div>
       )}
-      {winner && <div className="pirate-winner">Victoire de l’équipage {winner === 'red' ? 'rouge' : 'bleu'} !<MatchResultActions /></div>}
-      {isPirateEliminated() && !winner && <div className="battle-death">Élimination définitive<span>Le trésor de ton équipage est détruit.</span></div>}
+      {winner && <div className="pirate-winner">The {winner === 'red' ? 'red' : 'blue'} crew wins!<MatchResultActions /></div>}
+      {isPirateEliminated() && !winner && <div className="battle-death">Permanent elimination<span>Your crew’s treasure has been destroyed.</span></div>}
     </>
   );
 }

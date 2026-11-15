@@ -11,7 +11,7 @@ export function BoutiqueAvatarPreview() {
   const player = useMemo(() => world.queryFirst(Player) ?? previewWorld.spawn(Player, PlayerMesh(), PlayerMount(), PlayerPosition(), PlayerVelocity(), PlayerState({ grounded: true })), [previewWorld]);
   useEffect(() => () => { previewWorld.reset(); }, [previewWorld]);
   return (
-    <div className="boutique-avatar-3d" aria-label="Aperçu 3D du costume. Fais glisser pour le tourner.">
+    <div className="boutique-avatar-3d" aria-label="3D outfit preview. Drag to rotate.">
       <Canvas dpr={1} camera={{ position: [0, 1.1, -4.2], fov: 34 }} gl={{ antialias: false }}>
         <ambientLight intensity={1.3} />
         <directionalLight position={[3, 5, 4]} intensity={2.2} />
@@ -21,7 +21,7 @@ export function BoutiqueAvatarPreview() {
         </Suspense>
         <OrbitControls target={[0, 1.05, 0]} enablePan={false} minDistance={2.4} maxDistance={6} minPolarAngle={Math.PI / 5} maxPolarAngle={Math.PI * 0.75} />
       </Canvas>
-      <span className="boutique-preview-hint">Glisse pour tourner</span>
+      <span className="boutique-preview-hint">Drag to rotate</span>
     </div>
   );
 }

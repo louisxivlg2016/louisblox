@@ -45,7 +45,7 @@ export function clearTribes() {
 
 export function sendTribe(type: string, data: Record<string, unknown> = {}) {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
-    useTribeStore.setState({ error: 'Connexion au salon indisponible. Réessaie dans un instant.' });
+    useTribeStore.setState({ error: 'Room connection unavailable. Try again in a moment.' });
     return false;
   }
   useTribeStore.setState({ error: '', notice: '' });
@@ -90,7 +90,7 @@ export function teleportToPendingTribeHome() {
   const destination = teleportToHome(world, home);
   if (destination) {
     useTribeStore.setState({ homeArrived: true });
-    useGameStore.getState().setNotice('Tu es arrivé à la maison de ta tribu.');
+    useGameStore.getState().setNotice('You have arrived at your tribe home.');
   }
   return destination !== null;
 }
@@ -117,11 +117,11 @@ export function receiveTribeMessage(data: { type?: unknown; tribes?: unknown; tr
     const ownerName = text(value.ownerName, 24);
     if (!id || !name || !ownerId || !ownerName) return true;
     const invitation = { id, name, ownerId, ownerName };
-    useTribeStore.setState((state) => ({ invitations: [...state.invitations.filter((item) => item.id !== id), invitation], notice: `${ownerName} t’invite dans la tribu ${name}.` }));
+    useTribeStore.setState((state) => ({ invitations: [...state.invitations.filter((item) => item.id !== id), invitation], notice: `${ownerName} invites you to join tribe ${name}.` }));
     return true;
   }
   if (data.type === 'tribe-error') {
-    useTribeStore.setState({ error: typeof data.message === 'string' ? data.message.slice(0, 160) : 'Action impossible dans cette tribu.' });
+    useTribeStore.setState({ error: typeof data.message === 'string' ? data.message.slice(0, 160) : 'Action unavailable in this tribe.' });
     return true;
   }
   if (data.type === 'tribe-notice') {

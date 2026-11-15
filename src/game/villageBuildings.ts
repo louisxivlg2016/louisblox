@@ -106,7 +106,7 @@ export function restaurantBlocks(site: Site, seed: number): Voxel[] {
   put(centerX + 1, floorY + 2, centerZ, BlockKind.Food, { food: 'cheese_slice' });
   put(centerX - 1, floorY + 1, centerZ, BlockKind.OakPlanks);
   put(centerX + 1, floorY + 1, centerZ, BlockKind.OakPlanks);
-  put(centerX - 3, floorY + 2, centerZ + 1, BlockKind.Sign, { facing: 'east', text: 'Restaurant du village' });
+  put(centerX - 3, floorY + 2, centerZ + 1, BlockKind.Sign, { facing: 'east', text: 'Village restaurant' });
   return [...blocks.values()];
 }
 

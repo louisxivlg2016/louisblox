@@ -13,7 +13,7 @@ export class MazeEngine {
   private winner: string | null = null;
   private winnerName: string | null = null;
   private finishMs = 0;
-  private notice = 'L’arbitre prépare le départ';
+  private notice = 'The referee is preparing the start';
   private whistleToken = 0;
   private barriersOpen = false;
   private lanes = new Map<string, number>();
@@ -27,7 +27,7 @@ export class MazeEngine {
     this.winner = null;
     this.winnerName = null;
     this.finishMs = 0;
-    this.notice = 'L’arbitre prépare le départ';
+    this.notice = 'The referee is preparing the start';
     this.barriersOpen = false;
     this.lanes.clear();
     if (this.room.mode() === 'maze') this.room.barriers(false);
@@ -44,7 +44,7 @@ export class MazeEngine {
     this.winner = data.winner ?? null;
     this.winnerName = data.winnerName ?? null;
     this.finishMs = data.finishMs ?? 0;
-    this.notice = data.notice ?? 'L’arbitre prépare le départ';
+    this.notice = data.notice ?? 'The referee is preparing the start';
     this.whistleToken = data.whistleToken ?? 0;
     this.barriersOpen = data.barriersOpen === true;
     this.lanes = new Map(Object.entries(data.lanes ?? {}));
@@ -133,7 +133,7 @@ export class MazeEngine {
     this.winner = player.playerId;
     this.winnerName = player.name;
     this.finishMs = Math.max(0, now - this.startedAt);
-    this.notice = `${player.name} a trouvé la sortie !`;
+    this.notice = `${player.name} found the exit!`;
     this.whistle();
     this.update();
     void this.room.save();
@@ -144,7 +144,7 @@ export class MazeEngine {
     if (data.type === 'maze-start' && (this.phase === 'waiting' || this.phase === 'ready')) {
       this.phase = this.phase === 'waiting' ? 'ready' : 'countdown';
       this.phaseUntil = this.phase === 'countdown' ? Date.now() + 3000 : 0;
-      this.notice = this.phase === 'ready' ? 'Prêts ? À vos places !' : '3… 2… 1…';
+      this.notice = this.phase === 'ready' ? 'Ready? Take your places!' : '3… 2… 1…';
       this.whistle();
       this.spawnAll();
       this.update();

@@ -11,16 +11,16 @@ export function SirenButton() {
     <button
       type="button"
       className={`siren-toggle${enabled ? ' active' : ''}`}
-      aria-label={enabled ? 'Couper la sirène' : 'Activer la sirène'}
+      aria-label={enabled ? 'Stop siren' : 'Activate siren'}
       aria-pressed={enabled}
-      title="Sirène · raccourci L"
+      title="Siren · L shortcut"
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => {
         event.stopPropagation();
         toggleSiren(kind);
       }}
     >
-      {enabled ? 'Couper la sirène' : 'Sirène'}
+      {enabled ? 'Stop siren' : 'Siren'}
     </button>
   );
 }

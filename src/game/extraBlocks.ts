@@ -154,7 +154,7 @@ export const EXTRA_BLOCKS = {
   StairBedrock: 179,
 } as const;
 
-export const PARIS_STREET_SIGN_TEXT = '4e arrondissement\nRue de la Paix';
+export const PARIS_STREET_SIGN_TEXT = '4th arrondissement\nPeace Street';
 export type ExtraBlockKind = (typeof EXTRA_BLOCKS)[keyof typeof EXTRA_BLOCKS];
 export const EXTRA_BLOCK_ORDER = Object.values(EXTRA_BLOCKS).filter((kind) => kind !== EXTRA_BLOCKS.Watermelon) as ExtraBlockKind[];
 export const SAPLING_KINDS = [EXTRA_BLOCKS.OakSapling, EXTRA_BLOCKS.PineSapling, EXTRA_BLOCKS.AutumnSapling] as const;

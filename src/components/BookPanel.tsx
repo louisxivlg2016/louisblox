@@ -9,9 +9,9 @@ type BookContent = { title: string; text: string };
 function readBook(bookId: string): BookContent {
   try {
     const saved = JSON.parse(localStorage.getItem(`louisblox-book-${bookId}`) ?? '{}');
-    return { title: typeof saved.title === 'string' ? saved.title : 'Mon livre', text: typeof saved.text === 'string' ? saved.text : '' };
+    return { title: typeof saved.title === 'string' ? saved.title : 'My Book', text: typeof saved.text === 'string' ? saved.text : '' };
   } catch {
-    return { title: 'Mon livre', text: '' };
+    return { title: 'My Book', text: '' };
   }
 }
 
@@ -55,10 +55,10 @@ function BookEditor({ bookId, onClose }: { bookId: Extract<SelectedKind, string>
 
   const save = () => {
     if (!writeBook(bookId, draft.current)) {
-      setNotice('Impossible d’enregistrer le livre sur cet appareil.');
+      setNotice('Unable to save the book on this device.');
       return false;
     }
-    setNotice('Livre enregistré.');
+    setNotice('Book saved.');
     return true;
   };
   const close = () => {
@@ -68,10 +68,10 @@ function BookEditor({ bookId, onClose }: { bookId: Extract<SelectedKind, string>
 
   return (
     <div className="backpack-backdrop">
-      <section className="book-panel backpack-panel" aria-label="Écrire dans le livre">
+      <section className="book-panel backpack-panel" aria-label="Write in book">
         <div className="backpack-header">
           <h2>{selectionInfo(bookId).name}</h2>
-          <button className="secondary-button" onClick={close}>Fermer</button>
+          <button className="secondary-button" onClick={close}>Close</button>
         </div>
         <label className="book-field">
           Titre
@@ -79,9 +79,9 @@ function BookEditor({ bookId, onClose }: { bookId: Extract<SelectedKind, string>
         </label>
         <label className="book-field">
           Texte du livre
-          <textarea value={text} rows={12} maxLength={4000} onChange={(event) => setText(event.target.value)} placeholder="Écris ton histoire ici…" />
+          <textarea value={text} rows={12} maxLength={4000} onChange={(event) => setText(event.target.value)} placeholder="Write your story here…" />
         </label>
-        <button className="primary-button" onClick={close}>Enregistrer le livre</button>
+        <button className="primary-button" onClick={close}>Save book</button>
       </section>
     </div>
   );

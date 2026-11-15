@@ -13,7 +13,7 @@ function PlayerRow({ player, action, online = true }: { player: FriendPlayer; ac
   return (
     <div className="friend-row">
       <ProfileAvatar kind={player.avatar ?? 'pixel'} character={player.character} outfit={player.outfit} wig={player.wig} appearance={player.appearance} size={42} />
-      <span className="friend-info"><strong>{player.name}</strong><small>{online ? 'En ligne' : 'Hors ligne'} · {player.room}</small></span>
+      <span className="friend-info"><strong>{player.name}</strong><small>{online ? 'Online' : 'Offline'} · {player.room}</small></span>
       {action}
     </div>
   );
@@ -58,7 +58,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
       void onPlay();
     } else if (status === 'error') {
       setPendingJoin(null);
-      setMessage(useMultiplayerStore.getState().error || 'Connexion au monde de ton ami impossible.');
+      setMessage(useMultiplayerStore.getState().error || 'Unable to connect to your friend’s world.');
     }
   }, [pendingJoin, room, status, worldReady, onPlay]);
   useEffect(() => {
@@ -71,7 +71,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
         setOnlinePlayers(directory);
         await fetchFriendRequests();
       } catch (error) {
-        if (active) setMessage(error instanceof Error ? error.message : 'Annuaire indisponible pour le moment.');
+        if (active) setMessage(error instanceof Error ? error.message : 'The directory is unavailable right now.');
       }
     };
     void refresh();
@@ -93,7 +93,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
       void searchPlayers(query).then((players) => {
         if (active) setSearchResults(players);
       }).catch(() => {
-        if (active) setMessage('Recherche indisponible pour le moment.');
+        if (active) setMessage('Search is unavailable right now.');
       });
     }, 300);
     return () => {
@@ -106,9 +106,9 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
     try {
       const delivered = await sendFriendRequest(player);
       setPending((current) => [...current, player.playerId]);
-      setMessage(delivered ? `Invitation envoyée à ${player.name}.` : `Invitation enregistrée. ${player.name} la recevra à sa prochaine connexion.`);
+      setMessage(delivered ? `Invitation sent to ${player.name}.` : `Invitation saved. ${player.name} will receive it next time they connect.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Invitation impossible.');
+      setMessage(error instanceof Error ? error.message : 'Unable to send invitation.');
     }
   };
   const accept = async (request: FriendRequest) => {
@@ -116,15 +116,15 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
       await acceptFriendRequest(request);
       addFriend(request.from);
       removeRequest(request.requestId);
-      setMessage(`${request.from.name} est maintenant ton ami.`);
+      setMessage(`${request.from.name} is now your friend.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Invitation impossible.');
+      setMessage(error instanceof Error ? error.message : 'Unable to send invitation.');
     }
   };
   const joinFriend = (player: FriendPlayer) => {
     requestRoomMode(null);
     setPendingJoin(player.room);
-    setMessage(`Connexion au monde de ${player.name}…`);
+    setMessage(`Connecting to ${player.name}’s world…`);
     configure({ playerName, room: player.room, server }, true);
     const url = new URL(window.location.href);
     url.searchParams.set('room', player.room);
@@ -134,9 +134,9 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
     setGiving((current) => [...current, player.playerId]);
     try {
       await giveApple(player);
-      setMessage(`Une pomme a été offerte à ${player.name}.`);
+      setMessage(`An apple was given to ${player.name}.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Don impossible pour le moment.');
+      setMessage(error instanceof Error ? error.message : 'Unable to send a gift right now.');
     } finally {
       setGiving((current) => current.filter((id) => id !== player.playerId));
     }
@@ -149,7 +149,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
   return (
     <div className="friends-panel">
       <div className="profile-card">
-        <button className="profile-avatar-button" onClick={() => { setChoosingPhoto((value) => !value); setEditing(false); }} aria-label="Choisir ma photo">
+        <button className="profile-avatar-button" onClick={() => { setChoosingPhoto((value) => !value); setEditing(false); }} aria-label="Choose my photo">
           <ProfileAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={58} />
         </button>
         {editing ? (
@@ -158,14 +158,14 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
             void validatePlayerName(name).then(() => {
               setPlayerName(name);
               setEditing(false);
-              setMessage(`Ton pseudo est maintenant ${name.trim()}.`);
-            }).catch((error) => setMessage(error instanceof Error ? error.message : 'Ce pseudo est indisponible.'));
+              setMessage(`Your username is now ${name.trim()}.`);
+            }).catch((error) => setMessage(error instanceof Error ? error.message : 'This username is unavailable.'));
           }}>
-            <input aria-label="Mon pseudo" value={name} maxLength={24} onChange={(event) => setName(event.target.value)} autoFocus />
+            <input aria-label="My username" value={name} maxLength={24} onChange={(event) => setName(event.target.value)} autoFocus />
             <button type="submit">OK</button>
           </form>
         ) : (
-          <button className="profile-name" onClick={() => { setEditing(true); setChoosingPhoto(false); }}><strong>{playerName}</strong><small>{status === 'online' ? 'En ligne' : 'Modifier mon pseudo'}</small></button>
+          <button className="profile-name" onClick={() => { setEditing(true); setChoosingPhoto(false); }}><strong>{playerName}</strong><small>{status === 'online' ? 'Online' : 'Edit my username'}</small></button>
         )}
       </div>
       {choosingPhoto && <ProfilePhotoPicker onClose={() => setChoosingPhoto(false)} />}
@@ -176,27 +176,27 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
           {requests.map((request) => (
             <div className="friend-request" key={request.requestId}>
               <PlayerRow player={request.from} />
-              <div><button aria-label={`Accepter ${request.from.name}`} onClick={() => accept(request)}>Accepter</button><button aria-label={`Refuser ${request.from.name}`} onClick={() => { removeRequest(request.requestId); setMessage(`Invitation de ${request.from.name} refusée.`); }}>Refuser</button></div>
+              <div><button aria-label={`Accept ${request.from.name}`} onClick={() => accept(request)}>Accept</button><button aria-label={`Decline ${request.from.name}`} onClick={() => { removeRequest(request.requestId); setMessage(`Invitation from ${request.from.name} declined.`); }}>Decline</button></div>
             </div>
           ))}
         </div>
       )}
 
-      <div className="friends-heading"><h3>Amis <span>{friends.length}</span></h3><span className="online-dot" /></div>
+      <div className="friends-heading"><h3>Friends <span>{friends.length}</span></h3><span className="online-dot" /></div>
       <div className="friends-list">
-        {savedFriends.map(({ player, online: isOnline }) => <PlayerRow key={player.playerId} player={player} online={isOnline} action={<span className="friend-actions"><button className="friend-add" disabled={!isOnline} aria-label={`Rejoindre ${player.name}`} onClick={() => joinFriend(player)}>{isOnline ? 'Rejoindre' : 'Hors ligne'}</button><button className="friend-add friend-gift" disabled={!isOnline || apples < 1 || giving.includes(player.playerId)} aria-label={`Offrir une pomme à ${player.name}`} onClick={() => offerApple(player)}>{giving.includes(player.playerId) ? 'Envoi…' : `Pomme ×${apples}`}</button></span>} />)}
-        {savedFriends.length === 0 && <p className="friends-empty">Propose des amis parmi les joueurs en ligne.</p>}
+        {savedFriends.map(({ player, online: isOnline }) => <PlayerRow key={player.playerId} player={player} online={isOnline} action={<span className="friend-actions"><button className="friend-add" disabled={!isOnline} aria-label={`Join ${player.name}`} onClick={() => joinFriend(player)}>{isOnline ? 'Join' : 'Offline'}</button><button className="friend-add friend-gift" disabled={!isOnline || apples < 1 || giving.includes(player.playerId)} aria-label={`Give an apple to ${player.name}`} onClick={() => offerApple(player)}>{giving.includes(player.playerId) ? 'Sending…' : `Apple ×${apples}`}</button></span>} />)}
+        {savedFriends.length === 0 && <p className="friends-empty">Add friends from the online players.</p>}
       </div>
-      <div className="friends-heading"><h3>Tous les joueurs <span>{filteredPlayers.length}</span></h3></div>
-      <input className="friends-search" type="search" aria-label="Rechercher un joueur" placeholder="Rechercher…" value={search} onChange={(event) => setSearch(event.target.value)} />
+      <div className="friends-heading"><h3>All players <span>{filteredPlayers.length}</span></h3></div>
+      <input className="friends-search" type="search" aria-label="Search for a player" placeholder="Search…" value={search} onChange={(event) => setSearch(event.target.value)} />
       <div className="friends-list directory-list">
         {visiblePlayers.map(({ player, online: isOnline }) => (
           <PlayerRow key={player.playerId} player={player} online={isOnline} action={friends.some((friend) => friend.playerId === player.playerId)
-            ? <span className="friend-added">Ami</span>
-            : <button className="friend-add" disabled={pending.includes(player.playerId)} onClick={() => propose(player)}>{pending.includes(player.playerId) ? 'Envoyé' : 'Proposer'}</button>}
+            ? <span className="friend-added">Friend</span>
+            : <button className="friend-add" disabled={pending.includes(player.playerId)} onClick={() => propose(player)}>{pending.includes(player.playerId) ? 'Sent' : 'Add'}</button>}
           />
         ))}
-        {filteredPlayers.length === 0 && <p className="friends-empty">Aucun autre joueur trouvé.</p>}
+        {filteredPlayers.length === 0 && <p className="friends-empty">No other players found.</p>}
       </div>
       {message && <p className="friends-message" role="status">{message}</p>}
     </div>

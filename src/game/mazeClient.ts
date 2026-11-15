@@ -12,7 +12,7 @@ import { stopMining } from './input';
 
 export type MazePhase = 'waiting' | 'ready' | 'countdown' | 'running' | 'finished';
 type MazeState = { phase: MazePhase; phaseUntil: number; startedAt: number; winner: string | null; winnerName: string | null; finishMs: number; notice: string; whistleToken: number; barriersOpen: boolean; overview: boolean; spawn: { x: number; y: number; z: number } };
-const initial = { phase: 'waiting' as const, phaseUntil: 0, startedAt: 0, winner: null, winnerName: null, finishMs: 0, notice: 'L’arbitre prépare le départ', whistleToken: 0, barriersOpen: false, overview: false, spawn: mazeSpawn(0) };
+const initial = { phase: 'waiting' as const, phaseUntil: 0, startedAt: 0, winner: null, winnerName: null, finishMs: 0, notice: 'The referee is preparing the start', whistleToken: 0, barriersOpen: false, overview: false, spawn: mazeSpawn(0) };
 export const useMazeStore = create<MazeState>(() => ({ ...initial, spawn: { ...initial.spawn } }));
 let socket: WebSocket | null = null;
 let lastWhistle = 0;
@@ -40,7 +40,7 @@ function startSoloMaze() {
   applyMazeBarriers(false);
   respawnAtBase(world, null, spawn);
   world.queryFirst(Player)?.set(PlayerState, { yaw: 0, pitch: 0 });
-  useMazeStore.setState({ phase: 'countdown', phaseUntil: Date.now() + 3000, startedAt: 0, winner: null, winnerName: null, finishMs: 0, notice: 'Prépare-toi pour le départ', barriersOpen: false, overview: false, spawn });
+  useMazeStore.setState({ phase: 'countdown', phaseUntil: Date.now() + 3000, startedAt: 0, winner: null, winnerName: null, finishMs: 0, notice: 'Get ready for the start', barriersOpen: false, overview: false, spawn });
 }
 
 export function requestMazeStart() {
@@ -126,7 +126,7 @@ export function mazeControlSystem(_world: World) {
     const position = _world.queryFirst(Player)?.get(PlayerPosition);
     if (current.phase === 'running' && position && Math.abs(position.x - 18) <= 2 && position.z >= -25 && position.z <= -22 && Math.abs(position.y - 8.51) < 4) {
       playWhistle('goal');
-      useMazeStore.setState({ phase: 'finished', winner: 'solo', winnerName: useMultiplayerStore.getState().playerName, finishMs: Date.now() - current.startedAt, notice: 'Course terminée', whistleToken: current.whistleToken + 1 });
+      useMazeStore.setState({ phase: 'finished', winner: 'solo', winnerName: useMultiplayerStore.getState().playerName, finishMs: Date.now() - current.startedAt, notice: 'Race finished', whistleToken: current.whistleToken + 1 });
     }
   }
   stopMining();

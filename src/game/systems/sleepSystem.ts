@@ -29,6 +29,6 @@ export function sleepSystem(world: World, dt: number) {
     }
     entity.destroy();
     useGameStore.getState().setSleepProgress(null);
-    useGameStore.getState().setNotice(morning ? 'La nuit tombe.' : 'Le jour se lève.');
+    useGameStore.getState().setNotice(morning ? 'Night is falling.' : 'Day is breaking.');
   });
 }

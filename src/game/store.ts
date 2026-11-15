@@ -105,7 +105,7 @@ function currentWorldName() {
     }
   } catch {
   }
-  return worldId === 'main-room' ? 'Monde principal' : worldId;
+  return worldId === 'main-room' ? 'Main World' : worldId;
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -148,7 +148,7 @@ export const useGameStore = create<GameStore>((set) => ({
   selectBlock: (selected) => set((state) => {
     selected = normalizePaintballGun(selected);
     const key = typeof selected === 'number' ? `block_${selected}` : selected;
-    if (state.gameplayMode === 'survival' && selected !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: 'Récolte et fabrique cet objet avant de l’utiliser.' };
+    if (state.gameplayMode === 'survival' && selected !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: 'Gather and craft this item before using it.' };
     return { selected };
   }),
   setHotbarSlot: (index, kind) => set((state) => {
@@ -159,7 +159,7 @@ export const useGameStore = create<GameStore>((set) => ({
     }
     kind = normalizePaintballGun(kind);
     const key = typeof kind === 'number' ? `block_${kind}` : kind;
-    if (state.gameplayMode === 'survival' && kind !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: 'Cet objet n’a pas encore été fabriqué.' };
+    if (state.gameplayMode === 'survival' && kind !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: 'This item has not been crafted yet.' };
     const hotbarSlots = [...state.hotbarSlots];
     hotbarSlots[index] = kind;
     return { hotbarSlots, selected: kind, backpackItem: null };

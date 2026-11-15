@@ -29,7 +29,7 @@ export function dropSelectedItem() {
   );
   sendDroppedItemSpawn({ id, kind, x: position.x, y: position.y + 1.25, z: position.z, vx: -Math.sin(yaw) * 3.4, vy: 3.5, vz: -Math.cos(yaw) * 3.4 });
   changeInventory(kind, -1);
-  state.setNotice(`${typeof kind === 'number' ? BLOCK_INFO[kind].name : 'Objet'} jeté. Rapproche-toi pour le ramasser.`);
+  state.setNotice(`${typeof kind === 'number' ? BLOCK_INFO[kind].name : 'Item'} dropped. Move closer to pick it up.`);
 }
 
 export function dropBlock(gameWorld: World, block: { x: number; y: number; z: number; kind: import('./voxel').BlockKind }) {

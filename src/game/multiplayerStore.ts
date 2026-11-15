@@ -34,9 +34,9 @@ setJoinOnlyRoom(autoJoin ? query.get('room') || 'main-room' : null);
 
 function initialPlayerName() {
   try {
-    return localStorage.getItem('louisblox-player-name')?.trim().slice(0, 24) || 'Joueur';
+    return localStorage.getItem('louisblox-player-name')?.trim().slice(0, 24) || 'Player';
   } catch {
-    return 'Joueur';
+    return 'Player';
   }
 }
 
@@ -59,7 +59,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
     set((state) => ({ enabled, joined: enabled && state.joined, status: enabled && state.joined ? 'connecting' : 'offline', worldReady: false, error: '', players: [] }));
   },
   configure: (settings, joinOnly = false) => {
-    const playerName = settings.playerName.trim().slice(0, 24) || 'Joueur';
+    const playerName = settings.playerName.trim().slice(0, 24) || 'Player';
     const room = normalizeRoomId(settings.room);
     const server = settings.server.trim();
     try {
@@ -74,7 +74,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
   setStatus: (status, error = '') => set({ status, error, ...(status === 'online' ? {} : { worldReady: false }) }),
   setPlayers: (players) => set({ players }),
   setPlayerName: (name) => {
-    const playerName = name.trim().slice(0, 24) || 'Joueur';
+    const playerName = name.trim().slice(0, 24) || 'Player';
     try {
       localStorage.setItem('louisblox-player-name', playerName);
     } catch {

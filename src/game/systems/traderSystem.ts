@@ -333,7 +333,7 @@ export function traderSystem(world: World, dt: number) {
       if (remaining <= 2.2) {
         entity.set(Trader, { following: false, arrived: true, walking: false, targetX: trader.destinationX, targetZ: trader.destinationZ });
         if (conversation.traderId === entity) useTradeStore.setState({ following: false });
-        useGameStore.getState().setNotice('La caravane est arrivée ! Le marchand t’invite au restaurant du village. Parle-lui pour manger.');
+        useGameStore.getState().setNotice('The caravan has arrived! The trader invites you to the village restaurant. Talk to him to eat.');
         continue;
       }
       trader.detourIn = Math.max(0, trader.detourIn - dt);

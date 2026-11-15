@@ -35,15 +35,15 @@ export function MazeHud() {
   const seconds = Math.max(0, Math.floor(elapsed / 1000));
   return (
     <>
-      <div className="battle-scoreboard maze-scoreboard"><strong>COURSE LABYRINTHE</strong><span>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span></div>
-      {mode === 'play' && <div className="football-notice maze-notice" role="status"><strong>{notice}</strong><span>{phase === 'countdown' ? `Ouverture dans ${Math.max(0, Math.ceil((phaseUntil - Date.now()) / 1000))}` : phase === 'running' ? 'Trouve la ligne jaune au nord du labyrinthe.' : phase === 'finished' ? 'Course terminée' : 'Attends le coup de sifflet de l’arbitre.'}</span></div>}
+      <div className="battle-scoreboard maze-scoreboard"><strong>MAZE RACE</strong><span>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span></div>
+      {mode === 'play' && <div className="football-notice maze-notice" role="status"><strong>{notice}</strong><span>{phase === 'countdown' ? `Opening in ${Math.max(0, Math.ceil((phaseUntil - Date.now()) / 1000))}` : phase === 'running' ? 'Find the yellow line at the north of the maze.' : phase === 'finished' ? 'Race finished' : 'Wait for the referee’s whistle.'}</span></div>}
       {mode === 'play' && <div className="maze-referee-controls">
-        {referee && (phase === 'waiting' || phase === 'ready') && <button onClick={requestMazeStart}>{phase === 'waiting' ? 'Prêts ? · premier sifflet' : 'Départ · deuxième sifflet'}</button>}
-        {referee && <button onClick={toggleMazeOverview}>{overview ? 'Rejoindre mon couloir' : 'Vue d’ensemble'}</button>}
-        {referee && <button onClick={requestMazeReset}>Réinitialiser la course</button>}
-        {!referee && phase === 'waiting' && <span>En place dans ton couloir…</span>}
+        {referee && (phase === 'waiting' || phase === 'ready') && <button onClick={requestMazeStart}>{phase === 'waiting' ? 'Ready? · first whistle' : 'Start · second whistle'}</button>}
+        {referee && <button onClick={toggleMazeOverview}>{overview ? 'Return to my lane' : 'Overview'}</button>}
+        {referee && <button onClick={requestMazeReset}>Reset race</button>}
+        {!referee && phase === 'waiting' && <span>Get in your lane…</span>}
       </div>}
-      {phase === 'finished' && <div className="pirate-winner">{winner === 'solo' || winner === localId ? 'Tu as gagné la course !' : `${winnerName ?? 'Un joueur'} a gagné !`}<span>{(finishMs / 1000).toFixed(1)} secondes</span><MatchResultActions /></div>}
+      {phase === 'finished' && <div className="pirate-winner">{winner === 'solo' || winner === localId ? 'You won the race!' : `${winnerName ?? 'A player'} won!`}<span>{(finishMs / 1000).toFixed(1)} seconds</span><MatchResultActions /></div>}
     </>
   );
 }

@@ -12,7 +12,7 @@ export function MatchResultActions() {
   useEffect(() => { releasePointerForOverlay(); }, []);
   const replay = () => {
     if (full) {
-      useGameStore.getState().setNotice('Tu as déjà 20 mondes. Supprimes-en un pour pouvoir rejouer dans un nouveau monde.');
+      useGameStore.getState().setNotice('You already have 20 worlds. Delete one to replay in a new world.');
       return;
     }
     const worldId = `${gameplayMode}-${crypto.randomUUID().slice(0, 8)}`;
@@ -33,5 +33,5 @@ export function MatchResultActions() {
     useMultiplayerStore.getState().setEnabled(false);
     useGameStore.getState().setMode('menu');
   };
-  return <div className="match-result-actions"><button type="button" className="primary-button" onClick={replay} disabled={full}>Rejouer</button><button type="button" className="secondary-button" onClick={quit}>Quitter</button></div>;
+  return <div className="match-result-actions"><button type="button" className="primary-button" onClick={replay} disabled={full}>Replay</button><button type="button" className="secondary-button" onClick={quit}>Quit</button></div>;
 }

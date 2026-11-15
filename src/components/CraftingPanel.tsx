@@ -19,20 +19,20 @@ export function CraftingPanel() {
     .filter((recipe) => matchesSearch(selectionInfo(recipe.output).name, search));
 
   return (
-    <section className="crafting-panel" aria-label="Fabrication">
+    <section className="crafting-panel" aria-label="Crafting">
       <div className="backpack-header">
         <div>
-          <h3>Fabriquer</h3>
-          <p className="boutique-hint">Récolte les ressources, puis fabrique chaque objet toi-même.</p>
+          <h3>Craft</h3>
+          <p className="boutique-hint">Gather resources, then craft each item yourself.</p>
         </div>
-        <button className="secondary-button" onClick={() => setShowGallery((value) => !value)}>{showGallery ? 'Recettes principales' : 'Toutes les recettes'}</button>
+        <button className="secondary-button" onClick={() => setShowGallery((value) => !value)}>{showGallery ? 'Main recipes' : 'All recipes'}</button>
       </div>
-      <input type="search" aria-label="Rechercher une recette" placeholder="Rechercher un objet à fabriquer…" value={search} onChange={(event) => setSearch(event.target.value)} />
+      <input type="search" aria-label="Search recipes" placeholder="Search for an item to craft…" value={search} onChange={(event) => setSearch(event.target.value)} />
       <div className="recipe-grid">
         {recipes.map((recipe) => {
           const possible = recipe.ingredients.every((ingredient) => inventoryCount(ingredient.kind, state) >= ingredient.count);
           return (
-            <button key={String(recipe.output)} className={`recipe-card ${possible ? 'available' : 'locked'}`} disabled={!possible} onClick={() => craftRecipe(recipe.output)} aria-label={`Fabriquer ${selectionInfo(recipe.output).name}`}>
+            <button key={String(recipe.output)} className={`recipe-card ${possible ? 'available' : 'locked'}`} disabled={!possible} onClick={() => craftRecipe(recipe.output)} aria-label={`Craft ${selectionInfo(recipe.output).name}`}>
               <span className="recipe-title"><ItemIcon kind={recipe.output} /><strong>{selectionInfo(recipe.output).name}{recipe.count > 1 ? ` ×${recipe.count}` : ''}</strong></span>
               <span className="recipe-ingredients">
                 {recipe.ingredients.map((ingredient) => (
@@ -41,7 +41,7 @@ export function CraftingPanel() {
                   </span>
                 ))}
               </span>
-              <span className="recipe-action">{possible ? 'Fabriquer' : 'À récolter'}</span>
+              <span className="recipe-action">{possible ? 'Craft' : 'Gather resources'}</span>
             </button>
           );
         })}

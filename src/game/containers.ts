@@ -21,7 +21,7 @@ export function openChest(world: World, hit: VoxelHit) {
 
 export function openFurnace(hit: VoxelHit) {
   useGameStore.getState().openContainer('furnace', hit.block);
-  useGameStore.getState().setNotice('Choisis une viande à cuire.');
+  useGameStore.getState().setNotice('Choose meat to cook.');
   if (typeof document !== 'undefined' && document.pointerLockElement) document.exitPointerLock();
 }
 
@@ -44,12 +44,12 @@ export function depositChest(world: World) {
   const store = useGameStore.getState();
   if (store.container?.type !== 'chest') return;
   if (store.chestItems.length >= 24) {
-    store.setNotice('Ce coffre est plein.');
+    store.setNotice('This chest is full.');
     return;
   }
   const item = store.selected;
   updateChest(world, [...store.chestItems, item]);
-  store.setNotice(`${selectionInfo(item).name} déposé dans le coffre.`);
+  store.setNotice(`${selectionInfo(item).name} deposited in chest.`);
 }
 
 export function withdrawChest(world: World, index: number) {
@@ -61,16 +61,16 @@ export function withdrawChest(world: World, index: number) {
   const slot = Math.max(0, store.hotbarSlots.indexOf(store.selected));
   store.setHotbarSlot(slot, item);
   updateChest(world, items);
-  store.setNotice(`${selectionInfo(item).name} ajouté à la case ${slot === 9 ? '0' : slot + 1}.`);
+  store.setNotice(`${selectionInfo(item).name} added to slot ${slot === 9 ? '0' : slot + 1}.`);
 }
 
 export function cookMeat(kind: AnimalKind) {
   const store = useGameStore.getState();
   if (store.meat[kind] <= 0) {
-    store.setNotice('Il n’y a pas cette viande dans le sac.');
+    store.setNotice('This meat is not in the backpack.');
     return;
   }
   store.discardMeat(kind);
   store.setItemCount('cooked_meat', store.itemCounts.cooked_meat + 1);
-  store.setNotice('Viande cuite ajoutée au sac. Elle rend 4 vies.');
+  store.setNotice('Cooked meat added to backpack. It restores 4 lives.');
 }

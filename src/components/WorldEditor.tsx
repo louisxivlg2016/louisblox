@@ -10,6 +10,7 @@ import type { Voxel } from '../game/voxel';
 import { CUSTOM_WORLD_MAX_BLOCKS, CUSTOM_WORLD_MAX_Y, CUSTOM_WORLD_RADIUS, EDITOR_BLOCK_CATEGORIES, INFINITE_EDITOR_COORDINATE, worldBlockId } from '../game/worldCode';
 import type { CustomTerrain } from '../game/worldCode';
 import { ItemIcon } from './ItemIcon';
+import { selectionInfo } from '../game/items';
 import { EditorPlayer } from './EditorPlayer';
 import { StairModel } from './StairModel';
 import { isStair, isUpsideDownStair } from '../game/extraBlocks';
@@ -114,15 +115,15 @@ export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, 
   const [protectedPlacement, setProtectedPlacement] = useState(false);
   const [history, setHistory] = useState<Voxel[][]>([]);
   const [position, setPosition] = useState({ x: '0', y: '1', z: '0' });
-  const [message, setMessage] = useState('Choisis une catégorie, puis clique sur une face pour construire.');
+  const [message, setMessage] = useState('Choose a category, then click a face to build.');
   const [playerVisible, setPlayerVisible] = useState(true);
   const [resetKey, setResetKey] = useState(0);
   const [spawnPoint, setSpawnPoint] = useState<{ x: number; y: number; z: number } | null>(null);
   const keys = useRef(new Set<string>());
   const root = useRef<HTMLDivElement>(null);
   const currentCategory = EDITOR_BLOCK_CATEGORIES.find((entry) => entry.id === category);
-  const normalizedQuery = query.trim().toLocaleLowerCase('fr');
-  const available = (normalizedQuery ? ALL_BLOCKS : currentCategory?.kinds ?? ALL_BLOCKS).filter((kind) => !normalizedQuery || BLOCK_INFO[kind].name.toLocaleLowerCase('fr').includes(normalizedQuery) || worldBlockId(kind).includes(normalizedQuery));
+  const normalizedQuery = query.trim().toLocaleLowerCase('en');
+  const available = (normalizedQuery ? ALL_BLOCKS : currentCategory?.kinds ?? ALL_BLOCKS).filter((kind) => !normalizedQuery || selectionInfo(kind).name.toLocaleLowerCase('en').includes(normalizedQuery) || worldBlockId(kind).includes(normalizedQuery));
 
   useEffect(() => {
     if (!playerVisible) {
@@ -157,28 +158,28 @@ export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, 
   const put = (x: number, y: number, z: number, kind = selected) => {
     const limit = infinite ? INFINITE_EDITOR_COORDINATE : CUSTOM_WORLD_RADIUS;
     if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y) || !Number.isSafeInteger(z) || Math.abs(x) > limit || Math.abs(z) > limit || y < 1 || y > CUSTOM_WORLD_MAX_Y) {
-      setMessage(infinite ? 'Coordonnées entières trop grandes. Y doit être entre 1 et 48.' : 'Coordonnées : x et z de -32 à 32, y de 1 à 48.');
+      setMessage(infinite ? 'Integer coordinates are too large. Y must be between 1 and 48.' : 'Coordinates: x and z from -32 to 32, y from 1 to 48.');
       return;
     }
     const next = blocks.filter((block) => block.x !== x || block.y !== y || block.z !== z);
     if (next.length === blocks.length && blocks.length >= CUSTOM_WORLD_MAX_BLOCKS) {
-      setMessage(`La construction est limitée à ${CUSTOM_WORLD_MAX_BLOCKS} blocs.`);
+      setMessage(`Construction is limited to ${CUSTOM_WORLD_MAX_BLOCKS} blocks.`);
       return;
     }
     update([...next, { x, y, z, kind, ...(isStair(kind) ? { facing: 'south' } : {}), ...(protectedPlacement ? { protected: true } : {}) }]);
-    setMessage(`${BLOCK_INFO[kind].name} posé en ${x}, ${y}, ${z}${protectedPlacement ? ' · incassable' : ''}.`);
+    setMessage(`${selectionInfo(kind).name} placed at ${x}, ${y}, ${z}${protectedPlacement ? ' · unbreakable' : ''}.`);
   };
   const interact = ({ block, base }: PreviewBlock, normal: { x: number; y: number; z: number }, remove: boolean) => {
     if (tool === 'protect') {
-      if (base) { setMessage('Le sol de départ ne peut pas être protégé ici. Pose un bloc à cet endroit.'); return; }
+      if (base) { setMessage('The starting ground cannot be protected here. Place a block at this location.'); return; }
       update(blocks.map((other) => other.x === block.x && other.y === block.y && other.z === block.z ? { ...other, protected: other.protected === true ? undefined : true } : other));
-      setMessage(block.protected === true ? `${BLOCK_INFO[block.kind].name} est maintenant cassable.` : `${BLOCK_INFO[block.kind].name} est maintenant incassable.`);
+      setMessage(block.protected === true ? `${selectionInfo(block.kind).name} est maintenant cassable.` : `${selectionInfo(block.kind).name} est maintenant incassable.`);
       return;
     }
     if (remove) {
-      if (base) { setMessage('Le sol de départ est conservé. Tu peux construire dessus.'); return; }
+      if (base) { setMessage('The starting ground is preserved. You can build on it.'); return; }
       update(blocks.filter((other) => other.x !== block.x || other.y !== block.y || other.z !== block.z));
-      setMessage(`${BLOCK_INFO[block.kind].name} retiré.`);
+      setMessage(`${selectionInfo(block.kind).name} removed.`);
       return;
     }
     put(block.x + Math.round(normal.x), block.y + Math.round(normal.y), block.z + Math.round(normal.z));
@@ -188,52 +189,52 @@ export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, 
     if (!previous) return;
     setHistory((current) => current.slice(0, -1));
     onChange(previous);
-    setMessage('Dernière modification annulée.');
+    setMessage('Last change undone.');
   };
 
   return (
     <div ref={root} className="world-editor" tabIndex={0} onPointerDown={(event) => { if (event.target instanceof HTMLElement && !event.target.closest('input, textarea, select')) root.current?.focus(); }} onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); undo(); } }}>
       <div className="world-editor-palette">
-        <label htmlFor="editor-block-search">Rechercher un bloc
-          <input id="editor-block-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ex. brique, verre, sapin…" />
+        <label htmlFor="editor-block-search">Search blocks
+          <input id="editor-block-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="E.g. brick, glass, pine…" />
         </label>
-        <div className="world-editor-categories" aria-label="Catégories de blocs">
-          <button type="button" className={category === 'all' ? 'selected' : ''} onClick={() => setCategory('all')}>Tous <small>{ALL_BLOCKS.length}</small></button>
+        <div className="world-editor-categories" aria-label="Block categories">
+          <button type="button" className={category === 'all' ? 'selected' : ''} onClick={() => setCategory('all')}>All <small>{ALL_BLOCKS.length}</small></button>
           {EDITOR_BLOCK_CATEGORIES.map((entry) => <button type="button" key={entry.id} className={category === entry.id ? 'selected' : ''} onClick={() => setCategory(entry.id)}>{entry.name} <small>{entry.kinds.length}</small></button>)}
         </div>
-        <div className="world-editor-block-list" aria-label="Blocs disponibles">
-          {available.map((kind) => <button type="button" key={kind} className={selected === kind ? 'selected' : ''} onClick={() => { setSelected(kind); setTool('place'); }} title={`${BLOCK_INFO[kind].name} · ${worldBlockId(kind)}`} aria-pressed={selected === kind}><ItemIcon kind={kind} /><span>{BLOCK_INFO[kind].name}</span></button>)}
-          {available.length === 0 && <p>Aucun bloc trouvé.</p>}
+        <div className="world-editor-block-list" aria-label="Available blocks">
+          {available.map((kind) => <button type="button" key={kind} className={selected === kind ? 'selected' : ''} onClick={() => { setSelected(kind); setTool('place'); }} title={`${selectionInfo(kind).name} · ${worldBlockId(kind)}`} aria-pressed={selected === kind}><ItemIcon kind={kind} /><span>{selectionInfo(kind).name}</span></button>)}
+          {available.length === 0 && <p>No blocks found.</p>}
         </div>
-        <label className="world-editor-protected-option"><input type="checkbox" checked={protectedPlacement} onChange={(event) => setProtectedPlacement(event.target.checked)} /> Poser des blocs incassables</label>
+        <label className="world-editor-protected-option"><input type="checkbox" checked={protectedPlacement} onChange={(event) => setProtectedPlacement(event.target.checked)} /> Place unbreakable blocks</label>
       </div>
       <div className="world-editor-stage">
         <div className="world-editor-toolbar">
-          <div className="world-editor-tools" aria-label="Outils de construction et du joueur">
-            <button type="button" className={tool === 'place' ? 'selected' : ''} onClick={() => setTool('place')}>Poser</button>
-            <button type="button" className={tool === 'erase' ? 'selected' : ''} onClick={() => setTool('erase')}>Enlever</button>
-            <button type="button" className={tool === 'protect' ? 'selected' : ''} aria-pressed={tool === 'protect'} title="Clique sur un bloc pour le rendre incassable ou cassable" onClick={() => setTool('protect')}>Protéger</button>
-            <button type="button" onClick={undo} disabled={history.length === 0}>Annuler</button>
-            <button type="button" className={playerVisible ? 'selected' : ''} aria-pressed={playerVisible} onClick={() => setPlayerVisible((visible) => !visible)}>{playerVisible ? 'Joueur visible' : 'Joueur caché'}</button>
-            <button type="button" onClick={() => { setSpawnPoint(null); setResetKey((value) => value + 1); setMessage('Joueur replacé au point de départ.'); }}>Recentrer</button>
-            <button type="button" className="world-editor-save" onClick={() => setMessage(onSaveDraft() ? 'Brouillon sauvegardé sur cet appareil. Tu peux continuer à construire.' : 'Sauvegarde impossible sur cet appareil.')}>Sauvegarder</button>
+          <div className="world-editor-tools" aria-label="Building and player tools">
+            <button type="button" className={tool === 'place' ? 'selected' : ''} onClick={() => setTool('place')}>Place</button>
+            <button type="button" className={tool === 'erase' ? 'selected' : ''} onClick={() => setTool('erase')}>Remove</button>
+            <button type="button" className={tool === 'protect' ? 'selected' : ''} aria-pressed={tool === 'protect'} title="Click a block to make it unbreakable or breakable" onClick={() => setTool('protect')}>Protect</button>
+            <button type="button" onClick={undo} disabled={history.length === 0}>Undo</button>
+            <button type="button" className={playerVisible ? 'selected' : ''} aria-pressed={playerVisible} onClick={() => setPlayerVisible((visible) => !visible)}>{playerVisible ? 'Player visible' : 'Player hidden'}</button>
+            <button type="button" onClick={() => { setSpawnPoint(null); setResetKey((value) => value + 1); setMessage('Player returned to spawn.'); }}>Recenter</button>
+            <button type="button" className="world-editor-save" onClick={() => setMessage(onSaveDraft() ? 'Draft saved on this device. You can keep building.' : 'Unable to save on this device.')}>Save</button>
           </div>
-          <label>Éditeur<select aria-label="Taille de l’éditeur" value={infinite ? 'infinite' : 'finite'} onChange={(event) => onInfiniteChange(event.target.value === 'infinite')}><option value="finite">Fini · 65 × 65</option><option value="infinite">Infini · exploration libre</option></select></label>
-          <label>Terrain<select value={terrain} onChange={(event) => onTerrainChange(event.target.value as CustomTerrain)}><option value="flat">Plat infini</option><option value="natural">Naturel infini</option></select></label>
+          <label>Editor<select aria-label="Editor size" value={infinite ? 'infinite' : 'finite'} onChange={(event) => onInfiniteChange(event.target.value === 'infinite')}><option value="finite">Finite · 65 × 65</option><option value="infinite">Infinite · free exploration</option></select></label>
+          <label>Terrain<select value={terrain} onChange={(event) => onTerrainChange(event.target.value as CustomTerrain)}><option value="flat">Infinite flat</option><option value="natural">Infinite natural</option></select></label>
         </div>
         <div className="world-editor-canvas">
           <Canvas frameloop={playerVisible ? 'always' : 'demand'} dpr={1} camera={{ position: [20, 20, 24], fov: 50, near: 0.1, far: 200 }} gl={{ antialias: false }} onContextMenu={(event) => event.preventDefault()}>
             <EditorScene blocks={blocks} terrain={terrain} seed={seed} erase={tool === 'erase'} onInteract={interact} playerVisible={playerVisible} resetKey={resetKey} keys={keys} infinite={infinite} spawnPoint={spawnPoint} />
           </Canvas>
         </div>
-        <p className="world-editor-help">WASD ou flèches : déplacer le joueur · Espace : sauter · glisser pour tourner · clic pour poser · Enlever ou clic droit pour retirer · Protéger puis clic pour changer la résistance d’un bloc</p>
+        <p className="world-editor-help">WASD or arrows: move player · Space: jump · drag to rotate · click to place · Remove or right click to delete · Protect then click to change block resistance</p>
         <div className="world-editor-coordinates">
           {(['x', 'y', 'z'] as const).map((axis) => <label key={axis}>{axis.toUpperCase()}<input type="number" value={position[axis]} onChange={(event) => setPosition({ ...position, [axis]: event.target.value })} min={axis === 'y' ? 1 : infinite ? -INFINITE_EDITOR_COORDINATE : -CUSTOM_WORLD_RADIUS} max={axis === 'y' ? CUSTOM_WORLD_MAX_Y : infinite ? INFINITE_EDITOR_COORDINATE : CUSTOM_WORLD_RADIUS} /></label>)}
-          <button type="button" className="secondary-button" onClick={() => put(Number(position.x), Number(position.y), Number(position.z))}>Poser ici</button>
-          {infinite && <button type="button" className="secondary-button" onClick={() => { const x = Number(position.x); const y = Number(position.y); const z = Number(position.z); if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y) || !Number.isSafeInteger(z) || y < 1 || y > CUSTOM_WORLD_MAX_Y) { setMessage('Coordonnées de téléportation invalides.'); return; } setSpawnPoint({ x, y: y + 0.51, z }); setResetKey((value) => value + 1); setMessage(`Joueur téléporté en ${x}, ${y + 0.51}, ${z}.`); }}>Aller à X, Y, Z</button>}
-          <button type="button" className="text-button" onClick={() => { if (blocks.length === 0 || window.confirm('Retirer tous les blocs de cette construction ?')) { update([]); setMessage('Construction vidée.'); } }}>Vider</button>
+          <button type="button" className="secondary-button" onClick={() => put(Number(position.x), Number(position.y), Number(position.z))}>Place here</button>
+          {infinite && <button type="button" className="secondary-button" onClick={() => { const x = Number(position.x); const y = Number(position.y); const z = Number(position.z); if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y) || !Number.isSafeInteger(z) || y < 1 || y > CUSTOM_WORLD_MAX_Y) { setMessage('Invalid teleport coordinates.'); return; } setSpawnPoint({ x, y: y + 0.51, z }); setResetKey((value) => value + 1); setMessage(`Player teleported to ${x}, ${y + 0.51}, ${z}.`); }}>Go to X, Y, Z</button>}
+          <button type="button" className="text-button" onClick={() => { if (blocks.length === 0 || window.confirm('Remove every block from this construction?')) { update([]); setMessage('Construction cleared.'); } }}>Clear</button>
         </div>
-        <p className="world-editor-status" role="status"><strong>{blocks.length} / {CUSTOM_WORLD_MAX_BLOCKS} blocs</strong> · {message}{draftNotice ? ` · ${draftNotice}` : ''}</p>
+        <p className="world-editor-status" role="status"><strong>{blocks.length} / {CUSTOM_WORLD_MAX_BLOCKS} blocks</strong> · {message}{draftNotice ? ` · ${draftNotice}` : ''}</p>
       </div>
     </div>
   );

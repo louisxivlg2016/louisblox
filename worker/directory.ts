@@ -170,9 +170,9 @@ export class PlayerDirectory extends DurableObject<Env> {
     if (url.pathname === '/username' && request.method === 'GET') {
       const name = (url.searchParams.get('name') ?? '').trim();
       const playerId = url.searchParams.get('playerId') ?? '';
-      if (!name || name.length > 24 || !playerId) return json({ available: false, error: 'Choisis un pseudo de 1 à 24 caractères.' });
+      if (!name || name.length > 24 || !playerId) return json({ available: false, error: 'Choose a username between 1 and 24 characters.' });
       const available = this.nameAvailable(name, playerId);
-      return json({ available, error: available ? undefined : 'Ce pseudo est déjà utilisé. Choisis-en un autre.' }, available ? 200 : 409);
+      return json({ available, error: available ? undefined : 'This username is already in use. Choose another one.' }, available ? 200 : 409);
     }
     if (url.pathname === '/players' && request.method === 'GET') {
       const query = normalizeSearch(url.searchParams.get('q') ?? '');
@@ -204,7 +204,7 @@ export class PlayerDirectory extends DurableObject<Env> {
       if (request.method === 'POST') {
         const player = parseSocialPlayer(await request.json());
         if (!player) return json({ ok: false, error: 'Profil invalide.' }, 400);
-        if (!this.nameAvailable(player.name, player.playerId)) return json({ ok: false, error: 'Ce pseudo est déjà utilisé. Choisis-en un autre.' }, 409);
+        if (!this.nameAvailable(player.name, player.playerId)) return json({ ok: false, error: 'This username is already in use. Choose another one.' }, 409);
         const previous = this.knownPlayers.get(player.playerId);
         const renamed = previous !== undefined && previous.name !== player.name;
         if (previous && renamed) this.nameOwners.delete(previous.name.trim().toLocaleLowerCase());
@@ -251,13 +251,13 @@ export class PlayerDirectory extends DurableObject<Env> {
     }
     if (url.pathname === '/world' && request.method === 'POST') {
       const data = await request.json() as Record<string, unknown>;
-      if (typeof data.id !== 'string' || data.id.length < 1 || data.id.length > 80 || typeof data.ownerId !== 'string' || data.ownerId.length > 80 || typeof data.gameplayMode !== 'string') return json({ error: 'Monde invalide' }, 400);
+      if (typeof data.id !== 'string' || data.id.length < 1 || data.id.length > 80 || typeof data.ownerId !== 'string' || data.ownerId.length > 80 || typeof data.gameplayMode !== 'string') return json({ error: 'Invalid world' }, 400);
       const id = data.id;
       const world: SharedWorld = {
         id,
         name: typeof data.name === 'string' && data.name.trim() ? data.name.trim().slice(0, 80) : id,
         ownerId: data.ownerId,
-        ownerName: typeof data.ownerName === 'string' && data.ownerName.trim() ? data.ownerName.trim().slice(0, 24) : 'Créateur',
+        ownerName: typeof data.ownerName === 'string' && data.ownerName.trim() ? data.ownerName.trim().slice(0, 24) : 'Creator',
         gameplayMode: data.gameplayMode,
         template: data.template === 'city-ancient' || data.template === 'city-modern' || data.template === 'custom' ? data.template : 'nature',
         players: typeof data.players === 'number' && Number.isFinite(data.players) ? Math.max(0, Math.floor(data.players)) : 0,
@@ -269,7 +269,7 @@ export class PlayerDirectory extends DurableObject<Env> {
     }
     if (url.pathname === '/world' && request.method === 'DELETE') {
       const data = await request.json() as { id?: unknown };
-      if (typeof data.id !== 'string') return json({ error: 'Monde invalide' }, 400);
+      if (typeof data.id !== 'string') return json({ error: 'Invalid world' }, 400);
       this.sharedWorlds.delete(data.id);
       await this.saveWorlds();
       return json({ deleted: true });

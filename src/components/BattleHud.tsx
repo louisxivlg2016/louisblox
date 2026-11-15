@@ -41,17 +41,17 @@ export function BattleHud() {
       playerId,
       team: playerTeam,
       kills: playerScores[playerId] ?? 0,
-      name: playerId === localPlayerId ? 'Toi' : playerNames[playerId] ?? 'Joueur',
+      name: playerId === localPlayerId ? 'You' : playerNames[playerId] ?? 'Player',
     }))
     .sort((a, b) => b.kills - a.kills || a.name.localeCompare(b.name));
   return (
     <>
-      <div className={`battle-scoreboard${freeForAll ? ' free-for-all' : ''}`} aria-label="Score de la bataille">
-        {showTeams && <span className="battle-red">Rouge · {scores.red}</span>}
-        <strong>BATAILLE</strong>
-        {showTeams && <span className="battle-blue">Bleu · {scores.blue}</span>}
+      <div className={`battle-scoreboard${freeForAll ? ' free-for-all' : ''}`} aria-label="Combat score">
+        {showTeams && <span className="battle-red">Red · {scores.red}</span>}
+        <strong>COMBAT</strong>
+        {showTeams && <span className="battle-blue">Blue · {scores.blue}</span>}
         {freeForAll && (
-          <ol className="battle-ranking" aria-label="Score de chaque joueur">
+          <ol className="battle-ranking" aria-label="Each player’s score">
             {ranking.map((player) => (
               <li
                 key={player.playerId}
@@ -68,21 +68,21 @@ export function BattleHud() {
         <div className="battle-team-picker">
           {ready ? (
             <>
-              <strong>Choisis ton équipe</strong><span>Rouge/Bleu en groupe · 1 joueur = 1 équipe, autant d’équipes que de joueurs</span>
+              <strong>Choose your team</strong><span>Red/Blue teams · 1 player = 1 team, as many teams as players</span>
               <div>
-                <button className="battle-red" aria-pressed="false" onClick={() => selectTeam('red')}>Rouge · {redCount}</button>
-                <button className="battle-blue" aria-pressed="false" onClick={() => selectTeam('blue')}>Bleu · {blueCount}</button>
+                <button className="battle-red" aria-pressed="false" onClick={() => selectTeam('red')}>Red · {redCount}</button>
+                <button className="battle-blue" aria-pressed="false" onClick={() => selectTeam('blue')}>Blue · {blueCount}</button>
               </div>
-              <button className="battle-solo" aria-pressed="false" onClick={() => selectTeam('solo')}>Ma propre équipe · {soloCount}</button>
+              <button className="battle-solo" aria-pressed="false" onClick={() => selectTeam('solo')}>My own team · {soloCount}</button>
             </>
-          ) : <strong role="status">Préparation de l’arène…</strong>}
+          ) : <strong role="status">Preparing arena…</strong>}
         </div>
       )}
       <div className="battle-events" aria-live="polite">
-        {events.map((event) => <p key={event.id}><strong>{event.killerName}</strong> a éliminé <strong>{event.victimName}</strong></p>)}
+        {events.map((event) => <p key={event.id}><strong>{event.killerName}</strong> eliminated <strong>{event.victimName}</strong></p>)}
       </div>
-      {deadUntil > 0 && <div className="battle-death">Éliminé !<span>{isIndividualBattleTeam(team) ? 'Réapparition dans l’arène…' : 'Réapparition à ta base…'}</span></div>}
-      {winner && <div className="pirate-winner">{isIndividualBattleTeam(winner) ? `Victoire de ${playerNames[winner.slice(5)] ?? 'un joueur'} !` : `Victoire de l’équipe ${winner === 'red' ? 'rouge' : 'bleue'} !`}<MatchResultActions /></div>}
+      {deadUntil > 0 && <div className="battle-death">Eliminated!<span>{isIndividualBattleTeam(team) ? 'Respawning in arena…' : 'Respawning at your base…'}</span></div>}
+      {winner && <div className="pirate-winner">{isIndividualBattleTeam(winner) ? `${playerNames[winner.slice(5)] ?? 'a player'} wins!` : `The ${winner === 'red' ? 'red' : 'blue'} team wins!`}<MatchResultActions /></div>}
     </>
   );
 }

@@ -12,13 +12,13 @@ export async function removeWorld(worldId: string) {
     const shared = (await listPublicWorlds()).find((world) => world.id === worldId && world.ownerId === playerIdentity());
     if (shared) await deleteRoom(worldId);
   } catch {
-    warning = 'La sauvegarde est supprimée, mais le salon en ligne n’a pas pu être vérifié.';
+    warning = 'The save was deleted, but the online room could not be verified.';
   }
   if (useGameStore.getState().worldId === worldId) {
     useMultiplayerStore.getState().setEnabled(false);
     const next = listWorlds()[0];
     if (next) useGameStore.getState().openWorld(next.id, next.name);
-    else useGameStore.getState().regenerate('creative', 'main-room', undefined, 'Monde principal');
+    else useGameStore.getState().regenerate('creative', 'main-room', undefined, 'Main World');
     useGameStore.getState().setMode('menu');
   }
   return { warning };

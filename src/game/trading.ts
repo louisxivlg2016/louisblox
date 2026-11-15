@@ -24,32 +24,32 @@ export const TRADE_OFFERS: TradeOffer[] = [
 
 export const MERCHANT_STORIES = [
   {
-    title: 'La cloche du vieux pont',
+    title: 'The Old Bridge Bell',
     steps: [
-      'Bienvenue, voyageur. Mes chameaux et moi suivons la rivière depuis la forêt des sapins. Nous avons encore beaucoup de chemin devant nous.',
-      'Au vieux pont, j’ai entendu une cloche sous les ruines. En m’approchant, j’ai trouvé une petite cloche en or, perdue dans l’herbe.',
-      'Je la ramène maintenant au village de la prairie. Ses habitants s’en servent pour se prévenir de la nuit et de la pluie.',
-      'Le chemin est long et les chameaux sont parfois fatigués. Veux-tu marcher avec nous jusqu’au prochain village ? Tu pourras aussi voir mes marchandises.',
+      'Welcome, traveler. My camels and I have followed the river from the pine forest. We still have a long way to go.',
+      'At the old bridge, I heard a bell beneath the ruins. As I approached, I found a small golden bell lost in the grass.',
+      'I am bringing it back to the prairie village. Its residents use it to warn each other of night and rain.',
+      'The road is long and the camels sometimes get tired. Will you walk with us to the next village? You can also see my goods.',
     ],
-    companion: 'Merci ! Reste près de nous. Je te montrerai le vieux pont et le village de la prairie.',
+    companion: 'Thank you! Stay close. I will show you the old bridge and prairie village.',
   },
   {
-    title: 'Les graines de la montagne',
+    title: 'Mountain Seeds',
     steps: [
-      'Ce matin, j’ai quitté les montagnes enneigées avec mes deux chameaux. Le vent était froid, mais le soleil nous guidait vers la forêt.',
-      'Un ermite m’a confié un sac de graines de sapin. Il m’a demandé de les porter aux jardins du village, de l’autre côté de la rivière.',
-      'Nous avons contourné les ruines et traversé l’automne orange. Chaque pays traversé nous donne une nouvelle histoire à raconter.',
-      'Les graines doivent arriver avant la nuit. Veux-tu nous accompagner un moment, ou regarder les objets que j’ai rapportés ?',
+      'This morning, I left the snowy mountains with my two camels. The wind was cold, but the sun guided us toward the forest.',
+      'A hermit entrusted me with a bag of pine seeds. He asked me to carry them to the village gardens across the river.',
+      'We passed the ruins and crossed the orange autumn land. Every region gives us a new story to tell.',
+      'The seeds must arrive before nightfall. Will you travel with us for a while, or look at the items I brought?',
     ],
-    companion: 'Ta compagnie nous fera du bien. Ensemble, nous porterons ces graines jusqu’au village.',
+    companion: 'Your company will help us. Together, we will carry these seeds to the village.',
   },
 ] as const;
 
 export const VILLAGER_LINES = [
-  'Bonjour ! Nos maisons ont des portes et deux lits. La nuit, nous rentrons dormir.',
-  'Les chemins en terre mènent aux champs de blé, de maïs et de carottes.',
-  'Notre petite église est au nord du village. Elle est intacte et ouverte à tous.',
-  'Le restaurant est à l’est du village. Le marchand offre un repas aux voyageurs.',
+  'Hello! Our houses have doors and two beds. At night, we go inside to sleep.',
+  'The dirt paths lead to wheat, corn, and carrot fields.',
+  'Our little church is north of the village. It is intact and open to everyone.',
+  'The restaurant is east of the village. The trader offers meals to travelers.',
 ] as const;
 
 type TradeState = {
@@ -104,7 +104,7 @@ export function openTrader(traderId: import('koota').Entity) {
     traderId,
     storyId,
     step: 0,
-    story: villager ? VILLAGER_LINES[0] : trader?.restaurantMessage || (restaurantAvailable ? 'Nous voilà enfin au village ! Je t’invite à manger au restaurant, à l’est en suivant le chemin de terre.' : MERCHANT_STORIES[storyId].steps[0]),
+    story: villager ? VILLAGER_LINES[0] : trader?.restaurantMessage || (restaurantAvailable ? 'We are finally in the village! I invite you to eat at the restaurant, east along the dirt path.' : MERCHANT_STORIES[storyId].steps[0]),
     view: villager ? 'village' : restaurantAvailable ? 'restaurant' : 'story',
     following: false,
     message: '',
@@ -129,7 +129,7 @@ export function advanceTraderStory(traderId: import('koota').Entity | null) {
 }
 
 export function openRestaurant() {
-  useTradeStore.setState({ view: 'restaurant', story: 'Le marchand t’invite à partager un repas chaud au restaurant du village. Les champs et les habitants sont autour de toi.', message: '' });
+  useTradeStore.setState({ view: 'restaurant', story: 'The trader invites you to share a warm meal at the village restaurant. Fields and residents surround you.', message: '' });
 }
 
 export function acceptRestaurantInvitation(world: World) {
@@ -140,7 +140,7 @@ export function acceptRestaurantInvitation(world: World) {
   const next = restaurantAt(tradeCityAt(seed), seed);
   const merchant = useTradeStore.getState().traderId;
   if (merchant && !merchant.get(Trader)?.villager) {
-    merchant.set(Trader, { arrived: true, following: false, walking: true, restaurantInvited: true, restaurantMeal: 'going', restaurantMealTime: 0, restaurantStep: 0, restaurantMessage: 'Viens au restaurant avec moi. Je mange aussi avec toi !', targetX: next.x, targetZ: next.z });
+    merchant.set(Trader, { arrived: true, following: false, walking: true, restaurantInvited: true, restaurantMeal: 'going', restaurantMealTime: 0, restaurantStep: 0, restaurantMessage: 'Come to the restaurant with me. I will eat with you too!', targetX: next.x, targetZ: next.z });
   }
   for (let index = 0; index < 9; index++) streamChunks(world, next.x, next.z);
   if (merchant && !merchant.get(Trader)?.villager) {
@@ -165,7 +165,7 @@ export function acceptRestaurantInvitation(world: World) {
   playerEntity.get(PlayerVelocity)?.set(0, 0, 0);
   playerEntity.set(PlayerState, { flying: false, grounded: true });
   useGameStore.setState({ flying: false });
-  useGameStore.getState().setNotice('Te voilà au restaurant ! Choisis ton repas ici ou ramasse la nourriture sur la table avec E.');
+  useGameStore.getState().setNotice('Here you are at the restaurant! Choose your meal here or pick up food from the table with E.');
   useTradeStore.getState().setOpen(false);
   void requestPlay().then(() => {
     playerEntity.get(PlayerPosition)?.set(next.x, next.y, next.z);
@@ -177,12 +177,12 @@ export function acceptRestaurantInvitation(world: World) {
 
 export function eatRestaurantMeal(world: World) {
   if (useTradeStore.getState().mealEaten) {
-    useTradeStore.getState().setMessage('Tu as déjà mangé ce repas. La prochaine assiette sera offerte à ta prochaine visite.');
+    useTradeStore.getState().setMessage('You already ate this meal. The next plate will be offered on your next visit.');
     return false;
   }
   const health = world.queryFirst(PlayerHealth)?.get(PlayerHealth);
   if (health) health.value = Math.min(health.max, health.value + 4);
-  useTradeStore.setState({ mealEaten: true, message: 'Le repas est délicieux ! Tu as récupéré 4 points de vie. Bon appétit !' });
+  useTradeStore.setState({ mealEaten: true, message: 'The meal is delicious! You restored 4 health points. Enjoy!' });
   return true;
 }
 
@@ -198,7 +198,7 @@ export function tradeWithMerchant(offer: TradeOffer) {
   }
   if (useGameStore.getState().gameplayMode === 'survival') changeInventory(offer.cost, -offer.costCount);
   changeInventory(offer.reward, offer.rewardCount);
-  useTradeStore.getState().setMessage('Échange réussi ! Les objets sont dans ton sac.');
+  useTradeStore.getState().setMessage('Trade successful! The items are in your backpack.');
   return true;
 }
 

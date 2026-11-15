@@ -30,13 +30,13 @@ export function useFireExtinguisher(world: World, origin: Vector3, direction: Ve
   }
   spray(origin, direction);
   if (!target) {
-    useGameStore.getState().setNotice('Vise un feu pour l’éteindre avec l’extincteur.');
+    useGameStore.getState().setNotice('Aim at a fire to extinguish it with the fire extinguisher.');
     return false;
   }
   const { x, y, z } = target.position;
   const block = blocks.get(voxelKey(x, y, z));
   if (block && isFireBlock(block.kind)) removeVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: target.distance });
   else extinguishFireAt(world, x, y, z);
-  useGameStore.getState().setNotice('Feu éteint avec l’extincteur.');
+  useGameStore.getState().setNotice('Fire extinguished with the fire extinguisher.');
   return true;
 }

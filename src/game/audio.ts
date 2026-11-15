@@ -65,7 +65,7 @@ function attemptPlay(element: HTMLAudioElement) {
     pending.add(element);
     if (!reported.has(element.src)) {
       reported.add(element.src);
-      console.warn('Lecture audio différée par le navigateur', error);
+      console.warn('Audio playback deferred by browser', error);
     }
   });
 }

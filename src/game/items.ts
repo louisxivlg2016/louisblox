@@ -1,6 +1,7 @@
 import { BLOCK_INFO, BlockKind } from './voxel';
 import { isBed, isChest, isDoor, isLadder, isSign, isStair, isTrapdoor, stairSource } from './extraBlocks';
 import { GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
+import { englishItemName } from './english';
 import type { GalleryItemId } from './galleryCatalog';
 export type { GalleryItemId } from './galleryCatalog';
 
@@ -150,7 +151,7 @@ export function getItemMeta(kind: ItemKind | GalleryItemId): ItemMeta {
     const armor = shape === 'armor' ? name.includes('diamond') ? 'diamond' as const : name.includes('gold') ? 'gold' as const : 'silver' as const : undefined;
     const cooldown = shape === 'rpg' ? 1.2 : shape === 'gun' ? 0.4 : shape === 'bow' || shape === 'crossbow' ? 0.6 : undefined;
     return {
-      name: isAnimalPoison(kind) ? kind === 'gallery_potions_splash_poison_potion' ? 'Poison à lancer pour animaux' : 'Poison pour animaux' : item.name,
+      name: englishItemName(isAnimalPoison(kind) ? kind === 'gallery_potions_splash_poison_potion' ? 'Poison à lancer pour animaux' : 'Poison pour animaux' : item.name),
       color: isAnimalPoison(kind) ? '#72a94b' : item.color,
       category: galleryCategory(shape),
       shape,
@@ -161,11 +162,11 @@ export function getItemMeta(kind: ItemKind | GalleryItemId): ItemMeta {
       efficiency: toolEfficiency(name),
     };
   }
-  return ITEM_META[kind];
+  return { ...ITEM_META[kind], name: englishItemName(ITEM_META[kind].name) };
 }
 
 export function selectionInfo(kind: SelectedKind) {
-  return typeof kind === 'number' ? BLOCK_INFO[kind] : getItemMeta(kind);
+  return typeof kind === 'number' ? { ...BLOCK_INFO[kind], name: englishItemName(BLOCK_INFO[kind].name) } : getItemMeta(kind);
 }
 
 export function isSelectedKind(value: unknown): value is SelectedKind {

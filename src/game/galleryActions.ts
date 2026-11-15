@@ -80,7 +80,7 @@ export function useShears(world: World, origin: Vector3, direction: Vector3) {
   const hit = raycastVoxel(blocks, origin, direction, 6);
   if (hit && ([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine] as BlockKind[]).includes(hit.block.kind)) {
     removeVoxel(world, hit);
-    store.setNotice('Feuillage taillé avec les cisailles.');
+    store.setNotice('Foliage trimmed with shears.');
     return true;
   }
   if (hit?.normal.y === 1) {
@@ -88,16 +88,16 @@ export function useShears(world: World, origin: Vector3, direction: Vector3) {
     const y = hit.y + hit.normal.y;
     const z = hit.z + hit.normal.z;
     if (blocks.has(voxelKey(x, y, z))) {
-      store.setNotice('Cet emplacement est déjà occupé. Vise un endroit libre au-dessus du sol.');
+      store.setNotice('This spot is occupied. Aim at a free spot above ground.');
       return true;
     }
     const grass = ([BlockKind.Grass, BlockKind.ForestGrass, BlockKind.AutumnGrass, BlockKind.JungleGrass] as BlockKind[]).includes(hit.block.kind) ? hit.block.kind : BlockKind.Grass;
     if (addVoxel(world, x, y, z, grass, 0)) {
-      store.setNotice('Plaque d’herbe ajoutée avec les cisailles.');
+      store.setNotice('Grass plate added with shears.');
       return true;
     }
   }
-  store.setNotice('Vise le dessus libre d’un bloc d’herbe ou du sol avec les cisailles.');
+  store.setNotice('Aim at the free top of a grass or dirt block with shears.');
   return true;
 }
 
@@ -111,12 +111,12 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
   if (isAnimalPoison(selected)) {
     const target = findAnimalTarget(world, origin, direction, 6);
     if (!target) {
-      store.setNotice('Vise un animal avec le poison pour le faire disparaître.');
+      store.setNotice('Aim at an animal with poison to make it disappear.');
       return true;
     }
     removeAnimal(world, target.entity);
     if (store.gameplayMode === 'survival') store.setItemCount(selected, (store.itemCounts[selected] ?? 1) - 1);
-    store.setNotice('Poison utilisé : l’animal a disparu.');
+    store.setNotice('Poison used: the animal disappeared.');
     return true;
   }
   const blocks = getBlockIndex(world);
@@ -128,38 +128,38 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
   const empty = !blocks.has(voxelKey(x, y, z));
   const requiresSurface = ['bed', 'plant', 'flower', 'mushroom', 'seed', 'pod', 'banner', 'arrow_sign', 'tower'].includes(shape);
   if (requiresSurface && (hit?.normal.y !== 1 || !empty)) {
-    store.setNotice('Vise le dessus libre d’un bloc pour utiliser cet objet.');
+    store.setNotice('Aim at the free top of a block to use this item.');
     return true;
   }
 
   if (shape === 'hoe') {
     if (hit && ([BlockKind.Grass, BlockKind.ForestGrass, BlockKind.AutumnGrass, BlockKind.JungleGrass, BlockKind.Dirt] as BlockKind[]).includes(hit.block.kind)) {
       replaceVoxel(world, hit, BlockKind.ForestGrass);
-      store.setNotice('Terre labourée : tu peux maintenant planter des graines.');
-    } else store.setNotice('Vise un bloc d’herbe ou de terre avec la houe.');
+      store.setNotice('Soil tilled: you can now plant seeds.');
+    } else store.setNotice('Aim at a grass or dirt block with the hoe.');
     return true;
   }
   if (shape === 'shears') return useShears(world, origin, direction);
   if (shape === 'bone_meal') {
     if (hit && isSapling(hit.block.kind)) {
       growSapling(world, hit.block.kind, hit.x, hit.y, hit.z);
-      store.setNotice('La pousse a grandi grâce à la poudre d’os.');
+      store.setNotice('The sapling grew thanks to bone meal.');
     } else if (hit && isCrop(hit.block.kind)) {
       replaceVoxel(world, hit, hit.block.kind, undefined, 3);
-      store.setNotice('La culture est prête à être récoltée.');
-    } else store.setNotice('Vise une pousse ou une culture avec la poudre d’os.');
+      store.setNotice('The crop is ready to harvest.');
+    } else store.setNotice('Aim at a sapling or crop with bone meal.');
     return true;
   }
   if (shape === 'plant') {
     const kind = /pine|cedar|spruce/i.test(meta.name) ? BlockKind.PineSapling : /maple|autumn/i.test(meta.name) ? BlockKind.AutumnSapling : BlockKind.OakSapling;
     addVoxel(world, x, y, z, kind);
     attachGrowth(world, kind, x, y, z);
-    store.setNotice(`${meta.name} planté.`);
+    store.setNotice(`${meta.name} planted.`);
     return true;
   }
   if (shape === 'flower' || shape === 'mushroom' || shape === 'pod') {
     addVoxel(world, x, y, z, shape === 'flower' ? BlockKind.AutumnLeaves : BlockKind.Leaves);
-    store.setNotice(`${meta.name} placé comme décoration.`);
+    store.setNotice(`${meta.name} placed as decoration.`);
     return true;
   }
   if (shape === 'seed') {
@@ -167,20 +167,20 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     const kind = name.includes('carrot') ? BlockKind.Carrot : name.includes('melon') ? BlockKind.Watermelon : name.includes('corn') ? BlockKind.Corn : name.includes('tomato') ? BlockKind.Tomato : BlockKind.Wheat;
     addVoxel(world, x, y, z, kind, 0);
     attachGrowth(world, kind, x, y, z);
-    store.setNotice(`${cropDefinition(kind).name} planté.`);
+    store.setNotice(`${cropDefinition(kind).name} planted.`);
     return true;
   }
   if (shape === 'bed') {
     const facing = Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
     addVoxel(world, x, y, z, bedForName(meta.name), undefined, facing);
-    store.setNotice('Lit placé. Appuie sur E en le visant pour dormir.');
+    store.setNotice('Bed placed. Aim at it and press E to sleep.');
     return true;
   }
   if (shape === 'banner' || shape === 'arrow_sign') {
     const facing = signFacing(direction, hit?.normal);
     addVoxel(world, x, y, z, BlockKind.Sign, undefined, facing);
     setVoxelText(world, { x, y, z }, shape === 'arrow_sign' ? '→' : meta.name);
-    store.setNotice('Panneau placé. Vise-le avec E pour écrire dessus.');
+    store.setNotice('Sign placed. Aim at it with E to write on it.');
     return true;
   }
   if (shape === 'compass' || shape === 'map') {
@@ -201,10 +201,10 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
       const caughtFish = GALLERY_ITEMS.find((item) => item.name === 'Caught Fish')?.id;
       if (!caughtFish) return true;
       store.setItemCount(caughtFish, (store.itemCounts[caughtFish] ?? 0) + 1);
-      store.setNotice('Poisson pêché ! Il est dans ton sac et peut être mangé.');
+      store.setNotice('Fish caught! It is in your backpack and can be eaten.');
       return true;
     }
-    store.setNotice('Vise l’eau avec la canne à pêche.');
+    store.setNotice('Aim at water with the fishing rod.');
     return true;
   }
   if (shape === 'potion') {
@@ -214,7 +214,7 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
         if (bottle) store.setItemCount(bottle.id, (store.itemCounts[bottle.id] ?? 0) + 1);
         if (store.gameplayMode === 'survival') store.setItemCount(selected, (store.itemCounts[selected] ?? 1) - 1);
         store.setNotice('Bouteille remplie avec de l’eau.');
-      } else store.setNotice('Vise de l’eau avec la bouteille vide pour la remplir.');
+      } else store.setNotice('Aim at water with the empty bottle to fill it.');
       return true;
     }
     const result = usePotion(world, meta.name);
@@ -248,14 +248,14 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     player.copy(next);
     playerEntity.get(PlayerBody)?.value?.setTranslation(next, true);
     playerEntity.get(PlayerVelocity)?.set(0, shape === 'updraft' ? 7 : 0, 0);
-    store.setNotice(shape === 'updraft' ? 'Courant ascendant !' : 'Glisse rapide !');
+    store.setNotice(shape === 'updraft' ? 'Updraft!' : 'Fast glide!');
     return true;
   }
   if (shape === 'hang_glider' || shape === 'balloon') {
     const flying = !playerEntity.get(PlayerState)!.flying;
     playerEntity.set(PlayerState, { flying });
     store.setFlying(flying);
-    store.setNotice(flying ? `${meta.name} : vol activé. Espace/C pour monter et descendre.` : `${meta.name} rangé : vol désactivé.`);
+    store.setNotice(flying ? `${meta.name}: flight enabled. Space/C to ascend and descend.` : `${meta.name} stored: flight disabled.`);
     return true;
   }
   if (shape === 'ice_bridge') {
@@ -269,7 +269,7 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
         addVoxel(world, bridgeX, floor < SEA_LEVEL ? SEA_LEVEL : Math.floor(floor + 0.5), bridgeZ, BlockKind.Ice);
       }
     });
-    store.setNotice('Un pont de glace de cinq blocs apparaît.');
+    store.setNotice('A five-block ice bridge appears.');
     return true;
   }
   if (shape === 'tower') {
@@ -281,12 +281,12 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
   }
   if (shape === 'spawn_orb' || shape === 'spawner') {
     if (ground < SEA_LEVEL + 0.5) {
-      store.setNotice('Vise la terre ferme pour faire apparaître cet animal.');
+      store.setNotice('Aim at solid ground to spawn this animal.');
       return true;
     }
     const kind = animalForName(meta.name);
     spawnAnimal(world, kind, x, ground, z, Math.floor(performance.now()));
-    store.setNotice(`${meta.name} apparaît.`);
+    store.setNotice(`${meta.name} spawned.`);
     return true;
   }
   if (shape === 'catcher') {
@@ -300,17 +300,17 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     if (target && !saved) {
       captured.set(selected, target.kind);
       removeAnimal(world, target.entity);
-      store.setNotice(`${target.kind} capturé. Utilise encore l’objet pour le relâcher.`);
+      store.setNotice(`${target.kind} captured. Use the item again to release it.`);
     } else if (saved && ground >= SEA_LEVEL + 0.5) {
       const released = spawnAnimal(world, saved, x, ground, z, Math.floor(performance.now()), `pet:${saved}:${crypto.randomUUID()}`);
       if (released) {
         reportAnimalSpawn(released);
         captured.delete(selected);
-        store.setNotice(`${saved} relâché.`);
-      } else store.setNotice('Cet animal ne peut pas être relâché ici.');
-    } else store.setNotice('Vise un animal pour le capturer, puis un endroit libre pour le relâcher.');
+        store.setNotice(`${saved} released.`);
+      } else store.setNotice('This animal cannot be released here.');
+    } else store.setNotice('Aim at an animal to capture it, then at a free spot to release it.');
     return true;
   }
-  store.setNotice(`${meta.name} est une ressource à conserver dans ton sac.`);
+  store.setNotice(`${meta.name} is a resource to keep in your backpack.`);
   return true;
 }

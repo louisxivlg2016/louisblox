@@ -38,53 +38,53 @@ export function TradingPanel() {
   };
   const accompany = () => {
     useTradeStore.getState().setFollowing(true);
-    useGameStore.getState().setNotice('Suis le marchand jusqu’à la ville, à environ 1 km. Il t’attend si tu t’éloignes.');
+    useGameStore.getState().setNotice('Follow the trader to the city, about 1 km away. He waits if you fall behind.');
     close();
   };
   const stopAccompanying = () => {
     useTradeStore.getState().setFollowing(false);
-    useGameStore.getState().setNotice('Tu reprends la route seul.');
+    useGameStore.getState().setNotice('You are traveling alone again.');
     close();
   };
   return (
     <div className="backpack-backdrop">
-      <section className="book-panel backpack-panel trade-panel" aria-label="Discussion avec le marchand">
-        <div className="backpack-header"><h2>{view === 'village' ? 'Habitant du village' : view === 'restaurant' ? 'Restaurant du village' : 'Marchand ambulant'}</h2><button className="secondary-button" onClick={close}>Fermer et reprendre</button></div>
+      <section className="book-panel backpack-panel trade-panel" aria-label="Conversation with trader">
+        <div className="backpack-header"><h2>{view === 'village' ? 'Village resident' : view === 'restaurant' ? 'Village restaurant' : 'Traveling trader'}</h2><button className="secondary-button" onClick={close}>Close and resume</button></div>
         {view === 'village' ? (
           <div className="trade-story" role="status">
             <p>{story}</p>
             <div className="trade-story-actions">
-              <button className="primary-button" aria-keyshortcuts="E" onClick={() => advanceTraderStory(traderId)}>Parler encore (E)</button>
-              <button className="secondary-button" onClick={openRestaurant}>L’invitation au restaurant</button>
+              <button className="primary-button" aria-keyshortcuts="E" onClick={() => advanceTraderStory(traderId)}>Keep talking (E)</button>
+              <button className="secondary-button" onClick={openRestaurant}>Restaurant invitation</button>
             </div>
           </div>
         ) : view === 'restaurant' ? (
           <div className="trade-story" role="status">
             <p>{story}</p>
-            <p>Au menu : pain, maïs et fromage. Le marchand offre le repas aux voyageurs.</p>
+            <p>On the menu: bread, corn, and cheese. The trader offers meals to travelers.</p>
             <div className="trade-story-actions">
-              <button className="primary-button" onClick={() => acceptRestaurantInvitation(world)}>Aller au restaurant</button>
-              <button className="secondary-button" disabled={mealEaten} onClick={() => eatRestaurantMeal(world)}>Manger le repas · +4 vie</button>
+              <button className="primary-button" onClick={() => acceptRestaurantInvitation(world)}>Go to restaurant</button>
+              <button className="secondary-button" disabled={mealEaten} onClick={() => eatRestaurantMeal(world)}>Eat meal · +4 lives</button>
             </div>
             {message && <p className="trade-message">{message}</p>}
           </div>
         ) : view === 'story' ? (
           <div className="trade-story" role="status">
-            <p><strong>{definition.title}</strong> · Récit {step + 1} / {definition.steps.length}</p>
+            <p><strong>{definition.title}</strong> · Story {step + 1} / {definition.steps.length}</p>
             <p>{following ? definition.companion : story}</p>
-            {!following && step < lastStep && <p>Reste près de moi pour écouter la suite, ou avance le récit ici.</p>}
-            {!following && step === lastStep && <p>Veux-tu m’accompagner un moment, ou préfères-tu voir mes marchandises ?</p>}
+            {!following && step < lastStep && <p>Stay close to hear more, or advance the story here.</p>}
+            {!following && step === lastStep && <p>Would you like to travel with me, or would you rather see my goods?</p>}
             <div className="trade-story-actions">
-              {!following && step < lastStep && <button className="primary-button" aria-keyshortcuts="E" onClick={() => advanceTraderStory(traderId)}>Texte suivant (E)</button>}
-              {!following && step === lastStep && <button className="primary-button" onClick={accompany}>L’accompagner</button>}
-              {following && <button className="primary-button" onClick={stopAccompanying}>Reprendre la route seul</button>}
-              <button className="secondary-button" onClick={() => useTradeStore.getState().setView('offers')}>Voir les marchandises</button>
-              <button className="secondary-button" onClick={close}>Plus tard</button>
+              {!following && step < lastStep && <button className="primary-button" aria-keyshortcuts="E" onClick={() => advanceTraderStory(traderId)}>Next text (E)</button>}
+              {!following && step === lastStep && <button className="primary-button" onClick={accompany}>Travel with him</button>}
+              {following && <button className="primary-button" onClick={stopAccompanying}>Travel alone again</button>}
+              <button className="secondary-button" onClick={() => useTradeStore.getState().setView('offers')}>View goods</button>
+              <button className="secondary-button" onClick={close}>Later</button>
             </div>
           </div>
         ) : (
           <>
-            <p>{gameplayMode === 'survival' ? 'Choisis une offre : les objets sont échangés réellement.' : 'Choisis une offre : elle est gratuite en mode créatif.'}</p>
+            <p>{gameplayMode === 'survival' ? 'Choose an offer: items are really exchanged.' : 'Choose an offer: it is free in Creative mode.'}</p>
             <div className="trade-offers">
               {TRADE_OFFERS.map((offer) => (
                 <article className="trade-offer" data-offer={offer.id} key={offer.id}>
@@ -93,13 +93,13 @@ export function TradingPanel() {
                     <span>→</span>
                     <span><ItemIcon kind={offer.reward} /> {offer.rewardCount} {selectionInfo(offer.reward).name}</span>
                   </div>
-                  <button className="primary-button" disabled={!canTrade(offer)} onClick={() => tradeWithMerchant(offer)}>Échanger</button>
+                  <button className="primary-button" disabled={!canTrade(offer)} onClick={() => tradeWithMerchant(offer)}>Trade</button>
                 </article>
               ))}
             </div>
             {message && <p className="trade-message" role="status">{message}</p>}
-            <span className="trade-inventory-note">Les quantités de ton sac sont utilisées. {Object.keys(itemCounts).length} types d’objets.</span>
-            <button className="secondary-button trade-talk-button" onClick={() => useTradeStore.getState().setView('story')}>Parler du voyage</button>
+            <span className="trade-inventory-note">Your backpack quantities are used. {Object.keys(itemCounts).length} item types.</span>
+            <button className="secondary-button trade-talk-button" onClick={() => useTradeStore.getState().setView('story')}>Talk about the journey</button>
           </>
         )}
       </section>

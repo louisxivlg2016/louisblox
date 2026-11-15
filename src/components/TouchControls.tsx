@@ -39,7 +39,7 @@ function CannonFireButton() {
     <button
       type="button"
       className="touch-button touch-attack touch-cannon-fire"
-      aria-label="Tirer avec le canon"
+      aria-label="Fire cannon"
       onPointerDown={(event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -50,7 +50,7 @@ function CannonFireButton() {
       onPointerCancel={release}
       onLostPointerCapture={release}
     >
-      Tirer
+      Fire
     </button>
   );
 }
@@ -86,11 +86,11 @@ export function TouchControls() {
 
   return (
     <div className="mobile-controls">
-      <div className="touch-gesture-hint">{plane ? pilot ? 'Joystick : piloter · Glisser : caméra' : 'Passager de l’avion · Glisser : caméra' : football ? 'Appui court : tir · Glisser : caméra' : 'Appui court : poser, monter ou utiliser · Maintenir : casser · Glisser : caméra'}</div>
+      <div className="touch-gesture-hint">{plane ? pilot ? 'Joystick: pilot · Drag: camera' : 'Airplane passenger · Drag: camera' : football ? 'Short tap: shoot · Drag: camera' : 'Short tap: place, mount, or use · Hold: break · Drag: camera'}</div>
       <div
         ref={joystick}
         className="touch-joystick"
-        aria-label="Joystick de déplacement"
+        aria-label="Movement joystick"
         onPointerDown={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -107,14 +107,14 @@ export function TouchControls() {
         <div ref={knob} className="touch-knob" />
       </div>
       {football && <div className="football-touch-actions" aria-label="Actions de football">
-        <HoldButton code="KeyE" label="Tir puissant" />
-        <HoldButton code="KeyT" label="Tacler" />
-        <HoldButton code="KeyG" label="Passe" />
+        <HoldButton code="KeyE" label="Power shot" />
+        <HoldButton code="KeyT" label="Tackle" />
+        <HoldButton code="KeyG" label="Pass" />
       </div>}
       <div className={plane ? 'touch-actions plane-touch-actions' : 'touch-actions'}>
         {cannon && <CannonFireButton />}
         {!plane && <>
-          <HoldButton code="Space" label="Sauter" onDoubleTap={requestFlightToggle} />
+          <HoldButton code="Space" label="Jump" onDoubleTap={requestFlightToggle} />
           <button
             className="touch-button touch-flight"
             onPointerDown={(event) => {
@@ -123,13 +123,13 @@ export function TouchControls() {
               requestFlightToggle();
             }}
           >
-            Vol : {flying ? 'ON' : 'OFF'}
+            Flight: {flying ? 'ON' : 'OFF'}
           </button>
-          <HoldButton code="KeyC" label="Bas" />
+          <HoldButton code="KeyC" label="Down" />
         </>}
         {plane && pilot && <>
-          <HoldButton code="Space" label="Décoller / Monter" />
-          <HoldButton code="KeyC" label="Descendre" />
+          <HoldButton code="Space" label="Take off / Ascend" />
+          <HoldButton code="KeyC" label="Descend" />
           <button
             className="touch-button touch-flight"
             onPointerDown={(event) => {
@@ -138,11 +138,11 @@ export function TouchControls() {
               landPlane(world);
             }}
           >
-            Atterrir
+            Land
           </button>
         </>}
-        {plane && <HoldButton code="KeyE" label={pilot ? 'Sortir' : 'Quitter l’avion'} />}
-        {!plane && riding && <HoldButton code="KeyE" label={riding === 'horse' || riding === 'camel' ? 'Descendre de l’animal' : 'Sortir du véhicule'} />}
+        {plane && <HoldButton code="KeyE" label={pilot ? 'Exit' : 'Leave airplane'} />}
+        {!plane && riding && <HoldButton code="KeyE" label={riding === 'horse' || riding === 'camel' ? 'Dismount animal' : 'Exit vehicle'} />}
         <button
           className="touch-button"
           onPointerDown={(event) => {
@@ -151,7 +151,7 @@ export function TouchControls() {
             useGameStore.getState().toggleCamera();
           }}
         >
-          Caméra
+          Camera
         </button>
       </div>
     </div>

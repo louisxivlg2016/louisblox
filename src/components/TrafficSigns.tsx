@@ -69,7 +69,7 @@ export function TrafficSignModel({ kind, held = false, wallMounted = false }: { 
     let active = true;
     new GLTFLoader().load(models[kind]!, (gltf) => {
       if (active) setScene(gltf.scene);
-    }, undefined, (error) => console.error('Chargement du panneau routier impossible', error));
+    }, undefined, (error) => console.error('Unable to load road sign', error));
     return () => { active = false; };
   }, [kind]);
   const model = useMemo(() => {

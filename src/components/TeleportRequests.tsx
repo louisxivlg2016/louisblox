@@ -13,20 +13,20 @@ import { teleportToHome } from '../game/teleport';
 
 const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'jungle', 'prairie', 'desert'];
 const RUINS: Array<{ type: RuinType; name: string }> = [
-  { type: 'church', name: 'Église en ruines' },
-  { type: 'palace', name: 'Palais en ruines' },
-  { type: 'fort', name: 'Château fort en ruines' },
+  { type: 'church', name: 'Ruined church' },
+  { type: 'palace', name: 'Ruined palace' },
+  { type: 'fort', name: 'Ruined castle' },
 ];
 const CITY_DESTINATIONS = {
   modern: [
-    { name: 'Gratte-ciel de verre', x: 28, y: 5.51, z: 0 },
-    { name: 'Villas avec piscine', x: 28, y: 5.51, z: 160 },
-    { name: 'Plage', x: 28, y: 5.51, z: 195 },
+    { name: 'Glass skyscraper', x: 28, y: 5.51, z: 0 },
+    { name: 'Villas with pool', x: 28, y: 5.51, z: 160 },
+    { name: 'Beach', x: 28, y: 5.51, z: 195 },
   ],
   ancient: [
-    { name: 'Église', x: 28, y: 5.51, z: -56 },
-    { name: 'Quartier historique', x: 0, y: 5.51, z: 28 },
-    { name: 'Place centrale', x: 0, y: 5.51, z: 0 },
+    { name: 'Church', x: 28, y: 5.51, z: -56 },
+    { name: 'Historic district', x: 0, y: 5.51, z: 28 },
+    { name: 'Central square', x: 0, y: 5.51, z: 0 },
   ],
 } as const;
 
@@ -77,8 +77,8 @@ export function TeleportPanel() {
   return (
     <div className="teleport-panel">
       <div className="teleport-heading">
-        <strong>Se téléporter</strong>
-        <button type="button" className="teleport-close" onPointerDown={(event) => { if (event.pointerType === 'touch') { event.preventDefault(); event.stopPropagation(); close(); } }} onClick={close} aria-label="Fermer la téléportation">Fermer <span aria-hidden="true">×</span></button>
+        <strong>Teleport</strong>
+        <button type="button" className="teleport-close" onPointerDown={(event) => { if (event.pointerType === 'touch') { event.preventDefault(); event.stopPropagation(); close(); } }} onClick={close} aria-label="Close teleportation">Close <span aria-hidden="true">×</span></button>
       </div>
       {cityDestinations ? cityDestinations.map((destination) => (
         <button key={destination.name} onClick={() => travelToCity(destination)}>{destination.name}</button>
@@ -93,13 +93,13 @@ export function TeleportPanel() {
       <div className="home-destinations">
         <strong>Mes maisons ({homes.length} / {MAX_HOMES})</strong>
         {homes.map((home) => <button key={home.id} className="home-destination" onClick={() => travelHome(home)}>{home.name}</button>)}
-        <button className="home-manage-button" onClick={manageHomes}>Créer ou gérer mes maisons · M</button>
+        <button className="home-manage-button" onClick={manageHomes}>Create or manage my homes · M</button>
       </div>
       {enabled && online && (
         <div className="player-teleport">
-          <strong>Demander à rejoindre un joueur</strong>
+          <strong>Ask to join a player</strong>
           {players.filter((player) => !player.self).length === 0 ? (
-            <span className="teleport-empty">Aucun autre joueur dans ce salon.</span>
+            <span className="teleport-empty">No other players in this room.</span>
           ) : players.filter((player) => !player.self).map((player) => (
             <button
               key={player.playerId}
@@ -107,7 +107,7 @@ export function TeleportPanel() {
               disabled={Boolean(outgoing)}
               onClick={() => requestPlayerTeleport(player.playerId, player.name)}
             >
-              {outgoing?.playerId === player.playerId ? 'Demande envoyée…' : `Rejoindre ${player.name}`}
+              {outgoing?.playerId === player.playerId ? 'Request sent…' : `Join ${player.name}`}
             </button>
           ))}
           {notice && <span className="teleport-request-status" role="status">{notice}</span>}
@@ -123,12 +123,12 @@ export function TeleportRequestDialog() {
   return (
     <div className="menu-backdrop teleport-request-backdrop">
       <section className="menu-panel teleport-request-panel" role="dialog" aria-modal="true" aria-labelledby="teleport-request-title">
-        <p className="eyebrow">DEMANDE DE TÉLÉPORTATION</p>
+        <p className="eyebrow">TELEPORT REQUEST</p>
         <h2 id="teleport-request-title">{incoming.name}</h2>
-        <p>souhaite se téléporter jusqu’à toi.</p>
+        <p>wants to teleport to you.</p>
         <div className="teleport-request-actions">
-          <button className="primary-button" onClick={() => respondToTeleportRequest(true)}>Accepter</button>
-          <button className="secondary-button" onClick={() => respondToTeleportRequest(false)}>Refuser</button>
+          <button className="primary-button" onClick={() => respondToTeleportRequest(true)}>Accept</button>
+          <button className="secondary-button" onClick={() => respondToTeleportRequest(false)}>Decline</button>
         </div>
       </section>
     </div>

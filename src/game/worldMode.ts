@@ -8,14 +8,14 @@ export const hasTeamCombat = (mode: GameplayMode) => mode === 'battle' || mode =
 export const CITY_LIMIT = 5000;
 
 export const GAMEPLAY_MODE_LABELS: Record<GameplayMode, string> = {
-  creative: 'Créatif',
-  survival: 'Survie',
-  battle: 'Bataille',
-  'city-ancient': 'Ville ancienne',
-  'city-modern': 'Ville moderne',
+  creative: 'Creative',
+  survival: 'Survival',
+  battle: 'Combat',
+  'city-ancient': 'Historic City',
+  'city-modern': 'Modern City',
   pirates: 'Pirates',
   football: 'Football',
-  maze: 'Course Labyrinthe',
+  maze: 'Maze Race',
 };
 
 export function isGameplayMode(value: unknown): value is GameplayMode {

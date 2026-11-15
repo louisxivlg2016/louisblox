@@ -25,14 +25,14 @@ function Person({ position, color, worker = false }: { position: [number, number
   );
 }
 
-function CabinShell({ cabin }: { cabin: CabinDefinition }) {
+function CabinShell({ cabin, showFloor = true }: { cabin: CabinDefinition; showFloor?: boolean }) {
   const length = cabin.rear - cabin.front;
   const middle = (cabin.rear + cabin.front) / 2;
   const height = cabin.ceiling - cabin.floor;
   return (
     <group name="walkable-cabin">
-      <PixelPart position={[0, cabin.floor - 0.1, middle]} size={[cabin.halfWidth * 2 + 0.4, 0.2, length + 0.4]} color="#64727d" />
-      <PixelPart position={[0, cabin.floor + 0.012, middle]} size={[1.2, 0.025, length]} color="#405c76" />
+      {showFloor && <PixelPart position={[0, cabin.floor - 0.1, middle]} size={[cabin.halfWidth * 2 + 0.4, 0.2, length + 0.4]} color="#64727d" />}
+      {showFloor && <PixelPart position={[0, cabin.floor + 0.012, middle]} size={[1.2, 0.025, length]} color="#405c76" />}
       {[-1, 1].map((side) => (
         <mesh key={side} position={[side * (cabin.halfWidth + 0.12), cabin.floor + height / 2, middle]}>
           <boxGeometry args={[0.2, height, length + 0.4]} />
@@ -82,7 +82,7 @@ function TrainInterior({ kind, driverPresent, passengerSeat }: { kind: 'train' |
   const passengers = [5.7, 4.1, 2.5, 0.9].map((offset, index): [number, number, number] => [index % 2 === 0 ? seatX : -seatX, seatY, cabin.rear - offset]);
   return (
     <group name="train-cabin">
-      <CabinShell cabin={cabin} />
+      <CabinShell cabin={cabin} showFloor={false} />
       <SteeringWheel position={[-seatX, cabin.floor + 0.79, cabin.front + 0.6]} />
       {passengers.map((position, index) => (
         <group key={index}>

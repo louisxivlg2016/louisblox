@@ -5,8 +5,8 @@ import { selectionInfo } from '../game/items';
 import { ItemIcon } from './ItemIcon';
 import { PaintballPalette } from './PaintballPalette';
 import { PlaneTitleEditor } from './PlaneTitleEditor';
-import backpackButtonUrl from '../../assets/ui/backpack-button.webp';
-import shopButtonUrl from '../../assets/ui/shop-button.webp';
+import backpackButtonUrl from '../../assets/ui/english/backpack.webp';
+import shopButtonUrl from '../../assets/ui/english/shop.webp';
 import teleportButtonUrl from '../../assets/ui/teleport-button.webp';
 import tribeButtonUrl from '../../assets/menu/tribe-button.webp';
 import { Backpack } from './Backpack';
@@ -98,11 +98,11 @@ export function Hud() {
         <>
           <div className="crosshair" aria-hidden="true"><i /><b /></div>
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
-          {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label="Sac à dos"><img src={backpackButtonUrl} alt="" /></button>}
-          {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label="Boutique"><img src={shopButtonUrl} alt="" /></button>}
-          {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label="Téléportation · T"><img src={teleportButtonUrl} alt="Téléportation · T" /></button>}
-          {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label="Ouvrir ma tribu"><img src={tribeButtonUrl} alt="TRIBU" />{tribeInvitations > 0 && <span className="tribe-invitation-count">{tribeInvitations}</span>}</button>}
-          <div className="action-hint">{gameplayMode === 'football' ? 'Clic gauche : tir · E : tir puissant · T : tacler · G : passer' : <>Clic gauche <strong>casser / frapper / tirer</strong> · <strong>E</strong> poser / utiliser / monter</>}</div>
+          {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label="Backpack"><img src={backpackButtonUrl} alt="" /></button>}
+          {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label="Shop"><img src={shopButtonUrl} alt="" /></button>}
+          {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label="Teleportation · T"><img src={teleportButtonUrl} alt="Teleportation · T" /></button>}
+          {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label="Open my tribe"><img src={tribeButtonUrl} alt="TRIBU" />{tribeInvitations > 0 && <span className="tribe-invitation-count">{tribeInvitations}</span>}</button>}
+          <div className="action-hint">{gameplayMode === 'football' ? 'Left click: shoot · E: power shot · T: tackle · G: pass' : <>Left click <strong>break / hit / shoot</strong> · <strong>E</strong> place / use / mount</>}</div>
           {notice && <div className="game-notice">{notice}</div>}
           <EffectsHud />
           <SirenButton />
@@ -127,15 +127,15 @@ export function Hud() {
 
       {mode === 'play' && (
         <div className="hotbar-wrap">
-          {gameplayMode === 'survival' && <div className="survival-health" aria-label={`${lives} vies sur 10`}><span>Vies</span><div><i style={{ width: `${Math.max(0, Math.min(100, lives * 10))}%` }} /></div><strong>{lives}/10</strong></div>}
+          {gameplayMode === 'survival' && <div className="survival-health" aria-label={`${lives} vies sur 10`}><span>Lives</span><div><i style={{ width: `${Math.max(0, Math.min(100, lives * 10))}%` }} /></div><strong>{lives}/10</strong></div>}
           <div className="selected-name" role="status">
             {selectionInfo(selected).name}
-            {selected === 'pistol_bomb' && ` · ${bombAmmo}/10${bombReloading ? ' · Recharge de 3 s…' : ''}`}
+            {selected === 'pistol_bomb' && ` · ${bombAmmo}/10${bombReloading ? ' · 3-second reload…' : ''}`}
           </div>
           <div className="hotbar">
             {hotbarSlots.map((kind, index) => (
               <button
-                key={`${kind ?? 'vide'}-${index}`}
+                key={`${kind ?? 'empty'}-${index}`}
                 className={`hotbar-slot ${selected === kind ? 'selected' : ''}`}
                 onClick={() => {
                   if (kind === null) return;
@@ -143,7 +143,7 @@ export function Hud() {
                   else selectBlock(kind);
                 }}
                 disabled={kind === null}
-                aria-label={`${index + 1} : ${kind === null ? 'vide' : selectionInfo(kind).name}`}
+                aria-label={`${index + 1} : ${kind === null ? 'empty' : selectionInfo(kind).name}`}
               >
                 <span className="slot-number">{index === 9 ? '0' : index + 1}</span>
                 {kind !== null && <ItemIcon kind={kind} />}
@@ -165,7 +165,7 @@ export function Hud() {
       {sleepProgress !== null && (
         <div className="sleep-overlay" style={{ backgroundColor: `rgba(0, 0, 0, ${0.05 + sleepProgress * 0.35})` }}>
           <span className="sleep-zzz" aria-hidden="true">Z Z Z</span>
-          <p>{sleepProgress > 0.65 ? dayProgress >= 0.22 && dayProgress < 0.5 ? 'La nuit tombe…' : 'Le jour se lève…' : 'Tu dors…'}</p>
+          <p>{sleepProgress > 0.65 ? dayProgress >= 0.22 && dayProgress < 0.5 ? 'Night is falling…' : 'Day is breaking…' : 'You are sleeping…'}</p>
         </div>
       )}
     </div>

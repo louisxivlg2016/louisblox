@@ -8,14 +8,14 @@ import { Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition } from '
 
 export const WHITE_PAINTBALL_GUN_ID = 'gallery_paintball_white_paintball_gun' as const;
 export const PAINT_COLORS = [
-  { name: 'Rouge', value: '#c93d35' },
+  { name: 'Red', value: '#c93d35' },
   { name: 'Orange', value: '#df8730' },
   { name: 'Jaune', value: '#dfc33c' },
   { name: 'Lime', value: '#71ad3f' },
   { name: 'Vert', value: '#478c42' },
   { name: 'Cyan', value: '#43a9b3' },
-  { name: 'Bleu', value: '#4567b5' },
-  { name: 'Bleu clair', value: '#65a8d8' },
+  { name: 'Blue', value: '#4567b5' },
+  { name: 'Light Blue', value: '#65a8d8' },
   { name: 'Rose', value: '#db87a7' },
   { name: 'Violet', value: '#7850a7' },
   { name: 'Magenta', value: '#b454af' },

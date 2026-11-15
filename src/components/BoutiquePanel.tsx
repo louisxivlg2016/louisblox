@@ -6,7 +6,7 @@ import { useGameStore } from '../game/store';
 import { defaultAppearance } from '../game/appearance';
 import { BoutiqueAvatarPreview } from './BoutiqueAvatarPreview';
 import { SettingsPanel } from './SettingsPanel';
-import shopUrl from '../../assets/menu/shop.webp';
+import shopUrl from '../../assets/menu/english/shop.webp';
 import settingsButtonUrl from '../../assets/ui/settings-button.webp';
 
 const SKIN_COLORS = ['#f0c7a6', '#e7a0aa', '#c98962', '#966045', '#704735', '#493329'];
@@ -34,59 +34,59 @@ export function BoutiquePanel() {
   };
   return (
     <div className="menu-backdrop boutique-backdrop">
-      <section className="menu-panel boutique-panel" role="dialog" aria-modal="true" aria-label="Boutique et réglages" style={{ backgroundImage: `linear-gradient(rgba(20,34,24,.93), rgba(20,34,24,.97)), url(${shopUrl})`, backgroundSize: 'cover' }}>
+      <section className="menu-panel boutique-panel" role="dialog" aria-modal="true" aria-label="Shop and settings" style={{ backgroundImage: `linear-gradient(rgba(20,34,24,.93), rgba(20,34,24,.97)), url(${shopUrl})`, backgroundSize: 'cover' }}>
         <div className="boutique-layout">
-          <nav className="boutique-tabs" role="tablist" aria-label="Boutique et réglages">
-            <button className={`boutique-tab ${tab === 'shop' ? 'active' : ''}`} role="tab" aria-selected={tab === 'shop'} onClick={() => setTab('shop')}>Boutique</button>
-            <button className={`boutique-tab image-tab ${tab === 'settings' ? 'active' : ''}`} role="tab" aria-label="Réglages" aria-selected={tab === 'settings'} onClick={() => setTab('settings')}><img src={settingsButtonUrl} alt="" /></button>
+          <nav className="boutique-tabs" role="tablist" aria-label="Shop and settings">
+            <button className={`boutique-tab ${tab === 'shop' ? 'active' : ''}`} role="tab" aria-selected={tab === 'shop'} onClick={() => setTab('shop')}>Shop</button>
+            <button className={`boutique-tab image-tab ${tab === 'settings' ? 'active' : ''}`} role="tab" aria-label="Settings" aria-selected={tab === 'settings'} onClick={() => setTab('settings')}><img src={settingsButtonUrl} alt="" /></button>
           </nav>
           <div className={`boutique-content ${tab === 'shop' ? 'with-preview' : ''}`} role="tabpanel">
             {tab === 'settings' ? <SettingsPanel /> : <>
-        <div className="boutique-heading"><p className="eyebrow">PERSONNALISATION</p><h2 id="boutique-title">Boutique</h2><p>Choisis ta tenue. Ton aperçu 3D reste visible en bas pendant ton choix.</p></div>
+        <div className="boutique-heading"><p className="eyebrow">CUSTOMIZATION</p><h2 id="boutique-title">Shop</h2><p>Choose your outfit. Your 3D preview stays visible at the bottom while you choose.</p></div>
         <div className="character-selector">
-          <span>Personnage</span>
-          <div className="character-choice" role="group" aria-label="Choisir le personnage">
-            <button type="button" className={character === 'boy' ? 'active' : ''} aria-pressed={character === 'boy'} onClick={() => setCharacter('boy')}>Garçon</button>
-            <button type="button" className={character === 'girl' ? 'active' : ''} aria-pressed={character === 'girl'} onClick={() => setCharacter('girl')}>Fille</button>
-            <button type="button" className={`original-character-button ${outfit === 'default' ? 'active' : ''}`} aria-pressed={outfit === 'default'} title="Tenue, coiffure et couleurs du personnage original" onClick={() => { setOutfit('default'); setWig('auto'); setAppearance(defaultAppearance(character)); }}>Personnage original</button>
+          <span>Character</span>
+          <div className="character-choice" role="group" aria-label="Choose character">
+            <button type="button" className={character === 'boy' ? 'active' : ''} aria-pressed={character === 'boy'} onClick={() => setCharacter('boy')}>Boy</button>
+            <button type="button" className={character === 'girl' ? 'active' : ''} aria-pressed={character === 'girl'} onClick={() => setCharacter('girl')}>Girl</button>
+            <button type="button" className={`original-character-button ${outfit === 'default' ? 'active' : ''}`} aria-pressed={outfit === 'default'} title="Original character outfit, hairstyle, and colors" onClick={() => { setOutfit('default'); setWig('auto'); setAppearance(defaultAppearance(character)); }}>Original character</button>
           </div>
         </div>
         <div className="appearance-section">
-          {outfit === 'knight' && <p className="appearance-locked-note" role="status">Le casque du chevalier garde la peau, les cheveux et les sourcils d’origine.</p>}
+          {outfit === 'knight' && <p className="appearance-locked-note" role="status">The knight helmet keeps the original skin, hair, and eyebrows.</p>}
           <fieldset className="appearance-controls" disabled={outfit === 'knight'}>
-          <h3>Coiffure</h3>
+          <h3>Hairstyle</h3>
           <div className="appearance-options">
-            <button className={appearance.hairStyle === 'short' ? 'active' : ''} onClick={() => setAppearance({ hairStyle: 'short' })}>Cheveux courts</button>
-            <button className={appearance.hairStyle === 'long' ? 'active' : ''} onClick={() => setAppearance({ hairStyle: 'long' })}>Cheveux longs</button>
+            <button className={appearance.hairStyle === 'short' ? 'active' : ''} onClick={() => setAppearance({ hairStyle: 'short' })}>Short hair</button>
+            <button className={appearance.hairStyle === 'long' ? 'active' : ''} onClick={() => setAppearance({ hairStyle: 'long' })}>Long hair</button>
           </div>
-          <h3>Couleur de la peau</h3>
+          <h3>Skin color</h3>
           <div className="appearance-options">
-            <button className={appearance.originalSkinColor ? 'active' : ''} aria-pressed={appearance.originalSkinColor} onClick={() => setAppearance({ originalSkinColor: !appearance.originalSkinColor })}>Peau d’origine</button>
-            {SKIN_COLORS.map((color) => <button key={color} className={`color-swatch ${!appearance.originalSkinColor && appearance.skinColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ skinColor: color, originalSkinColor: false })} aria-label={`Peau ${color}`} />)}
+            <button className={appearance.originalSkinColor ? 'active' : ''} aria-pressed={appearance.originalSkinColor} onClick={() => setAppearance({ originalSkinColor: !appearance.originalSkinColor })}>Original skin</button>
+            {SKIN_COLORS.map((color) => <button key={color} className={`color-swatch ${!appearance.originalSkinColor && appearance.skinColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ skinColor: color, originalSkinColor: false })} aria-label={`Skin ${color}`} />)}
           </div>
           {outfit !== 'trader' && outfit !== 'firefighter' && <>
-            <h3>Couleur des cheveux</h3>
+            <h3>Hair color</h3>
             <div className="appearance-options">
-              <button className={appearance.originalHairColor ? 'active' : ''} aria-pressed={appearance.originalHairColor} onClick={() => setAppearance({ originalHairColor: !appearance.originalHairColor })}>Cheveux d’origine</button>
-              {HAIR_COLORS.map((color) => <button key={color} className={`color-swatch ${!appearance.originalHairColor && appearance.hairColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ hairColor: color, originalHairColor: false })} aria-label={`Cheveux ${color}`} />)}
+              <button className={appearance.originalHairColor ? 'active' : ''} aria-pressed={appearance.originalHairColor} onClick={() => setAppearance({ originalHairColor: !appearance.originalHairColor })}>Original hair</button>
+              {HAIR_COLORS.map((color) => <button key={color} className={`color-swatch ${!appearance.originalHairColor && appearance.hairColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ hairColor: color, originalHairColor: false })} aria-label={`Hair ${color}`} />)}
             </div>
           </>}
           {outfit !== 'firefighter' && <>
-            <h3>Couleur des sourcils</h3>
+            <h3>Eyebrow color</h3>
             <div className="appearance-options">
-              <button className={appearance.eyebrowColor === null ? 'active' : ''} onClick={() => setAppearance({ eyebrowColor: null })} aria-label="Sourcils comme les cheveux">Comme les cheveux</button>
-              {HAIR_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.eyebrowColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ eyebrowColor: color })} aria-label={`Sourcils ${color}`} />)}
+              <button className={appearance.eyebrowColor === null ? 'active' : ''} onClick={() => setAppearance({ eyebrowColor: null })} aria-label="Eyebrows matching hair">Same as hair</button>
+              {HAIR_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.eyebrowColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ eyebrowColor: color })} aria-label={`Eyebrows ${color}`} />)}
             </div>
           </>}
           </fieldset>
           {outfit !== 'louis15' && <>
-            <h3>Couleur des yeux</h3>
-            <div className="appearance-options">{EYE_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.eyeColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ eyeColor: color })} aria-label={`Yeux ${color}`} />)}</div>
+            <h3>Eye color</h3>
+            <div className="appearance-options">{EYE_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.eyeColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ eyeColor: color })} aria-label={`Eyes ${color}`} />)}</div>
           </>}
-          <h3>Couleur des vêtements</h3>
+          <h3>Clothing color</h3>
           <div className="appearance-options">
-            <button className={appearance.clothingColor === null ? 'active' : ''} onClick={() => setAppearance({ clothingColor: null })}>Du costume</button>
-            {CLOTHING_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.clothingColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ clothingColor: color })} aria-label={`Vêtements ${color}`} />)}
+            <button className={appearance.clothingColor === null ? 'active' : ''} onClick={() => setAppearance({ clothingColor: null })}>Costume default</button>
+            {CLOTHING_COLORS.map((color) => <button key={color} className={`color-swatch ${appearance.clothingColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ clothingColor: color })} aria-label={`Clothing ${color}`} />)}
           </div>
         </div>
         <div className="outfit-grid">
@@ -97,13 +97,13 @@ export function BoutiquePanel() {
                 <span className="outfit-swatch" style={{ backgroundColor: appearance.clothingColor ?? item.color }} />
                 <strong>{item.name}</strong>
                 <small>{item.description}</small>
-                {outfit === kind && <span className="outfit-selected">Portée</span>}
+                {outfit === kind && <span className="outfit-selected">Equipped</span>}
               </button>
             );
           })}
         </div>
         <>
-            <p className="backpack-label">Coiffure normale ou perruque · ton choix reste quand tu changes de costume</p>
+            <p className="backpack-label">Normal hair or wig · your choice remains when you change costumes</p>
             <div className="outfit-grid wig-grid">
               {WIG_ORDER.map((kind) => {
                 const item = WIGS[kind];
@@ -112,19 +112,19 @@ export function BoutiquePanel() {
                     <span className="outfit-swatch" style={{ backgroundColor: item.color }} />
                     <strong>{item.name}</strong>
                     <small>{item.description}</small>
-                    {wig === kind && <span className="outfit-selected">Choisie</span>}
+                    {wig === kind && <span className="outfit-selected">Selected</span>}
                   </button>
                 );
               })}
             </div>
         </>
-        {battle && <p className="backpack-label">Le costume militaire est obligatoire en Bataille.</p>}
-        <p className="boutique-hint">B ouvre la boutique · M crée une maison en pleine partie · P change de caméra.</p>
-        <button className="primary-button" onClick={close}>Porter et reprendre</button>
+        {battle && <p className="backpack-label">The military costume is required in Combat mode.</p>}
+        <p className="boutique-hint">B opens the shop · M creates a home during gameplay · P changes camera.</p>
+        <button className="primary-button" onClick={close}>Wear and resume</button>
             </>}
           </div>
         </div>
-        {tab === 'shop' && <aside className="boutique-avatar-preview boutique-dressing-room" aria-label="Aperçu de ton personnage">
+        {tab === 'shop' && <aside className="boutique-avatar-preview boutique-dressing-room" aria-label="Your character preview">
           <BoutiqueAvatarPreview />
           <strong>{OUTFITS[outfit].name}</strong>
         </aside>}

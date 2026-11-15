@@ -103,7 +103,7 @@ export function landPlane(world: World) {
   const mount = world.queryFirst(Player)?.get(PlayerMount);
   if (!mount?.vehicle || mount.kind !== 'plane' || mount.role !== 'driver') return false;
   mount.landing = true;
-  useGameStore.getState().setNotice('Atterrissage en cours · Monter ou Descendre pour reprendre les commandes.');
+  useGameStore.getState().setNotice('Landing in progress · Ascend or Descend to take control again.');
   return true;
 }
 
@@ -115,7 +115,7 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
     const motion = vehicle.get(VehicleMotion);
     if (!motion) return false;
     if (role === 'driver' && motion.mounted) {
-      useGameStore.getState().setNotice('La place de conducteur est déjà prise. Choisis la place passager.');
+      useGameStore.getState().setNotice('The driver seat is taken. Choose the passenger seat.');
       return false;
     }
     if (role === 'driver') {
@@ -126,13 +126,13 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
   } else {
     const rider = vehicle.get(HorseRider);
     if (rider?.mounted && rider.passenger) {
-      useGameStore.getState().setNotice(`Ce ${kind === 'horse' ? 'cheval' : 'chameau'} a déjà deux cavaliers.`);
+      useGameStore.getState().setNotice(`This ${kind === 'horse' ? 'horse' : 'camel'} already has two riders.`);
       return false;
     }
     const assignedRole = role === 'driver' && rider?.mounted ? 'passenger' : role;
     if (rider) {
       if (assignedRole === 'driver' && rider.mounted || assignedRole === 'passenger' && rider.passenger) {
-        useGameStore.getState().setNotice(assignedRole === 'driver' ? 'La place de conducteur est déjà prise.' : 'La place de passager est déjà prise.');
+        useGameStore.getState().setNotice(assignedRole === 'driver' ? 'The driver seat is already taken.' : 'The passenger seat is already taken.');
         return false;
       }
       vehicle.set(HorseRider, { mounted: assignedRole === 'driver' || rider.mounted, passenger: assignedRole === 'passenger' || rider.passenger });
@@ -155,14 +155,14 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
   mount.cabinPosition = walkable ? new Vector3(...seatOffset(kind, role, 0)) : null;
   useGameStore.getState().setRiding(kind, role);
   useGameStore.getState().setNotice(
-    kind === 'horse' ? role === 'passenger' ? 'Passager du cheval · E : descendre' : vehicle.get(HorseRider)?.saddled ? 'Cheval sellé · WASD : le guider · Espace : sauter · E : descendre' : 'Cheval sans selle · WASD / flèches : le guider · Espace : sauter · E : descendre'
-      : kind === 'camel' ? role === 'passenger' ? 'Passager du chameau · E : descendre' : guidedCamel ? 'Chameau attaché au marchand · Il guide le trajet · E : descendre' : 'Chameau · WASD / flèches : le guider · Espace : sauter · E : descendre'
-        : walkable ? 'Passager · WASD / flèches : marcher dans le véhicule · E : descendre · Le véhicule reste arrêté sans conducteur.'
-        : role === 'passenger' ? 'Passager · E : descendre · Le véhicule reste arrêté sans conducteur.'
-          : kind === 'plane' ? 'WASD : piloter · Espace/C : monter/descendre · E : sortir'
-            : kind === 'cannon' ? 'Clic gauche : tirer · Caméra : viser · E : descendre'
-              : kind === 'carriage' ? 'Cocher · WASD / flèches : guider les chevaux · E : descendre'
-                : 'WASD / flèches : conduire · E : descendre',
+    kind === 'horse' ? role === 'passenger' ? 'Horse passenger · E: dismount' : vehicle.get(HorseRider)?.saddled ? 'Saddled horse · WASD: guide · Space: jump · E: dismount' : 'Unsaddled horse · WASD / arrows: guide · Space: jump · E: dismount'
+      : kind === 'camel' ? role === 'passenger' ? 'Camel passenger · E: dismount' : guidedCamel ? 'Camel tied to trader · he leads the journey · E: dismount' : 'Camel · WASD / arrows: guide · Space: jump · E: dismount'
+        : walkable ? 'Passenger · WASD / arrows: walk inside vehicle · E: exit · The vehicle stays still without a driver.'
+        : role === 'passenger' ? 'Passenger · E: exit · The vehicle stays still without a driver.'
+          : kind === 'plane' ? 'WASD: pilot · Space/C: ascend/descend · E: exit'
+            : kind === 'cannon' ? 'Left click: fire · Camera: aim · E: exit'
+              : kind === 'carriage' ? 'Carriage driver · WASD / arrows: guide horses · E: exit'
+                : 'WASD / arrows: drive · E: exit',
   );
   return true;
 }
@@ -342,7 +342,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
         if (!movement || movement === 'landed') motion.speed = 0;
         if (movement === 'landed' && mount) {
           mount.landing = false;
-          useGameStore.getState().setNotice('Avion posé · E : sortir · Décoller / Monter pour repartir');
+          useGameStore.getState().setNotice('Airplane landed · E: exit · Take off / Ascend to depart again');
         }
       }
     } else if (vehicle.kind === 'boat') {
@@ -375,7 +375,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
       rider.mounted = true;
       rider.passenger = false;
       useGameStore.getState().setRiding(animal.kind, 'driver');
-      useGameStore.getState().setNotice('Tu es maintenant devant, aux commandes · E : descendre');
+      useGameStore.getState().setNotice('You are now in the driver seat · E: exit');
     }
     if (mount.role !== 'driver') return;
     if (animal.kind === 'camel' && entity.get(CamelLeash)?.trader?.get(TraderPosition)) {

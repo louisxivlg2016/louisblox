@@ -7,8 +7,8 @@ import { useGameStore } from '../game/store';
 import { Player } from '../game/traits';
 import { world } from '../game/world';
 
-const WEATHER_NAMES = { clear: 'Ciel clair', rain: 'Pluie', snow: 'Neige' } as const;
-const RUIN_NAMES = { church: 'Église', palace: 'Palais', fort: 'Fort' } as const;
+const WEATHER_NAMES = { clear: 'Clear sky', rain: 'Rain', snow: 'Snow' } as const;
+const RUIN_NAMES = { church: 'Church', palace: 'Palace', fort: 'Fort' } as const;
 
 function Coordinates() {
   const coordinates = useGameStore((state) => state.coordinates);
@@ -16,7 +16,7 @@ function Coordinates() {
   return (
     <>
       <span className="coordinates">XYZ {coordinates.x.toFixed(2)} / {coordinates.y.toFixed(2)} / {coordinates.z.toFixed(2)}</span>
-      {nearbyRuin && nearbyRuin.distance < 64 && <span className="weather-info">Ruines : {RUIN_NAMES[nearbyRuin.type]} à {Math.round(nearbyRuin.distance)} m</span>}
+      {nearbyRuin && nearbyRuin.distance < 64 && <span className="weather-info">Ruins: {RUIN_NAMES[nearbyRuin.type]} at {Math.round(nearbyRuin.distance)} m</span>}
     </>
   );
 }
@@ -54,16 +54,16 @@ export function WorldStats() {
 
   return (
     <div className="world-stats">
-      <strong className="block-count">{blockCount.toLocaleString('fr-FR')}</strong> blocs chargés
+      <strong className="block-count">{blockCount.toLocaleString('en-US')}</strong> loaded blocks
       <Coordinates />
       <EnvironmentInfo />
-      {multiplayerEnabled && <span className={`weather-info multiplayer-hud ${multiplayerStatus}`}>{multiplayerStatus === 'online' ? `En ligne · ${multiplayerRoom} · ${multiplayerPlayerCount} joueur${multiplayerPlayerCount > 1 ? 's' : ''}` : multiplayerStatus === 'connecting' ? `Connexion · ${multiplayerRoom}` : `Hors ligne · ${multiplayerRoom}`}</span>}
-      <span className="weather-info apple-count">Pommes : {apples}</span>
-      <span className="weather-info meat-count">Viandes : {meatSummary || 'aucune'}</span>
-      <span className="weather-info lives-count">Vies : {lives}/10</span>
-      {equippedArmor && <span className="weather-info">Armure : {equippedArmor}</span>}
-      {riding && <span className="weather-info">{riding === 'car' ? 'Au volant · E pour sortir' : riding === 'horse' ? 'À cheval · E pour descendre' : `${riding === 'plane' ? 'Avion' : riding === 'boat' ? 'Bateau' : 'Train'} · ${ridingRole === 'passenger' ? 'Passager' : 'Conducteur'} · E pour descendre`}</span>}
-      {flying && <span className="weather-info flight-status">Vol activé</span>}
+      {multiplayerEnabled && <span className={`weather-info multiplayer-hud ${multiplayerStatus}`}>{multiplayerStatus === 'online' ? `Online · ${multiplayerRoom} · ${multiplayerPlayerCount} player${multiplayerPlayerCount > 1 ? 's' : ''}` : multiplayerStatus === 'connecting' ? `Connexion · ${multiplayerRoom}` : `Offline · ${multiplayerRoom}`}</span>}
+      <span className="weather-info apple-count">Apples: {apples}</span>
+      <span className="weather-info meat-count">Meats: {meatSummary || 'none'}</span>
+      <span className="weather-info lives-count">Lives: {lives}/10</span>
+      {equippedArmor && <span className="weather-info">Armor: {equippedArmor}</span>}
+      {riding && <span className="weather-info">{riding === 'car' ? 'Driving · E to exit' : riding === 'horse' ? 'On horseback · E to dismount' : `${riding === 'plane' ? 'Airplane' : riding === 'boat' ? 'Boat' : 'Train'} · ${ridingRole === 'passenger' ? 'Passenger' : 'Driver'} · E pour descendre`}</span>}
+      {flying && <span className="weather-info flight-status">Flight enabled</span>}
     </div>
   );
 }

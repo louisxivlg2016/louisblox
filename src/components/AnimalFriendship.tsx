@@ -61,7 +61,7 @@ export function AnimalFriendship({ entity }: { entity: Entity }) {
     context.fillStyle = '#ffffff';
     context.font = 'bold 38px sans-serif';
     context.textBaseline = 'middle';
-    context.fillText(`Amitié ${tame.friendship} · ${tame.happiness} %`, 108, 58);
+    context.fillText(`Friendship ${tame.friendship} · ${tame.happiness}%`, 108, 58);
     label.map.needsUpdate = true;
   }, [label, tame?.tamed, tame?.friendship, tame?.happiness]);
 

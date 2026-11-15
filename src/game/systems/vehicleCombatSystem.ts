@@ -56,13 +56,13 @@ export function vehicleCombatSystem(world: World, camera: Camera, dt: number, to
   cooldowns.set(world, 0.35);
   stopMining();
   const remaining = target.health - 1;
-  const name = target.kind === 'car' ? 'Voiture' : target.kind === 'plane' ? 'Avion' : target.kind === 'boat' ? 'Bateau' : 'Train';
+  const name = target.kind === 'car' ? 'Car' : target.kind === 'plane' ? 'Airplane' : target.kind === 'boat' ? 'Boat' : 'Train';
   if (remaining > 0) {
     target.entity.set(VehicleHealth, { value: remaining });
     useGameStore.getState().setNotice(`${name} : encore ${remaining} coup${remaining > 1 ? 's' : ''}.`);
   } else {
     destroyVehicle(world, target.id);
-    useGameStore.getState().setNotice(`${name} détruit.`);
+    useGameStore.getState().setNotice(`${name} destroyed.`);
   }
   return true;
 }

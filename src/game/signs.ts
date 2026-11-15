@@ -29,5 +29,5 @@ export function saveSign(world: World, position: SignPosition, text: string) {
   const value = cleanSignText(text);
   setVoxelText(world, position, value);
   useSignStore.getState().closeSign();
-  useGameStore.getState().setNotice('Panneau enregistré.');
+  useGameStore.getState().setNotice('Sign saved.');
 }

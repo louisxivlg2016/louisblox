@@ -136,7 +136,7 @@ function unindexBlock(state: WorldChunks, block: Voxel, refresh = true) {
 
 function stateFor(world: World) {
   const state = worlds.get(world);
-  if (!state) throw new Error('Le monde de chunks n’est pas initialisé');
+  if (!state) throw new Error('Chunk world is not initialized');
   return state;
 }
 

@@ -16,11 +16,11 @@ export type LevelData = { spawn: { x: number; y: number; z: number } };
 
 export const BIOME_NAMES: Record<Biome, string> = {
   prairie: 'Prairie',
-  forest: 'Forêt de sapins',
+  forest: 'Pine Forest',
   jungle: 'Jungle',
-  winter: 'Montagnes enneigées',
-  desert: 'Désert',
-  autumn: 'Automne',
+  winter: 'Snowy Mountains',
+  desert: 'Desert',
+  autumn: 'Autumn',
 };
 
 function hash(x: number, z: number, seed: number) {

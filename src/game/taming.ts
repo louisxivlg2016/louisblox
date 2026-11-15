@@ -12,7 +12,7 @@ export const FEED_INTERVAL_MS = 30 * 60 * 1000;
 const FARM_FOOD = new Set<SelectedKind>(['corn', 'apple', 'wheat']);
 const MEAT_FOOD = new Set<SelectedKind>(['raw_meat', 'cooked_meat']);
 const kinds = new Set<AnimalKind>(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie', 'monkey', 'ocelot', 'giraffe', 'elephant']);
-const names: Partial<Record<AnimalKind, string>> = { cow: 'Vache', sheep: 'Mouton', pig: 'Cochon', horse: 'Cheval', bear: 'Ours', wolf: 'Loup', snowWolf: 'Loup des neiges', snowBear: 'Ours des neiges', camel: 'Chameau', chicken: 'Poule', duck: 'Canard', monkey: 'Singe', ocelot: 'Ocelot', giraffe: 'Girafe', elephant: 'Éléphant', deer: 'Cerf', snowDeer: 'Cerf des neiges' };
+const names: Partial<Record<AnimalKind, string>> = { cow: 'Cow', sheep: 'Sheep', pig: 'Pig', horse: 'Horse', bear: 'Bear', wolf: 'Wolf', snowWolf: 'Snow Wolf', snowBear: 'Snow Bear', camel: 'Camel', chicken: 'Chicken', duck: 'Duck', monkey: 'Monkey', ocelot: 'Ocelot', giraffe: 'Giraffe', elephant: 'Elephant', deer: 'Deer', snowDeer: 'Snow Deer' };
 
 type TameRecord = { id: string; kind: AnimalKind; tamedAt: number; giftDay: number; baby: boolean; babyBorn: boolean; lastFedAt: number; friendship: number };
 const records = new WeakMap<World, Map<string, TameRecord>>();
@@ -120,8 +120,8 @@ export function canFeedAnimal(kind: AnimalKind, selected: SelectedKind) {
 
 export function animalFoodNotice(kind: AnimalKind) {
   return WILD_ANIMALS.has(kind)
-    ? `${names[kind] ?? 'Cet animal'} mange de la viande crue ou cuite.`
-    : `${names[kind] ?? 'Cet animal'} mange du maïs, des pommes ou du blé.`;
+    ? `${names[kind] ?? 'This animal'} eats raw or cooked meat.`
+    : `${names[kind] ?? 'This animal'} eats corn, apples, or wheat.`;
 }
 
 export function feedAnimal(world: World, entity: Entity, selected: SelectedKind): 'fed' | 'handled' | false {
@@ -135,7 +135,7 @@ export function feedAnimal(world: World, entity: Entity, selected: SelectedKind)
     return 'handled';
   }
   if (!hasFood(selected)) {
-    store.setNotice(`Il te manque ${selected === 'apple' ? 'une pomme' : selected === 'wheat' ? 'du blé' : selected === 'corn' ? 'du maïs' : 'de la viande'} pour nourrir cet animal.`);
+    store.setNotice(`You need ${selected === 'apple' ? 'an apple' : selected === 'wheat' ? 'wheat' : selected === 'corn' ? 'corn' : 'meat'} to feed this animal.`);
     return 'handled';
   }
   consumeFood(selected);
@@ -164,7 +164,7 @@ export function feedAnimal(world: World, entity: Entity, selected: SelectedKind)
     entity.remove(CamelLeash);
   }
   save(world);
-  store.setNotice(existing ? `${names[kind] ?? 'Cet animal'} est content ! Amitié niveau ${record.friendship} · Prochain repas dans 30 minutes.` : `${names[kind] ?? 'Cet animal'} est apprivoisé · Amitié niveau 1. Nourris-le au moins toutes les 30 minutes.`);
+  store.setNotice(existing ? `${names[kind] ?? 'This animal'} is happy! Friendship level ${record.friendship} · Next meal in 30 minutes.` : `${names[kind] ?? 'This animal'} is tamed · Friendship level 1. Feed it at least every 30 minutes.`);
   return 'fed';
 }
 
@@ -219,8 +219,8 @@ export function tamingSystem(world: World, _dt: number) {
   if (giftsChanged || hungerChanged) {
     const store = useGameStore.getState();
     save(world);
-    if (hungerChanged) store.setNotice('Un animal n’a pas mangé pendant 30 minutes : il n’est plus ton ami. Donne-lui à manger pour le retrouver.');
-    else store.setNotice('Tes animaux t’ont donné du lait, de la laine ou un bébé.');
+    if (hungerChanged) store.setNotice('An animal has not eaten for 30 minutes: it is no longer your friend. Feed it to become friends again.');
+    else store.setNotice('Your animals gave you milk, wool, or a baby.');
   }
 }
 

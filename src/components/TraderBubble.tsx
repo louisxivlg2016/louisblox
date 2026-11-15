@@ -28,7 +28,7 @@ function bubbleTexture(text: string) {
   context.fillStyle = '#31573d';
   context.font = 'bold 18px monospace';
   context.textAlign = 'center';
-  context.fillText('Marchand', 256, 31);
+  context.fillText('Trader', 256, 31);
   context.fillStyle = '#27352b';
   context.font = 'bold 19px monospace';
   context.textAlign = 'left';
@@ -66,12 +66,12 @@ export function TraderBubble({ entity }: { entity: Entity }) {
   const active = traderId === entity || following && entity.get(Trader)?.following === true;
   const lastStep = MERCHANT_STORIES[storyId].steps.length - 1;
   const text = restaurantMessage || (arrived
-    ? 'Nous sommes arrivés en ville ! Les habitants sont heureux de te voir.'
+    ? 'We have arrived in the city! The residents are happy to see you.'
     : active
       ? following
-        ? `Direction la ville : encore ${remaining ?? '…'} m. Je t’attends si tu t’éloignes.`
-        : step === lastStep ? `${story} Choisis ta réponse ici.` : `${story} E pour la suite.`
-      : 'Appuie sur moi pour écouter mon histoire.');
+        ? `Heading to the city: ${remaining ?? '…'} m left. I will wait if you fall behind.`
+        : step === lastStep ? `${story} Choose your answer here.` : `${story} E to continue.`
+      : 'Press me to hear my story.');
   const sprite = useMemo(() => {
     const material = new SpriteMaterial({ map: bubbleTexture(text), transparent: true, depthWrite: false, depthTest: false, toneMapped: false });
     const object = new Sprite(material);

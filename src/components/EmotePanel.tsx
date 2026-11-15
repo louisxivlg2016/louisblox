@@ -5,9 +5,9 @@ import { useGameStore } from '../game/store';
 import emotesButtonUrl from '../../assets/ui/emotes-button.webp';
 
 const ACTIONS: Array<{ kind: EmoteKind; label: string }> = [
-  { kind: 'sit', label: 'S’asseoir' },
-  { kind: 'lie', label: 'S’aplatir' },
-  { kind: 'wave', label: 'Dire bonjour' },
+  { kind: 'sit', label: 'Sit' },
+  { kind: 'lie', label: 'Lie down' },
+  { kind: 'wave', label: 'Wave' },
 ];
 
 export function EmotePanel() {
@@ -36,10 +36,10 @@ export function EmotePanel() {
   if (open) {
     return (
       <div className="emote-backdrop">
-        <section className="emote-panel" aria-label="Choisir un geste">
-          <header><strong>Gestes</strong><button onClick={closeMenu} aria-label="Fermer les gestes">×</button></header>
+        <section className="emote-panel" aria-label="Choose emote">
+          <header><strong>Emotes</strong><button onClick={closeMenu} aria-label="Close emotes">×</button></header>
           {ACTIONS.map((action) => <button key={action.kind} className={current === action.kind ? 'active' : ''} onClick={() => choose(action.kind)}>{action.label}</button>)}
-          {(current === 'sit' || current === 'lie') && <button onClick={stand}>Se relever</button>}
+          {(current === 'sit' || current === 'lie') && <button onClick={stand}>Stand up</button>}
         </section>
       </div>
     );

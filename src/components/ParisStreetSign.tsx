@@ -5,8 +5,8 @@ import { PARIS_STREET_SIGN_TEXT } from '../game/extraBlocks';
 
 function parisSignTexture(text: string) {
   const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
-  const district = (lines.length > 1 ? lines[0] : '4e arrondissement').toLocaleUpperCase('fr-FR');
-  const street = (lines.length > 1 ? lines.slice(1).join(' ') : lines[0] || 'Rue de la Paix').toLocaleUpperCase('fr-FR');
+  const district = (lines.length > 1 ? lines[0] : '4th arrondissement').toLocaleUpperCase('en-US');
+  const street = (lines.length > 1 ? lines.slice(1).join(' ') : lines[0] || 'Peace Street').toLocaleUpperCase('en-US');
   const canvas = document.createElement('canvas');
   canvas.width = 256;
   canvas.height = 104;

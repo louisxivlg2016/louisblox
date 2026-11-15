@@ -23,7 +23,7 @@ export class FootballEngine {
   private penaltyTeam: Team | null = null;
   private penaltyShooterId: string | null = null;
   private restartPlayerId: string | null = null;
-  private notice = 'Choisis ton équipe';
+  private notice = 'Choose your team';
   private whistle?: 'short' | 'long' | 'goal';
   private whistleToken = 0;
   private lastTick = Date.now();
@@ -45,7 +45,7 @@ export class FootballEngine {
     this.penaltyTeam = null;
     this.penaltyShooterId = null;
     this.restartPlayerId = null;
-    this.notice = 'Choisis ton équipe';
+    this.notice = 'Choose your team';
     this.whistle = undefined;
     this.lastTick = Date.now();
     this.lastSent = 0;
@@ -67,7 +67,7 @@ export class FootballEngine {
     this.penaltyTeam = state.penaltyTeam ?? null;
     this.penaltyShooterId = state.penaltyShooterId ?? null;
     this.restartPlayerId = state.restartPlayerId ?? null;
-    this.notice = state.notice ?? 'Choisis ton équipe';
+    this.notice = state.notice ?? 'Choose your team';
     this.whistleToken = state.whistleToken ?? 0;
     this.lastTick = Date.now();
   }
@@ -139,7 +139,7 @@ export class FootballEngine {
     this.phaseUntil = Date.now() + 1500;
     this.lastTouchTeam = team;
     this.lastKick = null;
-    this.notice = goalKick ? `Six-mètres · ${goalkeeper?.name ?? 'au gardien'}` : `Ballon au gardien · ${goalkeeper?.name ?? 'au gardien'}`;
+    this.notice = goalKick ? `Goal kick · ${goalkeeper?.name ?? 'goalkeeper'}` : `Ball to goalkeeper · ${goalkeeper?.name ?? 'goalkeeper'}`;
     if (goalkeeper) {
       this.ball = { x: direction * 25.5, y: 9, z: 0, vx: 0, vy: 0, vz: 0 };
       this.room.broadcast({ type: 'football-spawn', positions: { [goalkeeper.playerId]: { x: direction * 26.2, y: 8.51, z: 0, yaw: team === 'red' ? -Math.PI / 2 : Math.PI / 2 } } });
@@ -157,7 +157,7 @@ export class FootballEngine {
     this.penaltyTeam = null;
     this.penaltyShooterId = null;
     this.restartPlayerId = null;
-    this.notice = 'Coup d’envoi dans 3 secondes';
+    this.notice = 'Kickoff in 3 seconds';
     this.spawnPositions();
     this.whistleSound('short');
     this.update(true);
@@ -178,7 +178,7 @@ export class FootballEngine {
   private touch(player: PlayerAttachment) {
     if (!player.state || player.team !== 'red' && player.team !== 'blue') return;
     if (this.lastKick && this.lastKick.offside && this.lastKick.team === player.team && this.lastKick.playerId !== player.playerId) {
-      this.notice = `Hors-jeu de ${player.name}`;
+      this.notice = `Offside by ${player.name}`;
       this.ball.x = player.state.x;
       this.ball.z = player.state.z;
       this.ball.vx = this.ball.vy = this.ball.vz = 0;
@@ -210,7 +210,7 @@ export class FootballEngine {
     this.ball.vy = style === 'pass' ? Math.max(1.2, Math.sin(pitch) * speed) : Math.max(2.2, Math.sin(pitch) * speed + (style === 'power' ? 3 : 0));
     this.lastTouchTeam = player.team as Team;
     this.lastKick = { playerId: player.playerId, team: player.team as Team, offside: this.isOffside(player) };
-    this.notice = style === 'power' ? 'Tir puissant' : style === 'pass' ? 'Passe' : style === 'tackle' ? 'Tacle réussi' : 'Tir';
+    this.notice = style === 'power' ? 'Power shot' : style === 'pass' ? 'Pass' : style === 'tackle' ? 'Successful tackle' : 'Shot';
     this.update(true);
   }
 
@@ -329,12 +329,12 @@ export class FootballEngine {
     if (this.overtime === false && now >= this.endsAt) {
       if (this.score.red === this.score.blue) {
         this.overtime = true;
-        this.notice = 'Prolongation : le prochain but gagne';
+        this.notice = 'Overtime: next goal wins';
         this.whistleSound('long');
       } else {
         this.winner = this.score.red > this.score.blue ? 'red' : 'blue';
         this.phase = 'finished';
-        this.notice = `Victoire de l’équipe ${this.winner === 'red' ? 'rouge' : 'bleue'}`;
+        this.notice = `The ${this.winner === 'red' ? 'red' : 'blue'} team wins`;
         this.whistleSound('long');
       }
       this.update(true);
@@ -366,19 +366,19 @@ export class FootballEngine {
     if (Math.abs(this.ball.x) > 26 && Math.abs(this.ball.z) < 4 && this.ball.y < 12.5) {
       const team: Team = this.ball.x > 0 ? 'red' : 'blue';
       this.score[team] += 1;
-      this.notice = `But de l’équipe ${team === 'red' ? 'rouge' : 'bleue'} !`;
+      this.notice = `Goal for the ${team === 'red' ? 'red' : 'blue'} team!`;
       this.whistleSound('goal');
       if (this.overtime) {
         this.winner = team;
         this.phase = 'finished';
-        this.notice = `But en or · victoire de l’équipe ${team === 'red' ? 'rouge' : 'bleue'}`;
+        this.notice = `Golden goal · the ${team === 'red' ? 'red' : 'blue'} team wins`;
         this.update(true);
       } else this.kickoff();
       return;
     }
     if (Math.abs(this.ball.z) > 15) {
       const team = this.lastTouchTeam ? other(this.lastTouchTeam) : 'red';
-      this.notice = `Touche pour ${team === 'red' ? 'rouge' : 'bleu'}`;
+      this.notice = `Throw-in for ${team === 'red' ? 'red' : 'blue'}`;
       this.ball = { x: Math.max(-22, Math.min(22, this.ball.x)), y: 9, z: Math.sign(this.ball.z) * 14, vx: 0, vy: 0, vz: 0 };
       this.phase = 'restart';
       this.phaseUntil = now + 1500;
@@ -392,7 +392,7 @@ export class FootballEngine {
     if (Math.abs(this.ball.x) > 28) {
       const defending: Team = this.ball.x > 0 ? 'blue' : 'red';
       if (this.lastTouchTeam === defending) {
-        this.notice = `Corner pour ${other(defending) === 'red' ? 'rouge' : 'bleu'}`;
+        this.notice = `Corner for ${other(defending) === 'red' ? 'red' : 'blue'}`;
         this.ball = { x: Math.sign(this.ball.x) * 25, y: 9, z: Math.sign(this.ball.z || 1) * 13, vx: 0, vy: 0, vz: 0 };
         this.lastTouchTeam = other(defending);
         this.phase = 'restart';
@@ -428,7 +428,7 @@ export class FootballEngine {
     }
     if (data.type === 'football-whistle') {
       if (this.room.owner?.(player.playerId) === false) return true;
-      this.notice = 'Arrêt de jeu par l’arbitre';
+      this.notice = 'Play stopped by referee';
       this.phase = 'restart';
       this.phaseUntil = Date.now() + 1500;
       this.whistleSound('short');

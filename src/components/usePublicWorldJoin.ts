@@ -26,7 +26,7 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
       void onPlay();
     } else if (status === 'error') {
       setPendingRoom(null);
-      setError('Connexion impossible. Réessaie dans un instant.');
+      setError('Connection failed. Try again in a moment.');
     }
   }, [pendingRoom, room, status, worldReady, onPlay]);
 
@@ -46,13 +46,13 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
       const candidates = (await listPublicWorlds()).filter((world) => world.id !== room);
       const world = busiestPublicWorld(candidates, mode);
       if (!world) {
-        setError(`Aucun joueur en ligne en ${GAMEPLAY_MODE_LABELS[mode]} pour le moment. Choisis un monde dans la liste ou crée le tien.`);
+        setError(`No players online in ${GAMEPLAY_MODE_LABELS[mode]} right now. Choose a world from the list or create your own.`);
         return false;
       }
       join(world);
       return true;
     } catch {
-      setError('Impossible de récupérer les mondes en ligne. Réessaie dans un instant.');
+      setError('Unable to fetch online worlds. Try again in a moment.');
       return false;
     } finally {
       setLoading(false);

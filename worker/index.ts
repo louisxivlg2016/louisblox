@@ -288,7 +288,7 @@ function parseWorldProtection(value: unknown, ownerId: string): WorldProtection 
   const savedNames = data.bannedPlayerNames && typeof data.bannedPlayerNames === 'object' ? data.bannedPlayerNames as Record<string, unknown> : {};
   for (const id of banned) {
     const name = savedNames[id];
-    if (typeof name === 'string') bannedPlayerNames[id] = name.trim().slice(0, 24) || 'Joueur';
+    if (typeof name === 'string') bannedPlayerNames[id] = name.trim().slice(0, 24) || 'Player';
   }
   return {
     ownerId,
@@ -411,7 +411,7 @@ export class GameRoom extends DurableObject<Env> {
     this.ctx.waitUntil(directory.fetch('https://directory/world', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: this.worldId ?? attachment?.room ?? 'main-room', name: this.worldName ?? this.worldId ?? attachment?.room ?? 'main-room', ownerId, ownerName: this.publisherName ?? 'Créateur', gameplayMode: this.gameplayMode, template: this.worldTemplate, players: this.ctx.getWebSockets().length }),
+      body: JSON.stringify({ id: this.worldId ?? attachment?.room ?? 'main-room', name: this.worldName ?? this.worldId ?? attachment?.room ?? 'main-room', ownerId, ownerName: this.publisherName ?? 'Creator', gameplayMode: this.gameplayMode, template: this.worldTemplate, players: this.ctx.getWebSockets().length }),
     }));
   }
 
@@ -527,7 +527,7 @@ export class GameRoom extends DurableObject<Env> {
       try {
         const data = await request.json() as { targetId?: unknown; from?: unknown; name?: unknown };
         if (typeof data.from !== 'string' || data.from.length < 1 || data.from.length > 80 || typeof data.targetId !== 'string') return json({ sent: false }, 400);
-        const name = typeof data.name === 'string' ? data.name.trim().slice(0, 24) || 'Joueur' : 'Joueur';
+        const name = typeof data.name === 'string' ? data.name.trim().slice(0, 24) || 'Player' : 'Player';
         return json({ sent: this.sendToPlayer(data.targetId, { type: 'apple-gift', from: data.from, name, count: 1 }) });
       } catch {
         return json({ sent: false }, 400);
@@ -549,7 +549,7 @@ export class GameRoom extends DurableObject<Env> {
     const playerId = requestedPlayerId && /^[0-9a-f-]{36}$/.test(requestedPlayerId) ? requestedPlayerId : crypto.randomUUID();
     if (this.protection?.bannedPlayerIds?.includes(playerId)) return new Response('Banned from this world', { status: 403, headers: corsHeaders });
     const room = params.get('room')?.slice(0, 48) || 'main-room';
-    const name = params.get('name')?.trim().slice(0, 24) || 'Joueur';
+    const name = params.get('name')?.trim().slice(0, 24) || 'Player';
     const character = params.get('character') === 'girl' ? 'girl' : 'boy';
     const requestedOutfit = params.get('outfit') ?? 'default';
     const outfit = outfits.has(requestedOutfit) ? requestedOutfit : 'default';
@@ -672,9 +672,9 @@ export class GameRoom extends DurableObject<Env> {
     if (!attachment) return;
     const fail = (message: string) => ws.send(JSON.stringify({ type: 'tribe-error', message }));
     if (type === 'tribe-create') {
-      if (this.tribeWithPlayer(attachment.playerId)) return fail('Tu appartiens déjà à une tribu.');
+      if (this.tribeWithPlayer(attachment.playerId)) return fail('You already belong to a tribe.');
       const name = typeof data.name === 'string' ? data.name.trim().slice(0, 24) : '';
-      if (!name) return fail('Choisis un nom pour ta tribu.');
+      if (!name) return fail('Choose a name for your tribe.');
       this.tribes.push({ id: crypto.randomUUID(), name, ownerId: attachment.playerId, members: [{ playerId: attachment.playerId, name: attachment.name }] });
       await this.saveWorld();
       this.broadcast(this.tribeSnapshot());
@@ -682,10 +682,10 @@ export class GameRoom extends DurableObject<Env> {
     }
     if (type === 'tribe-home-create') {
       const tribe = this.tribeWithPlayer(attachment.playerId);
-      if (!tribe || tribe.ownerId !== attachment.playerId) return fail('Seul le chef peut créer la maison de la tribu.');
-      if (tribe.home) return fail('La maison de la tribu existe déjà. Tu peux t’y téléporter.');
+      if (!tribe || tribe.ownerId !== attachment.playerId) return fail('Only the leader can create the tribe home.');
+      if (tribe.home) return fail('The tribe home already exists. You can teleport to it.');
       const state = attachment.state;
-      if (!state) return fail('Déplace-toi une première fois avant de créer la maison.');
+      if (!state) return fail('Move once before creating the home.');
       const centerX = Math.round(state.x);
       const centerZ = Math.round(state.z);
       const floorY = Math.round(state.y - 0.5);
@@ -715,53 +715,53 @@ export class GameRoom extends DurableObject<Env> {
       this.broadcast({ type: 'edits', edits });
       this.broadcast(this.tribeSnapshot());
       for (const member of tribe.members) this.sendToPlayer(member.playerId, { type: 'tribe-home-spawn', home });
-      this.sendToPlayer(attachment.playerId, { type: 'tribe-notice', message: 'La maison de ta tribu est construite. Tous les membres y arrivent.' });
+      this.sendToPlayer(attachment.playerId, { type: 'tribe-notice', message: 'Your tribe home is built. Every member will arrive there.' });
       return;
     }
     if (type === 'tribe-home-teleport') {
       const tribe = this.tribeWithPlayer(attachment.playerId);
-      if (!tribe?.home) return fail('La tribu n’a pas encore de maison.');
+      if (!tribe?.home) return fail('The tribe does not have a home yet.');
       ws.send(JSON.stringify({ type: 'tribe-home-spawn', home: tribe.home }));
       return;
     }
     if (type === 'tribe-invite') {
       const tribe = this.tribeWithPlayer(attachment.playerId);
-      if (!tribe || tribe.ownerId !== attachment.playerId) return fail('Seul le chef de la tribu peut inviter.');
+      if (!tribe || tribe.ownerId !== attachment.playerId) return fail('Only the tribe leader can invite players.');
       const targetId = typeof data.targetId === 'string' ? data.targetId : '';
-      if (!targetId || targetId.length > 80 || targetId === attachment.playerId) return fail('Ce joueur ne peut pas être invité.');
+      if (!targetId || targetId.length > 80 || targetId === attachment.playerId) return fail('This player cannot be invited.');
       const targetSocket = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
       const target = targetSocket ? this.attachment(targetSocket) : null;
-      if (!targetSocket || !target) return fail('Ce joueur n’est pas connecté dans ce salon.');
-      if (this.tribeWithPlayer(targetId)) return fail(`${target.name} appartient déjà à une tribu.`);
+      if (!targetSocket || !target) return fail('This player is not connected to this room.');
+      if (this.tribeWithPlayer(targetId)) return fail(`${target.name} already belongs to a tribe.`);
       this.tribeInvitations.set(targetId, { tribeId: tribe.id, fromId: attachment.playerId });
       targetSocket.send(JSON.stringify({ type: 'tribe-invite', tribe: { id: tribe.id, name: tribe.name, ownerId: tribe.ownerId, ownerName: attachment.name } }));
-      ws.send(JSON.stringify({ type: 'tribe-notice', message: `Invitation envoyée à ${target.name}.` }));
+      ws.send(JSON.stringify({ type: 'tribe-notice', message: `Invitation sent to ${target.name}.` }));
       return;
     }
     if (type === 'tribe-accept') {
       const invitation = this.tribeInvitations.get(attachment.playerId);
-      if (!invitation || invitation.tribeId !== data.tribeId) return fail('Cette invitation n’est plus disponible.');
+      if (!invitation || invitation.tribeId !== data.tribeId) return fail('This invitation is no longer available.');
       const tribe = this.tribes.find((candidate) => candidate.id === invitation.tribeId);
       this.tribeInvitations.delete(attachment.playerId);
-      if (!tribe) return fail('Cette tribu n’existe plus.');
-      if (this.tribeWithPlayer(attachment.playerId)) return fail('Tu appartiens déjà à une tribu.');
+      if (!tribe) return fail('This tribe no longer exists.');
+      if (this.tribeWithPlayer(attachment.playerId)) return fail('You already belong to a tribe.');
       tribe.members.push({ playerId: attachment.playerId, name: attachment.name });
       await this.saveWorld();
       this.broadcast(this.tribeSnapshot());
-      ws.send(JSON.stringify({ type: 'tribe-notice', message: `Tu as rejoint la tribu ${tribe.name}.` }));
+      ws.send(JSON.stringify({ type: 'tribe-notice', message: `You joined tribe ${tribe.name}.` }));
       if (tribe.home) ws.send(JSON.stringify({ type: 'tribe-home-spawn', home: tribe.home }));
-      this.sendToPlayer(invitation.fromId, { type: 'tribe-notice', message: `${attachment.name} a rejoint ta tribu.` });
+      this.sendToPlayer(invitation.fromId, { type: 'tribe-notice', message: `${attachment.name} joined your tribe.` });
       return;
     }
     if (type === 'tribe-decline') {
       const invitation = this.tribeInvitations.get(attachment.playerId);
       if (invitation?.tribeId === data.tribeId) this.tribeInvitations.delete(attachment.playerId);
-      ws.send(JSON.stringify({ type: 'tribe-notice', message: 'Invitation refusée.' }));
+      ws.send(JSON.stringify({ type: 'tribe-notice', message: 'Invitation declined.' }));
       return;
     }
     if (type === 'tribe-leave') {
       const tribe = this.tribeWithPlayer(attachment.playerId);
-      if (!tribe) return fail('Tu ne fais partie d’aucune tribu.');
+      if (!tribe) return fail('You are not a member of any tribe.');
       if (tribe.ownerId === attachment.playerId) {
         this.tribes = this.tribes.filter((candidate) => candidate.id !== tribe.id);
         for (const [playerId, invitation] of this.tribeInvitations) if (invitation.tribeId === tribe.id) this.tribeInvitations.delete(playerId);
@@ -1048,11 +1048,11 @@ export class GameRoom extends DurableObject<Env> {
       const target = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
       const name = target ? this.attachment(target)?.name : undefined;
       this.protection.bannedPlayerIds = [...new Set([...(this.protection.bannedPlayerIds ?? []), targetId])].slice(0, 100);
-      this.protection.bannedPlayerNames = { ...this.protection.bannedPlayerNames, [targetId]: name ?? this.protection.bannedPlayerNames?.[targetId] ?? 'Joueur' };
+      this.protection.bannedPlayerNames = { ...this.protection.bannedPlayerNames, [targetId]: name ?? this.protection.bannedPlayerNames?.[targetId] ?? 'Player' };
       await this.saveWorld();
       this.broadcast({ type: 'protection', protection: this.protection });
       if (target) {
-        target.send(JSON.stringify({ type: 'banned', message: 'Le créateur t’a exclu de ce monde. Il peut te réadmettre ensuite.' }));
+        target.send(JSON.stringify({ type: 'banned', message: 'The owner banned you from this world. They can readmit you later.' }));
         target.close(4003, 'Banned by world owner');
         const targetAttachment = this.attachment(target);
         if (targetAttachment) this.removePresence(targetAttachment);
@@ -1344,7 +1344,7 @@ export default {
     if (url.pathname === '/ws') {
       const roomId = url.searchParams.get('room') || 'main-room';
       const playerId = url.searchParams.get('playerId') ?? '';
-      const name = url.searchParams.get('name')?.trim() || 'Joueur';
+      const name = url.searchParams.get('name')?.trim() || 'Player';
       if (!/^[0-9a-f-]{36}$/.test(playerId)) return json({ error: 'Identifiant joueur requis.' }, 400);
       const directory = env.PLAYER_DIRECTORY.get(env.PLAYER_DIRECTORY.idFromName('global'));
       const claim = await directory.fetch('https://directory/presence', {

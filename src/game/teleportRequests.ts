@@ -44,16 +44,16 @@ export function clearTeleportRequests() {
 export function requestPlayerTeleport(playerId: string, name: string) {
   if (useTeleportRequestStore.getState().outgoing) return;
   if (socket?.readyState !== WebSocket.OPEN) {
-    useTeleportRequestStore.setState({ notice: 'La connexion multijoueur est indisponible.' });
+    useTeleportRequestStore.setState({ notice: 'Multiplayer connection unavailable.' });
     return;
   }
   const request = { id: crypto.randomUUID(), playerId, name };
-  useTeleportRequestStore.setState({ outgoing: request, notice: `Demande envoyée à ${name}…` });
+  useTeleportRequestStore.setState({ outgoing: request, notice: `Request sent to ${name}…` });
   socket.send(JSON.stringify({ type: 'teleport-request', requestId: request.id, targetId: playerId }));
   expiration = setTimeout(() => {
     expiration = null;
     useTeleportRequestStore.setState((state) => state.outgoing?.id === request.id
-      ? { outgoing: null, notice: 'La demande a expiré. Tu peux réessayer.' }
+      ? { outgoing: null, notice: 'Request expired. You can try again.' }
       : {});
   }, 30000);
 }
@@ -65,7 +65,7 @@ export function receiveTeleportRequest(data: TeleportMessage) {
   const incoming = {
     id: data.requestId,
     playerId: data.from,
-    name: typeof data.name === 'string' ? data.name : 'Un joueur',
+    name: typeof data.name === 'string' ? data.name : 'A player',
   };
   useTeleportRequestStore.setState({ incoming });
   const game = useGameStore.getState();
@@ -100,12 +100,12 @@ export function receiveTeleportResponse(data: TeleportMessage) {
   const name = typeof data.name === 'string' ? data.name : outgoing.name;
   if (data.type === 'teleport-unavailable') {
     clearOutgoing();
-    useTeleportRequestStore.setState({ notice: 'Ce joueur n’est plus disponible.' });
+    useTeleportRequestStore.setState({ notice: 'This player is no longer available.' });
     return;
   }
   if (data.type === 'teleport-decline') {
     clearOutgoing();
-    useTeleportRequestStore.setState({ notice: `${name} a refusé la demande.` });
+    useTeleportRequestStore.setState({ notice: `${name} declined the request.` });
     return;
   }
   if (data.type !== 'teleport-accept' || !data.position || typeof data.position !== 'object') return;
@@ -128,6 +128,6 @@ export function receiveTeleportResponse(data: TeleportMessage) {
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false });
   useGameStore.getState().setTeleportOpen(false);
-  useGameStore.getState().setNotice(`Téléportation vers ${name}.`);
+  useGameStore.getState().setNotice(`Teleporting to ${name}.`);
   void requestPlay();
 }

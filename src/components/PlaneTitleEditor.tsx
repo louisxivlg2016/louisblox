@@ -21,12 +21,12 @@ export function PlaneTitleEditor() {
   };
   return (
     <div className="backpack-backdrop">
-      <form className="book-panel backpack-panel plane-title-panel" aria-label="Modifier le titre de l’avion" onSubmit={(event) => { event.preventDefault(); setTitle(draft); close(); }}>
-        <div className="backpack-header"><h2>Titre de l’avion</h2><button type="button" className="secondary-button" onClick={close}>Fermer</button></div>
-        <label className="book-field">Texte doré sur la carlingue
-          <input aria-label="Nouveau titre de l’avion" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={24} autoFocus />
+      <form className="book-panel backpack-panel plane-title-panel" aria-label="Edit airplane title" onSubmit={(event) => { event.preventDefault(); setTitle(draft); close(); }}>
+        <div className="backpack-header"><h2>Airplane Title</h2><button type="button" className="secondary-button" onClick={close}>Close</button></div>
+        <label className="book-field">Gold text on fuselage
+          <input aria-label="New airplane title" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={24} autoFocus />
         </label>
-        <button className="primary-button" type="submit">Appliquer</button>
+        <button className="primary-button" type="submit">Apply</button>
       </form>
     </div>
   );

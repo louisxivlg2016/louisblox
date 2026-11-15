@@ -42,7 +42,7 @@ export function listWorlds(): WorldMeta[] {
   } catch {
   }
   if (readWorldSave(DEFAULT_WORLD_ID) && !saved.some((world) => world.id === DEFAULT_WORLD_ID)) {
-    saved.push({ id: DEFAULT_WORLD_ID, name: 'Monde principal', gameplayMode: readWorldSave(DEFAULT_WORLD_ID)?.gameplayMode, updatedAt: 0 });
+    saved.push({ id: DEFAULT_WORLD_ID, name: 'Main World', gameplayMode: readWorldSave(DEFAULT_WORLD_ID)?.gameplayMode, updatedAt: 0 });
   }
   return saved.sort((a, b) => b.updatedAt - a.updatedAt);
 }
@@ -51,7 +51,7 @@ let storageWarningShown = false;
 
 export function writeWorldSave(worldId: string, save: WorldSave, name = worldId): WorldMeta | null {
   if (!canCreateWorld(worldId)) {
-    useGameStore.getState().setNotice('Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes pour libérer une place.');
+    useGameStore.getState().setNotice('You already have 20 worlds. Delete one in My Worlds to free a slot.');
     return null;
   }
   const metadata: WorldMeta = { id: worldId, name: name.trim().slice(0, 80) || worldId, gameplayMode: save.gameplayMode, updatedAt: Date.now() };

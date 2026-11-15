@@ -133,6 +133,6 @@ export function craftRecipe(kind: SelectedKind) {
   }
   for (const ingredient of selected.ingredients) changeInventory(ingredient.kind, -ingredient.count);
   changeInventory(selected.output, selected.count);
-  store.setNotice(`${selectionInfo(selected.output).name} fabriqué.`);
+  store.setNotice(`${selectionInfo(selected.output).name} crafted.`);
   return true;
 }

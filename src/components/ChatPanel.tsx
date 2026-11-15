@@ -35,7 +35,7 @@ export function ChatPanel() {
   const submit = () => {
     if (!draft.trim()) return;
     if (!sendChatMessage(draft)) {
-      setError('Connexion au salon indisponible. Réessaie dans un instant.');
+      setError('Room connection unavailable. Try again in a moment.');
       return;
     }
     closeChat();
@@ -70,21 +70,21 @@ export function ChatPanel() {
               <p key={message.messageId}><strong>{message.name}</strong> · {message.text}</p>
             ))}
           </div>
-          <button className="chat-toggle" onClick={openChat} aria-label="Ouvrir le chat"><img src={chatButtonUrl} alt="Chat · Entrée" /></button>
+          <button className="chat-toggle" onClick={openChat} aria-label="Open chat"><img src={chatButtonUrl} alt="Chat · Enter" /></button>
         </>
       )}
       {open && (
         <div className="chat-backdrop">
-          <section className="chat-panel" role="dialog" aria-label="Chat du salon">
+          <section className="chat-panel" role="dialog" aria-label="Room chat">
             <header className="chat-header">
-              <strong>Chat du salon</strong>
-              <button className="chat-close" onClick={closeChat} aria-label="Fermer le chat">×</button>
+              <strong>Room chat</strong>
+              <button className="chat-close" onClick={closeChat} aria-label="Close chat">×</button>
             </header>
             <div className="chat-messages" ref={messagesRef} aria-live="polite">
-              {messages.length === 0 && <p className="chat-empty">Écris le premier message aux joueurs du salon.</p>}
+              {messages.length === 0 && <p className="chat-empty">Write the first message to players in the room.</p>}
               {messages.map((message) => (
                 <p className="chat-message" key={message.messageId}>
-                  <time>{new Date(message.sentAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</time>
+                  <time>{new Date(message.sentAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</time>
                   <strong>{message.name}</strong>
                   <span>{message.text}</span>
                 </p>
@@ -106,13 +106,13 @@ export function ChatPanel() {
                   submit();
                 }}
                 maxLength={200}
-                placeholder="Votre message…"
-                aria-label="Message aux joueurs"
+                placeholder="Your message…"
+                aria-label="Message to players"
                 autoFocus
               />
-              <button className="chat-send" type="submit" disabled={!draft.trim()}>Envoyer</button>
+              <button className="chat-send" type="submit" disabled={!draft.trim()}>Send</button>
             </form>
-            <p className="chat-help">{error || 'Entrée : envoyer · Échap : fermer'}</p>
+            <p className="chat-help">{error || 'Enter: send · Esc: close'}</p>
           </section>
         </div>
       )}
