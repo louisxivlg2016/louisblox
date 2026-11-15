@@ -5,8 +5,9 @@ import raceCarUrl from '../../assets/models/raceCar.glb';
 import blueCarUrl from '../../assets/models/blueCar.glb';
 import airplaneUrl from '../../assets/models/airplane.glb';
 import metroUrl from '../../assets/models/metro.glb';
+import trainUrl from '../../assets/models/train.glb';
 import { BoatModel, CarModel } from './ItemModel';
-import { METRO_LENGTH, PLANE_SCALE } from '../game/vehicles';
+import { METRO_LENGTH, PLANE_SCALE, TRAIN_LENGTH } from '../game/vehicles';
 import type { VehicleKind } from '../game/vehicleTypes';
 import { VehicleAccessories } from './VehicleAccessories';
 
@@ -14,17 +15,19 @@ const models = {
   raceCar: raceCarUrl,
   blueCar: blueCarUrl,
   airplane: airplaneUrl,
+  train: trainUrl,
   metro: metroUrl,
 };
 const dimensions = {
   raceCar: [2.6, 2.2, 4.8],
   blueCar: [2.6, 2.2, 4.8],
   airplane: [7.2 * PLANE_SCALE, 2.5 * PLANE_SCALE, 8.2 * PLANE_SCALE],
+  train: [1.9, 2.4, TRAIN_LENGTH],
   metro: [2.2, 2.4, METRO_LENGTH],
 } as const;
 
 function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane' | 'train' | 'metro' | 'boat'; color: string; interior: boolean; showOccupants: boolean }) {
-  const modelKind = kind === 'car' && color.toLowerCase() === '#347cd0' ? 'blueCar' : kind === 'car' ? 'raceCar' : kind === 'plane' ? 'airplane' : 'metro';
+  const modelKind = kind === 'car' && color.toLowerCase() === '#347cd0' ? 'blueCar' : kind === 'car' ? 'raceCar' : kind === 'plane' ? 'airplane' : kind === 'train' ? 'train' : 'metro';
   const { scene } = useGLTF(models[modelKind]);
   const model = useMemo(() => {
     const clone = scene.clone(true);
@@ -46,7 +49,8 @@ function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane'
         material.map.needsUpdate = true;
       }
     });
-    const uniformScale = modelKind === 'metro';
+    const uniformScale = modelKind === 'metro' || modelKind === 'train';
+    const targetLength = modelKind === 'train' ? TRAIN_LENGTH : METRO_LENGTH;
     if (modelKind === 'raceCar' || modelKind === 'blueCar') clone.rotation.y = Math.PI / 2;
     if (modelKind === 'airplane') clone.rotation.y = Math.PI / 2;
     const box = new Box3().setFromObject(clone);
@@ -54,7 +58,7 @@ function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane'
     const center = box.getCenter(new Vector3());
     const [width, height, length] = dimensions[modelKind];
     const [localWidth, localLength] = uniformScale ? [length, width] : [width, length];
-    clone.scale.set(uniformScale ? METRO_LENGTH / Math.max(size.x, size.y, size.z, 0.001) : localWidth / Math.max(size.x, 0.001), uniformScale ? METRO_LENGTH / Math.max(size.x, size.y, size.z, 0.001) : height / Math.max(size.y, 0.001), uniformScale ? METRO_LENGTH / Math.max(size.x, size.y, size.z, 0.001) : localLength / Math.max(size.z, 0.001));
+    clone.scale.set(uniformScale ? targetLength / Math.max(size.x, size.y, size.z, 0.001) : localWidth / Math.max(size.x, 0.001), uniformScale ? targetLength / Math.max(size.x, size.y, size.z, 0.001) : height / Math.max(size.y, 0.001), uniformScale ? targetLength / Math.max(size.x, size.y, size.z, 0.001) : localLength / Math.max(size.z, 0.001));
     center.multiply(clone.scale);
     if (uniformScale) {
       center.applyAxisAngle(new Vector3(0, 1, 0), Math.PI);

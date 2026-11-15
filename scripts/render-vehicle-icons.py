@@ -3,6 +3,7 @@ import os
 from mathutils import Vector
 
 assets = [
+    ('assets/models/train.glb', 'assets/icons/vehicle-train.png', 0.0),
     ('assets/models/metro.glb', 'assets/icons/vehicle-metro.png', 0.0),
     ('assets/models/fire-truck.glb', 'assets/icons/vehicle-fire-truck.png', 0.0),
     ('assets/models/police-car.glb', 'assets/icons/vehicle-police-car.png', 0.0),
@@ -31,7 +32,7 @@ for source, output, angle in assets:
     camera = bpy.context.object
     camera.rotation_euler = (target - camera.location).to_track_quat('-Z', 'Y').to_euler()
     camera.data.type = 'ORTHO'
-    camera.data.ortho_scale = 2.2 if 'metro' in source else 2.65
+    camera.data.ortho_scale = 2.2 if 'metro' in source or 'train' in source else 2.65
     scene = bpy.context.scene
     scene.camera = camera
     scene.render.engine = 'BLENDER_EEVEE'

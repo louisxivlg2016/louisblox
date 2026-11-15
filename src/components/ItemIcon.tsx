@@ -20,6 +20,7 @@ import bayonetRifleIconUrl from '../../assets/icons/bayonet-rifle.png';
 import raceCarIconUrl from '../../assets/icons/vehicle-race-car.png';
 import blueCarIconUrl from '../../assets/icons/vehicle-blue-car.png';
 import metroIconUrl from '../../assets/icons/vehicle-metro.png';
+import trainIconUrl from '../../assets/icons/vehicle-train.png';
 import fireTruckIconUrl from '../../assets/icons/vehicle-fire-truck.png';
 import policeCarIconUrl from '../../assets/icons/vehicle-police-car.png';
 
@@ -29,6 +30,7 @@ const photoIcons: Partial<Record<ItemKind, string>> = {
   car_red: raceCarIconUrl,
   car_blue: blueCarIconUrl,
   metro: metroIconUrl,
+  train: trainIconUrl,
   firetruck: fireTruckIconUrl,
   police_car: policeCarIconUrl,
 };

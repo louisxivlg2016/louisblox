@@ -17,7 +17,7 @@ import { useTradeStore } from './trading';
 import { animalSeatOffset } from './mounts';
 import type { Camera } from 'three';
 import type { MountKind, SeatRole, VehicleKind } from './vehicleTypes';
-export { METRO_LENGTH, PLANE_SCALE } from './vehicleTypes';
+export { METRO_LENGTH, PLANE_SCALE, TRAIN_LENGTH } from './vehicleTypes';
 
 export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y) {
   const bx = Math.round(x);

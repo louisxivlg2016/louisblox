@@ -9,6 +9,7 @@ const client = new CommonClient('hunyuan.intl.tencentcloudapi.com', '2023-09-01'
   profile: { httpProfile: { endpoint: 'hunyuan.intl.tencentcloudapi.com', reqTimeout: 60 } },
 });
 const assets = [
+  { name: 'train', image: '.tmp/high-speed-train-reference.png' },
   { name: 'metro', image: '.tmp/metro-reference.png' },
   { name: 'fire-truck', image: '.tmp/firetruck-reference.png' },
   { name: 'police-car', image: '.tmp/police-reference.png' },
