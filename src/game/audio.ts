@@ -11,6 +11,7 @@ import music7Url from '../../son/music7.mp4';
 import music8Url from '../../son/music8.mp4';
 import whistleUrl from '../../son/siflet.mp3';
 import fireSirenUrl from '../../son/sirene-de-pompier.mp3';
+import policeSirenUrl from '../../son/sirene-de-police.mp3';
 import breakBlockUrl from '../../son/son-de-casse-un-bloc.mp3';
 import breakGlassUrl from '../../son/casse-du-verre.mp3';
 import breakWoodUrl from '../../son/casse-du-bois.mp3';
@@ -123,12 +124,13 @@ export function initAudio() {
   });
 }
 
-export type SoundEffect = 'whistle' | 'fireSiren' | 'breakBlock' | 'breakGlass' | 'breakWood' | 'gunshot' | 'ball' | 'explosion' | 'fire' | 'eat' | 'walk' | 'placeBlock' | 'waterSplash'
+export type SoundEffect = 'whistle' | 'fireSiren' | 'policeSiren' | 'breakBlock' | 'breakGlass' | 'breakWood' | 'gunshot' | 'ball' | 'explosion' | 'fire' | 'eat' | 'walk' | 'placeBlock' | 'waterSplash'
   | 'animal_duck' | 'animal_horse' | 'animal_pig' | 'animal_sheep' | 'animal_cow' | 'animal_elephant' | 'animal_ocelot' | 'animal_wolf' | 'animal_bear' | 'animal_chicken';
 
 const soundUrls: Record<SoundEffect, string> = {
   whistle: whistleUrl,
   fireSiren: fireSirenUrl,
+  policeSiren: policeSirenUrl,
   breakBlock: breakBlockUrl,
   breakGlass: breakGlassUrl,
   breakWood: breakWoodUrl,
@@ -219,7 +221,7 @@ export function stopAnimalSound(entity: Entity) {
   animalAudio.delete(entity);
 }
 
-export function setLoopSound(name: Extract<SoundEffect, 'walk' | 'fire' | 'fireSiren'>, active: boolean, volume = 0.3) {
+export function setLoopSound(name: Extract<SoundEffect, 'walk' | 'fire' | 'fireSiren' | 'policeSiren'>, active: boolean, volume = 0.3) {
   const current = loops.get(name);
   if (!active) {
     activeLoops.delete(name);

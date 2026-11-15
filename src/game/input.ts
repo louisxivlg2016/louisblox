@@ -253,7 +253,7 @@ export function initInput() {
     }
     if (event.code === 'KeyL' && !event.repeat && useGameStore.getState().mode === 'play') {
       const riding = useGameStore.getState().riding;
-      if (riding === 'firetruck') toggleSiren(riding);
+      if (riding === 'firetruck' || riding === 'police') toggleSiren(riding);
     }
     if (event.code === 'KeyQ' && !event.repeat && useGameStore.getState().mode === 'play') {
       event.preventDefault();
