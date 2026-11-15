@@ -75,22 +75,24 @@ function PlaneInterior({ driverPresent }: { driverPresent: boolean }) {
   );
 }
 
-function TrainInterior({ driverPresent, passengerSeat }: { driverPresent: boolean; passengerSeat: number | null }) {
-  const cabin = CABINS.train!;
-  const passengers: Array<[number, number, number]> = [[0.65, 0.62, -1], [-0.65, 0.62, 0.6], [0.65, 0.62, 2.2], [-0.65, 0.62, 3.8]];
+function TrainInterior({ kind, driverPresent, passengerSeat }: { kind: 'train' | 'metro'; driverPresent: boolean; passengerSeat: number | null }) {
+  const cabin = CABINS[kind]!;
+  const seatX = Math.min(0.65, cabin.halfWidth - 0.38);
+  const seatY = cabin.floor + 0.25;
+  const passengers = [5.7, 4.1, 2.5, 0.9].map((offset, index): [number, number, number] => [index % 2 === 0 ? seatX : -seatX, seatY, cabin.rear - offset]);
   return (
     <group name="train-cabin">
       <CabinShell cabin={cabin} />
-      <SteeringWheel position={[-0.65, 1.16, -4.1]} />
+      <SteeringWheel position={[-seatX, cabin.floor + 0.79, cabin.front + 0.6]} />
       {passengers.map((position, index) => (
         <group key={index}>
           <Seat position={position} />
           {passengerSeat !== index && <Person position={position} color={index % 2 === 0 ? '#a36248' : '#4d789c'} />}
         </group>
       ))}
-      <Seat position={[-0.65, 0.62, -3.7]} />
-      {driverPresent && <Person position={[-0.65, 0.62, -3.7]} color="#31537b" worker />}
-      <Person position={[-0.65, 0.62, 4.7]} color="#31537b" worker />
+      <Seat position={[-seatX, seatY, cabin.front + 1]} />
+      {driverPresent && <Person position={[-seatX, seatY, cabin.front + 1]} color="#31537b" worker />}
+      <Person position={[-seatX, seatY, cabin.rear - 0.1]} color="#31537b" worker />
     </group>
   );
 }
@@ -101,7 +103,7 @@ export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
   passengerSeat: number | null;
 }) {
   if (kind === 'plane') return <PlaneInterior driverPresent={driverPresent} />;
-  if (kind === 'train' || kind === 'metro') return <TrainInterior driverPresent={driverPresent} passengerSeat={passengerSeat} />;
+  if (kind === 'train' || kind === 'metro') return <TrainInterior kind={kind} driverPresent={driverPresent} passengerSeat={passengerSeat} />;
   if (kind === 'carriage') return null;
   if (kind === 'boat') {
     return <><Seat position={[0, 0.45, -0.72]} /><Seat position={[0, 0.45, 0.72]} /><PixelPart position={[-0.9, 0.45, 0.4]} size={[0.1, 0.1, 2.4]} color="#9a7042" rotation={[0, -0.35, 0]} /></>;

@@ -10,7 +10,7 @@ import fireTruckUrl from '../../assets/models/fire-truck.glb';
 import jeepUrl from '../../assets/models/reference-jeep.glb';
 import carriageUrl from '../../assets/models/reference-carriage.glb';
 import cannonUrl from '../../assets/models/reference-cannon.glb';
-import { PLANE_SCALE } from '../game/vehicleTypes';
+import { METRO_LENGTH, PLANE_SCALE } from '../game/vehicleTypes';
 import type { VehicleKind } from '../game/vehicleTypes';
 
 const models = {
@@ -29,7 +29,7 @@ const dimensions = {
   raceCar: [2.6, 2.2, 4.8],
   blueCar: [2.6, 2.2, 4.8],
   airplane: [7.2 * PLANE_SCALE, 2.5 * PLANE_SCALE, 8.2 * PLANE_SCALE],
-  metro: [3, 4.2, 8.5],
+  metro: [2.2, 2.4, METRO_LENGTH],
 } as const;
 
 type AssetKind = Exclude<VehicleKind, 'boat'>;
@@ -61,7 +61,7 @@ function Asset({ kind, color, preview }: { kind: AssetKind; color: string; previ
       const center = box.getCenter(new Vector3());
       const [width, height, length] = dimensions[modelKind as keyof typeof dimensions];
       const [localWidth, localLength] = uniformScale ? [length, width] : [width, length];
-      clone.scale.set(uniformScale ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : localWidth / Math.max(size.x, 0.001), uniformScale ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : height / Math.max(size.y, 0.001), uniformScale ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : localLength / Math.max(size.z, 0.001));
+      clone.scale.set(uniformScale ? METRO_LENGTH / Math.max(size.x, size.y, size.z, 0.001) : localWidth / Math.max(size.x, 0.001), uniformScale ? METRO_LENGTH / Math.max(size.x, size.y, size.z, 0.001) : height / Math.max(size.y, 0.001), uniformScale ? METRO_LENGTH / Math.max(size.x, size.y, size.z, 0.001) : localLength / Math.max(size.z, 0.001));
       center.multiply(clone.scale);
       if (uniformScale) {
         center.applyAxisAngle(new Vector3(0, 1, 0), Math.PI);
@@ -76,8 +76,8 @@ function Asset({ kind, color, preview }: { kind: AssetKind; color: string; previ
         const size = bounds.getSize(new Vector3());
         const center = bounds.getCenter(new Vector3());
         const scale = targetLength / Math.max(size.x, size.y, size.z, 0.001);
-        clone.scale.setScalar(scale);
-        center.multiplyScalar(scale).applyAxisAngle(new Vector3(0, 1, 0), clone.rotation.y);
+        clone.scale.set(modelKind === 'police' ? 2.1 / Math.max(size.x, 0.001) : scale, scale, scale);
+        center.multiply(clone.scale).applyAxisAngle(new Vector3(0, 1, 0), clone.rotation.y);
         clone.position.set(-center.x, -bounds.min.y * scale, -center.z);
       } else {
         clone.position.y -= bounds.min.y;

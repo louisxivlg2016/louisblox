@@ -47,8 +47,8 @@ function HunyuanVehicle({ kind, interior, showOccupants }: { kind: VehicleModelK
       const size = bounds.getSize(new Vector3());
       const center = bounds.getCenter(new Vector3());
       const scale = targetLength / Math.max(size.x, size.y, size.z, 0.001);
-      clone.scale.setScalar(scale);
-      center.multiplyScalar(scale).applyAxisAngle(new Vector3(0, 1, 0), clone.rotation.y);
+      clone.scale.set(kind === 'police' ? 2.1 / Math.max(size.x, 0.001) : scale, scale, scale);
+      center.multiply(clone.scale).applyAxisAngle(new Vector3(0, 1, 0), clone.rotation.y);
       clone.position.set(-center.x, -bounds.min.y * scale, -center.z);
     } else {
       clone.position.y -= bounds.min.y;

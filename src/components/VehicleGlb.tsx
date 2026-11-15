@@ -6,7 +6,7 @@ import blueCarUrl from '../../assets/models/blueCar.glb';
 import airplaneUrl from '../../assets/models/airplane.glb';
 import metroUrl from '../../assets/models/metro.glb';
 import { BoatModel, CarModel } from './ItemModel';
-import { PLANE_SCALE } from '../game/vehicles';
+import { METRO_LENGTH, PLANE_SCALE } from '../game/vehicles';
 import type { VehicleKind } from '../game/vehicleTypes';
 import { VehicleAccessories } from './VehicleAccessories';
 
@@ -20,7 +20,7 @@ const dimensions = {
   raceCar: [2.6, 2.2, 4.8],
   blueCar: [2.6, 2.2, 4.8],
   airplane: [7.2 * PLANE_SCALE, 2.5 * PLANE_SCALE, 8.2 * PLANE_SCALE],
-  metro: [3, 4.2, 8.5],
+  metro: [2.2, 2.4, METRO_LENGTH],
 } as const;
 
 function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane' | 'train' | 'metro' | 'boat'; color: string; interior: boolean; showOccupants: boolean }) {
@@ -54,7 +54,7 @@ function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane'
     const center = box.getCenter(new Vector3());
     const [width, height, length] = dimensions[modelKind];
     const [localWidth, localLength] = uniformScale ? [length, width] : [width, length];
-    clone.scale.set(uniformScale ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : localWidth / Math.max(size.x, 0.001), uniformScale ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : height / Math.max(size.y, 0.001), uniformScale ? 8.5 / Math.max(size.x, size.y, size.z, 0.001) : localLength / Math.max(size.z, 0.001));
+    clone.scale.set(uniformScale ? METRO_LENGTH / Math.max(size.x, size.y, size.z, 0.001) : localWidth / Math.max(size.x, 0.001), uniformScale ? METRO_LENGTH / Math.max(size.x, size.y, size.z, 0.001) : height / Math.max(size.y, 0.001), uniformScale ? METRO_LENGTH / Math.max(size.x, size.y, size.z, 0.001) : localLength / Math.max(size.z, 0.001));
     center.multiply(clone.scale);
     if (uniformScale) {
       center.applyAxisAngle(new Vector3(0, 1, 0), Math.PI);

@@ -17,7 +17,7 @@ import { useTradeStore } from './trading';
 import { animalSeatOffset } from './mounts';
 import type { Camera } from 'three';
 import type { MountKind, SeatRole, VehicleKind } from './vehicleTypes';
-export { PLANE_SCALE } from './vehicleTypes';
+export { METRO_LENGTH, PLANE_SCALE } from './vehicleTypes';
 
 export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y) {
   const bx = Math.round(x);
@@ -120,6 +120,7 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
     }
     if (role === 'driver') {
       vehicle.set(VehicleMotion, { mounted: true });
+      if (player.has(PlayerState)) player.set(PlayerState, { yaw: motion.yaw });
       syncVehicleMotion(world, vehicle, true);
     }
   } else {
