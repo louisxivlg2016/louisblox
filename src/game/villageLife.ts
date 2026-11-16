@@ -9,6 +9,7 @@ import { replaceVoxel } from './chunks';
 import { restaurantAt, tradeCityAt, villageBeds } from './villages';
 import { openRestaurant, useTradeStore } from './trading';
 import { useGameStore } from './store';
+import { translate } from './language';
 
 function wake(world: World, entity: Entity) {
   const trader = entity.get(Trader);
@@ -139,8 +140,8 @@ export function updateMerchantRestaurant(world: World, entity: Entity, dt: numbe
   const distance = Math.hypot(seat.x - position.x, seat.z - position.z);
   if (distance <= 0.35) {
     position.set(seat.x, seat.y, seat.z);
-    entity.set(Trader, { restaurantMeal: 'eating', restaurantMealTime: 0, restaurantMessage: 'Enjoy your meal! This meal is delicious. I am eating with you.', walking: false });
-    useGameStore.getState().setNotice('The trader has arrived at the restaurant and is eating with you. Enjoy your meal!');
+    entity.set(Trader, { restaurantMeal: 'eating', restaurantMealTime: 0, restaurantMessage: translate('Bon appétit ! Ce repas est délicieux. Je mange avec toi.', 'Enjoy your meal! This meal is delicious. I am eating with you.'), walking: false });
+    useGameStore.getState().setNotice(translate('Le marchand est arrivé au restaurant et mange avec toi. Bon appétit !', 'The trader has arrived at the restaurant and is eating with you. Enjoy your meal!'));
     return true;
   }
   const doorDistance = Math.hypot(door.x - position.x, door.z - position.z);

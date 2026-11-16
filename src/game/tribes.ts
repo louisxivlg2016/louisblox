@@ -3,7 +3,9 @@ import { useMultiplayerStore } from './multiplayerStore';
 import { useGameStore } from './store';
 import { playerIdentity } from './playerIdentity';
 import { teleportToHome } from './teleport';
+import { translateServerMessage } from './language';
 import { world } from './world';
+import { translate } from './language';
 
 export type TribeMember = { playerId: string; name: string };
 export type TribeHome = { x: number; y: number; z: number; yaw: number; pitch: number };
@@ -45,7 +47,7 @@ export function clearTribes() {
 
 export function sendTribe(type: string, data: Record<string, unknown> = {}) {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
-    useTribeStore.setState({ error: 'Room connection unavailable. Try again in a moment.' });
+    useTribeStore.setState({ error: translate('Connexion au salon indisponible. Réessaie dans un instant.', 'Room connection unavailable. Try again in a moment.') });
     return false;
   }
   useTribeStore.setState({ error: '', notice: '' });
@@ -90,7 +92,7 @@ export function teleportToPendingTribeHome() {
   const destination = teleportToHome(world, home);
   if (destination) {
     useTribeStore.setState({ homeArrived: true });
-    useGameStore.getState().setNotice('You have arrived at your tribe home.');
+    useGameStore.getState().setNotice(translate('Tu es arrivé à la maison de ta tribu.', 'You have arrived at your tribe home.'));
   }
   return destination !== null;
 }
@@ -121,11 +123,11 @@ export function receiveTribeMessage(data: { type?: unknown; tribes?: unknown; tr
     return true;
   }
   if (data.type === 'tribe-error') {
-    useTribeStore.setState({ error: typeof data.message === 'string' ? data.message.slice(0, 160) : 'Action unavailable in this tribe.' });
+    useTribeStore.setState({ error: typeof data.message === 'string' ? translateServerMessage(data.message.slice(0, 160)) : 'Action unavailable in this tribe.' });
     return true;
   }
   if (data.type === 'tribe-notice') {
-    useTribeStore.setState({ notice: typeof data.message === 'string' ? data.message.slice(0, 160) : '' });
+    useTribeStore.setState({ notice: typeof data.message === 'string' ? translateServerMessage(data.message.slice(0, 160)) : '' });
     return true;
   }
   return false;

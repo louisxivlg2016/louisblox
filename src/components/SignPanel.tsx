@@ -3,6 +3,7 @@ import { requestPlay } from '../game/input';
 import { MAX_SIGN_LENGTH, saveSign, useSignStore } from '../game/signs';
 import { BlockKind } from '../game/voxel';
 import { world } from '../game/world';
+import { translate } from '../game/language';
 
 export function SignPanel() {
   const editing = useSignStore((state) => state.editing);
@@ -22,10 +23,10 @@ export function SignPanel() {
   };
   return (
     <div className="backpack-backdrop">
-      <section className="book-panel backpack-panel" role="dialog" aria-modal="true" aria-label={paris ? 'Edit street sign' : 'Edit sign'}>
+      <section className="book-panel backpack-panel" role="dialog" aria-modal="true" aria-label={paris ? translate('Écrire sur la plaque de rue', 'Edit street sign') : translate('Écrire sur le panneau', 'Edit sign')}>
         <div className="backpack-header">
-          <h2>{paris ? 'Street Sign' : 'Sign'}</h2>
-          <button type="button" className="secondary-button" onClick={close}>Close</button>
+          <h2>{paris ? translate('Plaque de rue', 'Street Sign') : translate('Panneau', 'Sign')}</h2>
+          <button type="button" className="secondary-button" onClick={close}>{translate('Fermer', 'Close')}</button>
         </div>
         <form onSubmit={(event) => {
           event.preventDefault();
@@ -33,11 +34,11 @@ export function SignPanel() {
           void requestPlay();
         }}>
           <label className="book-field">
-            {paris ? 'Street sign text' : 'Sign text'}
-            <textarea ref={textRef} autoFocus defaultValue={editing.text} rows={6} maxLength={MAX_SIGN_LENGTH} onInput={(event) => setLength(event.currentTarget.value.length)} placeholder={paris ? '4th arrondissement\nPeace Street' : 'Write something…'} />
+            {paris ? translate('Texte de la plaque', 'Street sign text') : translate('Texte du panneau', 'Sign text')}
+            <textarea ref={textRef} autoFocus defaultValue={editing.text} rows={6} maxLength={MAX_SIGN_LENGTH} onInput={(event) => setLength(event.currentTarget.value.length)} placeholder={paris ? '4th arrondissement\nPeace Street' : translate('Écris quelque chose…', 'Write something…')} />
           </label>
           <p className="boutique-hint">{length} / {MAX_SIGN_LENGTH} characters · text is saved and shared.</p>
-          <button type="submit" className="primary-button">{paris ? 'Save street sign' : 'Save sign'}</button>
+          <button type="submit" className="primary-button">{paris ? translate('Enregistrer la plaque', 'Save street sign') : translate('Enregistrer le panneau', 'Save sign')}</button>
         </form>
       </section>
     </div>

@@ -1,3 +1,5 @@
+import { useLanguageStore } from './language';
+
 const names: Record<string, string> = {
   Main: 'Hand', Bâton: 'Stick', Cisailles: 'Shears', 'Seau vide': 'Empty Bucket', 'Seau plein d’eau': 'Water Bucket', 'Seau toujours vide': 'Always Empty Bucket',
   'Épée en bois': 'Wooden Sword', 'Épée en pierre': 'Stone Sword', 'Épée en fer': 'Iron Sword', 'Épée en or': 'Gold Sword', 'Épée en diamant': 'Diamond Sword', 'Épée en argent': 'Silver Sword',
@@ -47,4 +49,8 @@ export function englishItemName(name: string) {
   if (name.startsWith('Escalier en béton ')) return `${colors[name.slice(18)] ?? name.slice(18)} Concrete Stairs`;
   if (name.startsWith('Escalier en ')) return `${stairMaterials[name.slice(12)] ?? name.slice(12)} Stairs`;
   return name;
+}
+
+export function localizedItemName(name: string) {
+  return useLanguageStore.getState().language === 'fr' ? name : englishItemName(name);
 }

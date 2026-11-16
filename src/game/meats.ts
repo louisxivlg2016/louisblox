@@ -1,25 +1,26 @@
 import type { AnimalKind } from './animals';
+import { translate } from './language';
 
-export const MEAT_NAMES: Record<AnimalKind, string> = {
-  camel: 'Camel Meat',
-  cow: 'Beef',
-  horse: 'Horse Meat',
-  pig: 'Pork',
-  sheep: 'Mutton',
-  chicken: 'Chicken',
-  duck: 'Duck',
-  bear: 'Bear Meat',
-  deer: 'Venison',
-  wolf: 'Wolf Meat',
-  snowWolf: 'Snow Wolf Meat',
-  snowBear: 'Polar Bear Meat',
-  snowDeer: 'Snow Venison',
-  zombie: 'Zombie Flesh',
-  monkey: 'Monkey Meat',
-  ocelot: 'Ocelot Meat',
-  giraffe: 'Giraffe Meat',
-  elephant: 'Elephant Meat',
-};
+export const MEAT_NAMES = (): Record<AnimalKind, string> => ({
+  camel: translate('Viande de chameau', 'Camel Meat'),
+  cow: translate('Bœuf', 'Beef'),
+  horse: translate('Viande de cheval', 'Horse Meat'),
+  pig: translate('Porc', 'Pork'),
+  sheep: translate('Mouton', 'Mutton'),
+  chicken: translate('Poulet', 'Chicken'),
+  duck: translate('Canard', 'Duck'),
+  bear: translate('Viande d’ours', 'Bear Meat'),
+  deer: translate('Venaison', 'Venison'),
+  wolf: translate('Viande de loup', 'Wolf Meat'),
+  snowWolf: translate('Viande de loup des neiges', 'Snow Wolf Meat'),
+  snowBear: translate('Viande d’ours blanc', 'Polar Bear Meat'),
+  snowDeer: translate('Venaison des neiges', 'Snow Venison'),
+  zombie: translate('Chair de zombie', 'Zombie Flesh'),
+  monkey: translate('Viande de singe', 'Monkey Meat'),
+  ocelot: translate('Viande d’ocelot', 'Ocelot Meat'),
+  giraffe: translate('Viande de girafe', 'Giraffe Meat'),
+  elephant: translate('Viande d’éléphant', 'Elephant Meat'),
+});
 
 export const MEAT_COLORS: Record<AnimalKind, string> = {
   camel: '#b77b50',

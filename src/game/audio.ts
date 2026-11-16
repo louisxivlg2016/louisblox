@@ -40,6 +40,7 @@ import type { World } from 'koota';
 import { Fire, FirePosition, Player, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
 import { getSwimState } from './swimming';
 import { getBlockIndex } from './chunks';
+import { translate } from './language';
 
 let music: HTMLAudioElement | null = null;
 let mode: GameplayMode = 'creative';
@@ -65,7 +66,7 @@ function attemptPlay(element: HTMLAudioElement) {
     pending.add(element);
     if (!reported.has(element.src)) {
       reported.add(element.src);
-      console.warn('Audio playback deferred by browser', error);
+      console.warn(translate('Lecture audio différée par le navigateur', 'Audio playback deferred by browser'), error);
     }
   });
 }

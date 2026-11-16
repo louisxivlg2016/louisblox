@@ -5,30 +5,32 @@ import type { Voxel } from './voxel';
 import type { SelectedKind } from './items';
 import type { BattleTeam } from './battleArena';
 import { addPirateShip, PIRATE_CHEST_OFFSETS } from './pirateShipGeometry';
+import { translate } from './language';
+
 export { PIRATE_CHEST_OFFSETS } from './pirateShipGeometry';
 
 export type PirateKit = 'defender' | 'gunner' | 'raider';
 export const PIRATE_WATER_Y = 4.5;
 export const PIRATE_OBJECTIVES = { red: { x: -16, y: 7, z: 0 }, blue: { x: 16, y: 7, z: 0 } } as const;
 
-export const PIRATE_KITS: Record<PirateKit, { name: string; description: string; hotbar: SelectedKind[] }> = {
-  defender: { name: 'Defender', description: 'Sword, walls, and food to protect the treasure.', hotbar: ['pistol_bomb', BlockKind.Tnt, BlockKind.OakPlanks, 'pickaxe_diamond'] },
-  gunner: { name: 'Artilleur', description: 'Canons, fusil et arc pour bombarder les autres navires.', hotbar: ['pistol_bomb', 'rifle_auto', 'bow', BlockKind.Tnt, 'cannon', BlockKind.OakPlanks, 'cooked_meat', 'sword_iron', BlockKind.Stone, 'apple'] },
-  raider: { name: 'Raider', description: 'Pickaxe, sword, and TNT to build and attack the hold.', hotbar: ['sword_diamond', 'pickaxe_diamond', BlockKind.Tnt, BlockKind.OakPlanks, 'pistol_bomb', 'bow', 'cooked_meat', BlockKind.Stone, BlockKind.OakPlanks, 'apple'] },
-};
+export const PIRATE_KITS = (): Record<PirateKit, { name: string; description: string; hotbar: SelectedKind[] }> => ({
+  defender: { name: translate('Défenseur', 'Defender'), description: translate('Épée, murs et nourriture pour protéger le trésor.', 'Sword, walls, and food to protect the treasure.'), hotbar: ['pistol_bomb', BlockKind.Tnt, BlockKind.OakPlanks, 'pickaxe_diamond'] },
+  gunner: { name: translate('Artilleur', 'Gunner'), description: translate('Canons, fusil et arc pour bombarder les autres navires.', 'Cannons, rifle, and bow to bombard other ships.'), hotbar: ['pistol_bomb', 'rifle_auto', 'bow', BlockKind.Tnt, 'cannon', BlockKind.OakPlanks, 'cooked_meat', 'sword_iron', BlockKind.Stone, 'apple'] },
+  raider: { name: translate('Abordeur', 'Raider'), description: translate('Pioche, épée et TNT pour construire et attaquer la cale.', 'Pickaxe, sword, and TNT to build and attack the hold.'), hotbar: ['sword_diamond', 'pickaxe_diamond', BlockKind.Tnt, BlockKind.OakPlanks, 'pistol_bomb', 'bow', 'cooked_meat', BlockKind.Stone, BlockKind.OakPlanks, 'apple'] },
+});
 
 export const PIRATE_LOADOUT: SelectedKind[] = ['pistol_bomb', BlockKind.Tnt, BlockKind.OakPlanks, 'pickaxe_diamond'];
 
-export const PIRATE_SHOP = [
-  { item: 'sword_diamond', name: 'Diamond Sword', cost: 12 },
+export const PIRATE_SHOP = () => [
+  { item: 'sword_diamond', name: translate('Épée en diamant', 'Diamond Sword'), cost: 12 },
   { item: 'bow', name: 'Arc', cost: 6 },
-  { item: 'pistol_bomb', name: 'Pistolet lance-bombes', cost: 10 },
+  { item: 'pistol_bomb', name: translate('Pistolet lance-bombes', 'Bomb Launcher'), cost: 10 },
   { item: 'Tnt', name: 'TNT', cost: 5 },
-  { item: 'OakPlanks', name: 'Oak Planks', cost: 3 },
-  { item: 'apple', name: 'Apple', cost: 2 },
+  { item: 'OakPlanks', name: translate('Planches de chêne', 'Oak Planks'), cost: 3 },
+  { item: 'apple', name: translate('Pomme', 'Apple'), cost: 2 },
   { item: 'parachute', name: 'Parachute', cost: 20 },
-  { item: 'mystery', name: 'Mystery Kit', cost: 500 },
-] as const;
+  { item: 'mystery', name: translate('Kit mystère', 'Mystery Kit'), cost: 500 },
+];
 
 export function pirateSpawn(team: 'red' | 'blue') {
   return { x: team === 'red' ? -18 : 18, y: 9.51, z: 3 };

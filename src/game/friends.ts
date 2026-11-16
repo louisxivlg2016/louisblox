@@ -5,9 +5,11 @@ import { useCharacterStore } from './characterStore';
 import { useGameStore } from './store';
 import { sanitizeAppearance } from './appearance';
 import { isOutfitKind, isWigSelection } from './outfits';
+import { translateServerMessage } from './language';
 import type { OutfitKind, WigSelection } from './outfits';
 import { normalizePlayerName, playerIdentity } from './playerIdentity';
 import { PROFILE_AVATAR_KINDS, useAvatarStore } from './avatar';
+import { translate } from './language';
 
 export type FriendPlayer = {
   playerId: string;
@@ -117,7 +119,7 @@ export async function registerSelfProfile() {
     body: JSON.stringify(profile),
   });
   const result = await response.json() as { ok?: boolean; error?: string };
-  if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to register this username.');
+  if (!response.ok || !result.ok) throw new Error(translateServerMessage(result.error || translate('Impossible d’enregistrer ce pseudo.', 'Unable to register this username.')));
   lastRegistration = { key, at: Date.now() };
 }
 
@@ -127,14 +129,14 @@ export async function validatePlayerName(name: string) {
   url.searchParams.set('name', name.trim().slice(0, 24));
   const response = await fetch(url, { cache: 'no-store' });
   const result = await response.json() as { available?: boolean; error?: string };
-  if (!response.ok || !result.available) throw new Error(result.error || 'This username is already in use.');
+  if (!response.ok || !result.available) throw new Error(translateServerMessage(result.error || translate('Ce pseudo est déjà utilisé.', 'This username is already in use.')));
 }
 
 export { normalizePlayerName };
 
 export async function listOnlinePlayers() {
   const response = await fetch(endpoint('/players'), { cache: 'no-store' });
-  if (!response.ok) throw new Error('Directory unavailable');
+  if (!response.ok) throw new Error(translate('Annuaire indisponible', 'Directory unavailable'));
   const data = await response.json() as { players?: unknown };
   return Array.isArray(data.players) ? data.players.map(friend).filter((value): value is FriendPlayer => value !== null) : [];
 }
@@ -174,7 +176,7 @@ async function postFriend(path: string, targetId: string, requestId?: string) {
   });
   if (!response.ok) throw new Error('Invitation impossible pour le moment.');
   const result = await response.json() as { sent?: boolean; delivered?: boolean };
-  if (!result.sent) throw new Error('This player is no longer available.');
+  if (!result.sent) throw new Error(translate('Ce joueur n’est plus disponible.', 'This player is no longer available.'));
   return result.delivered !== false;
 }
 
@@ -183,10 +185,10 @@ export const acceptFriendRequest = (request: FriendRequest) => postFriend('/frie
 
 export async function giveApple(target: FriendPlayer) {
   const game = useGameStore.getState();
-  if (game.gameplayMode === 'battle') throw new Error('Apples cannot be used in the combat arena.');
+  if (game.gameplayMode === 'battle') throw new Error(translate('Les pommes ne sont pas utilisables dans l’arène de bataille.', 'Apples cannot be used in the combat arena.'));
   if (game.apples < 1) throw new Error('Cueille d’abord une pomme sur un arbre de prairie.');
   const delivered = await postFriend('/apple-gift', target.playerId);
-  if (!delivered) throw new Error(`${target.name} must be connected to their game to receive the apple.`);
+  if (!delivered) throw new Error(translate(`${target.name} doit être connecté à sa partie pour recevoir la pomme.`, `${target.name} must be connected to their game to receive the apple.`));
   game.discardApple();
 }
 

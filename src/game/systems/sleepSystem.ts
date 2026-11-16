@@ -5,6 +5,7 @@ import { dismount } from '../vehicles';
 import { facingYaw } from '../extraBlocks';
 import { Sleep, Environment, Player, PlayerMount } from '../traits';
 import { DAY_DURATION } from './environmentSystem';
+import { translate } from '../language';
 
 export function startSleep(world: World, x: number, y: number, z: number, facing?: Voxel['facing']) {
   if (world.queryFirst(Sleep)) return;
@@ -29,6 +30,6 @@ export function sleepSystem(world: World, dt: number) {
     }
     entity.destroy();
     useGameStore.getState().setSleepProgress(null);
-    useGameStore.getState().setNotice(morning ? 'Night is falling.' : 'Day is breaking.');
+    useGameStore.getState().setNotice(morning ? translate('La nuit tombe.', 'Night is falling.') : translate('Le jour se lève.', 'Day is breaking.'));
   });
 }

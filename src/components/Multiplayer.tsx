@@ -57,6 +57,7 @@ import { applyAnimalSnapshots, applyFishSnapshots, isAnimalSnapshot, isFishSnaps
 import { clearTribes, receiveTribeMessage, setTribeSocket, teleportToPendingTribeHome } from '../game/tribes';
 import { applyAnimalDeath, applyDeathSnapshot, applyTraderDeath, isDeathId, setDeathSocket } from '../game/deathSync';
 import { onDroppedItemSync, receiveDroppedItem, setDroppedItemSocket } from '../game/droppedItemSync';
+import { translate } from '../game/language';
 
 type ServerMessage = {
   type?: unknown;
@@ -129,8 +130,8 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
   const current = sanitizeAppearance(appearance, character);
   const hair = appearanceHairColor(current, character);
   const skin = appearanceSkinColor(current, character);
-  const body = current.clothingColor ?? (outfit === 'default' ? (girl ? '#9a5f9f' : `hsl(${hue}, 45%, 48%)`) : OUTFITS[outfit].body);
-  const legs = current.clothingColor ?? (outfit === 'default' ? (girl ? '#4b405e' : '#354d6d') : OUTFITS[outfit].legs);
+  const body = current.clothingColor ?? (outfit === 'default' ? (girl ? '#9a5f9f' : `hsl(${hue}, 45%, 48%)`) : OUTFITS()[outfit].body);
+  const legs = current.clothingColor ?? (outfit === 'default' ? (girl ? '#4b405e' : '#354d6d') : OUTFITS()[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
   const team = useBattleStore((state) => state.teams[playerId]);
   const avatar = useRemotePlayerStore((state) => state.avatars[playerId] ?? 'pixel');
@@ -331,7 +332,7 @@ export function MultiplayerConnection() {
       closing.onclose = null;
       closing.close();
       store.setEnabled(false);
-      store.setStatus('offline', 'The room has been deleted.');
+      store.setStatus('offline', translate('Le salon a été supprimé.', 'The room has been deleted.'));
     };
     const syncRoster = () => {
       store.setPlayers([
@@ -358,7 +359,7 @@ export function MultiplayerConnection() {
         if (joinOnly) {
           pendingWorld.current = null;
           store.setEnabled(false);
-          store.setStatus('error', 'This room does not exist yet. Your friend must create it before you can join.');
+          store.setStatus('error', translate('Ce salon n’existe pas encore. Ton ami doit le créer avant que tu puisses le rejoindre.', 'This room does not exist yet. Your friend must create it before you can join.'));
           socket.current?.close();
           return;
         }
@@ -366,7 +367,7 @@ export function MultiplayerConnection() {
         if (!existing && !canCreateWorld(room)) {
           pendingWorld.current = null;
           store.setEnabled(false);
-          store.setStatus('error', 'You already have 20 worlds. Delete one before creating a room.');
+          store.setStatus('error', translate('Tu as déjà 20 mondes. Supprimes-en un avant de créer un salon.', 'You already have 20 worlds. Delete one before creating a room.'));
           socket.current?.close();
           return;
         }
@@ -514,7 +515,7 @@ export function MultiplayerConnection() {
         await registerSelfProfile();
       } catch (error) {
         if (!disposed) {
-          const message = error instanceof Error && error.message.toLowerCase().includes('pseudo') ? error.message : 'Unable to contact the multiplayer server. Check your connection or try again later.';
+          const message = error instanceof Error && error.message.toLowerCase().includes('pseudo') ? error.message : translate('Impossible de contacter le serveur multijoueur. Vérifie ta connexion ou réessaie plus tard.', 'Unable to contact the multiplayer server. Check your connection or try again later.');
           store.setStatus('error', message);
         }
         return;
@@ -636,7 +637,7 @@ export function MultiplayerConnection() {
           return;
         }
         if (data.type === 'protection-denied') {
-          useGameStore.getState().setNotice('Protected territory: you are not allowed to modify these blocks.');
+          useGameStore.getState().setNotice(translate('Territoire protégé : tu n’as pas l’autorisation de modifier ces blocs.', 'Protected territory: you are not allowed to modify these blocks.'));
           return;
         }
         if (data.type === 'protection') {
@@ -746,7 +747,7 @@ export function MultiplayerConnection() {
         if (event.code === 4003) {
           if (socket.current === next) socket.current = null;
           store.setEnabled(false);
-          store.setStatus('error', 'You have been banned from this world. The owner can readmit you: join this room again afterward.');
+          store.setStatus('error', translate('Tu as été exclu de ce monde. Le créateur peut te réadmettre : rejoins ensuite ce salon.', 'You have been banned from this world. The owner can readmit you: join this room again afterward.'));
           useGameStore.setState({ mode: 'menu' });
           return;
         }

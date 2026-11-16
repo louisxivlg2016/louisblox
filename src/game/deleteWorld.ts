@@ -4,6 +4,7 @@ import { playerIdentity } from './playerIdentity';
 import { deleteWorldSave, listWorlds } from './save';
 import { useGameStore } from './store';
 import { useMultiplayerStore } from './multiplayerStore';
+import { translate } from './language';
 
 export async function removeWorld(worldId: string) {
   if (!deleteWorldSave(worldId)) throw new Error('Impossible de supprimer cette sauvegarde sur cet appareil.');
@@ -12,13 +13,13 @@ export async function removeWorld(worldId: string) {
     const shared = (await listPublicWorlds()).find((world) => world.id === worldId && world.ownerId === playerIdentity());
     if (shared) await deleteRoom(worldId);
   } catch {
-    warning = 'The save was deleted, but the online room could not be verified.';
+    warning = translate('La sauvegarde est supprimée, mais le salon en ligne n’a pas pu être vérifié.', 'The save was deleted, but the online room could not be verified.');
   }
   if (useGameStore.getState().worldId === worldId) {
     useMultiplayerStore.getState().setEnabled(false);
     const next = listWorlds()[0];
     if (next) useGameStore.getState().openWorld(next.id, next.name);
-    else useGameStore.getState().regenerate('creative', 'main-room', undefined, 'Main World');
+    else useGameStore.getState().regenerate('creative', 'main-room', undefined, translate('Monde principal', 'Main World'));
     useGameStore.getState().setMode('menu');
   }
   return { warning };

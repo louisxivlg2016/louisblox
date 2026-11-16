@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { translate } from '../game/language';
 
 export function MenuDialog({ title, onClose, children, className = '' }: { title: string; onClose: () => void; children: ReactNode; className?: string }) {
   useEffect(() => {
@@ -18,7 +19,7 @@ export function MenuDialog({ title, onClose, children, className = '' }: { title
         <button
           className="world-library-close"
           type="button"
-          aria-label={`Close ${title}`}
+          aria-label={translate(`Fermer ${title}`, `Close ${title}`)}
           onPointerDown={(event) => {
             event.preventDefault();
             event.stopPropagation();

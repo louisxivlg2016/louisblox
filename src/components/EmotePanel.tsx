@@ -3,11 +3,12 @@ import type { EmoteKind } from '../game/emotes';
 import { clearInput, requestPlay } from '../game/input';
 import { useGameStore } from '../game/store';
 import emotesButtonUrl from '../../assets/ui/emotes-button.webp';
+import { translate } from '../game/language';
 
 const ACTIONS: Array<{ kind: EmoteKind; label: string }> = [
-  { kind: 'sit', label: 'Sit' },
-  { kind: 'lie', label: 'Lie down' },
-  { kind: 'wave', label: 'Wave' },
+  { kind: 'sit', label: translate('S’asseoir', 'Sit') },
+  { kind: 'lie', label: translate('S’aplatir', 'Lie down') },
+  { kind: 'wave', label: translate('Dire bonjour', 'Wave') },
 ];
 
 export function EmotePanel() {
@@ -36,10 +37,10 @@ export function EmotePanel() {
   if (open) {
     return (
       <div className="emote-backdrop">
-        <section className="emote-panel" aria-label="Choose emote">
-          <header><strong>Emotes</strong><button onClick={closeMenu} aria-label="Close emotes">×</button></header>
+        <section className="emote-panel" aria-label={translate('Choisir un geste', 'Choose emote')}>
+          <header><strong>{translate('Gestes', 'Emotes')}</strong><button onClick={closeMenu} aria-label={translate('Fermer les gestes', 'Close emotes')}>×</button></header>
           {ACTIONS.map((action) => <button key={action.kind} className={current === action.kind ? 'active' : ''} onClick={() => choose(action.kind)}>{action.label}</button>)}
-          {(current === 'sit' || current === 'lie') && <button onClick={stand}>Stand up</button>}
+          {(current === 'sit' || current === 'lie') && <button onClick={stand}>{translate('Se relever', 'Stand up')}</button>}
         </section>
       </div>
     );

@@ -5,6 +5,7 @@ import { clearInput, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 import { MatchResultActions } from './MatchResultActions';
+import { translate } from '../game/language';
 
 export function FootballHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
@@ -40,26 +41,26 @@ export function FootballHud() {
   const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
   return (
     <>
-      <div className="battle-scoreboard football-scoreboard" aria-label="Football match score">
-        <span className="battle-red">Red · {score.red}</span>
-        <strong>{winner ? 'FULL TIME' : overtime ? 'GOLDEN GOAL' : `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`}</strong>
-        <span className="battle-blue">Blue · {score.blue}</span>
+      <div className="battle-scoreboard football-scoreboard" aria-label={translate('Score du match de football', 'Football match score')}>
+        <span className="battle-red">{translate('Rouge', 'Red')} · {score.red}</span>
+        <strong>{winner ? translate('MATCH TERMINÉ', 'FULL TIME') : overtime ? translate('BUT EN OR', 'GOLDEN GOAL') : `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`}</strong>
+        <span className="battle-blue">{translate('Bleu', 'Blue')} · {score.blue}</span>
       </div>
       {!team && <div className="battle-team-picker football-picker">
-        {!ready ? <strong>Preparing stadium…</strong> : <>
-          <strong>Choose your football team</strong><span>5 minutes · red versus blue</span>
-          <div><button className="battle-red" onClick={() => selectTeam('red')}>Red</button><button className="battle-blue" onClick={() => selectTeam('blue')}>Blue</button></div>
-          <button className="battle-solo" onClick={() => selectTeam('auto')}>Automatic team</button>
+        {!ready ? <strong>{translate('Préparation du stade…', 'Preparing stadium…')}</strong> : <>
+          <strong>{translate('Choisis ton équipe de football', 'Choose your football team')}</strong><span>{translate('5 minutes · rouge contre bleu', '5 minutes · red versus blue')}</span>
+          <div><button className="battle-red" onClick={() => selectTeam('red')}>{translate('Rouge', 'Red')}</button><button className="battle-blue" onClick={() => selectTeam('blue')}>{translate('Bleu', 'Blue')}</button></div>
+          <button className="battle-solo" onClick={() => selectTeam('auto')}>{translate('Équipe automatique', 'Automatic team')}</button>
         </>}
       </div>}
       {team && mode === 'play' && <div className="football-notice" role="status">
         <strong>{notice}</strong>
         {phase === 'countdown' && <span>Kickoff in {Math.max(0, Math.ceil((phaseUntil - Date.now()) / 1000))}</span>}
-        {phase === 'penalty' && <span>Penalty for {penaltyTeam === 'red' ? 'red' : 'blue'} · shooter and goalkeeper get ready</span>}
-        {isFootballFrozen() && phase !== 'finished' && <span>Wait for the whistle</span>}
-        <small>Left click: shoot · E: power shot · T or right click: tackle · G: pass</small>
+        {phase === 'penalty' && <span>{translate('Penalty {penaltyTeam === \'red\' ? \'rouge\' : \'bleu\'} · le tireur et le gardien se placent', 'Penalty for {penaltyTeam === \'red\' ? \'red\' : \'blue\'} · shooter and goalkeeper get ready')}</span>}
+        {isFootballFrozen() && phase !== 'finished' && <span>{translate('Attends le coup de sifflet', 'Wait for the whistle')}</span>}
+        <small>{translate('Clic gauche : tir · E : tir puissant · T ou clic droit : tacler · G : passer', 'Left click: shoot · E: power shot · T or right click: tackle · G: pass')}</small>
       </div>}
-      {winner && <div className="pirate-winner">The {winner === 'red' ? 'red' : 'blue'} team wins!<MatchResultActions /></div>}
+      {winner && <div className="pirate-winner">{translate('Victoire de l’équipe {winner === \'red\' ? \'rouge\' : \'bleue\'} !', 'The {winner === \'red\' ? \'red\' : \'blue\'} team wins!')}<MatchResultActions /></div>}
     </>
   );
 }

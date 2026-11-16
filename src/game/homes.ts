@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useGameStore } from './store';
+import { translate } from './language';
 
 export const MAX_HOMES = 5;
 export const NO_HOMES: Home[] = [];
@@ -78,12 +79,12 @@ export const useHomeStore = create<HomeState>((set, get) => {
     homes: readHomes(),
     setOpen: (open) => set({ open: open && useGameStore.getState().gameplayMode !== 'pirates' }),
     createHome: (worldId, name, position) => {
-      if (useGameStore.getState().gameplayMode === 'pirates') return { error: 'Homes are disabled in Pirates mode.' };
+      if (useGameStore.getState().gameplayMode === 'pirates') return { error: translate('Les maisons sont désactivées en mode Pirates.', 'Homes are disabled in Pirates mode.') };
       const trimmed = name.trim().slice(0, 32);
-      if (!trimmed) return { error: 'Name your home.' };
-      if (!Object.values(position).every((value) => Number.isFinite(value))) return { error: 'This position is invalid.' };
+      if (!trimmed) return { error: translate('Donne un nom à ta maison.', 'Name your home.') };
+      if (!Object.values(position).every((value) => Number.isFinite(value))) return { error: translate('Cette position est invalide.', 'This position is invalid.') };
       const current = get().homes[worldId] ?? NO_HOMES;
-      if (current.length >= MAX_HOMES) return { error: 'You already have 5 homes in this world. Delete one to create another.' };
+      if (current.length >= MAX_HOMES) return { error: translate('Tu as déjà 5 maisons dans ce monde. Supprime-en une pour en créer une autre.', 'You already have 5 homes in this world. Delete one to create another.') };
       const home = { id: crypto.randomUUID(), name: trimmed, ...position };
       update(worldId, [...current, home]);
       return { home };

@@ -3,15 +3,16 @@ import { requestPlay } from '../game/input';
 import { selectionInfo } from '../game/items';
 import type { SelectedKind } from '../game/items';
 import { useGameStore } from '../game/store';
+import { translate } from '../game/language';
 
 type BookContent = { title: string; text: string };
 
 function readBook(bookId: string): BookContent {
   try {
     const saved = JSON.parse(localStorage.getItem(`louisblox-book-${bookId}`) ?? '{}');
-    return { title: typeof saved.title === 'string' ? saved.title : 'My Book', text: typeof saved.text === 'string' ? saved.text : '' };
+    return { title: typeof saved.title === 'string' ? saved.title : translate('Mon livre', 'My Book'), text: typeof saved.text === 'string' ? saved.text : '' };
   } catch {
-    return { title: 'My Book', text: '' };
+    return { title: translate('Mon livre', 'My Book'), text: '' };
   }
 }
 
@@ -55,10 +56,10 @@ function BookEditor({ bookId, onClose }: { bookId: Extract<SelectedKind, string>
 
   const save = () => {
     if (!writeBook(bookId, draft.current)) {
-      setNotice('Unable to save the book on this device.');
+      setNotice(translate('Impossible d’enregistrer le livre sur cet appareil.', 'Unable to save the book on this device.'));
       return false;
     }
-    setNotice('Book saved.');
+    setNotice(translate('Livre enregistré.', 'Book saved.'));
     return true;
   };
   const close = () => {
@@ -68,10 +69,10 @@ function BookEditor({ bookId, onClose }: { bookId: Extract<SelectedKind, string>
 
   return (
     <div className="backpack-backdrop">
-      <section className="book-panel backpack-panel" aria-label="Write in book">
+      <section className="book-panel backpack-panel" aria-label={translate('Écrire dans le livre', 'Write in book')}>
         <div className="backpack-header">
           <h2>{selectionInfo(bookId).name}</h2>
-          <button className="secondary-button" onClick={close}>Close</button>
+          <button className="secondary-button" onClick={close}>{translate('Fermer', 'Close')}</button>
         </div>
         <label className="book-field">
           Titre
@@ -79,9 +80,9 @@ function BookEditor({ bookId, onClose }: { bookId: Extract<SelectedKind, string>
         </label>
         <label className="book-field">
           Texte du livre
-          <textarea value={text} rows={12} maxLength={4000} onChange={(event) => setText(event.target.value)} placeholder="Write your story here…" />
+          <textarea value={text} rows={12} maxLength={4000} onChange={(event) => setText(event.target.value)} placeholder={translate('Écris ton histoire ici…', 'Write your story here…')} />
         </label>
-        <button className="primary-button" onClick={close}>Save book</button>
+        <button className="primary-button" onClick={close}>{translate('Enregistrer le livre', 'Save book')}</button>
       </section>
     </div>
   );

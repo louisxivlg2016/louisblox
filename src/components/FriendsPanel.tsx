@@ -8,12 +8,13 @@ import type { FriendPlayer, FriendRequest } from '../game/friends';
 import { ProfileAvatar, ProfilePhotoPicker } from './ProfileAvatar';
 import { useGameStore } from '../game/store';
 import { requestRoomMode } from './Multiplayer';
+import { translate } from '../game/language';
 
 function PlayerRow({ player, action, online = true }: { player: FriendPlayer; action?: React.ReactNode; online?: boolean }) {
   return (
     <div className="friend-row">
       <ProfileAvatar kind={player.avatar ?? 'pixel'} character={player.character} outfit={player.outfit} wig={player.wig} appearance={player.appearance} size={42} />
-      <span className="friend-info"><strong>{player.name}</strong><small>{online ? 'Online' : 'Offline'} · {player.room}</small></span>
+      <span className="friend-info"><strong>{player.name}</strong><small>{online ? translate('En ligne', 'Online') : translate('Hors ligne', 'Offline')} · {player.room}</small></span>
       {action}
     </div>
   );
@@ -58,7 +59,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
       void onPlay();
     } else if (status === 'error') {
       setPendingJoin(null);
-      setMessage(useMultiplayerStore.getState().error || 'Unable to connect to your friend’s world.');
+      setMessage(useMultiplayerStore.getState().error || translate('Connexion au monde de ton ami impossible.', 'Unable to connect to your friend’s world.'));
     }
   }, [pendingJoin, room, status, worldReady, onPlay]);
   useEffect(() => {
@@ -71,7 +72,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
         setOnlinePlayers(directory);
         await fetchFriendRequests();
       } catch (error) {
-        if (active) setMessage(error instanceof Error ? error.message : 'The directory is unavailable right now.');
+        if (active) setMessage(error instanceof Error ? error.message : translate('Annuaire indisponible pour le moment.', 'The directory is unavailable right now.'));
       }
     };
     void refresh();
@@ -93,7 +94,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
       void searchPlayers(query).then((players) => {
         if (active) setSearchResults(players);
       }).catch(() => {
-        if (active) setMessage('Search is unavailable right now.');
+        if (active) setMessage(translate('Recherche indisponible pour le moment.', 'Search is unavailable right now.'));
       });
     }, 300);
     return () => {
@@ -106,9 +107,9 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
     try {
       const delivered = await sendFriendRequest(player);
       setPending((current) => [...current, player.playerId]);
-      setMessage(delivered ? `Invitation sent to ${player.name}.` : `Invitation saved. ${player.name} will receive it next time they connect.`);
+      setMessage(delivered ? translate(`Invitation envoyée à ${player.name}.`, `Invitation sent to ${player.name}.`) : translate(`Invitation enregistrée. ${player.name} la recevra à sa prochaine connexion.`, `Invitation saved. ${player.name} will receive it next time they connect.`));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to send invitation.');
+      setMessage(error instanceof Error ? error.message : translate('Invitation impossible.', 'Unable to send invitation.'));
     }
   };
   const accept = async (request: FriendRequest) => {
@@ -116,15 +117,15 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
       await acceptFriendRequest(request);
       addFriend(request.from);
       removeRequest(request.requestId);
-      setMessage(`${request.from.name} is now your friend.`);
+      setMessage(translate(`${request.from.name} est maintenant ton ami.`, `${request.from.name} is now your friend.`));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to send invitation.');
+      setMessage(error instanceof Error ? error.message : translate('Invitation impossible.', 'Unable to send invitation.'));
     }
   };
   const joinFriend = (player: FriendPlayer) => {
     requestRoomMode(null);
     setPendingJoin(player.room);
-    setMessage(`Connecting to ${player.name}’s world…`);
+    setMessage(translate(`Connexion au monde de ${player.name}…`, `Connecting to ${player.name}’s world…`));
     configure({ playerName, room: player.room, server }, true);
     const url = new URL(window.location.href);
     url.searchParams.set('room', player.room);
@@ -134,9 +135,9 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
     setGiving((current) => [...current, player.playerId]);
     try {
       await giveApple(player);
-      setMessage(`An apple was given to ${player.name}.`);
+      setMessage(translate(`Une pomme a été offerte à ${player.name}.`, `An apple was given to ${player.name}.`));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to send a gift right now.');
+      setMessage(error instanceof Error ? error.message : translate('Don impossible pour le moment.', 'Unable to send a gift right now.'));
     } finally {
       setGiving((current) => current.filter((id) => id !== player.playerId));
     }
@@ -149,7 +150,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
   return (
     <div className="friends-panel">
       <div className="profile-card">
-        <button className="profile-avatar-button" onClick={() => { setChoosingPhoto((value) => !value); setEditing(false); }} aria-label="Choose my photo">
+        <button className="profile-avatar-button" onClick={() => { setChoosingPhoto((value) => !value); setEditing(false); }} aria-label={translate('Choisir ma photo', 'Choose my photo')}>
           <ProfileAvatar character={character} outfit={outfit} wig={wig} appearance={appearance} size={58} />
         </button>
         {editing ? (
@@ -158,14 +159,14 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
             void validatePlayerName(name).then(() => {
               setPlayerName(name);
               setEditing(false);
-              setMessage(`Your username is now ${name.trim()}.`);
-            }).catch((error) => setMessage(error instanceof Error ? error.message : 'This username is unavailable.'));
+              setMessage(translate(`Ton pseudo est maintenant ${name.trim()}.`, `Your username is now ${name.trim()}.`));
+            }).catch((error) => setMessage(error instanceof Error ? error.message : translate('Ce pseudo est indisponible.', 'This username is unavailable.')));
           }}>
-            <input aria-label="My username" value={name} maxLength={24} onChange={(event) => setName(event.target.value)} autoFocus />
+            <input aria-label={translate('Mon pseudo', 'My username')} value={name} maxLength={24} onChange={(event) => setName(event.target.value)} autoFocus />
             <button type="submit">OK</button>
           </form>
         ) : (
-          <button className="profile-name" onClick={() => { setEditing(true); setChoosingPhoto(false); }}><strong>{playerName}</strong><small>{status === 'online' ? 'Online' : 'Edit my username'}</small></button>
+          <button className="profile-name" onClick={() => { setEditing(true); setChoosingPhoto(false); }}><strong>{playerName}</strong><small>{status === 'online' ? translate('En ligne', 'Online') : translate('Modifier mon pseudo', 'Edit my username')}</small></button>
         )}
       </div>
       {choosingPhoto && <ProfilePhotoPicker onClose={() => setChoosingPhoto(false)} />}
@@ -176,7 +177,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
           {requests.map((request) => (
             <div className="friend-request" key={request.requestId}>
               <PlayerRow player={request.from} />
-              <div><button aria-label={`Accept ${request.from.name}`} onClick={() => accept(request)}>Accept</button><button aria-label={`Decline ${request.from.name}`} onClick={() => { removeRequest(request.requestId); setMessage(`Invitation from ${request.from.name} declined.`); }}>Decline</button></div>
+              <div><button aria-label={`Accept ${request.from.name}`} onClick={() => accept(request)}>{translate('Accepter', 'Accept')}</button><button aria-label={`Decline ${request.from.name}`} onClick={() => { removeRequest(request.requestId); setMessage(translate(`Invitation de ${request.from.name} refusée.`, `Invitation from ${request.from.name} declined.`)); }}>{translate('Refuser', 'Decline')}</button></div>
             </div>
           ))}
         </div>
@@ -184,19 +185,19 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
 
       <div className="friends-heading"><h3>Friends <span>{friends.length}</span></h3><span className="online-dot" /></div>
       <div className="friends-list">
-        {savedFriends.map(({ player, online: isOnline }) => <PlayerRow key={player.playerId} player={player} online={isOnline} action={<span className="friend-actions"><button className="friend-add" disabled={!isOnline} aria-label={`Join ${player.name}`} onClick={() => joinFriend(player)}>{isOnline ? 'Join' : 'Offline'}</button><button className="friend-add friend-gift" disabled={!isOnline || apples < 1 || giving.includes(player.playerId)} aria-label={`Give an apple to ${player.name}`} onClick={() => offerApple(player)}>{giving.includes(player.playerId) ? 'Sending…' : `Apple ×${apples}`}</button></span>} />)}
-        {savedFriends.length === 0 && <p className="friends-empty">Add friends from the online players.</p>}
+        {savedFriends.map(({ player, online: isOnline }) => <PlayerRow key={player.playerId} player={player} online={isOnline} action={<span className="friend-actions"><button className="friend-add" disabled={!isOnline} aria-label={`Join ${player.name}`} onClick={() => joinFriend(player)}>{isOnline ? translate('Rejoindre', 'Join') : translate('Hors ligne', 'Offline')}</button><button className="friend-add friend-gift" disabled={!isOnline || apples < 1 || giving.includes(player.playerId)} aria-label={`Give an apple to ${player.name}`} onClick={() => offerApple(player)}>{giving.includes(player.playerId) ? translate('Envoi…', 'Sending…') : `Apple ×${apples}`}</button></span>} />)}
+        {savedFriends.length === 0 && <p className="friends-empty">{translate('Propose des amis parmi les joueurs en ligne.', 'Add friends from the online players.')}</p>}
       </div>
-      <div className="friends-heading"><h3>All players <span>{filteredPlayers.length}</span></h3></div>
-      <input className="friends-search" type="search" aria-label="Search for a player" placeholder="Search…" value={search} onChange={(event) => setSearch(event.target.value)} />
+      <div className="friends-heading"><h3>{translate('Tous les joueurs', 'All players')} <span>{filteredPlayers.length}</span></h3></div>
+      <input className="friends-search" type="search" aria-label={translate('Rechercher un joueur', 'Search for a player')} placeholder={translate('Rechercher…', 'Search…')} value={search} onChange={(event) => setSearch(event.target.value)} />
       <div className="friends-list directory-list">
         {visiblePlayers.map(({ player, online: isOnline }) => (
           <PlayerRow key={player.playerId} player={player} online={isOnline} action={friends.some((friend) => friend.playerId === player.playerId)
-            ? <span className="friend-added">Friend</span>
-            : <button className="friend-add" disabled={pending.includes(player.playerId)} onClick={() => propose(player)}>{pending.includes(player.playerId) ? 'Sent' : 'Add'}</button>}
+            ? <span className="friend-added">{translate('Ami', 'Friend')}</span>
+            : <button className="friend-add" disabled={pending.includes(player.playerId)} onClick={() => propose(player)}>{pending.includes(player.playerId) ? translate('Envoyé', 'Sent') : translate('Proposer', 'Add')}</button>}
           />
         ))}
-        {filteredPlayers.length === 0 && <p className="friends-empty">No other players found.</p>}
+        {filteredPlayers.length === 0 && <p className="friends-empty">{translate('Aucun autre joueur trouvé.', 'No other players found.')}</p>}
       </div>
       {message && <p className="friends-message" role="status">{message}</p>}
     </div>

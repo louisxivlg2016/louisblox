@@ -16,6 +16,7 @@ import { CROP_KINDS, isCrop } from '../game/extraBlocks';
 import { inventoryCount } from '../game/inventory';
 import { CraftingPanel } from './CraftingPanel';
 import { normalizeSearch } from '../game/search';
+import { translate } from '../game/language';
 
 export function Backpack() {
   const open = useGameStore((state) => state.backpackOpen);
@@ -46,7 +47,7 @@ export function Backpack() {
   const resources = (Object.entries(meat) as Array<[AnimalKind, number]>).filter(([, count]) => count > 0);
   const query = normalizeSearch(gallerySearch);
   const matchesSearch = (kind: SelectedKind) => normalizeSearch(selectionInfo(kind).name).includes(query)
-    || (kind === 'gallery_tools_weapons_book' && 'book'.includes(query));
+    || (kind === 'gallery_tools_weapons_book' && translate('livre', 'book').includes(query));
   const visibleGalleryItems = GALLERY_ITEMS.filter((item) =>
     (query !== '' || galleryCategory === 'all' || item.category === galleryCategory) && matchesSearch(item.id)
     && (!isPaintballGun(item.id) || item.id === WHITE_PAINTBALL_GUN_ID)
@@ -73,74 +74,74 @@ export function Backpack() {
         aria-label={`Choose ${meta.name}`}
       >
         <ItemIcon kind={kind} />
-        <span>{meta.name}{count !== null ? ` ×${count}` : ''}{equipped ? ' · equipped' : ''}</span>
+        <span>{meta.name}{count !== null ? ` ×${count}` : ''}{equipped ? translate(' · portée', ' · equipped') : ''}</span>
       </button>
     );
   };
   return (
     <div className="backpack-backdrop">
-      <section className="backpack-panel" aria-label="Backpack">
+      <section className="backpack-panel" aria-label={translate('Sac à dos', 'Backpack')}>
         <div className="backpack-header">
-          <h2>{survival ? 'Survival · gathering and crafting' : 'Backpack'}</h2>
+          <h2>{survival ? translate('Survie · récolte et fabrication', 'Survival · gathering and crafting') : translate('Sac à dos', 'Backpack')}</h2>
           <button
             className="secondary-button"
             type="button"
-            aria-label="Close backpack"
+            aria-label={translate('Fermer le sac à dos', 'Close backpack')}
             onPointerDown={(event) => {
               event.preventDefault();
               event.stopPropagation();
               close();
             }}
             onClick={(event) => { if (event.detail === 0) close(); }}
-          >Close</button>
+          >{translate('Fermer', 'Close')}</button>
         </div>
         <div className="gallery-controls backpack-global-search">
-          <input type="search" aria-label="Search backpack" placeholder="Search the entire backpack…" value={gallerySearch} onChange={(event) => setGallerySearch(event.target.value)} />
+          <input type="search" aria-label={translate('Rechercher dans le sac à dos', 'Search backpack')} placeholder={translate('Rechercher dans tout le sac…', 'Search the entire backpack…')} value={gallerySearch} onChange={(event) => setGallerySearch(event.target.value)} />
         </div>
         <div className="backpack-content">
-          <p className="backpack-label">{survival ? 'Gathered resources' : 'Blocks, doors, and trapdoors'}</p>
+          <p className="backpack-label">{survival ? translate('Ressources récoltées', 'Gathered resources') : translate('Blocs, portes et trappes', 'Blocks, doors, and trapdoors')}</p>
           <div className="backpack-blocks">{HOTBAR_BLOCKS.filter((kind) => !isCrop(kind) && matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div>
-          <p className="backpack-label">Seeds and crops · on grass or dirt · E to harvest when ripe</p>
+          <p className="backpack-label">{translate('Graines et plants · sur herbe ou terre · E pour récolter quand c’est mûr', 'Seeds and crops · on grass or dirt · E to harvest when ripe')}</p>
           <div className="backpack-blocks">{CROP_KINDS.filter((kind) => matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div>
-          <p className="backpack-label">{survival ? 'Crafted items' : 'Pickaxes, shovels, swords, armor, and equipment · left click to mine or use'}</p>
+          <p className="backpack-label">{survival ? translate('Objets fabriqués', 'Crafted items') : translate('Pioches, pelles, épées, armures et équipement · clic gauche pour miner ou utiliser', 'Pickaxes, shovels, swords, armor, and equipment · left click to mine or use')}</p>
           <div className="backpack-blocks">{ITEM_ORDER.filter((kind) => matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div>
           {survival && <CraftingPanel />}
           <div className="gallery-controls">
-            <select aria-label="Gallery category" value={galleryCategory} onChange={(event) => setGalleryCategory(event.target.value)}>
-              <option value="all">All categories</option>
+            <select aria-label={translate('Catégorie de la galerie', 'Gallery category')} value={galleryCategory} onChange={(event) => setGalleryCategory(event.target.value)}>
+              <option value="all">{translate('Toutes les catégories', 'All categories')}</option>
               {GALLERY_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
             </select>
           </div>
           <p className="backpack-label">{visibleGalleryItems.length} items shown</p>
           <div className="backpack-blocks">{visibleGalleryItems.map((item) => itemButton(item.id))}</div>
-          <p className="backpack-label">Eat to restore lives</p>
+          <p className="backpack-label">{translate('Manger pour récupérer des vies', 'Eat to restore lives')}</p>
           <div className="backpack-resources">
             {ITEM_ORDER.filter((kind) => getItemMeta(kind).category === 'food' && (!survival || inventoryCount(kind, inventory) > 0)).map((kind) => (
               <div className="backpack-resource" key={kind}>
                 <span>{getItemMeta(kind).name} · +{getItemMeta(kind).healing} vies</span>
-                <button onClick={() => eatItem(world, kind)}>Eat</button>
+                <button onClick={() => eatItem(world, kind)}>{translate('Manger', 'Eat')}</button>
               </div>
             ))}
-            <div className="backpack-resource"><span>Collected apples ×{apples}</span><span><button onClick={() => eatItem(world, 'apple')} disabled={apples === 0}>Eat</button> <button onClick={discardApple} disabled={apples === 0}>Drop 1</button></span></div>
+            <div className="backpack-resource"><span>Collected apples ×{apples}</span><span><button onClick={() => eatItem(world, 'apple')} disabled={apples === 0}>{translate('Manger', 'Eat')}</button> <button onClick={discardApple} disabled={apples === 0}>{translate('Jeter 1', 'Drop 1')}</button></span></div>
             {resources.map(([kind, count]) => (
               <div className="backpack-resource" key={kind}>
-                <span>{MEAT_NAMES[kind]} ×{count}</span>
-                <span><button onClick={() => eatMeat(world, kind)}>Eat</button> <button onClick={() => { if (placeMeat(world, kind)) close(); }}>Place</button> <button onClick={() => discardMeat(kind)}>Drop 1</button></span>
+                <span>{MEAT_NAMES()[kind]} ×{count}</span>
+                <span><button onClick={() => eatMeat(world, kind)}>{translate('Manger', 'Eat')}</button> <button onClick={() => { if (placeMeat(world, kind)) close(); }}>{translate('Poser', 'Place')}</button> <button onClick={() => discardMeat(kind)}>{translate('Jeter 1', 'Drop 1')}</button></span>
               </div>
             ))}
           </div>
         </div>
         <div className="backpack-active-area">
-          <p className="backpack-label">Active slots · choose an item then a slot, or drag it</p>
+          <p className="backpack-label">{translate('Cases actives · choisis un objet puis une case, ou fais-le glisser', 'Active slots · choose an item then a slot, or drag it')}</p>
           <div className="backpack-active-slots">{hotbarSlots.map((kind, index) => (
             <button
-              key={`${kind ?? 'empty'}-${index}`}
+              key={`${kind ?? translate('vide', 'empty')}-${index}`}
               className="backpack-block active-slot"
               onClick={() => assign(index)}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => { event.preventDefault(); assign(index); }}
-              aria-label={`Slot ${index === 9 ? '0' : index + 1} : ${kind === null ? 'empty' : selectionInfo(kind).name}`}
-              title={kind === null ? 'Empty' : selectionInfo(kind).name}
+              aria-label={`Slot ${index === 9 ? '0' : index + 1} : ${kind === null ? translate('vide', 'empty') : selectionInfo(kind).name}`}
+              title={kind === null ? translate('Vide', 'Empty') : selectionInfo(kind).name}
             >
               <span className="active-slot-number">{index === 9 ? '0' : index + 1}</span>
               {kind !== null && <ItemIcon kind={kind} />}

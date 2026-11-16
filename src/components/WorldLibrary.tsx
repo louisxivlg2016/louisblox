@@ -7,6 +7,7 @@ import { downloadWorldBackup, importWorldBackup } from '../game/worldBackup';
 import { removeWorld } from '../game/deleteWorld';
 
 import { GAMEPLAY_MODE_LABELS, isMultiplayerOnlyMode } from '../game/worldMode';
+import { translate } from '../game/language';
 
 const MODE_NAMES = GAMEPLAY_MODE_LABELS;
 
@@ -34,7 +35,7 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
 
   const open = (world: WorldMeta) => {
     if (!enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative')) {
-      setMessage('Pirates and Football require multiplayer. Choose “Play multiplayer” to open this save.');
+      setMessage(translate('Les modes Pirates et Football nécessitent le multijoueur. Choisis « Jouer en multijoueur » pour ouvrir cette sauvegarde.', 'Pirates and Football require multiplayer. Choose “Play multiplayer” to open this save.'));
       return;
     }
     setMessage('');
@@ -53,9 +54,9 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
     try {
       const result = await removeWorld(world.id);
       setWorlds(listWorlds());
-      setMessage(result.warning || `“${world.name}” has been deleted.`);
+      setMessage(result.warning || translate(`« ${world.name} » a été supprimé.`, `“${world.name}” has been deleted.`));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to delete this world.');
+      setMessage(error instanceof Error ? error.message : translate('Impossible de supprimer ce monde.', 'Unable to delete this world.'));
     } finally {
       setBusy(false);
     }
@@ -63,20 +64,20 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
   const exportBackup = () => {
     try {
       const count = downloadWorldBackup();
-      setMessage(`${count} world${count > 1 ? 's' : ''} exported. Keep this file to restore your worlds.`);
+      setMessage(translate(`${count} monde${count > 1 ? 's' : ''} exporté${count > 1 ? 's' : ''}. Garde bien ce fichier pour retrouver tes mondes.`, `${count} world${count > 1 ? 's' : ''} exported. Keep this file to restore your worlds.`));
     } catch {
-      setMessage('Unable to export worlds on this device.');
+      setMessage(translate('Impossible d’exporter les mondes sur cet appareil.', 'Unable to export worlds on this device.'));
     }
   };
   const importBackup = async (file: File) => {
     setBusy(true);
-    setMessage('Importing backup…');
+    setMessage(translate('Importation de la sauvegarde…', 'Importing backup…'));
     try {
       const result = importWorldBackup(JSON.parse(await file.text()));
       setWorlds(listWorlds());
-      setMessage(`${result.imported.length} world${result.imported.length > 1 ? 's' : ''} imported.${result.skipped > 0 ? ` ${result.skipped} entr${result.skipped > 1 ? 'ies' : 'y'} skipped.` : ''} Your existing worlds were kept.`);
+      setMessage(translate(`${result.imported.length} monde${result.imported.length > 1 ? 's' : ''} importé${result.imported.length > 1 ? 's' : ''}.${result.skipped > 0 ? ` ${result.skipped} entrée ignorée.` : ''} Tes mondes existants sont conservés.`, `${result.imported.length} world${result.imported.length > 1 ? 's' : ''} imported.${result.skipped > 0 ? ` ${result.skipped} entry skipped.` : ''} Your existing worlds were kept.`));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Unable to read this backup.');
+      setMessage(error instanceof Error ? error.message : translate('Impossible de lire cette sauvegarde.', 'Unable to read this backup.'));
     } finally {
       setBusy(false);
     }
@@ -84,9 +85,9 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
 
   return (
     <section id="mes-mondes" className="world-library">
-      <div className="world-library-heading"><h2>My Worlds</h2><span>{worlds.length} / {MAX_WORLDS}</span></div>
+      <div className="world-library-heading"><h2>{translate('Mes mondes', 'My Worlds')}</h2><span>{worlds.length} / {MAX_WORLDS}</span></div>
       <div className="world-backup">
-        <button type="button" className="secondary-button" onClick={exportBackup} disabled={busy}>Export my worlds</button>
+        <button type="button" className="secondary-button" onClick={exportBackup} disabled={busy}>{translate('Exporter mes mondes', 'Export my worlds')}</button>
         <label className="world-backup-import" role="button" tabIndex={0} onKeyDown={(event) => {
           if (event.key !== 'Enter' && event.key !== ' ') return;
           event.preventDefault();
@@ -100,20 +101,20 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
           }} />
         </label>
       </div>
-      <p className="world-backup-hint">This file contains your worlds and homes. Keep it to restore them on another device or after clearing the browser.</p>
-      {worlds.length >= MAX_WORLDS && <p className="world-backup-hint" role="alert">You reached {MAX_WORLDS} worlds. Delete one to free a slot.</p>}
+      <p className="world-backup-hint">{translate('Le fichier contient tes mondes et leurs maisons. Garde-le pour les retrouver sur un autre appareil ou après un effacement du navigateur.', 'This file contains your worlds and homes. Keep it to restore them on another device or after clearing the browser.')}</p>
+      {worlds.length >= MAX_WORLDS && <p className="world-backup-hint" role="alert">{translate('Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un pour libérer une place.', 'You reached {MAX_WORLDS} worlds. Delete one to free a slot.')}</p>}
       {message && <p className="world-backup-message" role="status">{message}</p>}
       <div className="world-library-list">
         {worlds.map((world) => (
           <div className="world-library-item" key={world.id}>
             <button className="world-library-entry" onClick={() => open(world)} aria-label={`Open ${world.name}`} disabled={busy || pending}>
               <strong>{world.name}</strong>
-              <small>{MODE_NAMES[world.gameplayMode ?? 'creative']} · {world.updatedAt ? new Date(world.updatedAt).toLocaleDateString('en-US') : 'Old save'}</small>
+              <small>{MODE_NAMES()[world.gameplayMode ?? 'creative']} · {world.updatedAt ? new Date(world.updatedAt).toLocaleDateString('en-US') : translate('Ancienne sauvegarde', 'Old save')}</small>
             </button>
-            <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={busy || pending} aria-label={`Delete ${world.name}`}>Delete</button>
+            <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={busy || pending} aria-label={`Delete ${world.name}`}>{translate('Supprimer', 'Delete')}</button>
           </div>
         ))}
-        {worlds.length === 0 && <p>No saved games yet.</p>}
+        {worlds.length === 0 && <p>{translate('Aucune partie enregistrée pour le moment.', 'No saved games yet.')}</p>}
       </div>
     </section>
   );

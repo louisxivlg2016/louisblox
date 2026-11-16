@@ -6,6 +6,7 @@ import { Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVel
 import { dismount } from './vehicles';
 import { world } from './world';
 import { useHomeStore } from './homes';
+import { translate } from './language';
 
 type TeleportRequest = { id: string; playerId: string; name: string };
 type TeleportMessage = {
@@ -44,16 +45,16 @@ export function clearTeleportRequests() {
 export function requestPlayerTeleport(playerId: string, name: string) {
   if (useTeleportRequestStore.getState().outgoing) return;
   if (socket?.readyState !== WebSocket.OPEN) {
-    useTeleportRequestStore.setState({ notice: 'Multiplayer connection unavailable.' });
+    useTeleportRequestStore.setState({ notice: translate('La connexion multijoueur est indisponible.', 'Multiplayer connection unavailable.') });
     return;
   }
   const request = { id: crypto.randomUUID(), playerId, name };
-  useTeleportRequestStore.setState({ outgoing: request, notice: `Request sent to ${name}…` });
+  useTeleportRequestStore.setState({ outgoing: request, notice: translate(`Demande envoyée à ${name}…`, `Request sent to ${name}…`) });
   socket.send(JSON.stringify({ type: 'teleport-request', requestId: request.id, targetId: playerId }));
   expiration = setTimeout(() => {
     expiration = null;
     useTeleportRequestStore.setState((state) => state.outgoing?.id === request.id
-      ? { outgoing: null, notice: 'Request expired. You can try again.' }
+      ? { outgoing: null, notice: translate('La demande a expiré. Tu peux réessayer.', 'Request expired. You can try again.') }
       : {});
   }, 30000);
 }
@@ -65,7 +66,7 @@ export function receiveTeleportRequest(data: TeleportMessage) {
   const incoming = {
     id: data.requestId,
     playerId: data.from,
-    name: typeof data.name === 'string' ? data.name : 'A player',
+    name: typeof data.name === 'string' ? data.name : translate('Un joueur', 'A player'),
   };
   useTeleportRequestStore.setState({ incoming });
   const game = useGameStore.getState();
@@ -100,12 +101,12 @@ export function receiveTeleportResponse(data: TeleportMessage) {
   const name = typeof data.name === 'string' ? data.name : outgoing.name;
   if (data.type === 'teleport-unavailable') {
     clearOutgoing();
-    useTeleportRequestStore.setState({ notice: 'This player is no longer available.' });
+    useTeleportRequestStore.setState({ notice: translate('Ce joueur n’est plus disponible.', 'This player is no longer available.') });
     return;
   }
   if (data.type === 'teleport-decline') {
     clearOutgoing();
-    useTeleportRequestStore.setState({ notice: `${name} declined the request.` });
+    useTeleportRequestStore.setState({ notice: translate(`${name} a refusé la demande.`, `${name} declined the request.`) });
     return;
   }
   if (data.type !== 'teleport-accept' || !data.position || typeof data.position !== 'object') return;
@@ -128,6 +129,6 @@ export function receiveTeleportResponse(data: TeleportMessage) {
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false });
   useGameStore.getState().setTeleportOpen(false);
-  useGameStore.getState().setNotice(`Teleporting to ${name}.`);
+  useGameStore.getState().setNotice(translate(`Téléportation vers ${name}.`, `Teleporting to ${name}.`));
   void requestPlay();
 }

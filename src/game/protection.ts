@@ -3,6 +3,7 @@ import { playerIdentity } from './playerIdentity';
 import { useGameStore } from './store';
 import { useMultiplayerStore } from './multiplayerStore';
 import { BlockKind } from './voxel';
+import { translate } from './language';
 
 export type WorldProtection = {
   ownerId: string;
@@ -119,25 +120,25 @@ export function canEditAt(x: number, z: number, action: 'break' | 'place' | 'int
   if (!useMultiplayerStore.getState().enabled && Math.hypot(x - protection.centerX, z - protection.centerZ) <= protection.radius) return true;
   if (Math.hypot(x - protection.centerX, z - protection.centerZ) > protection.radius) return true;
   if (protection.bannedPlayerIds?.includes(playerIdentity())) {
-    useGameStore.getState().setNotice('You have been banned from this world. The owner can readmit you.');
+    useGameStore.getState().setNotice(translate('Tu as été exclu de ce monde. Le créateur peut te réadmettre.', 'You have been banned from this world. The owner can readmit you.'));
     return false;
   }
   if (protection.allowedPlayerIds.includes(playerIdentity())) return true;
   if (action === 'break' && protection.canBreak === true) return true;
   if (action === 'place' && protection.canPlace === true && (kind === undefined || allowsBlockCategory(protection, kind))) return true;
   if (action === 'place' && kind !== undefined && protection.canPlace === true && !allowsBlockCategory(protection, kind)) {
-    useGameStore.getState().setNotice('The owner disabled this block category.');
+    useGameStore.getState().setNotice(translate('Le créateur a désactivé cette catégorie de bloc.', 'The owner disabled this block category.'));
     return false;
   }
   if (action === 'break' && protection.canBreak === false) {
-    useGameStore.getState().setNotice('The owner disabled block breaking.');
+    useGameStore.getState().setNotice(translate('Le créateur a désactivé la destruction des blocs.', 'The owner disabled block breaking.'));
     return false;
   }
   if (action === 'place' && protection.canPlace === false) {
-    useGameStore.getState().setNotice('The owner disabled block placement.');
+    useGameStore.getState().setNotice(translate('Le créateur a désactivé la pose de blocs.', 'The owner disabled block placement.'));
     return false;
   }
   if (action === 'interact') return true;
-  useGameStore.getState().setNotice('Protected territory: ask the owner for permission to build or break.');
+  useGameStore.getState().setNotice(translate('Territoire protégé : demande au propriétaire l’autorisation de construire ou détruire.', 'Protected territory: ask the owner for permission to build or break.'));
   return false;
 }

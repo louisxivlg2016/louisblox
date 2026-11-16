@@ -23,6 +23,7 @@ import metroIconUrl from '../../assets/icons/vehicle-metro.png';
 import trainIconUrl from '../../assets/icons/vehicle-train.png';
 import fireTruckIconUrl from '../../assets/icons/vehicle-fire-truck.png';
 import policeCarIconUrl from '../../assets/icons/vehicle-police-car.png';
+import { translate } from '../game/language';
 
 const photoIcons: Partial<Record<ItemKind, string>> = {
   plane: airplaneIconUrl,
@@ -44,12 +45,12 @@ const cropIcons: Partial<Record<BlockKind, string>> = {
 const iconCache = new Map<BlockKind, string>();
 const trafficSignLabels: Partial<Record<BlockKind, { label: string; className?: string }>> = {
   [BlockKind.StopSign]: { label: 'STOP', className: 'stop' },
-  [BlockKind.YieldSign]: { label: 'YIELD' },
+  [BlockKind.YieldSign]: { label: translate('CÉDEZ', 'YIELD') },
   [BlockKind.NoEntrySign]: { label: 'INTERDIT', className: 'no-entry' },
   [BlockKind.OneWaySign]: { label: 'UNIQUE' },
   [BlockKind.SpeedLimitSign]: { label: '50', className: 'speed' },
-  [BlockKind.PedestrianSign]: { label: 'WALK' },
-  [BlockKind.SchoolSign]: { label: 'SCHOOL' },
+  [BlockKind.PedestrianSign]: { label: translate('PIÉTON', 'WALK') },
+  [BlockKind.SchoolSign]: { label: translate('ÉCOLE', 'SCHOOL') },
   [BlockKind.ParkingSign]: { label: 'P', className: 'parking' },
   [BlockKind.DirectionSign]: { label: '➜', className: 'direction' },
   [BlockKind.DangerSign]: { label: '!', className: 'danger' },

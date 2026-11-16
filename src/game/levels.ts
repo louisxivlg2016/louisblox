@@ -1,4 +1,6 @@
 import { BlockKind, voxelKey } from './voxel';
+
+import { translate } from './language';
 import { generateRuinsForChunk } from './ruins';
 import { CROP_KINDS } from './extraBlocks';
 import type { Voxel } from './voxel';
@@ -14,14 +16,14 @@ export type WaterTile = { x: number; z: number };
 export type GeneratedChunk = { blocks: Voxel[]; water: WaterTile[] };
 export type LevelData = { spawn: { x: number; y: number; z: number } };
 
-export const BIOME_NAMES: Record<Biome, string> = {
+export const BIOME_NAMES = (): Record<Biome, string> => ({
   prairie: 'Prairie',
-  forest: 'Pine Forest',
+  forest: translate('Forêt de sapins', 'Pine Forest'),
   jungle: 'Jungle',
-  winter: 'Snowy Mountains',
-  desert: 'Desert',
-  autumn: 'Autumn',
-};
+  winter: translate('Montagnes enneigées', 'Snowy Mountains'),
+  desert: translate('Désert', 'Desert'),
+  autumn: translate('Automne', 'Autumn'),
+});
 
 function hash(x: number, z: number, seed: number) {
   let value = Math.imul(x, 374761393) + Math.imul(z, 668265263) + Math.imul(seed, 1442695041);

@@ -10,6 +10,7 @@ import { BlockKind, HOTBAR_BLOCKS } from './voxel';
 import type { GameplayMode } from './worldMode';
 import { PIRATE_KITS } from './pirates';
 import { normalizePaintballGun } from './paintball';
+import { translate } from './language';
 
 export type GameMode = 'menu' | 'play' | 'pause';
 export type WeatherKind = 'clear' | 'rain' | 'snow';
@@ -105,7 +106,7 @@ function currentWorldName() {
     }
   } catch {
   }
-  return worldId === 'main-room' ? 'Main World' : worldId;
+  return worldId === 'main-room' ? translate('Monde principal', 'Main World') : worldId;
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -148,7 +149,7 @@ export const useGameStore = create<GameStore>((set) => ({
   selectBlock: (selected) => set((state) => {
     selected = normalizePaintballGun(selected);
     const key = typeof selected === 'number' ? `block_${selected}` : selected;
-    if (state.gameplayMode === 'survival' && selected !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: 'Gather and craft this item before using it.' };
+    if (state.gameplayMode === 'survival' && selected !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: translate('Récolte et fabrique cet objet avant de l’utiliser.', 'Gather and craft this item before using it.') };
     return { selected };
   }),
   setHotbarSlot: (index, kind) => set((state) => {
@@ -159,7 +160,7 @@ export const useGameStore = create<GameStore>((set) => ({
     }
     kind = normalizePaintballGun(kind);
     const key = typeof kind === 'number' ? `block_${kind}` : kind;
-    if (state.gameplayMode === 'survival' && kind !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: 'This item has not been crafted yet.' };
+    if (state.gameplayMode === 'survival' && kind !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: translate('Cet objet n’a pas encore été fabriqué.', 'This item has not been crafted yet.') };
     const hotbarSlots = [...state.hotbarSlots];
     hotbarSlots[index] = kind;
     return { hotbarSlots, selected: kind, backpackItem: null };
@@ -205,7 +206,7 @@ export const useGameStore = create<GameStore>((set) => ({
       selected: gameplayMode === 'battle' ? 'pistol_iron' : gameplayMode === 'pirates' ? 'pistol_bomb' : gameplayMode === 'survival' || gameplayMode === 'football' || gameplayMode === 'maze' ? 'hand' : BlockKind.Grass,
       hotbarSlots: gameplayMode === 'battle'
         ? ['pistol_iron', 'rifle_auto', 'pistol_bomb', 'bow', 'sword_iron', ...HOTBAR_BLOCKS.slice(0, 5)]
-        : gameplayMode === 'pirates' ? [...PIRATE_KITS.defender.hotbar] : gameplayMode === 'survival' || gameplayMode === 'football' || gameplayMode === 'maze' ? ['hand', ...Array(9).fill(null)] : [...HOTBAR_BLOCKS.slice(0, 10)],
+        : gameplayMode === 'pirates' ? [...PIRATE_KITS().defender.hotbar] : gameplayMode === 'survival' || gameplayMode === 'football' || gameplayMode === 'maze' ? ['hand', ...Array(9).fill(null)] : [...HOTBAR_BLOCKS.slice(0, 10)],
       backpackItem: null,
       itemCounts: gameplayMode === 'survival' ? { hand: 1 } : { ...DEFAULT_ITEM_COUNTS },
       equippedArmor: null,

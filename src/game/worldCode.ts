@@ -1,5 +1,6 @@
 import { BLOCK_INFO, BlockKind, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
+import { translate } from './language';
 
 export const CUSTOM_WORLD_RADIUS = 32;
 export const CUSTOM_WORLD_MAX_Y = 48;
@@ -57,12 +58,12 @@ export type EditorBlockCategory = { id: string; name: string; kinds: BlockKind[]
 export const EDITOR_BLOCK_CATEGORIES: EditorBlockCategory[] = [
   { id: 'nature', name: 'Terrain and ores', kinds: [BlockKind.Grass, BlockKind.ForestGrass, BlockKind.AutumnGrass, BlockKind.JungleGrass, BlockKind.Dirt, BlockKind.Stone, BlockKind.Sand, BlockKind.Snow, BlockKind.Bedrock, BlockKind.CoalOre, BlockKind.IronOre, BlockKind.GoldOre, BlockKind.DiamondOre] },
   { id: 'plants', name: 'Trees and crops', kinds: [BlockKind.Wood, BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple, BlockKind.Cactus, BlockKind.OakSapling, BlockKind.PineSapling, BlockKind.AutumnSapling, BlockKind.Corn, BlockKind.Wheat, BlockKind.Tomato, BlockKind.Carrot, BlockKind.Watermelon] },
-  { id: 'wood', name: 'Wood and bricks', kinds: [BlockKind.OakPlanks, BlockKind.PinePlanks, BlockKind.AutumnPlanks, BlockKind.BeigeBrick, BlockKind.WhiteBrick, BlockKind.GrayBrick] },
-  { id: 'concrete', name: 'Concrete', kinds: Array.from({ length: 16 }, (_, index) => (BlockKind.ConcreteWhite + index) as BlockKind) },
+  { id: 'wood', name: translate('Bois et briques', 'Wood and bricks'), kinds: [BlockKind.OakPlanks, BlockKind.PinePlanks, BlockKind.AutumnPlanks, BlockKind.BeigeBrick, BlockKind.WhiteBrick, BlockKind.GrayBrick] },
+  { id: 'concrete', name: translate('Béton', 'Concrete'), kinds: Array.from({ length: 16 }, (_, index) => (BlockKind.ConcreteWhite + index) as BlockKind) },
   { id: 'stairs', name: 'Stairs', kinds: Array.from({ length: 34 }, (_, index) => (BlockKind.StairOak + index) as BlockKind) },
-  { id: 'glass', name: 'Glass, water, and ice', kinds: [BlockKind.Glass, ...Array.from({ length: 16 }, (_, index) => (BlockKind.GlassWhite + index) as BlockKind), BlockKind.Water, BlockKind.CalmWater, BlockKind.Ice] },
+  { id: 'glass', name: translate('Verre, eau et glace', 'Glass, water, and ice'), kinds: [BlockKind.Glass, ...Array.from({ length: 16 }, (_, index) => (BlockKind.GlassWhite + index) as BlockKind), BlockKind.Water, BlockKind.CalmWater, BlockKind.Ice] },
   { id: 'doors', name: 'Doors and trapdoors', kinds: Array.from({ length: 32 }, (_, index) => (BlockKind.DoorWhite + index) as BlockKind) },
-  { id: 'furniture', name: 'Home and decoration', kinds: [BlockKind.Chest, BlockKind.Furnace, BlockKind.Ladder, BlockKind.Sign, BlockKind.Candle, BlockKind.Tnt, BlockKind.Campfire, BlockKind.Wildfire, BlockKind.Food, ...Array.from({ length: 17 }, (_, index) => (BlockKind.Bed + index) as BlockKind)] },
+  { id: 'furniture', name: translate('Maison et décoration', 'Home and decoration'), kinds: [BlockKind.Chest, BlockKind.Furnace, BlockKind.Ladder, BlockKind.Sign, BlockKind.Candle, BlockKind.Tnt, BlockKind.Campfire, BlockKind.Wildfire, BlockKind.Food, ...Array.from({ length: 17 }, (_, index) => (BlockKind.Bed + index) as BlockKind)] },
   { id: 'street', name: 'Street and rails', kinds: [BlockKind.Rail, BlockKind.TrafficLight, BlockKind.StreetLamp, BlockKind.ParisStreetLamp, ...Array.from({ length: 12 }, (_, index) => (BlockKind.StopSign + index) as BlockKind), BlockKind.ParisStreetSign] },
 ];
 
@@ -100,7 +101,7 @@ function tokenize(source: string) {
     }
     if (source.startsWith('/*', index)) {
       const end = source.indexOf('*/', index + 2);
-      if (end < 0) throw new Error(`Line ${line}: unterminated comment.`);
+      if (end < 0) throw new Error(translate(`Ligne ${line} : commentaire non terminé.`, `Line ${line}: unterminated comment.`));
       line += source.slice(index, end + 2).split('\n').length - 1;
       index = end + 2;
       continue;
@@ -123,7 +124,7 @@ function tokenize(source: string) {
       let value = '';
       let end = index + 1;
       while (end < source.length && source[end] !== char) {
-        if (source[end] === '\n') throw new Error(`Line ${line}: unterminated text.`);
+        if (source[end] === '\n') throw new Error(translate(`Ligne ${line} : texte non terminé.`, `Line ${line}: unterminated text.`));
         if (source[end] === '\\') {
           end += 1;
           if (end >= source.length) break;
@@ -132,7 +133,7 @@ function tokenize(source: string) {
         } else value += source[end];
         end += 1;
       }
-      if (source[end] !== char) throw new Error(`Line ${line}: unterminated text.`);
+      if (source[end] !== char) throw new Error(translate(`Ligne ${line} : texte non terminé.`, `Line ${line}: unterminated text.`));
       tokens.push({ type: 'string', value, line });
       index = end + 1;
       continue;
@@ -148,7 +149,7 @@ function tokenize(source: string) {
       index += 1;
       continue;
     }
-    throw new Error(`Line ${line}: character “${char}” is not allowed.`);
+    throw new Error(translate(`Ligne ${line} : le caractère « ${char} » n’est pas autorisé.`, `Line ${line}: character “${char}” is not allowed.`));
   }
   tokens.push({ type: 'end', value: '', line });
   return tokens;
@@ -238,12 +239,12 @@ class WorldCodeParser {
       this.index += 1;
       const right = this.expression(priority);
       if (priority === 1) {
-        if (left.type !== 'name') throw new Error(`Line ${line}: only a variable can be changed.`);
+        if (left.type !== 'name') throw new Error(translate(`Ligne ${line} : seule une variable peut être modifiée.`, `Line ${line}: only a variable can be changed.`));
         left = { type: 'assignment', name: left.name, operator, value: right, line };
       } else left = { type: 'binary', operator, left, right, line };
     }
     if (minPrecedence === 0 && (this.current().value === '++' || this.current().value === '--')) {
-      if (left.type !== 'name') throw new Error(`Line ${this.current().line}: only a variable can be incremented.`);
+      if (left.type !== 'name') throw new Error(translate(`Ligne ${this.current().line} : seule une variable peut être incrémentée.`, `Line ${this.current().line}: only a variable can be incremented.`));
       left = { type: 'update', name: left.name, amount: this.current().value === '++' ? 1 : -1, line: this.current().line };
       this.index += 1;
     }
@@ -272,7 +273,7 @@ class WorldCodeParser {
       }
       return { type: 'name', name: token.value, line: token.line };
     }
-    throw new Error(`Line ${token.line}: incomplete expression or unauthorized instruction.`);
+    throw new Error(translate(`Ligne ${token.line} : expression incomplète ou instruction non autorisée.`, `Line ${token.line}: incomplete expression or unauthorized instruction.`));
   }
 }
 
@@ -292,7 +293,7 @@ class Scope {
 type CompiledWorld = Pick<CustomWorldDefinition, 'terrain' | 'blocks'>;
 
 export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x: number, z: number) => number = () => 0, infinite = false): CompiledWorld {
-  if (typeof source !== 'string' || source.length > CUSTOM_WORLD_MAX_SOURCE) throw new Error(`Code is limited to ${CUSTOM_WORLD_MAX_SOURCE} characters.`);
+  if (typeof source !== 'string' || source.length > CUSTOM_WORLD_MAX_SOURCE) throw new Error(translate(`Le code est limité à ${CUSTOM_WORLD_MAX_SOURCE} caractères.`, `Code is limited to ${CUSTOM_WORLD_MAX_SOURCE} characters.`));
   const program = new WorldCodeParser(tokenize(source)).parse();
   const blocks = new Map<string, Voxel>();
   let terrain: CustomTerrain = 'flat';
@@ -300,15 +301,15 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
   let randomState = seed >>> 0;
   const tick = (line?: number) => {
     operations += 1;
-    if (operations > 100000) throw new Error(`Line ${line ?? 1}: code performs too many operations. Reduce the loops.`);
+    if (operations > 100000) throw new Error(translate(`Ligne ${line ?? 1} : le code fait trop d’opérations. Réduis les boucles.`, `Line ${line ?? 1}: code performs too many operations. Reduce the loops.`));
   };
   const number = (value: Value, name: string, line: number) => {
-    if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(`Line ${line}: ${name} must be a finite number.`);
+    if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(translate(`Ligne ${line} : ${name} doit être un nombre fini.`, `Line ${line}: ${name} must be a finite number.`));
     return value;
   };
   const integer = (value: Value, name: string, line: number) => {
     const result = number(value, name, line);
-    if (!Number.isInteger(result)) throw new Error(`Line ${line}: ${name} must be an integer.`);
+    if (!Number.isInteger(result)) throw new Error(translate(`Ligne ${line} : ${name} doit être un nombre entier.`, `Line ${line}: ${name} must be an integer.`));
     return result;
   };
   const position = (args: Value[], offset: number, line: number): [number, number, number] => {
@@ -316,19 +317,19 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
     const y = integer(args[offset + 1], 'y', line);
     const z = integer(args[offset + 2], 'z', line);
     const limit = infinite ? INFINITE_EDITOR_COORDINATE : CUSTOM_WORLD_RADIUS;
-    if (!Number.isSafeInteger(x) || !Number.isSafeInteger(z) || Math.abs(x) > limit || Math.abs(z) > limit || y < 1 || y > CUSTOM_WORLD_MAX_Y) throw new Error(infinite ? `Line ${line}: integer coordinates too large, y from 1 to 48.` : `Line ${line}: x and z from -32 to 32, y from 1 to 48.`);
+    if (!Number.isSafeInteger(x) || !Number.isSafeInteger(z) || Math.abs(x) > limit || Math.abs(z) > limit || y < 1 || y > CUSTOM_WORLD_MAX_Y) throw new Error(infinite ? translate(`Ligne ${line} : coordonnées entières trop grandes, y entre 1 et 48.`, `Line ${line}: integer coordinates too large, y from 1 to 48.`) : translate(`Ligne ${line} : x et z entre -32 et 32, y entre 1 et 48.`, `Line ${line}: x and z from -32 to 32, y from 1 to 48.`));
     return [x, y, z];
   };
   const kind = (value: Value, line: number) => {
-    if (typeof value !== 'string') throw new Error(`Line ${line}: write the block name in quotes.`);
+    if (typeof value !== 'string') throw new Error(translate(`Ligne ${line} : écris le nom du bloc entre guillemets.`, `Line ${line}: write the block name in quotes.`));
     const result = resolveWorldBlock(value);
-    if (result === undefined) throw new Error(`Line ${line}: unknown block “${value}”. Choose a name in the editor.`);
+    if (result === undefined) throw new Error(translate(`Ligne ${line} : bloc « ${value} » inconnu. Choisis un nom dans l’éditeur.`, `Line ${line}: unknown block “${value}”. Choose a name in the editor.`));
     return result;
   };
   const put = (x: number, y: number, z: number, block: BlockKind, line: number, protectedBlock = false) => {
     tick(line);
     const key = voxelKey(x, y, z);
-    if (!blocks.has(key) && blocks.size >= CUSTOM_WORLD_MAX_BLOCKS) throw new Error(`Line ${line}: construction is limited to ${CUSTOM_WORLD_MAX_BLOCKS} blocks.`);
+    if (!blocks.has(key) && blocks.size >= CUSTOM_WORLD_MAX_BLOCKS) throw new Error(translate(`Ligne ${line} : la construction est limitée à ${CUSTOM_WORLD_MAX_BLOCKS} blocs.`, `Line ${line}: construction is limited to ${CUSTOM_WORLD_MAX_BLOCKS} blocks.`));
     blocks.set(key, { x, y, z, kind: block, ...(protectedBlock ? { protected: true } : {}) });
   };
   const arity = (args: Value[], count: number, name: string, line: number) => {
@@ -344,18 +345,18 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
       return;
     }
     if (name === 'bloc' || name === 'effacer') {
-      if (name === 'bloc' ? args.length !== 4 && args.length !== 5 : args.length !== 3) throw new Error(`Line ${line}: ${name} expects ${name === 'bloc' ? '4 arguments, plus optional true for protection' : '3 arguments'}.`);
+      if (name === 'bloc' ? args.length !== 4 && args.length !== 5 : args.length !== 3) throw new Error(translate(`Ligne ${line} : ${name} attend ${name === 'bloc' ? '4 arguments, plus true facultatif pour protéger' : '3 arguments'}.`, `Line ${line}: ${name} expects ${name === 'bloc' ? '4 arguments, plus optional true for protection' : '3 arguments'}.`));
       const [x, y, z] = position(args, 0, line);
       if (name === 'effacer') { blocks.delete(voxelKey(x, y, z)); return; }
       put(x, y, z, kind(args[3], line), line, args[4] === true);
       return;
     }
     if (name === 'remplir') {
-      if (args.length !== 7 && args.length !== 8) throw new Error(`Line ${line}: fill expects 7 arguments, plus optional true for protection.`);
+      if (args.length !== 7 && args.length !== 8) throw new Error(translate(`Ligne ${line} : remplir attend 7 arguments, plus true facultatif pour protéger.`, `Line ${line}: fill expects 7 arguments, plus optional true for protection.`));
       const start = position(args, 0, line);
       const end = position(args, 3, line);
       const block = kind(args[6], line);
-      if ((Math.abs(end[0] - start[0]) + 1) * (Math.abs(end[1] - start[1]) + 1) * (Math.abs(end[2] - start[2]) + 1) > CUSTOM_WORLD_MAX_BLOCKS) throw new Error(`Line ${line}: this area exceeds ${CUSTOM_WORLD_MAX_BLOCKS} blocks.`);
+      if ((Math.abs(end[0] - start[0]) + 1) * (Math.abs(end[1] - start[1]) + 1) * (Math.abs(end[2] - start[2]) + 1) > CUSTOM_WORLD_MAX_BLOCKS) throw new Error(translate(`Ligne ${line} : cette zone dépasse ${CUSTOM_WORLD_MAX_BLOCKS} blocs.`, `Line ${line}: this area exceeds ${CUSTOM_WORLD_MAX_BLOCKS} blocks.`));
       for (let x = Math.min(start[0], end[0]); x <= Math.max(start[0], end[0]); x += 1) {
         for (let y = Math.min(start[1], end[1]); y <= Math.max(start[1], end[1]); y += 1) {
           for (let z = Math.min(start[2], end[2]); z <= Math.max(start[2], end[2]); z += 1) put(x, y, z, block, line, args[7] === true);
@@ -364,11 +365,11 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
       return;
     }
     if (name === 'sphere') {
-      if (args.length !== 5 && args.length !== 6) throw new Error(`Line ${line}: sphere expects 5 arguments, plus optional true for protection.`);
+      if (args.length !== 5 && args.length !== 6) throw new Error(translate(`Ligne ${line} : sphere attend 5 arguments, plus true facultatif pour protéger.`, `Line ${line}: sphere expects 5 arguments, plus optional true for protection.`));
       const [cx, cy, cz] = position(args, 0, line);
       const radius = integer(args[3], 'rayon', line);
       const block = kind(args[4], line);
-      if (radius < 1 || radius > 16) throw new Error(`Line ${line}: radius must be between 1 and 16.`);
+      if (radius < 1 || radius > 16) throw new Error(translate(`Ligne ${line} : le rayon doit être entre 1 et 16.`, `Line ${line}: radius must be between 1 and 16.`));
       for (let x = -radius; x <= radius; x += 1) for (let y = -radius; y <= radius; y += 1) for (let z = -radius; z <= radius; z += 1) {
         if (x * x + y * y + z * z <= radius * radius) position([cx + x, cy + y, cz + z], 0, line), put(cx + x, cy + y, cz + z, block, line, args[5] === true);
       }
@@ -434,7 +435,7 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
     if (expression.operator === '>=') return Number(left) >= Number(right);
     if (expression.operator === '==' || expression.operator === '===') return left === right;
     if (expression.operator === '!=' || expression.operator === '!==') return left !== right;
-    throw new Error(`Line ${expression.line}: unauthorized operation.`);
+    throw new Error(translate(`Ligne ${expression.line} : opération non autorisée.`, `Line ${expression.line}: unauthorized operation.`));
   };
   const run = (statement: Statement, scope: Scope): 'break' | 'continue' | undefined => {
     if (statement.type === 'expression') { evaluate(statement.expression, scope); return; }

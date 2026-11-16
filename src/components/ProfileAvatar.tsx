@@ -28,18 +28,19 @@ import corsairUrl from '../../assets/avatars/corsair.webp';
 import footballerUrl from '../../assets/avatars/footballer.webp';
 import firefighterUrl from '../../assets/avatars/firefighter.webp';
 import policeUrl from '../../assets/avatars/police.webp';
+import { translate } from '../game/language';
 
-export const PHOTO_AVATARS = {
+export const PHOTO_AVATARS = () => ({
   girl: { name: 'Girl', url: girlUrl },
-  'girl-dark': { name: 'Dark-skinned girl', url: girlDarkUrl },
+  'girl-dark': { name: translate('Fille peau foncée', 'Dark-skinned girl'), url: girlDarkUrl },
   'girl-brown': { name: 'Brunette girl · brown eyes', url: girlBrownUrl },
   'girl-red': { name: 'Red-haired girl · green eyes', url: girlRedUrl },
   'girl-black': { name: 'Black-haired girl · blue eyes', url: girlBlackUrl },
-  boy: { name: 'Boy', url: boyUrl },
-  'boy-dark': { name: 'Dark-skinned boy', url: boyDarkUrl },
-  'boy-brown': { name: 'Brunette boy · green eyes', url: boyBrownUrl },
-  'boy-red': { name: 'Red-haired boy · blue eyes', url: boyRedUrl },
-  'boy-black': { name: 'Black-haired boy · purple eyes', url: boyBlackUrl },
+  boy: { name: translate('Garçon', 'Boy'), url: boyUrl },
+  'boy-dark': { name: translate('Garçon peau foncé', 'Dark-skinned boy'), url: boyDarkUrl },
+  'boy-brown': { name: translate('Garçon brun · yeux verts', 'Brunette boy · green eyes'), url: boyBrownUrl },
+  'boy-red': { name: translate('Garçon roux · yeux bleus', 'Red-haired boy · blue eyes'), url: boyRedUrl },
+  'boy-black': { name: translate('Garçon cheveux noirs · yeux violets', 'Black-haired boy · purple eyes'), url: boyBlackUrl },
   trader: { name: 'Trader', url: traderUrl },
   soldier: { name: 'Soldier', url: soldierUrl },
   louis14: { name: 'Louis XIV', url: louis14Url },
@@ -51,11 +52,11 @@ export const PHOTO_AVATARS = {
   military: { name: 'Military', url: militaryUrl },
   pirate: { name: 'Pirate', url: pirateUrl },
   corsair: { name: 'Bandana Pirate', url: corsairUrl },
-  footballer: { name: 'Footballer', url: footballerUrl },
+  footballer: { name: translate('Joueur de foot', 'Footballer'), url: footballerUrl },
   firefighter: { name: 'Firefighter', url: firefighterUrl },
   police: { name: 'Police Officer', url: policeUrl },
-} as const;
-const photoKinds = Object.keys(PHOTO_AVATARS) as Array<keyof typeof PHOTO_AVATARS>;
+});
+const photoKinds = Object.keys(PHOTO_AVATARS()) as Array<keyof ReturnType<typeof PHOTO_AVATARS>>;
 
 export function ProfileAvatar({ kind, size = 58 }: {
   kind?: ProfileAvatarKind | OutfitKind;
@@ -68,7 +69,7 @@ export function ProfileAvatar({ kind, size = 58 }: {
   const selected = useAvatarStore((state) => state.kind);
   const current = kind ?? selected;
   const photoKind = current === 'pixel' || current === 'default' ? 'boy' : current;
-  const photo = PHOTO_AVATARS[photoKind];
+  const photo = PHOTO_AVATARS()[photoKind];
   const newPortrait = ['girl', 'boy', 'trader', 'soldier'].includes(photoKind) || photoKind.startsWith('girl-') || photoKind.startsWith('boy-');
   return <img className={`profile-photo${current === 'footballer' ? ' profile-photo-footballer' : ''}${newPortrait ? ' profile-photo-new' : ''}`} src={photo.url} width={size} height={size} alt={`Portrait ${photo.name}`} />;
 }
@@ -101,11 +102,11 @@ export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
   };
   return (
     <div ref={picker} className="profile-photo-picker" role="group" aria-label={`Choose my photo, ${photoKinds.length} profiles`} tabIndex={0} onScroll={(event) => { const element = event.currentTarget; setAtBottom(element.scrollTop + element.clientHeight >= element.scrollHeight - 8); }}>
-      {scrollable && !atBottom && <p className="profile-photo-scroll-hint">Scroll to see more profiles ↓</p>}
+      {scrollable && !atBottom && <p className="profile-photo-scroll-hint">{translate('Fais défiler pour voir les autres profils ↓', 'Scroll to see more profiles ↓')}</p>}
       {photoKinds.map((kind) => (
-        <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choose ${PHOTO_AVATARS[kind].name}`} title={PHOTO_AVATARS[kind].name}>
+        <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choose ${PHOTO_AVATARS()[kind].name}`} title={PHOTO_AVATARS()[kind].name}>
           <ProfileAvatar kind={kind} size={96} />
-          <span>{PHOTO_AVATARS[kind].name}</span>
+          <span>{PHOTO_AVATARS()[kind].name}</span>
         </button>
       ))}
     </div>

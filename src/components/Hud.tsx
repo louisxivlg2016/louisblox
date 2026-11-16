@@ -39,8 +39,11 @@ import { HomePanel } from './HomePanel';
 import { useHomeStore } from '../game/homes';
 import { TribePanel } from './TribePanel';
 import { useTribeStore } from '../game/tribes';
+import { useLanguageStore } from '../game/language';
+import { translate } from '../game/language';
 
 export function Hud() {
+  const language = useLanguageStore((state) => state.language);
   const mode = useGameStore((state) => state.mode);
   const selected = useGameStore((state) => state.selected);
   const bombAmmo = useBombLauncherStore((state) => state.ammo);
@@ -98,11 +101,11 @@ export function Hud() {
         <>
           <div className="crosshair" aria-hidden="true"><i /><b /></div>
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
-          {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label="Backpack"><img src={backpackButtonUrl} alt="" /></button>}
-          {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label="Shop"><img src={shopButtonUrl} alt="" /></button>}
-          {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label="Teleportation · T"><img src={teleportButtonUrl} alt="Teleportation · T" /></button>}
-          {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label="Open my tribe"><img src={tribeButtonUrl} alt="TRIBU" />{tribeInvitations > 0 && <span className="tribe-invitation-count">{tribeInvitations}</span>}</button>}
-          <div className="action-hint">{gameplayMode === 'football' ? 'Left click: shoot · E: power shot · T: tackle · G: pass' : <>Left click <strong>break / hit / shoot</strong> · <strong>E</strong> place / use / mount</>}</div>
+          {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label={translate('Sac à dos', 'Backpack')}><img src={backpackButtonUrl} alt="" /></button>}
+          {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label={translate('Boutique', 'Shop')}><img src={shopButtonUrl} alt="" /></button>}
+          {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label={translate('Téléportation · T', 'Teleportation · T')}><img src={teleportButtonUrl} alt={translate('Téléportation · T', 'Teleportation · T')} /></button>}
+          {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label={translate('Ouvrir ma tribu', 'Open my tribe')}><img src={tribeButtonUrl} alt="TRIBU" />{tribeInvitations > 0 && <span className="tribe-invitation-count">{tribeInvitations}</span>}</button>}
+          <div className="action-hint">{gameplayMode === 'football' ? translate('Clic gauche : tir · E : tir puissant · T : tacler · G : passer', 'Left click: shoot · E: power shot · T: tackle · G: pass') : <>Left click <strong>{translate('casser / frapper / tirer', 'break / hit / shoot')}</strong> · <strong>E</strong> place / use / mount</>}</div>
           {notice && <div className="game-notice">{notice}</div>}
           <EffectsHud />
           <SirenButton />
@@ -127,7 +130,7 @@ export function Hud() {
 
       {mode === 'play' && (
         <div className="hotbar-wrap">
-          {gameplayMode === 'survival' && <div className="survival-health" aria-label={`${lives} vies sur 10`}><span>Lives</span><div><i style={{ width: `${Math.max(0, Math.min(100, lives * 10))}%` }} /></div><strong>{lives}/10</strong></div>}
+          {gameplayMode === 'survival' && <div className="survival-health" aria-label={`${lives} vies sur 10`}><span>{translate('Vies', 'Lives')}</span><div><i style={{ width: `${Math.max(0, Math.min(100, lives * 10))}%` }} /></div><strong>{lives}/10</strong></div>}
           <div className="selected-name" role="status">
             {selectionInfo(selected).name}
             {selected === 'pistol_bomb' && ` · ${bombAmmo}/10${bombReloading ? ' · 3-second reload…' : ''}`}
@@ -135,7 +138,7 @@ export function Hud() {
           <div className="hotbar">
             {hotbarSlots.map((kind, index) => (
               <button
-                key={`${kind ?? 'empty'}-${index}`}
+                key={`${kind ?? translate('vide', 'empty')}-${index}`}
                 className={`hotbar-slot ${selected === kind ? 'selected' : ''}`}
                 onClick={() => {
                   if (kind === null) return;
@@ -143,7 +146,7 @@ export function Hud() {
                   else selectBlock(kind);
                 }}
                 disabled={kind === null}
-                aria-label={`${index + 1} : ${kind === null ? 'empty' : selectionInfo(kind).name}`}
+                aria-label={`${index + 1} : ${kind === null ? translate('vide', 'empty') : selectionInfo(kind).name}`}
               >
                 <span className="slot-number">{index === 9 ? '0' : index + 1}</span>
                 {kind !== null && <ItemIcon kind={kind} />}
@@ -165,7 +168,7 @@ export function Hud() {
       {sleepProgress !== null && (
         <div className="sleep-overlay" style={{ backgroundColor: `rgba(0, 0, 0, ${0.05 + sleepProgress * 0.35})` }}>
           <span className="sleep-zzz" aria-hidden="true">Z Z Z</span>
-          <p>{sleepProgress > 0.65 ? dayProgress >= 0.22 && dayProgress < 0.5 ? 'Night is falling…' : 'Day is breaking…' : 'You are sleeping…'}</p>
+          <p>{sleepProgress > 0.65 ? dayProgress >= 0.22 && dayProgress < 0.5 ? translate('La nuit tombe…', 'Night is falling…') : translate('Le jour se lève…', 'Day is breaking…') : translate('Tu dors…', 'You are sleeping…')}</p>
         </div>
       )}
     </div>

@@ -5,6 +5,7 @@ import { GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
 import { isGlass, isStair, stairSource } from './extraBlocks';
 import { changeInventory, inventoryCount } from './inventory';
 import { useGameStore } from './store';
+import { translate } from './language';
 
 export type Recipe = {
   output: SelectedKind;
@@ -133,6 +134,6 @@ export function craftRecipe(kind: SelectedKind) {
   }
   for (const ingredient of selected.ingredients) changeInventory(ingredient.kind, -ingredient.count);
   changeInventory(selected.output, selected.count);
-  store.setNotice(`${selectionInfo(selected.output).name} crafted.`);
+  store.setNotice(translate(`${selectionInfo(selected.output).name} fabriqué.`, `${selectionInfo(selected.output).name} crafted.`));
   return true;
 }

@@ -11,6 +11,7 @@ import { findInteractionTarget } from './interactionTargets';
 import { getWorldSeed, streamChunks } from './chunks';
 import { tradeCityAt, restaurantAt } from './villages';
 import { requestPlay } from './input';
+import { translate } from './language';
 
 export type TradeOffer = { id: string; cost: SelectedKind; costCount: number; reward: SelectedKind; rewardCount: number };
 
@@ -22,35 +23,35 @@ export const TRADE_OFFERS: TradeOffer[] = [
   { id: 'stone-coal', cost: BlockKind.Stone, costCount: 3, reward: BlockKind.CoalOre, rewardCount: 2 },
 ];
 
-export const MERCHANT_STORIES = [
+export const merchantStories = () => [
   {
-    title: 'The Old Bridge Bell',
+    title: translate('La cloche du vieux pont', 'The Old Bridge Bell'),
     steps: [
-      'Welcome, traveler. My camels and I have followed the river from the pine forest. We still have a long way to go.',
-      'At the old bridge, I heard a bell beneath the ruins. As I approached, I found a small golden bell lost in the grass.',
-      'I am bringing it back to the prairie village. Its residents use it to warn each other of night and rain.',
-      'The road is long and the camels sometimes get tired. Will you walk with us to the next village? You can also see my goods.',
+      translate('Bienvenue, voyageur. Mes chameaux et moi suivons la rivière depuis la forêt des sapins. Nous avons encore beaucoup de chemin devant nous.', 'Welcome, traveler. My camels and I have followed the river from the pine forest. We still have a long way to go.'),
+      translate('Au vieux pont, j’ai entendu une cloche sous les ruines. En m’approchant, j’ai trouvé une petite cloche en or, perdue dans l’herbe.', 'At the old bridge, I heard a bell beneath the ruins. As I approached, I found a small golden bell lost in the grass.'),
+      translate('Je la ramène maintenant au village de la prairie. Ses habitants s’en servent pour se prévenir de la nuit et de la pluie.', 'I am bringing it back to the prairie village. Its residents use it to warn each other of night and rain.'),
+      translate('Le chemin est long et les chameaux sont parfois fatigués. Veux-tu marcher avec nous jusqu’au prochain village ? Tu pourras aussi voir mes marchandises.', 'The road is long and the camels sometimes get tired. Will you walk with us to the next village? You can also see my goods.'),
     ],
-    companion: 'Thank you! Stay close. I will show you the old bridge and prairie village.',
+    companion: translate('Merci ! Reste près de nous. Je te montrerai le vieux pont et le village de la prairie.', 'Thank you! Stay close. I will show you the old bridge and prairie village.'),
   },
   {
-    title: 'Mountain Seeds',
+    title: translate('Les graines de la montagne', 'Mountain Seeds'),
     steps: [
-      'This morning, I left the snowy mountains with my two camels. The wind was cold, but the sun guided us toward the forest.',
-      'A hermit entrusted me with a bag of pine seeds. He asked me to carry them to the village gardens across the river.',
-      'We passed the ruins and crossed the orange autumn land. Every region gives us a new story to tell.',
-      'The seeds must arrive before nightfall. Will you travel with us for a while, or look at the items I brought?',
+      translate('Ce matin, j’ai quitté les montagnes enneigées avec mes deux chameaux. Le vent était froid, mais le soleil nous guidait vers la forêt.', 'This morning, I left the snowy mountains with my two camels. The wind was cold, but the sun guided us toward the forest.'),
+      translate('Un ermite m’a confié un sac de graines de sapin. Il m’a demandé de les porter aux jardins du village, de l’autre côté de la rivière.', 'A hermit entrusted me with a bag of pine seeds. He asked me to carry them to the village gardens across the river.'),
+      translate('Nous avons contourné les ruines et traversé l’automne orange. Chaque pays traversé nous donne une nouvelle histoire à raconter.', 'We passed the ruins and crossed the orange autumn land. Every region gives us a new story to tell.'),
+      translate('Les graines doivent arriver avant la nuit. Veux-tu nous accompagner un moment, ou regarder les objets que j’ai rapportés ?', 'The seeds must arrive before nightfall. Will you travel with us for a while, or look at the items I brought?'),
     ],
-    companion: 'Your company will help us. Together, we will carry these seeds to the village.',
+    companion: translate('Ta compagnie nous fera du bien. Ensemble, nous porterons ces graines jusqu’au village.', 'Your company will help us. Together, we will carry these seeds to the village.'),
   },
-] as const;
+];
 
-export const VILLAGER_LINES = [
-  'Hello! Our houses have doors and two beds. At night, we go inside to sleep.',
-  'The dirt paths lead to wheat, corn, and carrot fields.',
-  'Our little church is north of the village. It is intact and open to everyone.',
-  'The restaurant is east of the village. The trader offers meals to travelers.',
-] as const;
+export const villagerLines = () => [
+  translate('Bonjour ! Nos maisons ont des portes et deux lits. La nuit, nous rentrons dormir.', 'Hello! Our houses have doors and two beds. At night, we go inside to sleep.'),
+  translate('Les chemins en terre mènent aux champs de blé, de maïs et de carottes.', 'The dirt paths lead to wheat, corn, and carrot fields.'),
+  translate('Notre petite église est au nord du village. Elle est intacte et ouverte à tous.', 'Our little church is north of the village. It is intact and open to everyone.'),
+  translate('Le restaurant est à l’est du village. Le marchand offre un repas aux voyageurs.', 'The restaurant is east of the village. The trader offers meals to travelers.'),
+];
 
 type TradeState = {
   open: boolean;
@@ -73,7 +74,7 @@ export const useTradeStore = create<TradeState>((set) => ({
   open: false,
   message: '',
   view: 'story',
-  story: MERCHANT_STORIES[0].steps[0],
+  story: merchantStories()[0].steps[0],
   traderId: null,
   storyId: 0,
   step: 0,
@@ -89,22 +90,22 @@ export const useTradeStore = create<TradeState>((set) => ({
 export function beginTraderStory(traderId: import('koota').Entity) {
   useTradeStore.setState((state) => {
     if (state.traderId === traderId) return {};
-    const storyId = Math.abs(Number(traderId)) % MERCHANT_STORIES.length;
-    return { traderId, storyId, step: 0, story: MERCHANT_STORIES[storyId].steps[0], view: 'story', following: false, restaurantAvailable: false, mealEaten: false };
+    const storyId = Math.abs(Number(traderId)) % merchantStories().length;
+    return { traderId, storyId, step: 0, story: merchantStories()[storyId].steps[0], view: 'story', following: false, restaurantAvailable: false, mealEaten: false };
   });
 }
 
 export function openTrader(traderId: import('koota').Entity) {
   const trader = traderId.get(Trader);
   const villager = trader?.villager === true;
-  const storyId = Math.abs(Number(traderId)) % MERCHANT_STORIES.length;
+  const storyId = Math.abs(Number(traderId)) % merchantStories().length;
   const restaurantAvailable = villager || trader?.arrived === true;
   useTradeStore.setState({
     open: true,
     traderId,
     storyId,
     step: 0,
-    story: villager ? VILLAGER_LINES[0] : trader?.restaurantMessage || (restaurantAvailable ? 'We are finally in the village! I invite you to eat at the restaurant, east along the dirt path.' : MERCHANT_STORIES[storyId].steps[0]),
+    story: villager ? villagerLines()[0] : trader?.restaurantMessage || (restaurantAvailable ? translate('Nous voilà enfin au village ! Je t’invite à manger au restaurant, à l’est en suivant le chemin de terre.', 'We are finally in the village! I invite you to eat at the restaurant, east along the dirt path.') : merchantStories()[storyId].steps[0]),
     view: villager ? 'village' : restaurantAvailable ? 'restaurant' : 'story',
     following: false,
     message: '',
@@ -119,9 +120,9 @@ export function advanceTraderStory(traderId: import('koota').Entity | null) {
     if (state.traderId !== traderId || state.following) return {};
     if (state.view === 'village') {
       const step = state.step + 1;
-      return { step, storyId: step % VILLAGER_LINES.length, story: VILLAGER_LINES[step % VILLAGER_LINES.length] };
+      return { step, storyId: step % villagerLines().length, story: villagerLines()[step % villagerLines().length] };
     }
-    const story = MERCHANT_STORIES[state.storyId];
+    const story = merchantStories()[state.storyId];
     const step = Math.min(state.step + 1, story.steps.length - 1);
     if (step === state.step) return {};
     return { step, story: story.steps[step], view: 'story' };
@@ -129,7 +130,7 @@ export function advanceTraderStory(traderId: import('koota').Entity | null) {
 }
 
 export function openRestaurant() {
-  useTradeStore.setState({ view: 'restaurant', story: 'The trader invites you to share a warm meal at the village restaurant. Fields and residents surround you.', message: '' });
+  useTradeStore.setState({ view: 'restaurant', story: translate('Le marchand t’invite à partager un repas chaud au restaurant du village. Les champs et les habitants sont autour de toi.', 'The trader invites you to share a warm meal at the village restaurant. Fields and residents surround you.'), message: '' });
 }
 
 export function acceptRestaurantInvitation(world: World) {
@@ -140,7 +141,7 @@ export function acceptRestaurantInvitation(world: World) {
   const next = restaurantAt(tradeCityAt(seed), seed);
   const merchant = useTradeStore.getState().traderId;
   if (merchant && !merchant.get(Trader)?.villager) {
-    merchant.set(Trader, { arrived: true, following: false, walking: true, restaurantInvited: true, restaurantMeal: 'going', restaurantMealTime: 0, restaurantStep: 0, restaurantMessage: 'Come to the restaurant with me. I will eat with you too!', targetX: next.x, targetZ: next.z });
+    merchant.set(Trader, { arrived: true, following: false, walking: true, restaurantInvited: true, restaurantMeal: 'going', restaurantMealTime: 0, restaurantStep: 0, restaurantMessage: translate('Viens au restaurant avec moi. Je mange aussi avec toi !', 'Come to the restaurant with me. I will eat with you too!'), targetX: next.x, targetZ: next.z });
   }
   for (let index = 0; index < 9; index++) streamChunks(world, next.x, next.z);
   if (merchant && !merchant.get(Trader)?.villager) {
@@ -165,7 +166,7 @@ export function acceptRestaurantInvitation(world: World) {
   playerEntity.get(PlayerVelocity)?.set(0, 0, 0);
   playerEntity.set(PlayerState, { flying: false, grounded: true });
   useGameStore.setState({ flying: false });
-  useGameStore.getState().setNotice('Here you are at the restaurant! Choose your meal here or pick up food from the table with E.');
+  useGameStore.getState().setNotice(translate('Te voilà au restaurant ! Choisis ton repas ici ou ramasse la nourriture sur la table avec E.', 'Here you are at the restaurant! Choose your meal here or pick up food from the table with E.'));
   useTradeStore.getState().setOpen(false);
   void requestPlay().then(() => {
     playerEntity.get(PlayerPosition)?.set(next.x, next.y, next.z);
@@ -177,12 +178,12 @@ export function acceptRestaurantInvitation(world: World) {
 
 export function eatRestaurantMeal(world: World) {
   if (useTradeStore.getState().mealEaten) {
-    useTradeStore.getState().setMessage('You already ate this meal. The next plate will be offered on your next visit.');
+    useTradeStore.getState().setMessage(translate('Tu as déjà mangé ce repas. La prochaine assiette sera offerte à ta prochaine visite.', 'You already ate this meal. The next plate will be offered on your next visit.'));
     return false;
   }
   const health = world.queryFirst(PlayerHealth)?.get(PlayerHealth);
   if (health) health.value = Math.min(health.max, health.value + 4);
-  useTradeStore.setState({ mealEaten: true, message: 'The meal is delicious! You restored 4 health points. Enjoy!' });
+  useTradeStore.setState({ mealEaten: true, message: translate('Le repas est délicieux ! Tu as récupéré 4 points de vie. Bon appétit !', 'The meal is delicious! You restored 4 health points. Enjoy!') });
   return true;
 }
 
@@ -198,7 +199,7 @@ export function tradeWithMerchant(offer: TradeOffer) {
   }
   if (useGameStore.getState().gameplayMode === 'survival') changeInventory(offer.cost, -offer.costCount);
   changeInventory(offer.reward, offer.rewardCount);
-  useTradeStore.getState().setMessage('Trade successful! The items are in your backpack.');
+  useTradeStore.getState().setMessage(translate('Échange réussi ! Les objets sont dans ton sac.', 'Trade successful! The items are in your backpack.'));
   return true;
 }
 

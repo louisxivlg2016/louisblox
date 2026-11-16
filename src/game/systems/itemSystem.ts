@@ -20,6 +20,7 @@ import { drawPaintStroke, endPaintStroke } from '../paintStrokes';
 import { drainConnectedWater } from './waterSystem';
 import { tryFireBombLauncher, updateBombLauncher } from '../weaponAmmo';
 import { useFireExtinguisher } from '../extinguisher';
+import { translate } from '../language';
 
 export { eatItem, eatMeat } from '../foods';
 
@@ -46,7 +47,7 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
   const hit = raycastVoxel(blocks, origin, direction, 6, alwaysEmpty || !filled);
   if (alwaysEmpty && hit && isWaterBlock(hit.block.kind)) {
     const drained = drainConnectedWater(world, hit);
-    store.setNotice(drained > 0 ? `Water removed (${drained} blocks). The bucket remains empty.` : 'You cannot collect this water here.');
+    store.setNotice(drained > 0 ? translate(`Eau retirée (${drained} blocs). Le seau reste toujours vide.`, `Water removed (${drained} blocks). The bucket remains empty.`) : translate('Tu ne peux pas récupérer cette eau ici.', 'You cannot collect this water here.'));
     return true;
   }
   if (filled) {
@@ -56,24 +57,24 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
       const z = hit.z + hit.normal.z;
       if (y >= MIN_WORLD_Y && y <= MAX_BUILD_Y && !blocks.has(voxelKey(x, y, z)) && addVoxel(world, x, y, z, BlockKind.CalmWater)) {
         if (!alwaysEmpty) changeHeldBucket('water_bucket', 'bucket');
-        store.setNotice(alwaysEmpty ? 'Water placed. The bucket remains empty.' : 'The bucket is emptied: 1 calm water block, without flooding.');
+        store.setNotice(alwaysEmpty ? translate('Eau posée. Le seau reste toujours vide.', 'Water placed. The bucket remains empty.') : translate('Tout le contenu du seau est vidé : 1 bloc d’eau calme, sans inondation.', 'The bucket is emptied: 1 calm water block, without flooding.'));
         return true;
       }
     }
-    store.setNotice(alwaysEmpty ? 'Aim at a block with the always-empty bucket to place water.' : 'Aim at a block with the full bucket to place water.');
+    store.setNotice(alwaysEmpty ? translate('Vise un bloc avec le seau toujours vide pour poser de l’eau.', 'Aim at a block with the always-empty bucket to place water.') : translate('Vise un bloc avec le seau plein pour y poser l’eau.', 'Aim at a block with the full bucket to place water.'));
     return true;
   }
   if (hit && isWaterBlock(hit.block.kind)) {
     const drained = drainConnectedWater(world, hit);
     if (drained > 0) {
       changeHeldBucket('bucket', 'water_bucket');
-      store.setNotice(`All connected water was removed at once: ${drained} blocks. The bucket is full.`);
+      store.setNotice(translate(`Toute l’eau connectée a été retirée d’un coup : ${drained} blocs. Le seau est plein.`, `All connected water was removed at once: ${drained} blocks. The bucket is full.`));
       return true;
     }
-    store.setNotice('You cannot collect this water here.');
+    store.setNotice(translate('Tu ne peux pas récupérer cette eau ici.', 'You cannot collect this water here.'));
     return true;
   }
-  store.setNotice('Aim at a water block with the empty bucket to remove all connected water.');
+  store.setNotice(translate('Vise un bloc d’eau avec le seau vide pour retirer toute l’eau connectée.', 'Aim at a water block with the empty bucket to remove all connected water.'));
   return true;
 }
 
@@ -84,7 +85,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
   const store = useGameStore.getState();
   const selected = store.selected;
   if (!hasInventory(selected, store)) {
-    store.setNotice('Gather and craft this item before using it.');
+    store.setNotice(translate('Récolte et fabrique cet objet avant de l’utiliser.', 'Gather and craft this item before using it.'));
     return true;
   }
   if (typeof selected === 'number') return false;
@@ -117,7 +118,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     const store = useGameStore.getState();
     const armor = store.equippedArmor === meta.armor ? null : meta.armor ?? null;
     store.equipArmor(armor);
-    store.setNotice(armor ? `${meta.name} equipped.` : 'Armor removed and stored in backpack.');
+    store.setNotice(armor ? translate(`${meta.name} équipée.`, `${meta.name} equipped.`) : translate('Armure retirée dans le sac.', 'Armor removed and stored in backpack.'));
     return true;
   }
   if (isPaintballGun(selected)) {
@@ -140,9 +141,9 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
       const rider = target.entity.get(HorseRider);
       if (rider) target.entity.set(HorseRider, { saddled: true });
       else target.entity.add(HorseRider({ saddled: true }));
-      useGameStore.getState().setNotice('Saddle installed! Press E near the horse to mount it.');
+      useGameStore.getState().setNotice(translate('Selle installée ! Appuie sur E près du cheval pour le monter.', 'Saddle installed! Press E near the horse to mount it.'));
     } else {
-      useGameStore.getState().setNotice('Aim at a horse to install the saddle.');
+      useGameStore.getState().setNotice(translate('Vise un cheval pour installer la selle.', 'Aim at a horse to install the saddle.'));
     }
     return true;
   }
@@ -158,10 +159,10 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
         if (!isWaterBlock(blocks.get(voxelKey(x, SEA_LEVEL, z))?.kind)) continue;
         if (groundAt(world, x, z, SEA_LEVEL) >= SEA_LEVEL) continue;
         spawnVehicle(world, 'boat', x, SEA_LEVEL + 0.55, z, meta.color);
-        useGameStore.getState().setNotice('Boat ready! E: choose the front seat to drive or the back seat to be a passenger.');
+        useGameStore.getState().setNotice(translate('Bateau prêt ! E : choisis le siège avant pour conduire ou l’arrière pour être passager.', 'Boat ready! E: choose the front seat to drive or the back seat to be a passenger.'));
         return true;
       }
-      useGameStore.getState().setNotice('Aim at a river or lake to place the boat on water.');
+      useGameStore.getState().setNotice(translate('Vise une rivière ou un lac pour poser le bateau sur l’eau.', 'Aim at a river or lake to place the boat on water.'));
       return true;
     }
     const hit = raycastVoxel(blocks, origin, direction, 6);
@@ -169,11 +170,11 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     const z = hit ? hit.z + hit.normal.z * 1.5 : player.z + direction.z * 3;
     const ground = groundAt(world, x, z, player.y + 4);
     if (ground <= SEA_LEVEL) {
-      useGameStore.getState().setNotice('The car must be placed on land.');
+      useGameStore.getState().setNotice(translate('La voiture doit être posée sur la terre ferme.', 'The car must be placed on land.'));
       return true;
     }
     spawnVehicle(world, kind, x, ground, z, meta.color);
-    useGameStore.getState().setNotice(`${kind === 'plane' ? 'Airplane' : kind === 'train' ? 'Train' : kind === 'metro' ? 'Metro' : 'Vehicle'} ready! Come closer and press E to choose your seat.`);
+    useGameStore.getState().setNotice(translate(`${kind === 'plane' ? 'Avion' : kind === 'train' ? 'Train' : kind === 'metro' ? 'Métro' : 'Voiture'} prêt ! Approche-toi et appuie sur E pour choisir ta place.`, `${kind === 'plane' ? 'Airplane' : kind === 'train' ? 'Train' : kind === 'metro' ? 'Metro' : 'Vehicle'} ready! Come closer and press E to choose your seat.`));
     return true;
   }
   if (isGalleryItem(selected) && meta.category === 'resource' && interact > 0) return useGalleryItem(world, selected, origin, direction);

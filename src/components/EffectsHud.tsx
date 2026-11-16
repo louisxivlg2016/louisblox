@@ -13,7 +13,7 @@ export function EffectsHud() {
   return (
     <div className="active-effects" aria-label="Effets actifs">
       {Object.entries(active).map(([kind, effect]) => (
-        <span key={kind}>{EFFECT_NAMES[kind as PotionEffect]} · {Math.max(0, Math.ceil((effect.until - now) / 1000))} s</span>
+        <span key={kind}>{EFFECT_NAMES()[kind as PotionEffect]} · {Math.max(0, Math.ceil((effect.until - now) / 1000))} s</span>
       ))}
       {shield && <span>Bouclier · {Math.ceil(shield.value)} · {Math.max(0, Math.ceil((shield.until - now) / 1000))} s</span>}
     </div>

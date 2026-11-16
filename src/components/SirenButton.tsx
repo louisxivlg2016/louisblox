@@ -1,5 +1,6 @@
 import { useGameStore } from '../game/store';
 import { toggleSiren, useVehicleControls } from '../game/vehicleControls';
+import { translate } from '../game/language';
 
 export function SirenButton() {
   const riding = useGameStore((state) => state.riding);
@@ -11,16 +12,16 @@ export function SirenButton() {
     <button
       type="button"
       className={`siren-toggle${enabled ? ' active' : ''}`}
-      aria-label={enabled ? 'Stop siren' : 'Activate siren'}
+      aria-label={enabled ? translate('Couper la sirène', 'Stop siren') : translate('Activer la sirène', 'Activate siren')}
       aria-pressed={enabled}
-      title="Siren · L shortcut"
+      title={translate('Sirène · raccourci L', 'Siren · L shortcut')}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => {
         event.stopPropagation();
         toggleSiren(kind);
       }}
     >
-      {enabled ? 'Stop siren' : 'Siren'}
+      {enabled ? translate('Couper la sirène', 'Stop siren') : translate('Sirène', 'Siren')}
     </button>
   );
 }

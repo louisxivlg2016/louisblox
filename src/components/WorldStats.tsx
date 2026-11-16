@@ -6,9 +6,10 @@ import { nearestRuin } from '../game/ruins';
 import { useGameStore } from '../game/store';
 import { Player } from '../game/traits';
 import { world } from '../game/world';
+import { translate } from '../game/language';
 
-const WEATHER_NAMES = { clear: 'Clear sky', rain: 'Rain', snow: 'Snow' } as const;
-const RUIN_NAMES = { church: 'Church', palace: 'Palace', fort: 'Fort' } as const;
+const WEATHER_NAMES = () => ({ clear: translate('Ciel clair', 'Clear sky'), rain: translate('Pluie', 'Rain'), snow: translate('Neige', 'Snow') });
+const RUIN_NAMES = () => ({ church: translate('Église', 'Church'), palace: translate('Palais', 'Palace'), fort: 'Fort' });
 
 function Coordinates() {
   const coordinates = useGameStore((state) => state.coordinates);
@@ -16,7 +17,7 @@ function Coordinates() {
   return (
     <>
       <span className="coordinates">XYZ {coordinates.x.toFixed(2)} / {coordinates.y.toFixed(2)} / {coordinates.z.toFixed(2)}</span>
-      {nearbyRuin && nearbyRuin.distance < 64 && <span className="weather-info">Ruins: {RUIN_NAMES[nearbyRuin.type]} at {Math.round(nearbyRuin.distance)} m</span>}
+      {nearbyRuin && nearbyRuin.distance < 64 && <span className="weather-info">{translate('Ruines :', 'Ruins:')} {RUIN_NAMES()[nearbyRuin.type]} {translate('à', 'at')} {Math.round(nearbyRuin.distance)} m</span>}
     </>
   );
 }
@@ -28,8 +29,8 @@ function EnvironmentInfo() {
   const minutes = (totalMinutes % 60).toString().padStart(2, '0');
   return (
     <>
-      <span className="biome-info">{BIOME_NAMES[environment.biome]} · {hours}:{minutes}</span>
-      <span className={`weather-info ${environment.weather}`}>{WEATHER_NAMES[environment.weather]}</span>
+      <span className="biome-info">{BIOME_NAMES()[environment.biome]} · {hours}:{minutes}</span>
+      <span className={`weather-info ${environment.weather}`}>{WEATHER_NAMES()[environment.weather]}</span>
     </>
   );
 }
@@ -49,21 +50,21 @@ export function WorldStats() {
   const multiplayerPlayerCount = useMultiplayerStore((state) => state.players.length);
   const meatSummary = Object.entries(meat)
     .filter(([, count]) => count > 0)
-    .map(([kind, count]) => `${MEAT_NAMES[kind as keyof typeof MEAT_NAMES]} ×${count}`)
+    .map(([kind, count]) => `${MEAT_NAMES()[kind as keyof typeof MEAT_NAMES]} ×${count}`)
     .join(' · ');
 
   return (
     <div className="world-stats">
-      <strong className="block-count">{blockCount.toLocaleString('en-US')}</strong> loaded blocks
+      <strong className="block-count">{blockCount.toLocaleString(translate('fr-FR', 'en-US'))}</strong> {translate('blocs chargés', 'loaded blocks')}
       <Coordinates />
       <EnvironmentInfo />
-      {multiplayerEnabled && <span className={`weather-info multiplayer-hud ${multiplayerStatus}`}>{multiplayerStatus === 'online' ? `Online · ${multiplayerRoom} · ${multiplayerPlayerCount} player${multiplayerPlayerCount > 1 ? 's' : ''}` : multiplayerStatus === 'connecting' ? `Connexion · ${multiplayerRoom}` : `Offline · ${multiplayerRoom}`}</span>}
-      <span className="weather-info apple-count">Apples: {apples}</span>
-      <span className="weather-info meat-count">Meats: {meatSummary || 'none'}</span>
-      <span className="weather-info lives-count">Lives: {lives}/10</span>
-      {equippedArmor && <span className="weather-info">Armor: {equippedArmor}</span>}
-      {riding && <span className="weather-info">{riding === 'car' ? 'Driving · E to exit' : riding === 'horse' ? 'On horseback · E to dismount' : `${riding === 'plane' ? 'Airplane' : riding === 'boat' ? 'Boat' : 'Train'} · ${ridingRole === 'passenger' ? 'Passenger' : 'Driver'} · E pour descendre`}</span>}
-      {flying && <span className="weather-info flight-status">Flight enabled</span>}
+      {multiplayerEnabled && <span className={`weather-info multiplayer-hud ${multiplayerStatus}`}>{multiplayerStatus === 'online' ? `${translate('En ligne', 'Online')} · ${multiplayerRoom} · ${multiplayerPlayerCount} ${translate('joueur', 'player')}${multiplayerPlayerCount > 1 ? 's' : ''}` : multiplayerStatus === 'connecting' ? `${translate('Connexion', 'Connecting')} · ${multiplayerRoom}` : `${translate('Hors ligne', 'Offline')} · ${multiplayerRoom}`}</span>}
+      <span className="weather-info apple-count">{translate('Pommes :', 'Apples:')} {apples}</span>
+      <span className="weather-info meat-count">{translate('Viandes :', 'Meats:')} {meatSummary || translate('aucune', 'none')}</span>
+      <span className="weather-info lives-count">{translate('Vies :', 'Lives:')} {lives}/10</span>
+      {equippedArmor && <span className="weather-info">{translate('Armure :', 'Armor:')} {equippedArmor}</span>}
+      {riding && <span className="weather-info">{riding === 'car' ? translate('Au volant · E pour sortir', 'Driving · E to exit') : riding === 'horse' ? translate('À cheval · E pour descendre', 'On horseback · E to dismount') : `${riding === 'plane' ? translate('Avion', 'Airplane') : riding === 'boat' ? translate('Bateau', 'Boat') : 'Train'} · ${ridingRole === 'passenger' ? translate('Passager', 'Passenger') : translate('Conducteur', 'Driver')} · ${translate('E pour descendre', 'E to exit')}`}</span>}
+      {flying && <span className="weather-info flight-status">{translate('Vol activé', 'Flight enabled')}</span>}
     </div>
   );
 }

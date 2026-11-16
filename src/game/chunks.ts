@@ -39,6 +39,7 @@ import { resetBombLauncher } from './weaponAmmo';
 import { customWorldSpawn, generateCustomChunk } from './customWorld';
 import { createCustomWorld, DEFAULT_WORLD_SOURCE, sanitizeCustomWorld } from './worldCode';
 import { initTaming } from './taming';
+import { translate } from './language';
 
 export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean } | null;
 export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: VehicleKind };
@@ -136,7 +137,7 @@ function unindexBlock(state: WorldChunks, block: Voxel, refresh = true) {
 
 function stateFor(world: World) {
   const state = worlds.get(world);
-  if (!state) throw new Error('Chunk world is not initialized');
+  if (!state) throw new Error(translate('Le monde de chunks n’est pas initialisé', 'Chunk world is not initialized'));
   return state;
 }
 

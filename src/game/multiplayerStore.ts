@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import { translateServerMessage } from './language';
 import { rememberWorld } from './store';
 import { setJoinOnlyRoom } from './roomJoin';
+import { translate } from './language';
 
 export type MultiplayerStatus = 'offline' | 'connecting' | 'online' | 'error';
 export type LobbyPlayer = { playerId: string; name: string; self?: boolean };
@@ -34,9 +36,9 @@ setJoinOnlyRoom(autoJoin ? query.get('room') || 'main-room' : null);
 
 function initialPlayerName() {
   try {
-    return localStorage.getItem('louisblox-player-name')?.trim().slice(0, 24) || 'Player';
+    return localStorage.getItem('louisblox-player-name')?.trim().slice(0, 24) || translate('Joueur', 'Player');
   } catch {
-    return 'Player';
+    return translate('Joueur', 'Player');
   }
 }
 
@@ -59,7 +61,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
     set((state) => ({ enabled, joined: enabled && state.joined, status: enabled && state.joined ? 'connecting' : 'offline', worldReady: false, error: '', players: [] }));
   },
   configure: (settings, joinOnly = false) => {
-    const playerName = settings.playerName.trim().slice(0, 24) || 'Player';
+    const playerName = settings.playerName.trim().slice(0, 24) || translate('Joueur', 'Player');
     const room = normalizeRoomId(settings.room);
     const server = settings.server.trim();
     try {
@@ -71,10 +73,10 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
     set((state) => ({ playerName, room, server, enabled: true, joined: true, connectionId: state.connectionId + 1, status: 'connecting', worldReady: false, error: '', players: [] }));
     return { playerName, room, server };
   },
-  setStatus: (status, error = '') => set({ status, error, ...(status === 'online' ? {} : { worldReady: false }) }),
+  setStatus: (status, error = '') => set({ status, error: translateServerMessage(error), ...(status === 'online' ? {} : { worldReady: false }) }),
   setPlayers: (players) => set({ players }),
   setPlayerName: (name) => {
-    const playerName = name.trim().slice(0, 24) || 'Player';
+    const playerName = name.trim().slice(0, 24) || translate('Joueur', 'Player');
     try {
       localStorage.setItem('louisblox-player-name', playerName);
     } catch {

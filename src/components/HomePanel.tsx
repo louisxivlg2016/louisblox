@@ -7,6 +7,7 @@ import { Player, PlayerPosition, PlayerState } from '../game/traits';
 import { world } from '../game/world';
 import { teleportToHome } from '../game/teleport';
 import { requestPlay } from '../game/input';
+import { translate } from '../game/language';
 
 export function HomePanel() {
   const open = useHomeStore((state) => state.open);
@@ -41,7 +42,7 @@ export function HomePanel() {
     const position = player?.get(PlayerPosition);
     const state = player?.get(PlayerState);
     if (!position || !state) {
-      setMessage('Unable to find your current position.');
+      setMessage(translate('Impossible de trouver ta position actuelle.', 'Unable to find your current position.'));
       return;
     }
     const result = createHome(worldId, name, { x: position.x, y: position.y, z: position.z, yaw: state.yaw, pitch: state.pitch });
@@ -49,12 +50,12 @@ export function HomePanel() {
       setMessage(result.error);
       return;
     }
-    setMessage(`Home “${result.home.name}” created at this position.`);
+    setMessage(translate(`Maison « ${result.home.name} » créée à cette position.`, `Home “${result.home.name}” created at this position.`));
     setName(`Maison ${Math.min(homes.length + 2, MAX_HOMES)}`);
   };
   const travel = (home: Home) => {
     if (!teleportToHome(world, home)) {
-      setMessage('This destination is unavailable.');
+      setMessage(translate('Cette destination est indisponible.', 'This destination is unavailable.'));
       return;
     }
     useGameStore.getState().setTeleportOpen(false);
@@ -63,23 +64,23 @@ export function HomePanel() {
   const rename = (event: React.FormEvent, home: Home) => {
     event.preventDefault();
     if (renameHome(worldId, home.id, editName)) {
-      setMessage(`Home renamed “${editName.trim()}”.`);
+      setMessage(translate(`Maison renommée « ${editName.trim()} ».`, `Home renamed “${editName.trim()}”.`));
       setEditing(null);
     } else {
-      setMessage('Choose a valid name for this home.');
+      setMessage(translate('Choisis un nom valide pour cette maison.', 'Choose a valid name for this home.'));
     }
   };
 
   return (
-    <MenuDialog title="My Homes" onClose={close} className="home-panel">
+    <MenuDialog title={translate('Mes maisons', 'My Homes')} onClose={close} className="home-panel">
       <div className="home-heading">
-        <div><p className="eyebrow">YOUR LANDMARKS</p><h2>My Homes</h2></div>
+        <div><p className="eyebrow">{translate('TES REPÈRES', 'YOUR LANDMARKS')}</p><h2>{translate('Mes maisons', 'My Homes')}</h2></div>
         <span className="home-count" aria-label={`${homes.length} homes out of ${MAX_HOMES}`}>{homes.length} / {MAX_HOMES}</span>
       </div>
       <form className="home-create-form" onSubmit={create}>
-        <label htmlFor="home-name">New home name</label>
+        <label htmlFor="home-name">{translate('Nom de la nouvelle maison', 'New home name')}</label>
         <div className="home-create-row">
-          <input id="home-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Your home name" maxLength={32} required autoFocus disabled={homes.length >= MAX_HOMES} />
+          <input id="home-name" value={name} onChange={(event) => setName(event.target.value)} placeholder={translate('Nom de ta maison', 'Your home name')} maxLength={32} required autoFocus disabled={homes.length >= MAX_HOMES} />
           <button
             className="primary-button"
             type="submit"
@@ -93,13 +94,13 @@ export function HomePanel() {
             onClick={(event) => {
               if (event.detail > 0 && event.nativeEvent instanceof PointerEvent && event.nativeEvent.pointerType !== 'mouse') event.preventDefault();
             }}
-          >Create here</button>
+          >{translate('Créer ici', 'Create here')}</button>
         </div>
       </form>
-      {homes.length >= MAX_HOMES && <p className="home-limit">You reached the 5-home limit. Delete one to create another.</p>}
+      {homes.length >= MAX_HOMES && <p className="home-limit">{translate('Tu as atteint la limite de 5 maisons. Supprimes-en une pour en créer une autre.', 'You reached the 5-home limit. Delete one to create another.')}</p>}
       {message && <p className="home-message" role="status">{message}</p>}
       <div className="home-list">
-        {homes.length === 0 ? <p className="home-empty">Create your first home here. You can teleport to it later.</p> : homes.map((home) => (
+        {homes.length === 0 ? <p className="home-empty">{translate('Crée ta première maison ici. Tu pourras ensuite t’y téléporter.', 'Create your first home here. You can teleport to it later.')}</p> : homes.map((home) => (
           <article className="home-row" key={home.id}>
             {editing === home.id ? (
               <form className="home-rename-form" onSubmit={(event) => rename(event, home)}>
@@ -107,21 +108,21 @@ export function HomePanel() {
                   <input id={`rename-${home.id}`} value={editName} onChange={(event) => setEditName(event.target.value)} maxLength={32} required autoFocus />
                 </label>
                 <div className="home-actions">
-                  <button className="primary-button" type="submit">Save</button>
-                  <button className="secondary-button" type="button" onClick={() => setEditing(null)}>Cancel</button>
+                  <button className="primary-button" type="submit">{translate('Enregistrer', 'Save')}</button>
+                  <button className="secondary-button" type="button" onClick={() => setEditing(null)}>{translate('Annuler', 'Cancel')}</button>
                 </div>
               </form>
             ) : (
               <>
                 <div className="home-details"><strong>{home.name}</strong><small>X {Math.round(home.x)} · Y {Math.round(home.y)} · Z {Math.round(home.z)}</small></div>
                 <div className="home-actions">
-                  <button className="primary-button" onClick={() => travel(home)}>Go</button>
-                  <button className="secondary-button" onClick={() => { setEditing(home.id); setEditName(home.name); }}>Rename</button>
+                  <button className="primary-button" onClick={() => travel(home)}>{translate('Y aller', 'Go')}</button>
+                  <button className="secondary-button" onClick={() => { setEditing(home.id); setEditName(home.name); }}>{translate('Renommer', 'Rename')}</button>
                   <button className="home-delete-button" onClick={() => {
-                    if (!window.confirm(`Delete home “${home.name}”?`)) return;
+                    if (!window.confirm(translate(`Supprimer la maison « ${home.name} » ?`, `Delete home “${home.name}”?`))) return;
                     deleteHome(worldId, home.id);
-                    setMessage(`Home “${home.name}” deleted.`);
-                  }}>Delete</button>
+                    setMessage(translate(`Maison « ${home.name} » supprimée.`, `Home “${home.name}” deleted.`));
+                  }}>{translate('Supprimer', 'Delete')}</button>
                 </div>
               </>
             )}

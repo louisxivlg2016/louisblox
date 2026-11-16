@@ -5,6 +5,7 @@ import { useBattleStore, respawnAtBase } from './battle';
 import { useGameStore } from './store';
 import { world } from './world';
 import type { Vector3 } from 'three';
+import { translate } from './language';
 
 type PirateState = {
   kit: PirateKit | null;
@@ -61,7 +62,7 @@ export function receivePirateState(value: unknown) {
   const kits: Record<string, PirateKit> = {};
   if (Array.isArray(data.kits)) {
     for (const entry of data.kits) {
-      if (!Array.isArray(entry) || typeof entry[0] !== 'string' || !(entry[1] in PIRATE_KITS)) continue;
+      if (!Array.isArray(entry) || typeof entry[0] !== 'string' || !(entry[1] in PIRATE_KITS())) continue;
       kits[entry[0]] = entry[1];
     }
   }
@@ -105,8 +106,8 @@ export function receivePirateInventory(value: unknown) {
   }
   const localId = useBattleStore.getState().localPlayerId;
   if (localId && typeof data.coins === 'number') usePirateStore.setState((state) => ({ coins: { ...state.coins, [localId]: Math.max(0, Math.floor(data.coins as number)) } }));
-  const names: Record<string, string> = { pistol_bomb: 'Bomb Launcher', Tnt: 'TNT', OakPlanks: 'Wooden Planks', pickaxe_diamond: 'Diamond Pickaxe', parachute: 'Parachute', sword_diamond: 'Diamond Sword', bow: 'Bow', apple: 'Apple' };
-  store.setNotice(`${names[item] ?? item} added to your selected slot.`);
+  const names: Record<string, string> = { pistol_bomb: translate('Lance-bombes', 'Bomb Launcher'), Tnt: 'TNT', OakPlanks: translate('Planches de bois', 'Wooden Planks'), pickaxe_diamond: translate('Pioche en diamant', 'Diamond Pickaxe'), parachute: 'Parachute', sword_diamond: translate('Épée en diamant', 'Diamond Sword'), bow: translate('Arc', 'Bow'), apple: translate('Pomme', 'Apple') };
+  store.setNotice(translate(`${names[item] ?? item} ajouté à ta case sélectionnée.`, `${names[item] ?? item} added to your selected slot.`));
 }
 
 export function damagePirateObjectivesInRadius(position: Vector3, radius: number) {

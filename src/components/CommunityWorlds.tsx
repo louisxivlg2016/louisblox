@@ -10,6 +10,7 @@ import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { usePublicWorldJoin } from './usePublicWorldJoin';
 import { removeWorld } from '../game/deleteWorld';
+import { translate } from '../game/language';
 
 export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
   onPlay: () => void | Promise<void>;
@@ -61,7 +62,7 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
 
   const openLocal = (world: WorldMeta) => {
     if (!enabled && isMultiplayerOnlyMode(world.gameplayMode ?? selectedMode)) {
-      setDeleteError('Pirates and Football require multiplayer.');
+      setDeleteError(translate('Les modes Pirates et Football nécessitent le multijoueur.', 'Pirates and Football require multiplayer.'));
       return;
     }
     setDeleteError('');
@@ -83,7 +84,7 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
       setWorlds(await listPublicWorlds());
       if (result.warning) setDeleteError(result.warning);
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : 'Unable to delete this world.');
+      setDeleteError(error instanceof Error ? error.message : translate('Impossible de supprimer ce monde.', 'Unable to delete this world.'));
     } finally {
       setDeleting(false);
     }
@@ -91,62 +92,62 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
   return (
     <section className="community-worlds">
       <div className="community-heading">
-        <div><h2>Join a World</h2><p>An online world hosted by another player, or one of your saves.</p></div>
-        <label>Mode
-          <select value={selectedMode} onChange={(event) => setMode(event.target.value as GameplayMode)} aria-label="Suggested world mode">
-            {Object.entries(GAMEPLAY_MODE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        <div><h2>{translate('Rejoindre un monde', 'Join a World')}</h2><p>{translate('Un monde en ligne chez un autre joueur, ou l’une de tes sauvegardes.', 'An online world hosted by another player, or one of your saves.')}</p></div>
+        <label>{translate('Mode', 'Mode')}
+          <select value={selectedMode} onChange={(event) => setMode(event.target.value as GameplayMode)} aria-label={translate('Mode des mondes proposés', 'Suggested world mode')}>
+            {Object.entries(GAMEPLAY_MODE_LABELS()).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
       </div>
       <div className="community-actions">
-        <button className="multiplayer-join community-random" onClick={() => void joinBusiest(selectedMode)} disabled={pending || status === 'connecting'}>Join</button>
-        {onCreate && <button className="secondary-button community-create" onClick={onCreate} disabled={full || pending || status === 'connecting' || !enabled && isMultiplayerOnlyMode(selectedMode)}>{!enabled && isMultiplayerOnlyMode(selectedMode) ? 'Multiplayer required' : 'Create here'}</button>}
+        <button className="multiplayer-join community-random" onClick={() => void joinBusiest(selectedMode)} disabled={pending || status === 'connecting'}>{translate('Rejoindre', 'Join')}</button>
+        {onCreate && <button className="secondary-button community-create" onClick={onCreate} disabled={full || pending || status === 'connecting' || !enabled && isMultiplayerOnlyMode(selectedMode)}>{!enabled && isMultiplayerOnlyMode(selectedMode) ? translate('Multijoueur requis', 'Multiplayer required') : translate('Créer ici', 'Create here')}</button>}
       </div>
-      <p className="community-random-hint">Join the {GAMEPLAY_MODE_LABELS[selectedMode]} world with the most players online.</p>
-      {full && <p className="multiplayer-error" role="alert">You reached {MAX_WORLDS} worlds. Delete one to create another.</p>}
+      <p className="community-random-hint">{translate('Rejoins le monde {GAMEPLAY_MODE_LABELS()[selectedMode]} avec le plus de joueurs en ligne.', 'Join the {GAMEPLAY_MODE_LABELS()[selectedMode]} world with the most players online.')}</p>
+      {full && <p className="multiplayer-error" role="alert">{translate('Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un pour en créer un autre.', 'You reached {MAX_WORLDS} worlds. Delete one to create another.')}</p>}
       {error && <p className="multiplayer-error" role="alert">{error}</p>}
       {deleteError && <p className="multiplayer-error" role="alert">{deleteError}</p>}
       <section className="community-section mode-players-section">
-        <h3>Players in {GAMEPLAY_MODE_LABELS[selectedMode]} <span>{modePlayers.length}</span></h3>
-        <div className="mode-player-list" aria-label={`Players connected in ${GAMEPLAY_MODE_LABELS[selectedMode]}`}>
+        <h3>{translate('Joueurs en', 'Players in')} {GAMEPLAY_MODE_LABELS()[selectedMode]} <span>{modePlayers.length}</span></h3>
+        <div className="mode-player-list" aria-label={`Players connected in ${GAMEPLAY_MODE_LABELS()[selectedMode]}`}>
           {modePlayers.map((player) => <div className="mode-player-entry" key={player.playerId}><strong>{player.name}</strong><small>{player.room}</small></div>)}
-          {modePlayers.length === 0 && <p>No players connected in this mode right now.</p>}
+          {modePlayers.length === 0 && <p>{translate('Aucun joueur connecté dans ce mode pour le moment.', 'No players connected in this mode right now.')}</p>}
         </div>
       </section>
       <section className="community-section">
-        <h3>Other players’ worlds <span>{others.length}</span></h3>
+        <h3>{translate('Mondes des autres joueurs', 'Other players’ worlds')} <span>{others.length}</span></h3>
         <div className="world-library-list">
           {others.map((world) => (
             <button className="world-library-entry" key={world.id} data-world-id={world.id} data-owner-id={world.ownerId} data-mode={world.gameplayMode} onClick={() => join(world)} disabled={deleting || pending || status === 'connecting'}>
               <strong>{world.name}</strong>
-              <small>{world.ownerName} · {GAMEPLAY_MODE_LABELS[world.gameplayMode]} · {world.players} player{world.players > 1 ? 's' : ''} online</small>
+              <small>{world.ownerName} · {GAMEPLAY_MODE_LABELS()[world.gameplayMode]} · {world.players} player{world.players > 1 ? 's' : ''} online</small>
             </button>
           ))}
-          {others.length === 0 && <p>No public worlds in {GAMEPLAY_MODE_LABELS[selectedMode]} right now.</p>}
+          {others.length === 0 && <p>No public worlds in {GAMEPLAY_MODE_LABELS()[selectedMode]} right now.</p>}
         </div>
       </section>
       <section className="community-section">
-        <h3>My Worlds <span>{ownPublic.length + ownLocal.length}</span></h3>
+        <h3>{translate('Mes mondes', 'My Worlds')} <span>{ownPublic.length + ownLocal.length}</span></h3>
         <div className="world-library-list">
           {ownPublic.map((world) => (
             <div className="world-library-item" key={world.id}>
               <button className="world-library-entry" data-world-id={world.id} data-owner-id={world.ownerId} data-mode={world.gameplayMode} onClick={() => join(world)} disabled={deleting || pending || status === 'connecting'}>
                 <strong>{world.name}</strong>
-                <small>My shared world · {world.players} player{world.players > 1 ? 's' : ''} online</small>
+                <small>{translate('Mon monde partagé', 'My shared world')} · {world.players} {translate('joueur', 'player')}{world.players > 1 ? 's' : ''} {translate('en ligne', 'online')}</small>
               </button>
-              <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={deleting || pending || status === 'connecting'} aria-label={`Delete ${world.name}`}>Delete</button>
+              <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={deleting || pending || status === 'connecting'} aria-label={`Delete ${world.name}`}>{translate('Supprimer', 'Delete')}</button>
             </div>
           ))}
           {ownLocal.map((world) => (
             <div className="world-library-item" key={world.id}>
-              <button className="world-library-entry" data-world-id={world.id} data-mode={world.gameplayMode ?? 'creative'} onClick={() => openLocal(world)} disabled={deleting || pending || status === 'connecting' || !enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative')} title={!enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative') ? 'Multiplayer required' : undefined}>
+              <button className="world-library-entry" data-world-id={world.id} data-mode={world.gameplayMode ?? 'creative'} onClick={() => openLocal(world)} disabled={deleting || pending || status === 'connecting' || !enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative')} title={!enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative') ? translate('Multijoueur requis', 'Multiplayer required') : undefined}>
                 <strong>{world.name}</strong>
-                <small>My save · {GAMEPLAY_MODE_LABELS[world.gameplayMode ?? 'creative']} · {!enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative') ? 'Multiplayer required' : world.updatedAt ? new Date(world.updatedAt).toLocaleDateString('en-US') : 'Old save'}</small>
+                <small>My save · {GAMEPLAY_MODE_LABELS()[world.gameplayMode ?? 'creative']} · {!enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative') ? translate('Multijoueur requis', 'Multiplayer required') : world.updatedAt ? new Date(world.updatedAt).toLocaleDateString('en-US') : translate('Ancienne sauvegarde', 'Old save')}</small>
               </button>
-              <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={deleting || pending || status === 'connecting'} aria-label={`Delete ${world.name}`}>Delete</button>
+              <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={deleting || pending || status === 'connecting'} aria-label={`Delete ${world.name}`}>{translate('Supprimer', 'Delete')}</button>
             </div>
           ))}
-          {ownPublic.length + ownLocal.length === 0 && <p>No saves in {GAMEPLAY_MODE_LABELS[selectedMode]} right now.</p>}
+          {ownPublic.length + ownLocal.length === 0 && <p>No saves in {GAMEPLAY_MODE_LABELS()[selectedMode]} right now.</p>}
         </div>
       </section>
     </section>

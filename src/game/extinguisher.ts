@@ -7,6 +7,7 @@ import { isFireBlock } from './extraBlocks';
 import { getFireSources } from './hazards';
 import { raycastVoxel, voxelKey } from './voxel';
 import { useGameStore } from './store';
+import { translate } from './language';
 
 export type ExtinguisherSpray = { id: number; origin: Vector3; direction: Vector3; age: number };
 export const useExtinguisherStore = create<{ sprays: ExtinguisherSpray[] }>(() => ({ sprays: [] }));
@@ -30,13 +31,13 @@ export function useFireExtinguisher(world: World, origin: Vector3, direction: Ve
   }
   spray(origin, direction);
   if (!target) {
-    useGameStore.getState().setNotice('Aim at a fire to extinguish it with the fire extinguisher.');
+    useGameStore.getState().setNotice(translate('Vise un feu pour l’éteindre avec l’extincteur.', 'Aim at a fire to extinguish it with the fire extinguisher.'));
     return false;
   }
   const { x, y, z } = target.position;
   const block = blocks.get(voxelKey(x, y, z));
   if (block && isFireBlock(block.kind)) removeVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: target.distance });
   else extinguishFireAt(world, x, y, z);
-  useGameStore.getState().setNotice('Fire extinguished with the fire extinguisher.');
+  useGameStore.getState().setNotice(translate('Feu éteint avec l’extincteur.', 'Fire extinguished with the fire extinguisher.'));
   return true;
 }

@@ -89,9 +89,9 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   if (!entity) return null;
   const armor = equipped ? getItemMeta(`armor_${equipped}`).color : null;
   const girl = character === 'girl';
-  const body = armor ?? appearance.clothingColor ?? (outfit === 'default' ? (girl ? '#625887' : '#526b45') : OUTFITS[outfit].body);
+  const body = armor ?? appearance.clothingColor ?? (outfit === 'default' ? (girl ? '#625887' : '#526b45') : OUTFITS()[outfit].body);
   const limbs = armor ?? (outfit === 'default' ? body : skin);
-  const legs = armor ?? appearance.clothingColor ?? (outfit === 'default' ? '#38363b' : OUTFITS[outfit].legs);
+  const legs = armor ?? appearance.clothingColor ?? (outfit === 'default' ? '#38363b' : OUTFITS()[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
   const classicDetails = outfit === 'default' && !armor && !girl && (
     <PixelPart position={[0, 1.15, -0.205]} size={[0.1, 0.66, 0.035]} color="#76553b" rotation={[0, 0, -0.42]} />

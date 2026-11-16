@@ -4,6 +4,7 @@ import { queueHarvest, requestFlightToggle, setTouchKey, setTouchMouseButton, se
 import { useGameStore } from '../game/store';
 import { landPlane } from '../game/vehicles';
 import { world } from '../game/world';
+import { translate } from '../game/language';
 
 function HoldButton({ code, label, onDoubleTap }: { code: string; label: string; onDoubleTap?: () => void }) {
   const lastTap = useRef(0);
@@ -39,7 +40,7 @@ function CannonFireButton() {
     <button
       type="button"
       className="touch-button touch-attack touch-cannon-fire"
-      aria-label="Fire cannon"
+      aria-label={translate('Tirer avec le canon', 'Fire cannon')}
       onPointerDown={(event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -86,11 +87,11 @@ export function TouchControls() {
 
   return (
     <div className="mobile-controls">
-      <div className="touch-gesture-hint">{plane ? pilot ? 'Joystick: pilot · Drag: camera' : 'Airplane passenger · Drag: camera' : football ? 'Short tap: shoot · Drag: camera' : 'Short tap: place, mount, or use · Hold: break · Drag: camera'}</div>
+      <div className="touch-gesture-hint">{plane ? pilot ? translate('Joystick : piloter · Glisser : caméra', 'Joystick: pilot · Drag: camera') : translate('Passager de l’avion · Glisser : caméra', 'Airplane passenger · Drag: camera') : football ? translate('Appui court : tir · Glisser : caméra', 'Short tap: shoot · Drag: camera') : translate('Appui court : poser, monter ou utiliser · Maintenir : casser · Glisser : caméra', 'Short tap: place, mount, or use · Hold: break · Drag: camera')}</div>
       <div
         ref={joystick}
         className="touch-joystick"
-        aria-label="Movement joystick"
+        aria-label={translate('Joystick de déplacement', 'Movement joystick')}
         onPointerDown={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -107,14 +108,14 @@ export function TouchControls() {
         <div ref={knob} className="touch-knob" />
       </div>
       {football && <div className="football-touch-actions" aria-label="Actions de football">
-        <HoldButton code="KeyE" label="Power shot" />
-        <HoldButton code="KeyT" label="Tackle" />
-        <HoldButton code="KeyG" label="Pass" />
+        <HoldButton code="KeyE" label={translate('Tir puissant', 'Power shot')} />
+        <HoldButton code="KeyT" label={translate('Tacler', 'Tackle')} />
+        <HoldButton code="KeyG" label={translate('Passe', 'Pass')} />
       </div>}
       <div className={plane ? 'touch-actions plane-touch-actions' : 'touch-actions'}>
         {cannon && <CannonFireButton />}
         {!plane && <>
-          <HoldButton code="Space" label="Jump" onDoubleTap={requestFlightToggle} />
+          <HoldButton code="Space" label={translate('Sauter', 'Jump')} onDoubleTap={requestFlightToggle} />
           <button
             className="touch-button touch-flight"
             onPointerDown={(event) => {
@@ -125,11 +126,11 @@ export function TouchControls() {
           >
             Flight: {flying ? 'ON' : 'OFF'}
           </button>
-          <HoldButton code="KeyC" label="Down" />
+          <HoldButton code="KeyC" label={translate('Bas', 'Down')} />
         </>}
         {plane && pilot && <>
-          <HoldButton code="Space" label="Take off / Ascend" />
-          <HoldButton code="KeyC" label="Descend" />
+          <HoldButton code="Space" label={translate('Décoller / Monter', 'Take off / Ascend')} />
+          <HoldButton code="KeyC" label={translate('Descendre', 'Descend')} />
           <button
             className="touch-button touch-flight"
             onPointerDown={(event) => {
@@ -141,8 +142,8 @@ export function TouchControls() {
             Land
           </button>
         </>}
-        {plane && <HoldButton code="KeyE" label={pilot ? 'Exit' : 'Leave airplane'} />}
-        {!plane && riding && <HoldButton code="KeyE" label={riding === 'horse' || riding === 'camel' ? 'Dismount animal' : 'Exit vehicle'} />}
+        {plane && <HoldButton code="KeyE" label={pilot ? translate('Sortir', 'Exit') : translate('Quitter l’avion', 'Leave airplane')} />}
+        {!plane && riding && <HoldButton code="KeyE" label={riding === 'horse' || riding === 'camel' ? translate('Descendre de l’animal', 'Dismount animal') : translate('Sortir du véhicule', 'Exit vehicle')} />}
         <button
           className="touch-button"
           onPointerDown={(event) => {

@@ -6,6 +6,7 @@ import type { GameplayMode } from '../game/worldMode';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { requestRoomMode } from './Multiplayer';
+import { translate } from '../game/language';
 
 export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
   const [pendingRoom, setPendingRoom] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
       void onPlay();
     } else if (status === 'error') {
       setPendingRoom(null);
-      setError('Connection failed. Try again in a moment.');
+      setError(translate('Connexion impossible. Réessaie dans un instant.', 'Connection failed. Try again in a moment.'));
     }
   }, [pendingRoom, room, status, worldReady, onPlay]);
 
@@ -46,13 +47,13 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
       const candidates = (await listPublicWorlds()).filter((world) => world.id !== room);
       const world = busiestPublicWorld(candidates, mode);
       if (!world) {
-        setError(`No players online in ${GAMEPLAY_MODE_LABELS[mode]} right now. Choose a world from the list or create your own.`);
+        setError(translate(`Aucun joueur en ligne en ${GAMEPLAY_MODE_LABELS()[mode]} pour le moment. Choisis un monde dans la liste ou crée le tien.`, `No players online in ${GAMEPLAY_MODE_LABELS()[mode]} right now. Choose a world from the list or create your own.`));
         return false;
       }
       join(world);
       return true;
     } catch {
-      setError('Unable to fetch online worlds. Try again in a moment.');
+      setError(translate('Impossible de récupérer les mondes en ligne. Réessaie dans un instant.', 'Unable to fetch online worlds. Try again in a moment.'));
       return false;
     } finally {
       setLoading(false);

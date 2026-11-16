@@ -14,6 +14,7 @@ import { Player, PlayerHealth, PlayerPosition, PlayerState } from './traits';
 import { BlockKind, raycastVoxel, voxelKey } from './voxel';
 import type { VoxelHit } from './voxel';
 import { playSound } from './audio';
+import { translate } from './language';
 
 export function eatItem(world: World, kind: ItemKind | GalleryItemId) {
   const meta = getItemMeta(kind);
@@ -21,7 +22,7 @@ export function eatItem(world: World, kind: ItemKind | GalleryItemId) {
   if (meta.category !== 'food') return false;
   const count = kind === 'apple' ? store.apples : store.itemCounts[kind] ?? 1;
   if (count <= 0) {
-    store.setNotice(kind === 'apple' ? 'Pick apples with E from a prairie tree.' : `Plus de ${meta.name.toLowerCase()}.`);
+    store.setNotice(kind === 'apple' ? translate('Cueille des pommes avec E sur un arbre de prairie.', 'Pick apples with E from a prairie tree.') : `Plus de ${meta.name.toLowerCase()}.`);
     return false;
   }
   const health = world.queryFirst(Player)?.get(PlayerHealth);
@@ -32,7 +33,7 @@ export function eatItem(world: World, kind: ItemKind | GalleryItemId) {
     if (kind === 'apple') store.discardApple();
     else store.setItemCount(kind, count - 1);
   }
-  store.setNotice(healing > 0 ? `${meta.name}: +${healing} ${healing > 1 ? 'lives' : 'life'}` : kind === 'apple' ? 'Apple eaten.' : `${meta.name} eaten.`);
+  store.setNotice(healing > 0 ? translate(`${meta.name} : +${healing} vie${healing > 1 ? 's' : ''}`, `${meta.name}: +${healing} ${healing > 1 ? 'lives' : 'life'}`) : kind === 'apple' ? translate('Pomme mangée.', 'Apple eaten.') : translate(`${meta.name} mangé.`, `${meta.name} eaten.`));
   playSound('eat', 0.45);
   useEatingStore.getState().startEating(kind);
   return true;
@@ -45,7 +46,7 @@ export function eatMeat(world: World, kind: AnimalKind) {
   const healing = Math.min(health.max - health.value, 2);
   if (healing > 0) healPlayer(world, healing);
   store.discardMeat(kind);
-  store.setNotice(healing > 0 ? `Meat eaten: +${healing} ${healing > 1 ? 'lives' : 'life'}` : 'Meat eaten.');
+  store.setNotice(healing > 0 ? translate(`Viande mangée : +${healing} vie${healing > 1 ? 's' : ''}`, `Meat eaten: +${healing} ${healing > 1 ? 'lives' : 'life'}`) : translate('Viande mangée.', 'Meat eaten.'));
   playSound('eat', 0.45);
   useEatingStore.getState().startEating('cooked_meat');
   return true;
@@ -60,8 +61,8 @@ export function pickUpFood(world: World, hit: VoxelHit) {
   if (meat) store.collectMeat(meat);
   else if (food === 'apple') store.collectApple();
   else if (food !== undefined && isSelectedKind(food)) changeInventory(food, 1);
-  const name = meat ? MEAT_NAMES[meat] : food !== undefined && isSelectedKind(food) ? selectionInfo(food).name : 'Food';
-  store.setNotice(`${name} collected.`);
+  const name = meat ? MEAT_NAMES()[meat] : food !== undefined && isSelectedKind(food) ? selectionInfo(food).name : translate('Nourriture', 'Food');
+  store.setNotice(translate(`${name} récupéré.`, `${name} collected.`));
   return true;
 }
 
@@ -86,12 +87,12 @@ export function useFood(world: World, selected: ItemKind | GalleryItemId, origin
         if (selected === 'apple') store.discardApple();
         else changeInventory(selected, -1);
       }
-      store.setNotice(`${getItemMeta(selected).name} placed. Aim at it with E to pick it up.`);
+      store.setNotice(translate(`${getItemMeta(selected).name} posé. Vise-le avec E pour le reprendre.`, `${getItemMeta(selected).name} placed. Aim at it with E to pick it up.`));
     }
     return true;
   }
   if (hit) {
-    useGameStore.getState().setNotice('Aim at the free top of a block to place food.');
+    useGameStore.getState().setNotice(translate('Vise le dessus libre d’un bloc pour poser la nourriture.', 'Aim at the free top of a block to place food.'));
     return true;
   }
   eatItem(world, selected);
@@ -101,7 +102,7 @@ export function useFood(world: World, selected: ItemKind | GalleryItemId, origin
 export function placeMeat(world: World, kind: AnimalKind) {
   const store = useGameStore.getState();
   if (store.meat[kind] <= 0) {
-    store.setNotice('You do not have this meat in your backpack.');
+    store.setNotice(translate('Tu n’as pas cette viande dans ton sac.', 'You do not have this meat in your backpack.'));
     return false;
   }
   const player = world.queryFirst(Player)?.get(PlayerPosition);
@@ -112,12 +113,12 @@ export function placeMeat(world: World, kind: AnimalKind) {
   const direction = new Vector3(0, 0, -1).applyEuler(new Euler(state?.pitch ?? 0, state?.yaw ?? 0, 0, 'YXZ'));
   const surface = foodSurface(world, raycastVoxel(getBlockIndex(world), origin, direction, 6));
   if (!surface) {
-    store.setNotice('Aim at the free top of a block to place this meat.');
+    store.setNotice(translate('Vise le dessus libre d’un bloc pour poser cette viande.', 'Aim at the free top of a block to place this meat.'));
     return false;
   }
   const placed = addVoxel(world, surface.x, surface.y, surface.z, BlockKind.Food, undefined, undefined, 0, undefined, kind);
   if (!placed) return false;
   store.discardMeat(kind);
-  store.setNotice(`${MEAT_NAMES[kind]} placed. Aim at it with E to pick it up.`);
+  store.setNotice(translate(`${MEAT_NAMES()[kind]} posée. Vise-la avec E pour la reprendre.`, `${MEAT_NAMES()[kind]} placed. Aim at it with E to pick it up.`));
   return true;
 }

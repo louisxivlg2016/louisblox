@@ -152,8 +152,8 @@ function moveInDirection(world: World, kind: AnimalKind, position: Vector3, moti
     position.x = x;
     position.z = z;
     if (motion.grounded && ground > position.y) {
-      if (ground - position.y > 1.05) motion.climbTarget = ground;
-      else position.y = ground;
+      if (ground - position.y > 1.05) return false;
+      position.y = ground;
     }
     if (!updateAnimalVertical(world, position, motion, dt, entity)) return false;
   }

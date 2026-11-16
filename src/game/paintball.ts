@@ -5,27 +5,28 @@ import { GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
 import type { GalleryItemId } from './galleryCatalog';
 import type { SelectedKind } from './items';
 import { Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition } from './traits';
+import { translate } from './language';
 
 export const WHITE_PAINTBALL_GUN_ID = 'gallery_paintball_white_paintball_gun' as const;
-export const PAINT_COLORS = [
-  { name: 'Red', value: '#c93d35' },
+export const PAINT_COLORS = () => [
+  { name: translate('Rouge', 'Red'), value: '#c93d35' },
   { name: 'Orange', value: '#df8730' },
-  { name: 'Jaune', value: '#dfc33c' },
+  { name: translate('Jaune', 'Yellow'), value: '#dfc33c' },
   { name: 'Lime', value: '#71ad3f' },
-  { name: 'Vert', value: '#478c42' },
+  { name: translate('Vert', 'Green'), value: '#478c42' },
   { name: 'Cyan', value: '#43a9b3' },
-  { name: 'Blue', value: '#4567b5' },
-  { name: 'Light Blue', value: '#65a8d8' },
-  { name: 'Rose', value: '#db87a7' },
-  { name: 'Violet', value: '#7850a7' },
+  { name: translate('Bleu', 'Blue'), value: '#4567b5' },
+  { name: translate('Bleu clair', 'Light Blue'), value: '#65a8d8' },
+  { name: translate('Rose', 'Pink'), value: '#db87a7' },
+  { name: translate('Violet', 'Purple'), value: '#7850a7' },
   { name: 'Magenta', value: '#b454af' },
-  { name: 'Marron', value: '#795238' },
-  { name: 'Blanc', value: '#e4e7df' },
-  { name: 'Gris clair', value: '#a7b0b4' },
-  { name: 'Gris', value: '#666d75' },
-  { name: 'Noir', value: '#2b3038' },
-] as const;
-type PaintColor = (typeof PAINT_COLORS)[number]['value'];
+  { name: translate('Marron', 'Brown'), value: '#795238' },
+  { name: translate('Blanc', 'White'), value: '#e4e7df' },
+  { name: translate('Gris clair', 'Light Gray'), value: '#a7b0b4' },
+  { name: translate('Gris', 'Gray'), value: '#666d75' },
+  { name: translate('Noir', 'Black'), value: '#2b3038' },
+];
+type PaintColor = ReturnType<typeof PAINT_COLORS>[number]['value'];
 
 export function isPaintballGun(kind: unknown): kind is GalleryItemId {
   return typeof kind === 'string' && isGalleryItem(kind) && GALLERY_ITEM_MAP[kind].category === 'Paintball Items' && GALLERY_ITEM_MAP[kind].shape === 'gun';
@@ -50,7 +51,7 @@ export function normalizePaintballCounts(counts: Partial<Record<string, number>>
 function initialPaintColor(): PaintColor {
   try {
     const saved = localStorage.getItem('louisblox-paint-color');
-    if (PAINT_COLORS.some((color) => color.value === saved)) return saved as PaintColor;
+    if (PAINT_COLORS().some((color) => color.value === saved)) return saved as PaintColor;
   } catch {
   }
   return '#e4e7df';

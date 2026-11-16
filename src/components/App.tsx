@@ -16,8 +16,10 @@ import { biomeAt } from '../game/levels';
 import { BlockKind, voxelKey } from '../game/voxel';
 import { buildChunkGeometry } from '../game/chunkGeometry';
 import { droppedItemSystem } from '../game/droppedItems';
+import { useLanguageStore } from '../game/language';
 
 export function App() {
+  useLanguageStore((state) => state.language);
   const mode = useGameStore((state) => state.mode);
   const pirateWinner = usePirateStore((state) => state.winner);
   return (

@@ -6,6 +6,7 @@ import { clearInput, releasePointerForOverlay, requestPlay } from '../game/input
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 import { MatchResultActions } from './MatchResultActions';
+import { translate } from '../game/language';
 import pirateShopButtonUrl from '../../assets/menu/pirate-shop-button.webp';
 
 export function PiratesHud() {
@@ -50,30 +51,30 @@ export function PiratesHud() {
   const money = localPlayerId ? coins[localPlayerId] ?? 0 : 0;
   return (
     <>
-      <div className="battle-scoreboard pirate-scoreboard" aria-label="Ship objectives">
-        <span className="battle-red">Red · {objectives.red}</span><strong>TREASURES</strong><span className="battle-blue">Blue · {objectives.blue}</span><span className="pirate-coins">Gold · {money}</span>
+      <div className="battle-scoreboard pirate-scoreboard" aria-label={translate('Objectifs des bateaux', 'Ship objectives')}>
+        <span className="battle-red">{translate('Rouge', 'Red')} · {objectives.red}</span><strong>{translate('TRÉSORS', 'TREASURES')}</strong><span className="battle-blue">{translate('Bleu', 'Blue')} · {objectives.blue}</span><span className="pirate-coins">{translate('Or', 'Gold')} · {money}</span>
       </div>
       {!team && (
         <div className="battle-team-picker pirate-picker">
-          {!ready ? <strong>Preparing ships…</strong> : (
+          {!ready ? <strong>{translate('Préparation des navires…', 'Preparing ships…')}</strong> : (
             <>
-              <strong>Choose your crew</strong><span>Automatic mode balances the two ships.</span>
-              <div><button className="battle-red" onClick={() => selectTeam('red')}>Red</button><button className="battle-blue" onClick={() => selectTeam('blue')}>Blue</button></div>
-              <button className="battle-solo" onClick={() => selectTeam('auto')}>Automatic team</button>
+              <strong>{translate('Choisis ton équipage', 'Choose your crew')}</strong><span>{translate('Le mode automatique équilibre les deux bateaux.', 'Automatic mode balances the two ships.')}</span>
+              <div><button className="battle-red" onClick={() => selectTeam('red')}>{translate('Rouge', 'Red')}</button><button className="battle-blue" onClick={() => selectTeam('blue')}>{translate('Bleu', 'Blue')}</button></div>
+              <button className="battle-solo" onClick={() => selectTeam('auto')}>{translate('Équipe automatique', 'Automatic team')}</button>
             </>
           )}
         </div>
       )}
-      {team && !winner && <button className="pirate-shop-toggle" aria-label="Pirate shop" onClick={() => { releasePointerForOverlay(); setShopOpen(true); }}><img src={pirateShopButtonUrl} alt="" /></button>}
+      {team && !winner && <button className="pirate-shop-toggle" aria-label={translate('Boutique pirate', 'Pirate shop')} onClick={() => { releasePointerForOverlay(); setShopOpen(true); }}><img src={pirateShopButtonUrl} alt="" /></button>}
       {shopOpen && (
         <div className="pirate-shop-panel">
-          <h2>Pirate shop · {money} coins</h2>
-          {PIRATE_SHOP.map((entry) => <button key={entry.item} disabled={money < entry.cost} onClick={() => buyPirateItem(entry.item)}>{entry.name} · {entry.cost} coins</button>)}
-          <button className="primary-button" onClick={() => { setShopOpen(false); void requestPlay(); }}>Return to ship</button>
+          <h2>{translate('Boutique pirate · {money} pièces', 'Pirate shop · {money} coins')}</h2>
+          {PIRATE_SHOP().map((entry) => <button key={entry.item} disabled={money < entry.cost} onClick={() => buyPirateItem(entry.item)}>{entry.name} · {entry.cost} coins</button>)}
+          <button className="primary-button" onClick={() => { setShopOpen(false); void requestPlay(); }}>{translate('Retour au navire', 'Return to ship')}</button>
         </div>
       )}
-      {winner && <div className="pirate-winner">The {winner === 'red' ? 'red' : 'blue'} crew wins!<MatchResultActions /></div>}
-      {isPirateEliminated() && !winner && <div className="battle-death">Permanent elimination<span>Your crew’s treasure has been destroyed.</span></div>}
+      {winner && <div className="pirate-winner">{translate('Victoire de l’équipage {winner === \'red\' ? \'rouge\' : \'bleu\'} !', 'The {winner === \'red\' ? \'red\' : \'blue\'} crew wins!')}<MatchResultActions /></div>}
+      {isPirateEliminated() && !winner && <div className="battle-death">{translate('Élimination définitive', 'Permanent elimination')}<span>{translate('Le trésor de ton équipage est détruit.', 'Your crew’s treasure has been destroyed.')}</span></div>}
     </>
   );
 }

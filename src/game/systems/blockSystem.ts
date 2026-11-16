@@ -24,6 +24,7 @@ import { isPirateObjective } from '../pirates';
 import { requestPirateObjectiveHit } from '../piratesClient';
 import { playSound } from '../audio';
 import { dropBlock } from '../droppedItems';
+import { translate } from '../language';
 
 const direction = new Vector3();
 const origin = new Vector3();
@@ -168,7 +169,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       return;
     }
     store.setItemCount(definition.food, store.itemCounts[definition.food] + definition.yield);
-    store.setNotice(`${definition.name} harvested: +${definition.yield} in backpack.`);
+    store.setNotice(translate(`${definition.name} récolté : +${definition.yield} dans le sac.`, `${definition.name} harvested: +${definition.yield} in backpack.`));
     if (definition.regrows) {
       replaceVoxel(world, hit, hit.block.kind, undefined, 0);
       attachGrowth(world, hit.block.kind, hit.x, hit.y, hit.z);
@@ -199,7 +200,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       const kind = useGameStore.getState().selected;
       if (typeof kind !== 'number') return;
       if (!hasInventory(kind, store)) {
-        store.setNotice('Gather or craft this block before placing it.');
+        store.setNotice(translate('Récolte ou fabrique ce bloc avant de le poser.', 'Gather or craft this block before placing it.'));
         return;
       }
       if (isCrop(kind)) {
@@ -213,7 +214,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
           attachGrowth(world, kind, x, y, z);
           if (store.gameplayMode === 'survival') changeInventory(kind, -1);
         }
-        store.setNotice(`${cropDefinition(kind).name} planted. The crop will be ready in 24 seconds.`);
+        store.setNotice(translate(`${cropDefinition(kind).name} planté. La récolte sera prête dans 24 secondes.`, `${cropDefinition(kind).name} planted. The crop will be ready in 24 seconds.`));
         return;
       }
       const facing = isLadder(kind)

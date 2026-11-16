@@ -4,6 +4,7 @@ import { useTrait } from 'koota/react';
 import type { Entity } from 'koota';
 import { CanvasTexture, Group, SRGBColorSpace, Sprite } from 'three';
 import { AnimalLove, AnimalTame } from '../game/traits';
+import { translate } from '../game/language';
 
 function drawHeart(context: CanvasRenderingContext2D, x: number, y: number, size: number) {
   context.beginPath();
@@ -61,7 +62,7 @@ export function AnimalFriendship({ entity }: { entity: Entity }) {
     context.fillStyle = '#ffffff';
     context.font = 'bold 38px sans-serif';
     context.textBaseline = 'middle';
-    context.fillText(`Friendship ${tame.friendship} · ${tame.happiness}%`, 108, 58);
+    context.fillText(translate(`Amitié ${tame.friendship} · ${tame.happiness} %`, `Friendship ${tame.friendship} · ${tame.happiness}%`), 108, 58);
     label.map.needsUpdate = true;
   }, [label, tame?.tamed, tame?.friendship, tame?.happiness]);
 

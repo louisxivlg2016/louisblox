@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { World } from 'koota';
 import { setVoxelText } from './chunks';
 import { useGameStore } from './store';
+import { translate } from './language';
 
 export const MAX_SIGN_LENGTH = 120;
 
@@ -29,5 +30,5 @@ export function saveSign(world: World, position: SignPosition, text: string) {
   const value = cleanSignText(text);
   setVoxelText(world, position, value);
   useSignStore.getState().closeSign();
-  useGameStore.getState().setNotice('Sign saved.');
+  useGameStore.getState().setNotice(translate('Panneau enregistré.', 'Sign saved.'));
 }

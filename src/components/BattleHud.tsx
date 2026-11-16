@@ -5,6 +5,7 @@ import { clearInput, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 import { MatchResultActions } from './MatchResultActions';
+import { translate } from '../game/language';
 
 export function BattleHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
@@ -41,17 +42,17 @@ export function BattleHud() {
       playerId,
       team: playerTeam,
       kills: playerScores[playerId] ?? 0,
-      name: playerId === localPlayerId ? 'You' : playerNames[playerId] ?? 'Player',
+      name: playerId === localPlayerId ? translate('Toi', 'You') : playerNames[playerId] ?? translate('Joueur', 'Player'),
     }))
     .sort((a, b) => b.kills - a.kills || a.name.localeCompare(b.name));
   return (
     <>
-      <div className={`battle-scoreboard${freeForAll ? ' free-for-all' : ''}`} aria-label="Combat score">
-        {showTeams && <span className="battle-red">Red · {scores.red}</span>}
-        <strong>COMBAT</strong>
-        {showTeams && <span className="battle-blue">Blue · {scores.blue}</span>}
+      <div className={`battle-scoreboard${freeForAll ? ' free-for-all' : ''}`} aria-label={translate('Score de la bataille', 'Combat score')}>
+        {showTeams && <span className="battle-red">{translate('Rouge', 'Red')} · {scores.red}</span>}
+        <strong>{translate('BATAILLE', 'COMBAT')}</strong>
+        {showTeams && <span className="battle-blue">{translate('Bleu', 'Blue')} · {scores.blue}</span>}
         {freeForAll && (
-          <ol className="battle-ranking" aria-label="Each player’s score">
+          <ol className="battle-ranking" aria-label={translate('Score de chaque joueur', 'Each player’s score')}>
             {ranking.map((player) => (
               <li
                 key={player.playerId}
@@ -68,21 +69,21 @@ export function BattleHud() {
         <div className="battle-team-picker">
           {ready ? (
             <>
-              <strong>Choose your team</strong><span>Red/Blue teams · 1 player = 1 team, as many teams as players</span>
+              <strong>{translate('Choisis ton équipe', 'Choose your team')}</strong><span>{translate('Rouge/Bleu en groupe · 1 joueur = 1 équipe, autant d’équipes que de joueurs', 'Red/Blue teams · 1 player = 1 team, as many teams as players')}</span>
               <div>
-                <button className="battle-red" aria-pressed="false" onClick={() => selectTeam('red')}>Red · {redCount}</button>
-                <button className="battle-blue" aria-pressed="false" onClick={() => selectTeam('blue')}>Blue · {blueCount}</button>
+                <button className="battle-red" aria-pressed="false" onClick={() => selectTeam('red')}>{translate('Rouge', 'Red')} · {redCount}</button>
+                <button className="battle-blue" aria-pressed="false" onClick={() => selectTeam('blue')}>{translate('Bleu', 'Blue')} · {blueCount}</button>
               </div>
-              <button className="battle-solo" aria-pressed="false" onClick={() => selectTeam('solo')}>My own team · {soloCount}</button>
+              <button className="battle-solo" aria-pressed="false" onClick={() => selectTeam('solo')}>{translate('Ma propre équipe', 'My own team')} · {soloCount}</button>
             </>
-          ) : <strong role="status">Preparing arena…</strong>}
+          ) : <strong role="status">{translate('Préparation de l’arène…', 'Preparing arena…')}</strong>}
         </div>
       )}
       <div className="battle-events" aria-live="polite">
-        {events.map((event) => <p key={event.id}><strong>{event.killerName}</strong> eliminated <strong>{event.victimName}</strong></p>)}
+        {events.map((event) => <p key={event.id}><strong>{event.killerName}</strong>{translate(' a éliminé ', ' eliminated ')}<strong>{event.victimName}</strong></p>)}
       </div>
-      {deadUntil > 0 && <div className="battle-death">Eliminated!<span>{isIndividualBattleTeam(team) ? 'Respawning in arena…' : 'Respawning at your base…'}</span></div>}
-      {winner && <div className="pirate-winner">{isIndividualBattleTeam(winner) ? `${playerNames[winner.slice(5)] ?? 'a player'} wins!` : `The ${winner === 'red' ? 'red' : 'blue'} team wins!`}<MatchResultActions /></div>}
+      {deadUntil > 0 && <div className="battle-death">{translate('Éliminé !', 'Eliminated!')}<span>{isIndividualBattleTeam(team) ? translate('Réapparition dans l’arène…', 'Respawning in arena…') : translate('Réapparition à ta base…', 'Respawning at your base…')}</span></div>}
+      {winner && <div className="pirate-winner">{isIndividualBattleTeam(winner) ? `${playerNames[winner.slice(5)] ?? translate('un joueur', 'a player')} wins!` : `The ${winner === 'red' ? 'red' : 'blue'} team wins!`}<MatchResultActions /></div>}
     </>
   );
 }

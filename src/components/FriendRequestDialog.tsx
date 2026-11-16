@@ -3,6 +3,7 @@ import { acceptFriendRequest, useFriendStore } from '../game/friends';
 import { clearInput, requestPlay } from '../game/input';
 import { useGameStore } from '../game/store';
 import { ProfileAvatar } from './ProfileAvatar';
+import { translate } from '../game/language';
 
 export function FriendRequestDialog() {
   const request = useFriendStore((state) => state.requests[0]);
@@ -50,7 +51,7 @@ export function FriendRequestDialog() {
         <p>wants to be your friend.</p>
         <div className="teleport-request-actions">
           <button className="primary-button" disabled={pending} aria-label={`Accept ${player.name}`} onClick={accept}>{pending ? 'Accepting…' : 'Accept'}</button>
-          <button className="secondary-button" disabled={pending} aria-label={`Decline ${player.name}`} onClick={refuse}>Decline</button>
+          <button className="secondary-button" disabled={pending} aria-label={`Decline ${player.name}`} onClick={refuse}>{translate('Refuser', 'Decline')}</button>
         </div>
       </section>
     </div>

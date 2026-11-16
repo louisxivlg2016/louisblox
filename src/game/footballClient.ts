@@ -9,6 +9,7 @@ import { useRemotePlayerStore } from './multiplayerStore';
 import { Player, PlayerPosition, PlayerState } from './traits';
 import { world } from './world';
 import { playWhistle, playSound } from './audio';
+import { translate } from './language';
 
 export type FootballTeam = 'red' | 'blue';
 export type FootballPhase = 'waiting' | 'countdown' | 'running' | 'restart' | 'penalty' | 'finished';
@@ -30,7 +31,7 @@ type FootballState = {
   whistleToken: number;
 };
 
-const initial: FootballState = { phase: 'waiting', phaseUntil: 0, endsAt: 0, score: { red: 0, blue: 0 }, ball: { x: 0, y: 9, z: 0, vx: 0, vy: 0, vz: 0 }, overtime: false, winner: null, cards: {}, penaltyTeam: null, penaltyShooterId: null, restartPlayerId: null, notice: 'Choose your team', whistleToken: 0 };
+const initial: FootballState = { phase: 'waiting', phaseUntil: 0, endsAt: 0, score: { red: 0, blue: 0 }, ball: { x: 0, y: 9, z: 0, vx: 0, vy: 0, vz: 0 }, overtime: false, winner: null, cards: {}, penaltyTeam: null, penaltyShooterId: null, restartPlayerId: null, notice: translate('Choisis ton équipe', 'Choose your team'), whistleToken: 0 };
 export const useFootballStore = create<FootballState>(() => ({ ...initial, score: { ...initial.score }, ball: { ...initial.ball }, cards: {} }));
 let socket: WebSocket | null = null;
 let lastWhistle = 0;

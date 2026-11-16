@@ -9,29 +9,30 @@ import oceanUrl from '../../assets/vitraux/ocean-lisse.webp';
 import violetUrl from '../../assets/vitraux/violet-lisse.webp';
 import rainbowUrl from '../../assets/vitraux/rainbow-lisse.webp';
 import doveUrl from '../../assets/vitraux/dove-lisse.webp';
+import { translate } from './language';
 
 export type VitrailDesign = { name: string; url: string };
-const designs: Partial<Record<BlockKind, VitrailDesign>> = {
+const designs = (): Partial<Record<BlockKind, VitrailDesign>> => ({
   [BlockKind.GlassWhite]: { name: 'Roses', url: roseUrl },
   [BlockKind.GlassOrange]: { name: 'Soleil', url: sunUrl },
-  [BlockKind.GlassMagenta]: { name: 'Arc-en-ciel', url: rainbowUrl },
-  [BlockKind.GlassLightBlue]: { name: 'Ocean', url: oceanUrl },
+  [BlockKind.GlassMagenta]: { name: translate('Arc-en-ciel', 'Rainbow'), url: rainbowUrl },
+  [BlockKind.GlassLightBlue]: { name: translate('Océan', 'Ocean'), url: oceanUrl },
   [BlockKind.GlassYellow]: { name: 'Soleil', url: sunUrl },
-  [BlockKind.GlassLime]: { name: 'Forest', url: forestUrl },
+  [BlockKind.GlassLime]: { name: translate('Forêt', 'Forest'), url: forestUrl },
   [BlockKind.GlassPink]: { name: 'Roses', url: roseUrl },
-  [BlockKind.GlassGray]: { name: 'Geometry', url: geometricUrl },
-  [BlockKind.GlassLightGray]: { name: 'Colombe', url: doveUrl },
-  [BlockKind.GlassCyan]: { name: 'Ocean', url: oceanUrl },
-  [BlockKind.GlassPurple]: { name: 'Purple Night', url: violetUrl },
-  [BlockKind.GlassBlue]: { name: 'Ocean', url: oceanUrl },
-  [BlockKind.GlassBrown]: { name: 'Forest', url: forestUrl },
-  [BlockKind.GlassGreen]: { name: 'Forest', url: forestUrl },
+  [BlockKind.GlassGray]: { name: translate('Géométrie', 'Geometry'), url: geometricUrl },
+  [BlockKind.GlassLightGray]: { name: translate('Colombe', 'Dove'), url: doveUrl },
+  [BlockKind.GlassCyan]: { name: translate('Océan', 'Ocean'), url: oceanUrl },
+  [BlockKind.GlassPurple]: { name: translate('Nuit violette', 'Purple Night'), url: violetUrl },
+  [BlockKind.GlassBlue]: { name: translate('Océan', 'Ocean'), url: oceanUrl },
+  [BlockKind.GlassBrown]: { name: translate('Forêt', 'Forest'), url: forestUrl },
+  [BlockKind.GlassGreen]: { name: translate('Forêt', 'Forest'), url: forestUrl },
   [BlockKind.GlassRed]: { name: 'Roses', url: roseUrl },
-  [BlockKind.GlassBlack]: { name: 'Purple Night', url: violetUrl },
-};
+  [BlockKind.GlassBlack]: { name: translate('Nuit violette', 'Purple Night'), url: violetUrl },
+});
 
 export function getVitrailDesign(kind: BlockKind) {
-  return designs[kind];
+  return designs()[kind];
 }
 
 const textures = new Map<BlockKind, Texture>();

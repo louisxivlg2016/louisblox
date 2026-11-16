@@ -10,23 +10,24 @@ import { world } from '../game/world';
 import { MAX_HOMES, NO_HOMES, useHomeStore } from '../game/homes';
 import type { Home } from '../game/homes';
 import { teleportToHome } from '../game/teleport';
+import { translate } from '../game/language';
 
 const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'jungle', 'prairie', 'desert'];
 const RUINS: Array<{ type: RuinType; name: string }> = [
-  { type: 'church', name: 'Ruined church' },
-  { type: 'palace', name: 'Ruined palace' },
-  { type: 'fort', name: 'Ruined castle' },
+  { type: 'church', name: translate('Église en ruines', 'Ruined church') },
+  { type: 'palace', name: translate('Palais en ruines', 'Ruined palace') },
+  { type: 'fort', name: translate('Château fort en ruines', 'Ruined castle') },
 ];
 const CITY_DESTINATIONS = {
   modern: [
-    { name: 'Glass skyscraper', x: 28, y: 5.51, z: 0 },
-    { name: 'Villas with pool', x: 28, y: 5.51, z: 160 },
-    { name: 'Beach', x: 28, y: 5.51, z: 195 },
+    { name: translate('Gratte-ciel de verre', 'Glass skyscraper'), x: 28, y: 5.51, z: 0 },
+    { name: translate('Villas avec piscine', 'Villas with pool'), x: 28, y: 5.51, z: 160 },
+    { name: translate('Plage', 'Beach'), x: 28, y: 5.51, z: 195 },
   ],
   ancient: [
-    { name: 'Church', x: 28, y: 5.51, z: -56 },
-    { name: 'Historic district', x: 0, y: 5.51, z: 28 },
-    { name: 'Central square', x: 0, y: 5.51, z: 0 },
+    { name: translate('Église', 'Church'), x: 28, y: 5.51, z: -56 },
+    { name: translate('Quartier historique', 'Historic district'), x: 0, y: 5.51, z: 28 },
+    { name: translate('Place centrale', 'Central square'), x: 0, y: 5.51, z: 0 },
   ],
 } as const;
 
@@ -77,14 +78,14 @@ export function TeleportPanel() {
   return (
     <div className="teleport-panel">
       <div className="teleport-heading">
-        <strong>Teleport</strong>
-        <button type="button" className="teleport-close" onPointerDown={(event) => { if (event.pointerType === 'touch') { event.preventDefault(); event.stopPropagation(); close(); } }} onClick={close} aria-label="Close teleportation">Close <span aria-hidden="true">×</span></button>
+        <strong>{translate('Se téléporter', 'Teleport')}</strong>
+        <button type="button" className="teleport-close" onPointerDown={(event) => { if (event.pointerType === 'touch') { event.preventDefault(); event.stopPropagation(); close(); } }} onClick={close} aria-label={translate('Fermer la téléportation', 'Close teleportation')}>{translate('Fermer', 'Close')} <span aria-hidden="true">×</span></button>
       </div>
       {cityDestinations ? cityDestinations.map((destination) => (
         <button key={destination.name} onClick={() => travelToCity(destination)}>{destination.name}</button>
       )) : <>
         {DESTINATIONS.map((biome) => (
-          <button key={biome} onClick={() => travel(biome)}>{BIOME_NAMES[biome]}</button>
+          <button key={biome} onClick={() => travel(biome)}>{BIOME_NAMES()[biome]}</button>
         ))}
         {RUINS.map((ruin) => (
           <button key={ruin.type} onClick={() => travelToRuin(ruin.type)}>{ruin.name}</button>
@@ -93,13 +94,13 @@ export function TeleportPanel() {
       <div className="home-destinations">
         <strong>Mes maisons ({homes.length} / {MAX_HOMES})</strong>
         {homes.map((home) => <button key={home.id} className="home-destination" onClick={() => travelHome(home)}>{home.name}</button>)}
-        <button className="home-manage-button" onClick={manageHomes}>Create or manage my homes · M</button>
+        <button className="home-manage-button" onClick={manageHomes}>{translate('Créer ou gérer mes maisons · M', 'Create or manage my homes · M')}</button>
       </div>
       {enabled && online && (
         <div className="player-teleport">
-          <strong>Ask to join a player</strong>
+          <strong>{translate('Demander à rejoindre un joueur', 'Ask to join a player')}</strong>
           {players.filter((player) => !player.self).length === 0 ? (
-            <span className="teleport-empty">No other players in this room.</span>
+            <span className="teleport-empty">{translate('Aucun autre joueur dans ce salon.', 'No other players in this room.')}</span>
           ) : players.filter((player) => !player.self).map((player) => (
             <button
               key={player.playerId}
@@ -107,7 +108,7 @@ export function TeleportPanel() {
               disabled={Boolean(outgoing)}
               onClick={() => requestPlayerTeleport(player.playerId, player.name)}
             >
-              {outgoing?.playerId === player.playerId ? 'Request sent…' : `Join ${player.name}`}
+              {outgoing?.playerId === player.playerId ? translate('Demande envoyée…', 'Request sent…') : `Join ${player.name}`}
             </button>
           ))}
           {notice && <span className="teleport-request-status" role="status">{notice}</span>}
@@ -123,12 +124,12 @@ export function TeleportRequestDialog() {
   return (
     <div className="menu-backdrop teleport-request-backdrop">
       <section className="menu-panel teleport-request-panel" role="dialog" aria-modal="true" aria-labelledby="teleport-request-title">
-        <p className="eyebrow">TELEPORT REQUEST</p>
+        <p className="eyebrow">{translate('DEMANDE DE TÉLÉPORTATION', 'TELEPORT REQUEST')}</p>
         <h2 id="teleport-request-title">{incoming.name}</h2>
-        <p>wants to teleport to you.</p>
+        <p>{translate('souhaite se téléporter jusqu’à toi.', 'wants to teleport to you.')}</p>
         <div className="teleport-request-actions">
-          <button className="primary-button" onClick={() => respondToTeleportRequest(true)}>Accept</button>
-          <button className="secondary-button" onClick={() => respondToTeleportRequest(false)}>Decline</button>
+          <button className="primary-button" onClick={() => respondToTeleportRequest(true)}>{translate('Accepter', 'Accept')}</button>
+          <button className="secondary-button" onClick={() => respondToTeleportRequest(false)}>{translate('Refuser', 'Decline')}</button>
         </div>
       </section>
     </div>

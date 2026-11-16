@@ -1,5 +1,6 @@
 import { BlockKind } from './voxel';
 import type { ItemKind } from './items';
+import { translate } from './language';
 
 export type CropDefinition = {
   name: string;
@@ -10,8 +11,8 @@ export type CropDefinition = {
 };
 
 export const CROP_DEFINITIONS: Record<number, CropDefinition> = {
-  [BlockKind.Corn]: { name: 'Corn', food: 'corn', yield: 2, regrows: true, growthTime: 8 },
-  [BlockKind.Wheat]: { name: 'Wheat', food: 'wheat', yield: 3, regrows: false, growthTime: 8 },
+  [BlockKind.Corn]: { name: translate('Maïs', 'Corn'), food: 'corn', yield: 2, regrows: true, growthTime: 8 },
+  [BlockKind.Wheat]: { name: translate('Blé', 'Wheat'), food: 'wheat', yield: 3, regrows: false, growthTime: 8 },
   [BlockKind.Tomato]: { name: 'Tomates', food: 'tomato', yield: 3, regrows: true, growthTime: 8 },
   [BlockKind.Carrot]: { name: 'Carottes', food: 'carrot', yield: 3, regrows: false, growthTime: 8 },
 };
