@@ -5,11 +5,9 @@ import { sendTribe, useTribeStore } from '../game/tribes';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { playerIdentity } from '../game/playerIdentity';
 import { usePlaneTitleStore } from '../game/planeTitle';
-import { useLanguageStore, translate } from '../game/language';
+import { translate } from '../game/language';
 
 export function SettingsPanel() {
-  const language = useLanguageStore((state) => state.language);
-  const setLanguage = useLanguageStore((state) => state.setLanguage);
   const [name, setName] = useState(translate('Ma tribu', 'My Tribe'));
   const planeTitle = usePlaneTitleStore((state) => state.title);
   const setPlaneTitle = usePlaneTitleStore((state) => state.setTitle);
@@ -27,13 +25,6 @@ export function SettingsPanel() {
         <h2>{translate('Réglages', 'Settings')}</h2>
         <p>{translate('Retrouve ici les informations du monde et les touches de jeu.', 'Find world information and game controls here.')}</p>
       </div>
-      <section className="settings-tribe" aria-label="Language / Langue">
-        <h3>Language / Langue</h3>
-        <div className="language-switch" role="group" aria-label="Language / Langue">
-          <button type="button" className={language === 'fr' ? 'active' : ''} aria-pressed={language === 'fr'} onClick={() => setLanguage('fr')}>FR</button>
-          <button type="button" className={language === 'en' ? 'active' : ''} aria-pressed={language === 'en'} onClick={() => setLanguage('en')}>EN</button>
-        </div>
-      </section>
       <WorldStats />
       <section className="settings-tribe" aria-label={translate('Titre de l’avion', 'Airplane Title')}>
         <h3>{translate('Titre de l’avion', 'Airplane Title')}</h3>

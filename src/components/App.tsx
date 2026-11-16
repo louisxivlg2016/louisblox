@@ -17,6 +17,7 @@ import { BlockKind, voxelKey } from '../game/voxel';
 import { buildChunkGeometry } from '../game/chunkGeometry';
 import { droppedItemSystem } from '../game/droppedItems';
 import { useLanguageStore } from '../game/language';
+import { LanguagePanel } from './LanguagePanel';
 
 export function App() {
   useLanguageStore((state) => state.language);
@@ -58,6 +59,7 @@ export function App() {
           <Game />
         </Canvas>
         <Hud />
+        <LanguagePanel />
       </WorldProvider>
     </main>
   );

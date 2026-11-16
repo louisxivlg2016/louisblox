@@ -17,7 +17,7 @@ function VehicleView({ entity }: { entity: Entity }) {
   const kind = vehicle?.kind ?? 'car';
   const remoteOccupant = useRemotePlayerStore((state) => Object.values(state.players).some((player) => player.mounted === true && player.vehicleId === vehicle?.id));
   const showOccupants = mount?.vehicle === entity || remoteOccupant;
-  const showInterior = mount?.vehicle === entity || (kind !== 'plane' && playerPosition && position.distanceTo(playerPosition) < 16);
+  const showInterior = mount?.vehicle === entity || (kind !== 'plane' && kind !== 'train' && kind !== 'metro' && playerPosition && position.distanceTo(playerPosition) < 16);
   return (
     <group
       ref={(group) => {
