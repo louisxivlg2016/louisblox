@@ -13,6 +13,11 @@ import whistleUrl from '../../son/siflet.mp3';
 import fireSirenUrl from '../../son/sirene-de-pompier.mp3';
 import policeSirenUrl from '../../son/sirene-de-police.mp3';
 import breakBlockUrl from '../../son/son-de-casse-un-bloc.mp3';
+import breakDirtUrl from '../../son/casse-un-bloc-de-terre.mp3';
+import vehicleCarUrl from '../../son-de-voiture.mp3';
+import vehicleTrainUrl from '../../son/train-moderne.mp3';
+import vehicleMetroUrl from '../../son/train-metro.mp3';
+import vehiclePlaneUrl from '../../son/avion.mp3';
 import breakGlassUrl from '../../son/casse-du-verre.mp3';
 import breakWoodUrl from '../../son/casse-du-bois.mp3';
 import gunshotUrl from '../../son/tire-de-fusil.mp3';
@@ -37,7 +42,8 @@ import type { AnimalKind } from './animals';
 import type { Entity } from 'koota';
 import type { GameplayMode } from './worldMode';
 import type { World } from 'koota';
-import { Fire, FirePosition, Player, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
+import { Fire, FirePosition, Player, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, VehicleMotion } from './traits';
+import type { VehicleKind } from './vehicleTypes';
 import { getSwimState } from './swimming';
 import { getBlockIndex } from './chunks';
 import { translate } from './language';
@@ -125,7 +131,7 @@ export function initAudio() {
   });
 }
 
-export type SoundEffect = 'whistle' | 'fireSiren' | 'policeSiren' | 'breakBlock' | 'breakGlass' | 'breakWood' | 'gunshot' | 'ball' | 'explosion' | 'fire' | 'eat' | 'walk' | 'placeBlock' | 'waterSplash'
+export type SoundEffect = 'whistle' | 'fireSiren' | 'policeSiren' | 'breakBlock' | 'breakDirt' | 'breakGlass' | 'breakWood' | 'vehicleCar' | 'vehicleTrain' | 'vehicleMetro' | 'vehiclePlane' | 'gunshot' | 'ball' | 'explosion' | 'fire' | 'eat' | 'walk' | 'placeBlock' | 'waterSplash'
   | 'animal_duck' | 'animal_horse' | 'animal_pig' | 'animal_sheep' | 'animal_cow' | 'animal_elephant' | 'animal_ocelot' | 'animal_wolf' | 'animal_bear' | 'animal_chicken';
 
 const soundUrls: Record<SoundEffect, string> = {
@@ -133,6 +139,11 @@ const soundUrls: Record<SoundEffect, string> = {
   fireSiren: fireSirenUrl,
   policeSiren: policeSirenUrl,
   breakBlock: breakBlockUrl,
+  breakDirt: breakDirtUrl,
+  vehicleCar: vehicleCarUrl,
+  vehicleTrain: vehicleTrainUrl,
+  vehicleMetro: vehicleMetroUrl,
+  vehiclePlane: vehiclePlaneUrl,
   breakGlass: breakGlassUrl,
   breakWood: breakWoodUrl,
   gunshot: gunshotUrl,
@@ -222,7 +233,7 @@ export function stopAnimalSound(entity: Entity) {
   animalAudio.delete(entity);
 }
 
-export function setLoopSound(name: Extract<SoundEffect, 'walk' | 'fire' | 'fireSiren' | 'policeSiren'>, active: boolean, volume = 0.3) {
+export function setLoopSound(name: Extract<SoundEffect, 'walk' | 'fire' | 'fireSiren' | 'policeSiren' | 'vehicleCar' | 'vehicleTrain' | 'vehicleMetro' | 'vehiclePlane'>, active: boolean, volume = 0.3) {
   const current = loops.get(name);
   if (!active) {
     activeLoops.delete(name);
@@ -255,12 +266,29 @@ export function playWhistle(kind: 'short' | 'long' | 'goal' = 'short') {
   playSound('whistle', kind === 'long' ? 0.6 : 0.45);
 }
 
+const drivingSounds: Partial<Record<VehicleKind, { sound: 'vehicleCar' | 'vehicleTrain' | 'vehicleMetro' | 'vehiclePlane'; volume: number }>> = {
+  car: { sound: 'vehicleCar', volume: 0.3 },
+  jeep: { sound: 'vehicleCar', volume: 0.3 },
+  police: { sound: 'vehicleCar', volume: 0.3 },
+  firetruck: { sound: 'vehicleCar', volume: 0.3 },
+  train: { sound: 'vehicleTrain', volume: 0.3 },
+  metro: { sound: 'vehicleMetro', volume: 0.3 },
+  plane: { sound: 'vehiclePlane', volume: 0.34 },
+};
+
 export function updateAmbientSounds(world: World, playing: boolean) {
   const playerEntity = world.queryFirst(Player);
   const position = playerEntity?.get(PlayerPosition);
   const state = playerEntity?.get(PlayerState);
   const velocity = playerEntity?.get(PlayerVelocity);
-  const mounted = playerEntity?.get(PlayerMount)?.vehicle;
+  const mount = playerEntity?.get(PlayerMount);
+  const mounted = mount?.vehicle;
+  const driving = playing && mount?.role === 'driver' && mounted && Math.abs(mounted.get(VehicleMotion)?.speed ?? 0) > 0.03 ? mount.kind : null;
+  for (const kind of ['car', 'train', 'metro', 'plane'] as const) {
+    const definition = drivingSounds[kind]!;
+    const active = driving !== null && drivingSounds[driving as VehicleKind]?.sound === definition.sound;
+    setLoopSound(definition.sound, active, definition.volume);
+  }
   const walking = Boolean(playing && position && state?.grounded && !state.flying && !mounted && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
   setLoopSound('walk', walking, 0.32);
   let nearestFire = Infinity;

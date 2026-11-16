@@ -117,7 +117,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         removeVoxel(world, hit);
         if (store.gameplayMode === 'survival') dropBlock(world, hit.block);
       }
-      playSound(isGlass(hit.block.kind) ? 'breakGlass' : isWoodBlock(hit.block.kind) ? 'breakWood' : 'breakBlock', 0.5);
+      playSound(hit.block.kind === BlockKind.Dirt || hit.block.kind === BlockKind.Sand ? 'breakDirt' : isGlass(hit.block.kind) ? 'breakGlass' : isWoodBlock(hit.block.kind) ? 'breakWood' : 'breakBlock', 0.5);
       target.visible = false;
       target.miningKey = '';
       target.miningProgress = 0;
