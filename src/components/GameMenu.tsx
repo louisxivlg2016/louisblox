@@ -41,6 +41,7 @@ import citiesEnUrl from '../../assets/menu/english/built-city.webp';
 import citiesEsUrl from '../../assets/menu/spanish/ciudad-contruida.webp';
 import gameIconUrl from '../../assets/icons/louisblox-icon3.jpeg';
 import { useLanguageStore, translate } from '../game/language';
+import { LanguagePanel } from './LanguagePanel';
 
 type ModeCard = {
   mode: GameplayMode;
@@ -160,6 +161,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const soloModeBlocked = !enabled && isMultiplayerOnlyMode(currentMode);
   return (
     <div className="menu-screen">
+      <LanguagePanel />
       <div className="menu-layout">
         <aside className="menu-sidebar">
           <div className="menu-brand"><img className="menu-brand-icon" src={gameIconUrl} alt="LouisBlox" /><div><strong>LOUISBLOX</strong><small>{translate('Joue, construis, partage.', 'Play, build, share.')}</small></div></div>

@@ -12,6 +12,7 @@ import { generateMazeChunk, mazeSpawn } from './maze';
 import type { GameplayMode } from './worldMode';
 import { isCityMode, isMinigameMode } from './worldMode';
 import { generateCityChunk } from './cities';
+import { spawnCountrysideAnimals } from './countryside';
 import { generateVillageBlocks } from './villages';
 import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnChunkFish } from './fish';
@@ -80,6 +81,7 @@ type WorldChunks = {
   saddledHorses: SavedHorse[];
   traderSnapshots: Map<string, SavedTrader>;
   streamCenter: string | null;
+  cameraChunk: string | null;
   streamOrder: Array<{ x: number; z: number }>;
   batchDepth: number;
   pendingRevisions: Set<Entity>;
@@ -263,7 +265,7 @@ function editsFor(state: WorldChunks, cx: number, cz: number) {
   return edits;
 }
 
-function loadChunk(world: World, cx: number, cz: number) {
+export function loadChunk(world: World, cx: number, cz: number) {
   const state = stateFor(world);
   const key = chunkKey(cx, cz);
   if (state.chunks.has(key)) return;
@@ -302,7 +304,8 @@ function loadChunk(world: World, cx: number, cz: number) {
     state.blocks.set(voxelKey(block.x, block.y, block.z), block);
     indexBlock(state, block);
   }
-  data.animals = isMinigameMode(mode) || isCityMode(mode) || template === 'custom' && customWorld?.terrain === 'flat' ? [] : spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
+  const countryside = template === 'city-ancient' && Math.max(Math.abs(cx * 16 + 8), Math.abs(cz * 16 + 8)) > 240;
+  data.animals = countryside ? spawnCountrysideAnimals(world, cx, cz, state.seed) : isMinigameMode(mode) || isCityMode(mode) || template === 'custom' && customWorld?.terrain === 'flat' ? [] : spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
   for (const animal of data.animals) {
     const trader = animal.get(Trader);
     if (!trader?.villager) continue;
@@ -341,11 +344,21 @@ function loadChunk(world: World, cx: number, cz: number) {
   touchNeighbors(state, cx, cz);
 }
 
+export function loadChunkForCamera(world: World, cx: number, cz: number) {
+  const state = stateFor(world);
+  state.cameraChunk = chunkKey(cx, cz);
+  loadChunk(world, cx, cz);
+}
+
+export function releaseCameraChunk(world: World) {
+  stateFor(world).cameraChunk = null;
+}
+
 function unloadChunk(world: World, entity: Entity) {
   const state = stateFor(world);
   const chunk = entity.get(Chunk);
   const data = entity.get(ChunkData);
-  if (!chunk || !data) return;
+  if (!chunk || !data || state.cameraChunk === chunkKey(chunk.x, chunk.z)) return;
 
   for (const block of data.blocks) {
     state.blocks.delete(voxelKey(block.x, block.y, block.z));
@@ -672,6 +685,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     saddledHorses: restore?.saddledHorses ?? [],
     traderSnapshots: new Map(),
     streamCenter: null,
+    cameraChunk: null,
     streamOrder: [],
     batchDepth: 0,
     pendingRevisions: new Set(),

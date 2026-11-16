@@ -47,6 +47,13 @@ function attachGrowth(world: World, kind: BlockKind, x: number, y: number, z: nu
   }
 }
 
+export function miningTarget(blocks: ReadonlyMap<string, import('../voxel').Voxel>, currentHit: VoxelHit | null, target: { miningKey: string; normal: { x: number; y: number; z: number } }, mouseDown: boolean) {
+  if (!mouseDown || !target.miningKey) return currentHit;
+  const [x, y, z] = target.miningKey.split(',').map(Number);
+  const block = blocks.get(target.miningKey);
+  return block ? { block, x, y, z, normal: { ...target.normal }, distance: 0 } : currentHit;
+}
+
 export function blockSystem(world: World, camera: Camera, dt: number, disabled = false, pendingActions?: { place: number; harvest: number; interact?: number }) {
   const playerEntity = world.queryFirst(Player);
   const targetEntity = world.queryFirst(BlockTarget);
@@ -71,7 +78,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     return;
   }
   if (store.blockCount !== allBlocks.size) store.setBlockCount(allBlocks.size);
-  const hit = raycastVoxel(blocks, origin, direction, 6, store.gameplayMode === 'pirates' || typeof store.selected === 'number' || store.selected === 'bucket' || store.selected === 'empty_bucket');
+  const hit = miningTarget(blocks, raycastVoxel(blocks, origin, direction, 6, store.gameplayMode === 'pirates' || typeof store.selected === 'number' || store.selected === 'bucket' || store.selected === 'empty_bucket'), target, isMouseDown(0));
 
   target.visible = hit !== null;
   if (hit) {

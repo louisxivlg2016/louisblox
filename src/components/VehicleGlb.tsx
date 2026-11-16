@@ -1,6 +1,6 @@
 import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Box3, DataTexture, Mesh, NearestFilter, RepeatWrapping, RGBAFormat, Vector3 } from 'three';
+import { Box3, BoxGeometry, DataTexture, Mesh, MeshLambertMaterial, NearestFilter, RepeatWrapping, RGBAFormat, Vector3 } from 'three';
 import raceCarUrl from '../../assets/models/raceCar.glb';
 import blueCarUrl from '../../assets/models/blueCar.glb';
 import airplaneUrl from '../../assets/models/airplane.glb';
@@ -52,12 +52,18 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'm
     clone.name = modelKind;
     clone.traverse((object) => {
       if (!(object instanceof Mesh)) return;
+      const partName = object.name.replaceAll('_', ' ').toLowerCase();
       object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) {
         material.transparent = false;
         material.opacity = 1;
         material.depthWrite = true;
+        if (modelKind === 'blueCar' && partName === 'front windshield') {
+          material.transparent = true;
+          material.opacity = 0.28;
+          material.depthWrite = false;
+        }
         if (modelKind === 'blueCar' && !material.map) material.map = bluePixelTexture;
         if (!material.map) continue;
         material.map.magFilter = NearestFilter;
@@ -65,7 +71,21 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'm
         material.map.generateMipmaps = false;
         material.map.needsUpdate = true;
       }
+      if (modelKind === 'blueCar' && partName.startsWith('dark bumper')) object.scale.y *= 0.45;
     });
+    if (modelKind === 'blueCar') {
+      const glass = new MeshLambertMaterial({ color: '#9fd3e5', transparent: true, opacity: 0.28, depthWrite: false });
+      for (const side of [-1, 1]) {
+        const window = new Mesh(new BoxGeometry(0.035, 1.05, 2.35), glass);
+        window.name = 'blue-side-window';
+        window.position.set(side * 1.46, 2.42, 0);
+        clone.add(window);
+      }
+      const rear = new Mesh(new BoxGeometry(2.75, 1.05, 0.035), glass);
+      rear.name = 'blue-rear-window';
+      rear.position.set(0, 2.42, -1.29);
+      clone.add(rear);
+    }
     const uniformScale = modelKind === 'metro' || modelKind === 'train';
     const targetLength = modelKind === 'train' ? TRAIN_LENGTH : METRO_LENGTH;
     if (modelKind === 'raceCar') clone.rotation.y = Math.PI / 2;

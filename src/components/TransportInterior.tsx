@@ -25,6 +25,15 @@ function Person({ position, color, worker = false }: { position: [number, number
   );
 }
 
+function WindowPart({ position, size }: { position: [number, number, number]; size: [number, number, number] }) {
+  return (
+    <mesh position={position} name="cabin-window">
+      <boxGeometry args={size} />
+      <meshLambertMaterial color="#a9d3e2" transparent opacity={0.2} depthWrite={false} />
+    </mesh>
+  );
+}
+
 function CabinShell({ cabin, showFloor = true }: { cabin: CabinDefinition; showFloor?: boolean }) {
   const length = cabin.rear - cabin.front;
   const middle = (cabin.rear + cabin.front) / 2;
@@ -36,7 +45,7 @@ function CabinShell({ cabin, showFloor = true }: { cabin: CabinDefinition; showF
       {[-1, 1].map((side) => (
         <mesh key={side} position={[side * (cabin.halfWidth + 0.12), cabin.floor + height / 2, middle]}>
           <boxGeometry args={[0.2, height, length + 0.4]} />
-          <meshLambertMaterial color="#cfdae0" />
+          <meshLambertMaterial color="#a9d3e2" transparent opacity={0.2} depthWrite={false} />
         </mesh>
       ))}
       {[-1, 1].map((side) => <PixelPart key={side} position={[side * (cabin.halfWidth + 0.12), cabin.floor + height / 2, cabin.front - 0.1]} size={[0.16, height, 0.2]} color="#a9b9c4" />)}
@@ -44,7 +53,7 @@ function CabinShell({ cabin, showFloor = true }: { cabin: CabinDefinition; showF
       <PixelPart position={[0, cabin.floor + 0.22, cabin.front - 0.1]} size={[cabin.halfWidth * 2 + 0.4, 0.44, 0.2]} color="#a9b9c4" />
       <mesh name="plane-windshield" position={[0, cabin.floor + height * 0.56, cabin.front - 0.115]}>
         <boxGeometry args={[cabin.halfWidth * 2 + 0.2, height * 0.66, 0.035]} />
-        <meshLambertMaterial color="#111923" />
+        <meshLambertMaterial color="#a9d3e2" transparent opacity={0.2} depthWrite={false} />
       </mesh>
       <PixelPart position={[0, cabin.floor + height / 2, cabin.rear + 0.1]} size={[cabin.halfWidth * 2 + 0.4, height, 0.2]} color="#a9b9c4" />
       <mesh position={[0, cabin.ceiling + 0.1, middle]}>
@@ -90,12 +99,12 @@ function RoadInterior({ kind, rightHandDrive }: { kind: VehicleKind; rightHandDr
       <PixelPart position={[0, ceiling, middle]} size={[halfWidth * 2, 0.16, length]} color="#d3d9dc" />
       {[-1, 1].map((side) => <group key={side}>
         <PixelPart position={[side * halfWidth, 0.7, middle]} size={[0.12, 0.85, length]} color="#596d7b" />
-        <PixelPart position={[side * halfWidth, 1.38, middle]} size={[0.1, 0.72, length - 0.35]} color="#111923" />
+        <WindowPart position={[side * halfWidth, 1.38, middle]} size={[0.1, 0.72, length - 0.35]} />
         <PixelPart position={[side * (halfWidth - 0.07), 0.93, 0.45]} size={[0.08, 0.08, 0.42]} color="#c2cbd0" />
         <PixelPart position={[side * (halfWidth - 0.09), 1.38, front + 0.35]} size={[0.13, 0.78, 0.12]} color="#9aa9b2" />
         <PixelPart position={[side * (halfWidth - 0.09), 1.38, rear - 0.35]} size={[0.13, 0.78, 0.12]} color="#9aa9b2" />
       </group>)}
-      <PixelPart position={[0, 1.4, front]} size={[halfWidth * 2, 0.82, 0.1]} color="#111923" />
+      <WindowPart position={[0, 1.4, front]} size={[halfWidth * 2, 0.82, 0.1]} />
       <PixelPart position={[0, 0.86, front + 0.28]} size={[halfWidth * 1.85, 0.34, 0.48]} color="#263642" />
       <PixelPart position={[driverX, 1.02, front + 0.54]} size={[0.5, 0.18, 0.14]} color="#10181f" />
       <PixelPart position={[driverX - 0.12, 1.04, front + 0.63]} size={[0.08, 0.08, 0.025]} color="#65b6cf" />
@@ -106,7 +115,7 @@ function RoadInterior({ kind, rightHandDrive }: { kind: VehicleKind; rightHandDr
       <Seat position={[driverX, 0.52, 0.95]} />
       <Seat position={[-driverX, 0.52, 0.95]} />
       <PixelPart position={[0, 1.35, rear]} size={[halfWidth * 2, 1.1, 0.12]} color="#596d7b" />
-      <PixelPart position={[0, 1.45, rear - 0.07]} size={[halfWidth * 1.55, 0.58, 0.06]} color="#111923" />
+      <WindowPart position={[0, 1.45, rear - 0.07]} size={[halfWidth * 1.55, 0.58, 0.06]} />
     </group>
   );
 }
@@ -141,7 +150,7 @@ export function VehicleInterior({ kind, driverPresent, passengerSeat, rightHandD
 }) {
   if (kind === 'plane') return <PlaneInterior driverPresent={driverPresent} />;
   if (kind === 'train' || kind === 'metro') return <TrainInterior kind={kind} driverPresent={driverPresent} passengerSeat={passengerSeat} />;
-  if (kind === 'carriage') return null;
+  if (kind === 'carriage') return <><CabinShell cabin={CABINS.carriage!} /><Seat position={[-0.5, 1.04, 0.5]} /><Seat position={[0.5, 1.04, 0.5]} /></>;
   if (kind === 'boat') {
     return <><Seat position={[0, 0.45, -0.72]} /><Seat position={[0, 0.45, 0.72]} /><PixelPart position={[-0.9, 0.45, 0.4]} size={[0.1, 0.1, 2.4]} color="#9a7042" rotation={[0, -0.35, 0]} /></>;
   }

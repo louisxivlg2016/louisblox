@@ -27,6 +27,10 @@ export const CABINS: Partial<Record<VehicleKind, CabinDefinition>> = {
   plane: { halfWidth: 1.2, floor: 5.5, ceiling: 8.1, front: -30, rear: -4.5, entrance: [1.4, 0, -4.5] },
   train: { halfWidth: 0.7, floor: 0.18, ceiling: 2.05, front: -7.6, rear: 7.6, entrance: [1.15, 0, 1.2] },
   metro: { halfWidth: 0.82, floor: 0.18, ceiling: 2.2, front: -6.6, rear: 6.6, entrance: [1.35, 0, 1.2] },
+  car: { halfWidth: 0.86, floor: 0.3, ceiling: 2.2, front: -1.2, rear: 1.3, entrance: [1.4, 0, 0] },
+  jeep: { halfWidth: 0.9, floor: 0.3, ceiling: 2.3, front: -1.2, rear: 1.3, entrance: [1.45, 0, 0] },
+  police: { halfWidth: 0.9, floor: 0.3, ceiling: 2.3, front: -1.2, rear: 1.3, entrance: [1.45, 0, 0] },
+  firetruck: { halfWidth: 1, floor: 0.3, ceiling: 2.5, front: -1.45, rear: 2, entrance: [1.55, 0, 0] },
   carriage: { halfWidth: 1.08, floor: 1.02, ceiling: 3.2, front: -0.5, rear: 1.9, entrance: [2, 0, 1.3] },
 };
 

@@ -3,6 +3,7 @@ import { churchBlocks } from './churches';
 import type { Voxel } from './voxel';
 import type { GeneratedChunk } from './levels';
 import { CITY_LIMIT } from './worldMode';
+import { generateCountrysideChunk } from './countryside';
 
 const GROUND = 5;
 const BLOCK_SIZE = 48;
@@ -14,6 +15,7 @@ function hash(x: number, z: number, seed: number) {
 }
 
 export function generateCityChunk(cx: number, cz: number, seed: number, modern: boolean): GeneratedChunk {
+  if (!modern && Math.max(Math.abs(cx * 16 + 8), Math.abs(cz * 16 + 8)) > 240) return generateCountrysideChunk(cx, cz, seed);
   const blocks = new Map<string, Voxel>();
   const water: Array<{ x: number; z: number }> = [];
   const minX = cx * 16;

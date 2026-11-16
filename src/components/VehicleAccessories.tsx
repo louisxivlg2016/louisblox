@@ -53,6 +53,7 @@ function HunyuanVehicle({ kind, interior }: { kind: VehicleModelKind; interior: 
     }
     return clone;
   }, [scene, kind, interior]);
+  if (interior && kind !== 'cannon') return null;
   return <group name={`${kind}-reference-model`} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
@@ -93,7 +94,6 @@ function HarnessHorse({ entity, x, phase }: { entity: Entity; x: number; phase: 
 
 export function VehicleAccessories({ entity, kind, interior = false }: { entity: Entity; kind: VehicleKind; interior?: boolean }) {
   if (kind === 'plane') return null;
-  if (interior && (kind === 'police' || kind === 'firetruck' || kind === 'jeep')) return null;
   if (kind in vehicleModels) return <>
     <HunyuanVehicle kind={kind as VehicleModelKind} interior={interior} />
     {kind === 'carriage' && <><HarnessHorse entity={entity} x={-0.8} phase={0} /><HarnessHorse entity={entity} x={0.8} phase={Math.PI} /></>}

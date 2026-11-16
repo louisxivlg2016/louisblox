@@ -22,7 +22,7 @@ export function moveCabinPlayer(world: World, entity: Entity, dt: number, yaw: n
   if (!position || !state || !velocity) return false;
   const local = mount.cabinPosition ?? new Vector3(...seatOffset(kind, role, mount.seat));
   local.x = Math.max(-cabin.halfWidth + 0.36, Math.min(cabin.halfWidth - 0.36, local.x));
-  local.y = Math.max(cabin.floor + 0.001, local.y);
+  local.y = Math.max(cabin.floor + 0.001, Math.min(cabin.ceiling - 1.801, local.y));
   local.z = Math.max(cabin.front + 0.36, Math.min(cabin.rear - 0.36, local.z));
   const touch = getTouchMovement();
   const forward = Math.max(-1, Math.min(1, Number(isDown('KeyW') || isDown('ArrowUp')) - Number(isDown('KeyS') || isDown('ArrowDown')) - touch.y));

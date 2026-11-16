@@ -9,6 +9,7 @@ import { useMazeStore } from '../mazeClient';
 import { canWalkInVehicle, isAnimalMount, vehicleViewDistance } from '../vehicleTypes';
 import { VehiclePosition } from '../traits';
 import { groundAt } from '../vehicles';
+import { chunkCoordinate, loadChunkForCamera, releaseCameraChunk } from '../chunks';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
 
@@ -77,10 +78,16 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   if (cameraMode === 'front' || cameraMode === 'third') {
     const direction = cameraMode === 'front' ? -1 : 1;
     camera.position.set(center.x + Math.sin(state.yaw) * distance * direction, center.y + height, center.z + Math.cos(state.yaw) * distance * direction);
+    if (mounted) {
+      const chunkX = chunkCoordinate(camera.position.x);
+      const chunkZ = chunkCoordinate(camera.position.z);
+      loadChunkForCamera(world, chunkX, chunkZ);
+    }
     camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z) + 0.35);
     cameraTarget.set(center.x, center.y + targetHeight, center.z);
     camera.lookAt(cameraTarget);
   } else {
+    releaseCameraChunk(world);
     camera.position.copy(position);
     if (walkingCabin) camera.position.y += 1.62;
     else if (mount?.kind === 'car' && mount.role === 'passenger') {

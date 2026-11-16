@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { setMusicSuppressed } from './audio';
+import { setMusicSuppressed, useAudioSettings } from './audio';
 import { RADIO_TRACKS } from './radioTracks';
 import { useGameStore } from './store';
 import { isAnimalMount } from './vehicleTypes';
@@ -13,11 +13,11 @@ function currentTrack() {
 }
 
 function playTrack() {
-  if (typeof document === 'undefined') return;
+  if (typeof document === 'undefined' || !useAudioSettings.getState().music) return;
   if (!audio) {
     audio = new Audio();
     audio.id = 'vehicle-radio';
-    audio.volume = 0.48;
+    audio.volume = 0.65;
     audio.preload = 'auto';
     audio.addEventListener('ended', () => nextRadioTrack());
     document.body.appendChild(audio);
@@ -36,15 +36,23 @@ export function stopVehicleRadio() {
 }
 
 export function nextRadioTrack() {
-  const state = useRadioStore.getState();
-  const trackIndex = (state.trackIndex + 1) % RADIO_TRACKS.length;
+  selectRadioTrack((useRadioStore.getState().trackIndex + 1) % RADIO_TRACKS.length);
+}
+
+export function previousRadioTrack() {
+  selectRadioTrack((useRadioStore.getState().trackIndex - 1 + RADIO_TRACKS.length) % RADIO_TRACKS.length);
+}
+
+export function selectRadioTrack(index: number) {
+  const trackIndex = Math.max(0, Math.min(RADIO_TRACKS.length - 1, Math.floor(index)));
   useRadioStore.setState({ trackIndex });
-  if (state.enabled) playTrack();
+  if (useRadioStore.getState().enabled) playTrack();
+  else toggleVehicleRadio();
 }
 
 export function toggleVehicleRadio() {
   const game = useGameStore.getState();
-  if (!game.riding || isAnimalMount(game.riding) || game.mode !== 'play') return false;
+  if (!game.riding || isAnimalMount(game.riding) || game.mode !== 'play' || !useAudioSettings.getState().music) return false;
   if (useRadioStore.getState().enabled) {
     stopVehicleRadio();
     return false;
@@ -57,13 +65,29 @@ export function toggleVehicleRadio() {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('keydown', (event) => {
-    if (event.code !== 'KeyR' || event.repeat) return;
+    if (event.repeat) return;
     const target = event.target;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLElement && target.isContentEditable) return;
-    event.preventDefault();
-    toggleVehicleRadio();
+    if (event.code === 'KeyR') {
+      event.preventDefault();
+      toggleVehicleRadio();
+      return;
+    }
+    if (!useRadioStore.getState().enabled) return;
+    if (event.code === 'KeyD') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      nextRadioTrack();
+    } else if (event.code === 'KeyK') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      previousRadioTrack();
+    }
   });
   useGameStore.subscribe((state) => {
     if (useRadioStore.getState().enabled && (state.mode !== 'play' || !state.riding || isAnimalMount(state.riding))) stopVehicleRadio();
+  });
+  useAudioSettings.subscribe((state) => {
+    if (!state.music) stopVehicleRadio();
   });
 }

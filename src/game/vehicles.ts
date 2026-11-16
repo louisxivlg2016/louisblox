@@ -18,6 +18,7 @@ import { animalSeatOffset } from './mounts';
 import type { Camera } from 'three';
 import type { MountKind, SeatRole, VehicleKind } from './vehicleTypes';
 import { translate } from './language';
+import { useRadioStore } from './radio';
 export { METRO_LENGTH, PLANE_SCALE, TRAIN_LENGTH } from './vehicleTypes';
 
 const isVehicleFoliage = (kind: BlockKind) => kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves;
@@ -247,9 +248,10 @@ export function vehicleInteractionSystem(world: World, camera: Camera, interact:
 
 function drivingInput() {
   const touch = getTouchMovement();
+  const nextTrack = useRadioStore.getState().enabled && isDown('KeyD');
   return {
     forward: Math.max(-1, Math.min(1, Number(isDown('KeyW') || isDown('ArrowUp')) - Number(isDown('KeyS') || isDown('ArrowDown')) - touch.y)),
-    strafe: Math.max(-1, Math.min(1, Number(isDown('KeyD') || isDown('ArrowRight')) - Number(isDown('KeyA') || isDown('ArrowLeft')) + touch.x)),
+    strafe: Math.max(-1, Math.min(1, Number(!nextTrack && (isDown('KeyD') || isDown('ArrowRight'))) - Number(isDown('KeyA') || isDown('ArrowLeft')) + touch.x)),
   };
 }
 
@@ -296,7 +298,7 @@ function moveRiddenAnimal(world: World, position: Vector3, yaw: number, speed: n
 function movePlane(world: World, position: Vector3, yaw: number, speed: number, dt: number, vertical: number, landing: boolean) {
   const x = position.x - Math.sin(yaw) * speed * dt;
   const z = position.z - Math.cos(yaw) * speed * dt;
-  const terrain = landingGroundAt(world, x, z, position.y + 1.01);
+  const terrain = landingGroundAt(world, x, z, MAX_BUILD_Y);
   const ground = terrain + 0.02;
   const airborne = vertical > 0 || (!landing && position.y > terrain + 2.1);
   const nextY = position.y + vertical * dt * 8;

@@ -1,3 +1,4 @@
+import { create } from 'zustand';
 import musicUrl from '../../assets/LouisBlox_Theme.mp3';
 import battleMusicUrl from '../../assets/audio/The_Last_Move.mp3';
 import pirateMusicUrl from '../../assets/audio/Salt_On_The_Gunwale.m4a';
@@ -53,8 +54,44 @@ let mode: GameplayMode = 'creative';
 let started = false;
 let listening = false;
 let musicSuppressed = false;
+
+function initialAudioSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('louisblox-audio-settings') ?? '{}');
+    return { music: saved.music !== false, sounds: saved.sounds !== false };
+  } catch {
+    return { music: true, sounds: true };
+  }
+}
+
+export const useAudioSettings = create<{ music: boolean; sounds: boolean }>(initialAudioSettings);
+
+export function setAudioPreference(kind: 'music' | 'sounds', enabled: boolean) {
+  useAudioSettings.setState({ [kind]: enabled });
+  try {
+    localStorage.setItem('louisblox-audio-settings', JSON.stringify(useAudioSettings.getState()));
+  } catch {
+  }
+  if (kind === 'music') {
+    if (music && enabled && !musicSuppressed && started) attemptPlay(music);
+    else if (!enabled) music?.pause();
+  } else {
+    if (!enabled) {
+      for (const element of audio.values()) element.pause();
+      for (const element of loops.values()) element.pause();
+    } else if (started) {
+      for (const name of activeLoops) {
+        const element = loops.get(name);
+        if (element) attemptPlay(element);
+      }
+    }
+  }
+}
+
 const pending = new Set<HTMLAudioElement>();
 const reported = new Set<string>();
+const SOUND_BOOST = 1.6;
+const louder = (volume: number) => Math.min(1, volume * SOUND_BOOST);
 
 function attemptPlay(element: HTMLAudioElement) {
   if (!element.paused) return;
@@ -96,14 +133,14 @@ export function setMusicMode(nextMode: GameplayMode) {
   music.pause();
   music.src = source;
   music.dataset.track = source;
-  if (started && !musicSuppressed) attemptPlay(music);
+  if (started && !musicSuppressed && useAudioSettings.getState().music) attemptPlay(music);
 }
 
 export function setMusicSuppressed(suppressed: boolean) {
   musicSuppressed = suppressed;
   if (!music) return;
   if (suppressed) music.pause();
-  else if (started) attemptPlay(music);
+  else if (started && useAudioSettings.getState().music) attemptPlay(music);
 }
 
 export function startMusic() {
@@ -111,13 +148,13 @@ export function startMusic() {
   if (!music) {
     music = new Audio();
     music.id = 'background-music';
-    music.volume = 0.28;
+    music.volume = 0.4;
     music.style.display = 'none';
     music.addEventListener('ended', playNextTrack);
     document.body.appendChild(music);
   }
   setMusicMode(mode);
-  if (!musicSuppressed) attemptPlay(music);
+  if (!musicSuppressed && useAudioSettings.getState().music) attemptPlay(music);
   for (const name of activeLoops) {
     const element = loops.get(name);
     if (element) attemptPlay(element);
@@ -210,9 +247,9 @@ function sound(name: SoundEffect) {
 export function playSound(name: SoundEffect, volume = 0.5) {
   if (!started) startMusic();
   const element = sound(name).cloneNode(true) as HTMLAudioElement;
-  element.volume = volume;
+  element.volume = louder(volume);
   element.dataset.effect = name;
-  attemptPlay(element);
+  if (useAudioSettings.getState().sounds) attemptPlay(element);
   return element;
 }
 
@@ -254,9 +291,10 @@ export function setLoopSound(name: Extract<SoundEffect, 'walk' | 'fire' | 'fireS
   activeLoops.add(name);
   const element = current ?? sound(name).cloneNode(true) as HTMLAudioElement;
   element.loop = true;
-  element.volume = volume;
+  element.volume = louder(volume);
   loops.set(name, element);
-  if (started) attemptPlay(element);
+  if (started && useAudioSettings.getState().sounds) attemptPlay(element);
+  else element.pause();
 }
 
 export function updateWaterSound(world: object, inWater: boolean) {
@@ -291,7 +329,7 @@ export function updateAmbientSounds(world: World, playing: boolean) {
   const velocity = playerEntity?.get(PlayerVelocity);
   const mount = playerEntity?.get(PlayerMount);
   const mounted = mount?.vehicle;
-  const driving = playing && mount?.role === 'driver' && mounted && Math.abs(mounted.get(VehicleMotion)?.speed ?? 0) > 0.03 ? mount.kind : null;
+  const driving = playing && mounted ? mount.kind : null;
   for (const kind of ['car', 'train', 'metro', 'plane'] as const) {
     const definition = drivingSounds[kind]!;
     const active = driving !== null && drivingSounds[driving as VehicleKind]?.sound === definition.sound;

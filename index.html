@@ -880,7 +880,8 @@
       .color-swatch { width: 32px; height: 32px; padding: 0 !important; border-color: rgba(255,255,255,.4) !important; }
       .menu-action-bar { position: fixed; left: 326px; right: 16px; bottom: 12px; z-index: 41; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 26px; padding: 14px; background: rgba(22,30,43,.97); border: 2px solid #4f4c46; box-shadow: 0 -4px 18px rgba(0,0,0,.28); }
       .language-panel { position: fixed; top: 12px; right: 240px; z-index: 60; padding: 4px; background: rgba(22,30,43,.96); border: 2px solid #4f4c46; }
-      .language-panel::before { content: attr(data-label); position: absolute; top: -23px; right: 0; color: #d8e2ee; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+      .language-menu-button { min-width: 104px; padding: 10px 12px; color: #2d2410; background: #f5d553; border: 2px solid #fff0a0; cursor: pointer; font-weight: 800; }
+      .language-options { position: absolute; top: calc(100% + 4px); right: 0; padding: 4px; background: rgba(22,30,43,.98); border: 2px solid #4f4c46; }
       .language-switch { display: flex; align-items: center; justify-content: center; gap: 8px; }
       .language-switch button { min-width: 52px; padding: 10px 12px; color: #d8e2ee; background: #26344c; border: 2px solid #61708f; cursor: pointer; font-weight: 700; }
       .language-switch button.active { color: #2d2410; background: #f5d553; border-color: #fff0a0; }
@@ -889,8 +890,14 @@
       .radio-controls button { padding: 9px 12px; color: #e5edf8; background: #2d405b; border: 0; cursor: pointer; font-weight: 700; }
       .radio-controls .radio-toggle.active { color: #2d2410; background: #f5d553; }
       .radio-track { max-width: 260px; padding: 0 12px; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-      .radio-next { border-left: 1px solid #667c99 !important; font-size: 18px !important; }
-      @media (max-width: 650px) { .radio-controls { right: 10px; bottom: 142px; } .radio-controls button { padding: 8px; font-size: 10px; } .radio-track { max-width: 130px; font-size: 10px; } }
+      .radio-next, .radio-previous { border-left: 1px solid #667c99 !important; font-size: 18px !important; }
+      .radio-search { position: relative; }
+      .radio-search input { width: 170px; padding: 8px; color: #fff; background: #172231; border: 0; border-left: 1px solid #667c99; font-size: 11px; }
+      .radio-search-results { position: absolute; right: 0; bottom: 33px; display: grid; width: 280px; max-height: 260px; overflow-y: auto; background: #172231; border: 2px solid #667c99; box-shadow: 0 -4px 12px rgba(0,0,0,.35); }
+      .radio-search-results button { overflow: hidden; padding: 9px; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+      .radio-search-results button:hover, .radio-search-results button[aria-selected="true"] { color: #2d2410; background: #f5d553; }
+      .radio-search-results > span { padding: 10px; font-size: 11px; }
+      @media (max-width: 650px) { .radio-controls { right: 10px; bottom: 142px; flex-wrap: wrap; max-width: calc(100vw - 20px); } .radio-controls button { padding: 8px; font-size: 10px; } .radio-track { flex: 1; max-width: 130px; font-size: 10px; } .radio-search { flex-basis: 100%; } .radio-search input { width: 100%; border-top: 1px solid #667c99; border-left: 0; } .radio-search-results { width: min(280px, calc(100vw - 20px)); } }
       .menu-action-button { min-width: 0; padding: 0; overflow: hidden; background: transparent; border: 2px solid transparent; cursor: pointer; }
       .menu-action-button:hover { transform: translateY(-2px); }
       .menu-action-button.active { border-color: #f5d553; }
