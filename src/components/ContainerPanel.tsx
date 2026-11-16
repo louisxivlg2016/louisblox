@@ -27,7 +27,7 @@ export function ContainerPanel() {
             <button className="container-deposit" onClick={() => depositChest(world)}>Deposit: {selectionInfo(selected).name}</button>
             <div className="backpack-blocks">
               {items.map((item, index) => (
-                <button className="backpack-block" key={`${item}-${index}`} onClick={() => withdrawChest(world, index)} aria-label={`Take ${selectionInfo(item).name}`}>
+                <button className="backpack-block" key={`${item}-${index}`} onClick={() => withdrawChest(world, index)} aria-label={translate(`Prendre ${selectionInfo(item).name}`, `Take ${selectionInfo(item).name}`, `Tomar ${selectionInfo(item).name}`)}>
                   <ItemIcon kind={item} /><span>{selectionInfo(item).name}</span>
                 </button>
               ))}

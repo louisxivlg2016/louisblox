@@ -174,7 +174,7 @@ export function MultiplayerLobby({ onPlay, onCreateRoom, createLabel = translate
           </button>
           {showServer && (
             <>
-              <label htmlFor={fieldId('server')}>Custom server <span>{translate('(optionnel)', '(optional)')}</span>
+              <label htmlFor={fieldId('server')}>{translate('Serveur personnalisé', 'Custom server', 'Servidor personalizado')} <span>{translate('(optionnel)', '(optional)')}</span>
                 <input id={fieldId('server')} value={server} onChange={(event) => setServer(event.target.value)} placeholder="wss://…workers.dev/ws" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
               </label>
               <p className="multiplayer-hint">{translate('Laisse le serveur vide pour utiliser la connexion automatique. En local, il utilise le port 8787 de cet appareil.', 'Leave the server empty to use automatic connection. Locally, it uses port 8787 on this device.')}</p>

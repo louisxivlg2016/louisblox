@@ -48,7 +48,7 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
     }
   };
   const remove = async (world: WorldMeta) => {
-    if (!window.confirm(`Delete “${world.name}”?\n\nThe save on this device will be permanently deleted. If you own the online room, it will be deleted for everyone.`)) return;
+    if (!window.confirm(translate(`Supprimer « ${world.name} » ?\n\nLa sauvegarde sur cet appareil sera définitivement effacée. Si tu possèdes le salon en ligne, il sera supprimé pour tout le monde.`, `Delete “${world.name}”?\n\nThe save on this device will be permanently deleted. If you own the online room, it will be deleted for everyone.`, `¿Eliminar “${world.name}”?\n\nLa partida guardada en este dispositivo se eliminará permanentemente. Si eres propietario de la sala en línea, se eliminará para todos.`))) return;
     setBusy(true);
     setMessage('');
     try {
@@ -93,7 +93,7 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
           event.preventDefault();
           event.currentTarget.querySelector('input')?.click();
         }}>
-          Importer une sauvegarde
+          {translate('Importer une sauvegarde', 'Import a backup', 'Importar una copia de seguridad')}
           <input type="file" accept="application/json,.json" disabled={busy} onChange={(event) => {
             const file = event.target.files?.[0];
             if (file) void importBackup(file);
@@ -107,11 +107,11 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
       <div className="world-library-list">
         {worlds.map((world) => (
           <div className="world-library-item" key={world.id}>
-            <button className="world-library-entry" onClick={() => open(world)} aria-label={`Open ${world.name}`} disabled={busy || pending}>
+            <button className="world-library-entry" onClick={() => open(world)} aria-label={translate(`Ouvrir ${world.name}`, `Open ${world.name}`, `Abrir ${world.name}`)} disabled={busy || pending}>
               <strong>{world.name}</strong>
-              <small>{MODE_NAMES()[world.gameplayMode ?? 'creative']} · {world.updatedAt ? new Date(world.updatedAt).toLocaleDateString('en-US') : translate('Ancienne sauvegarde', 'Old save')}</small>
+              <small>{MODE_NAMES()[world.gameplayMode ?? 'creative']} · {world.updatedAt ? new Date(world.updatedAt).toLocaleDateString(translate('fr-FR', 'en-US', 'es-ES')) : translate('Ancienne sauvegarde', 'Old save')}</small>
             </button>
-            <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={busy || pending} aria-label={`Delete ${world.name}`}>{translate('Supprimer', 'Delete')}</button>
+            <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={busy || pending} aria-label={translate(`Supprimer ${world.name}`, `Delete ${world.name}`, `Eliminar ${world.name}`)}>{translate('Supprimer', 'Delete')}</button>
           </div>
         ))}
         {worlds.length === 0 && <p>{translate('Aucune partie enregistrée pour le moment.', 'No saved games yet.')}</p>}

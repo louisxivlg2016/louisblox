@@ -1,6 +1,6 @@
 import { useQuery, useQueryFirst, useTrait } from 'koota/react';
 import type { Entity } from 'koota';
-import { Player, PlayerMount, PlayerPosition, Vehicle, VehicleMesh, VehicleMotion, VehiclePosition } from '../game/traits';
+import { Player, PlayerMount, Vehicle, VehicleMesh, VehicleMotion, VehiclePosition } from '../game/traits';
 import { useGameStore } from '../game/store';
 import { VehicleGlb } from './VehicleGlb';
 import { VehicleInterior } from './TransportInterior';
@@ -12,10 +12,8 @@ function VehicleView({ entity }: { entity: Entity }) {
   const cameraMode = useGameStore((state) => state.cameraMode);
   const position = entity.get(VehiclePosition)!;
   const mount = player?.get(PlayerMount);
-  const playerPosition = player?.get(PlayerPosition);
   const kind = vehicle?.kind ?? 'car';
-  const closedCabin = kind === 'plane' || kind === 'train' || kind === 'metro';
-  const showInterior = mount?.vehicle === entity ? cameraMode === 'first' : !closedCabin && playerPosition && position.distanceTo(playerPosition) < 16;
+  const showInterior = mount?.vehicle === entity && cameraMode === 'first';
   return (
     <group
       ref={(group) => {

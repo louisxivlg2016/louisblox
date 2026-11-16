@@ -28,30 +28,30 @@ export function FriendRequestDialog() {
       await acceptFriendRequest(request);
       addFriend(player);
       removeRequest(request.requestId);
-      useGameStore.getState().setNotice(`${player.name} is now your friend.`);
+      useGameStore.getState().setNotice(translate(`${player.name} est maintenant ton ami.`, `${player.name} is now your friend.`, `${player.name} ahora es tu amigo.`));
       void requestPlay();
     } catch (error) {
-      useGameStore.getState().setNotice(error instanceof Error ? error.message : 'Unable to send invitation.');
+      useGameStore.getState().setNotice(error instanceof Error ? error.message : translate('Invitation impossible.', 'Unable to send invitation.', 'No se pudo enviar la invitación.'));
     } finally {
       setPending(false);
     }
   };
   const refuse = () => {
     removeRequest(request.requestId);
-    useGameStore.getState().setNotice(`Invitation from ${player.name} declined.`);
+    useGameStore.getState().setNotice(translate(`Invitation de ${player.name} refusée.`, `Invitation from ${player.name} declined.`, `Invitación de ${player.name} rechazada.`));
     void requestPlay();
   };
 
   return (
     <div className="menu-backdrop friend-request-backdrop">
       <section className="menu-panel friend-request-panel" role="dialog" aria-modal="true" aria-labelledby="friend-request-title">
-        <p className="eyebrow">FRIEND REQUEST</p>
+        <p className="eyebrow">{translate('DEMANDE D’AMI', 'FRIEND REQUEST', 'SOLICITUD DE AMISTAD')}</p>
         <ProfileAvatar kind={player.outfit === 'default' ? 'pixel' : player.outfit} character={player.character} outfit={player.outfit} wig={player.wig} appearance={player.appearance} size={76} />
         <h2 id="friend-request-title">{player.name}</h2>
-        <p>wants to be your friend.</p>
+        <p>{translate('veut être ton ami.', 'wants to be your friend.', 'quiere ser tu amigo.')}</p>
         <div className="teleport-request-actions">
-          <button className="primary-button" disabled={pending} aria-label={`Accept ${player.name}`} onClick={accept}>{pending ? 'Accepting…' : 'Accept'}</button>
-          <button className="secondary-button" disabled={pending} aria-label={`Decline ${player.name}`} onClick={refuse}>{translate('Refuser', 'Decline')}</button>
+          <button className="primary-button" disabled={pending} aria-label={translate(`Accepter ${player.name}`, `Accept ${player.name}`, `Aceptar a ${player.name}`)} onClick={accept}>{pending ? translate('Acceptation…', 'Accepting…', 'Aceptando…') : translate('Accepter', 'Accept')}</button>
+          <button className="secondary-button" disabled={pending} aria-label={translate(`Refuser ${player.name}`, `Decline ${player.name}`, `Rechazar a ${player.name}`)} onClick={refuse}>{translate('Refuser', 'Decline')}</button>
         </div>
       </section>
     </div>

@@ -3,15 +3,16 @@ import type { EmoteKind } from '../game/emotes';
 import { clearInput, requestPlay } from '../game/input';
 import { useGameStore } from '../game/store';
 import emotesButtonUrl from '../../assets/ui/emotes-button.webp';
-import { translate } from '../game/language';
+import { translate, useLanguageStore } from '../game/language';
 
-const ACTIONS: Array<{ kind: EmoteKind; label: string }> = [
+const ACTIONS = (): Array<{ kind: EmoteKind; label: string }> => [
   { kind: 'sit', label: translate('S’asseoir', 'Sit') },
   { kind: 'lie', label: translate('S’aplatir', 'Lie down') },
   { kind: 'wave', label: translate('Dire bonjour', 'Wave') },
 ];
 
 export function EmotePanel() {
+  const language = useLanguageStore((state) => state.language);
   const mode = useGameStore((state) => state.mode);
   const open = useEmoteStore((state) => state.open);
   const current = useEmoteStore((state) => state.current);
@@ -39,12 +40,12 @@ export function EmotePanel() {
       <div className="emote-backdrop">
         <section className="emote-panel" aria-label={translate('Choisir un geste', 'Choose emote')}>
           <header><strong>{translate('Gestes', 'Emotes')}</strong><button onClick={closeMenu} aria-label={translate('Fermer les gestes', 'Close emotes')}>×</button></header>
-          {ACTIONS.map((action) => <button key={action.kind} className={current === action.kind ? 'active' : ''} onClick={() => choose(action.kind)}>{action.label}</button>)}
+          {ACTIONS().map((action) => <button key={action.kind} className={current === action.kind ? 'active' : ''} onClick={() => choose(action.kind)}>{action.label}</button>)}
           {(current === 'sit' || current === 'lie') && <button onClick={stand}>{translate('Se relever', 'Stand up')}</button>}
         </section>
       </div>
     );
   }
   if (mode !== 'play') return null;
-  return <button className="emote-toggle" onClick={openMenu} aria-label="Animations · Z"><img src={emotesButtonUrl} alt="Animations · Z" /></button>;
+  return <button className="emote-toggle" onClick={openMenu} aria-label={translate('Animations · Z', 'Emotes · Z', 'Animaciones · Z')}>{language === 'es' ? <span className="localized-button-text">ANIMACIONES · Z</span> : <img src={emotesButtonUrl} alt={translate('Animations · Z', 'Emotes · Z')} />}</button>;
 }

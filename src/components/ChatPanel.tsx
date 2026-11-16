@@ -85,7 +85,7 @@ export function ChatPanel() {
               {messages.length === 0 && <p className="chat-empty">{translate('Écris le premier message aux joueurs du salon.', 'Write the first message to players in the room.')}</p>}
               {messages.map((message) => (
                 <p className="chat-message" key={message.messageId}>
-                  <time>{new Date(message.sentAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</time>
+                  <time>{new Date(message.sentAt).toLocaleTimeString(translate('fr-FR', 'en-US', 'es-ES'), { hour: '2-digit', minute: '2-digit' })}</time>
                   <strong>{message.name}</strong>
                   <span>{message.text}</span>
                 </p>

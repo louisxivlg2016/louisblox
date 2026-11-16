@@ -71,7 +71,7 @@ export function Backpack() {
           setBackpackItem(kind);
         }}
         onClick={() => setBackpackItem(kind)}
-        aria-label={`Choose ${meta.name}`}
+        aria-label={translate(`Choisir ${meta.name}`, `Choose ${meta.name}`, `Elegir ${meta.name}`)}
       >
         <ItemIcon kind={kind} />
         <span>{meta.name}{count !== null ? ` ×${count}` : ''}{equipped ? translate(' · portée', ' · equipped') : ''}</span>
@@ -112,7 +112,7 @@ export function Backpack() {
               {GALLERY_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
             </select>
           </div>
-          <p className="backpack-label">{visibleGalleryItems.length} items shown</p>
+          <p className="backpack-label">{translate(`${visibleGalleryItems.length} objets affichés`, `${visibleGalleryItems.length} items shown`, `${visibleGalleryItems.length} objetos mostrados`)}</p>
           <div className="backpack-blocks">{visibleGalleryItems.map((item) => itemButton(item.id))}</div>
           <p className="backpack-label">{translate('Manger pour récupérer des vies', 'Eat to restore lives')}</p>
           <div className="backpack-resources">

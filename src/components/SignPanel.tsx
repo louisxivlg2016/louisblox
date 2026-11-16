@@ -37,7 +37,7 @@ export function SignPanel() {
             {paris ? translate('Texte de la plaque', 'Street sign text') : translate('Texte du panneau', 'Sign text')}
             <textarea ref={textRef} autoFocus defaultValue={editing.text} rows={6} maxLength={MAX_SIGN_LENGTH} onInput={(event) => setLength(event.currentTarget.value.length)} placeholder={paris ? '4th arrondissement\nPeace Street' : translate('Écris quelque chose…', 'Write something…')} />
           </label>
-          <p className="boutique-hint">{length} / {MAX_SIGN_LENGTH} characters · text is saved and shared.</p>
+          <p className="boutique-hint">{length} / {MAX_SIGN_LENGTH} {translate('caractères · le texte est enregistré et partagé.', 'characters · text is saved and shared.', 'caracteres · el texto se guarda y comparte.')}</p>
           <button type="submit" className="primary-button">{paris ? translate('Enregistrer la plaque', 'Save street sign') : translate('Enregistrer le panneau', 'Save sign')}</button>
         </form>
       </section>

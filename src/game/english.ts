@@ -1,4 +1,4 @@
-import { useLanguageStore } from './language';
+import { spanishText, useLanguageStore } from './language';
 
 const names: Record<string, string> = {
   Main: 'Hand', Bâton: 'Stick', Cisailles: 'Shears', 'Seau vide': 'Empty Bucket', 'Seau plein d’eau': 'Water Bucket', 'Seau toujours vide': 'Always Empty Bucket',
@@ -52,5 +52,8 @@ export function englishItemName(name: string) {
 }
 
 export function localizedItemName(name: string) {
-  return useLanguageStore.getState().language === 'fr' ? name : englishItemName(name);
+  const language = useLanguageStore.getState().language;
+  if (language === 'fr') return name;
+  const english = englishItemName(name);
+  return language === 'es' ? spanishText(english) : english;
 }

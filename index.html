@@ -880,14 +880,22 @@
       .color-swatch { width: 32px; height: 32px; padding: 0 !important; border-color: rgba(255,255,255,.4) !important; }
       .menu-action-bar { position: fixed; left: 326px; right: 16px; bottom: 12px; z-index: 41; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 26px; padding: 14px; background: rgba(22,30,43,.97); border: 2px solid #4f4c46; box-shadow: 0 -4px 18px rgba(0,0,0,.28); }
       .language-panel { position: fixed; top: 12px; right: 240px; z-index: 60; padding: 4px; background: rgba(22,30,43,.96); border: 2px solid #4f4c46; }
-      .language-panel::before { content: 'Langue'; position: absolute; top: -23px; right: 0; color: #d8e2ee; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+      .language-panel::before { content: attr(data-label); position: absolute; top: -23px; right: 0; color: #d8e2ee; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
       .language-switch { display: flex; align-items: center; justify-content: center; gap: 8px; }
       .language-switch button { min-width: 52px; padding: 10px 12px; color: #d8e2ee; background: #26344c; border: 2px solid #61708f; cursor: pointer; font-weight: 700; }
       .language-switch button.active { color: #2d2410; background: #f5d553; border-color: #fff0a0; }
+      .localized-button-text { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 7px 10px; color: #fff3b1; font-size: 12px; font-weight: 900; text-align: center; text-shadow: 2px 2px #24180d; background: #35465c; border: 2px solid #d3a942; }
+      .radio-controls { position: absolute; right: 18px; bottom: 164px; z-index: 14; display: flex; align-items: center; max-width: min(430px, calc(100vw - 36px)); color: #fff; background: rgba(19,28,40,.94); border: 2px solid #667c99; pointer-events: auto; }
+      .radio-controls button { padding: 9px 12px; color: #e5edf8; background: #2d405b; border: 0; cursor: pointer; font-weight: 700; }
+      .radio-controls .radio-toggle.active { color: #2d2410; background: #f5d553; }
+      .radio-track { max-width: 260px; padding: 0 12px; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+      .radio-next { border-left: 1px solid #667c99 !important; font-size: 18px !important; }
+      @media (max-width: 650px) { .radio-controls { right: 10px; bottom: 142px; } .radio-controls button { padding: 8px; font-size: 10px; } .radio-track { max-width: 130px; font-size: 10px; } }
       .menu-action-button { min-width: 0; padding: 0; overflow: hidden; background: transparent; border: 2px solid transparent; cursor: pointer; }
       .menu-action-button:hover { transform: translateY(-2px); }
       .menu-action-button.active { border-color: #f5d553; }
       .menu-action-button img { display: block; width: 100%; height: 92px; object-fit: contain; image-rendering: pixelated; }
+      .menu-action-text { display: flex; align-items: center; justify-content: center; height: 92px; padding: 8px; overflow-wrap: anywhere; color: #fff4b0; font-size: clamp(9px, 2vw, 27px); font-weight: 900; line-height: 1.1; text-shadow: 2px 2px #37200f; background: linear-gradient(#8157ac, #3e276d); border: 4px solid #e6b94c; }
       .create-world-dialog { display: flex; flex-direction: column; width: min(1180px, 100%); overflow: hidden; }
       .create-lobby-panel { padding: 18px; background: rgba(20, 32, 28, .72); border: 1px solid #526b58; }
       .create-lobby-intro { margin: 0 0 14px; color: #b6c1cf; font-size: 12px; line-height: 1.5; }
@@ -1042,7 +1050,8 @@
         .language-panel button { min-width: 44px; padding: 6px 8px; }
         .menu-sidebar { padding: 12px 10px; }
         .menu-action-bar { bottom: 6px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; }
-        .menu-action-button img { height: 42px; }
+        .menu-action-button img, .menu-action-text { height: 42px; }
+        .menu-action-text { padding: 2px; font-size: 8px; white-space: nowrap; }
         .world-browser { padding: 14px 10px; }
         .world-cards { grid-template-columns: 1fr; gap: 14px; }
         .world-card img { height: 180px; }

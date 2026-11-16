@@ -20,6 +20,8 @@ import type { MountKind, SeatRole, VehicleKind } from './vehicleTypes';
 import { translate } from './language';
 export { METRO_LENGTH, PLANE_SCALE, TRAIN_LENGTH } from './vehicleTypes';
 
+const isVehicleFoliage = (kind: BlockKind) => kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves;
+
 export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y) {
   const bx = Math.round(x);
   const bz = Math.round(z);
@@ -27,7 +29,7 @@ export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y
   const blocks = getBlockIndex(world);
   const isGround = (y: number) => {
     const block = blocks.get(voxelKey(bx, y, bz));
-    return block && !isGrassPlate(block) && !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79);
+    return block && !isGrassPlate(block) && !isWaterBlock(block.kind) && !isVehicleFoliage(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79);
   };
   if (top !== undefined && top + 0.5 <= fromY && isGround(top)) return top + 0.5;
   for (let y = Math.min(top ?? 80, Math.floor(fromY + 0.5)); y >= MIN_WORLD_Y; y -= 1) {
@@ -259,7 +261,7 @@ function moveMount(world: World, position: Vector3, yaw: number, speed: number, 
   const blocks = getBlockIndex(world);
   for (const height of [0.65, clearance]) {
     const block = blocks.get(voxelKey(Math.round(x), Math.round(ground + height), Math.round(z)));
-    if (block && !isRail(block.kind)) return false;
+    if (block && isCollidable(block) && !isRail(block.kind) && !isVehicleFoliage(block.kind)) return false;
   }
   position.set(x, ground, z);
   return true;

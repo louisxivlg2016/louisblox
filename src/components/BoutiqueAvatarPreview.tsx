@@ -22,7 +22,7 @@ export function BoutiqueAvatarPreview() {
         </Suspense>
         <OrbitControls target={[0, 1.05, 0]} enablePan={false} minDistance={2.4} maxDistance={6} minPolarAngle={Math.PI / 5} maxPolarAngle={Math.PI * 0.75} />
       </Canvas>
-      <span className="boutique-preview-hint">Drag to rotate</span>
+      <span className="boutique-preview-hint">{translate('Glisser pour tourner', 'Drag to rotate', 'Arrastrar para girar')}</span>
     </div>
   );
 }

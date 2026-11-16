@@ -121,10 +121,10 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
             const localY = y - GROUND - 1;
             const doorway = z === centerZ - half && Math.abs(x - centerX) <= 1 && y <= GROUND + 3;
             if (doorway) continue;
-            const window = localY % 4 >= 1 && localY % 4 <= 2 && ((edgeX ? z : x) - centerX + half) % 2 === 1;
-            const foundation = localY === 0;
             const facade = ((edgeX ? z : x) - centerX + half);
-            const stoneBand = !modern && (localY % 4 === 3 || edgeX && edgeZ || facade % 5 === 0);
+            const window = localY % 4 >= 1 && facade % 3 !== 0;
+            const foundation = localY === 0;
+            const stoneBand = !modern && (localY % 4 === 0 || edgeX && edgeZ || facade % 3 === 0);
             const frame = modern && (localY % 4 === 0 || facade % 6 === 0);
             put(x, y, z, modern ? frame ? BlockKind.ConcreteGray : accent : foundation ? BlockKind.GrayBrick : stoneBand ? BlockKind.BeigeBrick : window ? accent : wall);
           }

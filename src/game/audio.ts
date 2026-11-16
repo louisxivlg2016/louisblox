@@ -52,6 +52,7 @@ let music: HTMLAudioElement | null = null;
 let mode: GameplayMode = 'creative';
 let started = false;
 let listening = false;
+let musicSuppressed = false;
 const pending = new Set<HTMLAudioElement>();
 const reported = new Set<string>();
 
@@ -95,7 +96,14 @@ export function setMusicMode(nextMode: GameplayMode) {
   music.pause();
   music.src = source;
   music.dataset.track = source;
-  if (started) attemptPlay(music);
+  if (started && !musicSuppressed) attemptPlay(music);
+}
+
+export function setMusicSuppressed(suppressed: boolean) {
+  musicSuppressed = suppressed;
+  if (!music) return;
+  if (suppressed) music.pause();
+  else if (started) attemptPlay(music);
 }
 
 export function startMusic() {
@@ -109,7 +117,7 @@ export function startMusic() {
     document.body.appendChild(music);
   }
   setMusicMode(mode);
-  attemptPlay(music);
+  if (!musicSuppressed) attemptPlay(music);
   for (const name of activeLoops) {
     const element = loops.get(name);
     if (element) attemptPlay(element);

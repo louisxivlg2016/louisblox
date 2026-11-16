@@ -152,7 +152,7 @@ export function TouchControls() {
             useGameStore.getState().toggleCamera();
           }}
         >
-          Camera
+          {translate('Caméra', 'Camera', 'Cámara')}
         </button>
       </div>
     </div>

@@ -155,7 +155,7 @@ export async function fetchFriendRequests() {
   const url = endpoint('/friend-requests');
   url.searchParams.set('playerId', self.playerId);
   const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) throw new Error('Invitations indisponibles');
+  if (!response.ok) throw new Error(translate('Invitations indisponibles.', 'Invitations unavailable.', 'Invitaciones no disponibles.'));
   const data = await response.json() as { requests?: unknown };
   if (!Array.isArray(data.requests)) return;
   for (const item of data.requests) {
@@ -174,7 +174,7 @@ async function postFriend(path: string, targetId: string, requestId?: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ targetId, requestId, from }),
   });
-  if (!response.ok) throw new Error('Invitation impossible pour le moment.');
+  if (!response.ok) throw new Error(translate('Invitation impossible pour le moment.', 'Unable to send an invitation right now.', 'No se pudo enviar una invitación en este momento.'));
   const result = await response.json() as { sent?: boolean; delivered?: boolean };
   if (!result.sent) throw new Error(translate('Ce joueur n’est plus disponible.', 'This player is no longer available.'));
   return result.delivered !== false;

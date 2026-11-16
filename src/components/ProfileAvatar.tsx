@@ -101,10 +101,10 @@ export function ProfilePhotoPicker({ onClose }: { onClose: () => void }) {
     onClose();
   };
   return (
-    <div ref={picker} className="profile-photo-picker" role="group" aria-label={`Choose my photo, ${photoKinds.length} profiles`} tabIndex={0} onScroll={(event) => { const element = event.currentTarget; setAtBottom(element.scrollTop + element.clientHeight >= element.scrollHeight - 8); }}>
+    <div ref={picker} className="profile-photo-picker" role="group" aria-label={translate(`Choisir ma photo, ${photoKinds.length} profils`, `Choose my photo, ${photoKinds.length} profiles`, `Elegir mi foto, ${photoKinds.length} perfiles`)} tabIndex={0} onScroll={(event) => { const element = event.currentTarget; setAtBottom(element.scrollTop + element.clientHeight >= element.scrollHeight - 8); }}>
       {scrollable && !atBottom && <p className="profile-photo-scroll-hint">{translate('Fais défiler pour voir les autres profils ↓', 'Scroll to see more profiles ↓')}</p>}
       {photoKinds.map((kind) => (
-        <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={`Choose ${PHOTO_AVATARS()[kind].name}`} title={PHOTO_AVATARS()[kind].name}>
+        <button key={kind} className={`profile-photo-choice ${selected === kind ? 'active' : ''}`} onClick={() => choose(kind)} aria-pressed={selected === kind} aria-label={translate(`Choisir ${PHOTO_AVATARS()[kind].name}`, `Choose ${PHOTO_AVATARS()[kind].name}`, `Elegir ${PHOTO_AVATARS()[kind].name}`)} title={PHOTO_AVATARS()[kind].name}>
           <ProfileAvatar kind={kind} size={96} />
           <span>{PHOTO_AVATARS()[kind].name}</span>
         </button>

@@ -71,7 +71,7 @@ export function TraderBubble({ entity }: { entity: Entity }) {
     : active
       ? following
         ? translate(`Direction la ville : encore ${remaining ?? '…'} m. Je t’attends si tu t’éloignes.`, `Heading to the city: ${remaining ?? '…'} m left. I will wait if you fall behind.`)
-        : step === lastStep ? `${story} Choose your answer here.` : `${story} E to continue.`
+        : step === lastStep ? translate(`${story} Choisis ta réponse ici.`, `${story} Choose your answer here.`, `${story} Elige tu respuesta aquí.`) : translate(`${story} E pour continuer.`, `${story} E to continue.`, `${story} E para continuar.`)
       : translate('Appuie sur moi pour écouter mon histoire.', 'Press me to hear my story.'));
   const sprite = useMemo(() => {
     const material = new SpriteMaterial({ map: bubbleTexture(text), transparent: true, depthWrite: false, depthTest: false, toneMapped: false });

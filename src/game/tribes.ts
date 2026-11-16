@@ -123,7 +123,7 @@ export function receiveTribeMessage(data: { type?: unknown; tribes?: unknown; tr
     return true;
   }
   if (data.type === 'tribe-error') {
-    useTribeStore.setState({ error: typeof data.message === 'string' ? translateServerMessage(data.message.slice(0, 160)) : 'Action unavailable in this tribe.' });
+    useTribeStore.setState({ error: typeof data.message === 'string' ? translateServerMessage(data.message.slice(0, 160)) : translate('Action indisponible dans cette tribu.', 'Action unavailable in this tribe.', 'Acción no disponible en esta tribu.') });
     return true;
   }
   if (data.type === 'tribe-notice') {

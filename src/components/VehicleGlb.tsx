@@ -1,6 +1,6 @@
 import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Box3, Mesh, NearestFilter, Vector3 } from 'three';
+import { Box3, DataTexture, Mesh, NearestFilter, RepeatWrapping, RGBAFormat, Vector3 } from 'three';
 import raceCarUrl from '../../assets/models/raceCar.glb';
 import blueCarUrl from '../../assets/models/blueCar.glb';
 import airplaneUrl from '../../assets/models/airplane.glb';
@@ -18,9 +18,27 @@ const models = {
   train: trainUrl,
   metro: metroUrl,
 };
+const bluePixelData = new Uint8Array(16 * 16 * 4);
+for (let y = 0; y < 16; y += 1) for (let x = 0; x < 16; x += 1) {
+  const index = (y * 16 + x) * 4;
+  const shade = 210 + ((x * 37 + y * 61 + x * y) % 5) * 9;
+  bluePixelData[index] = shade;
+  bluePixelData[index + 1] = shade;
+  bluePixelData[index + 2] = shade;
+  bluePixelData[index + 3] = 255;
+}
+const bluePixelTexture = new DataTexture(bluePixelData, 16, 16, RGBAFormat);
+bluePixelTexture.magFilter = NearestFilter;
+bluePixelTexture.minFilter = NearestFilter;
+bluePixelTexture.generateMipmaps = false;
+bluePixelTexture.wrapS = RepeatWrapping;
+bluePixelTexture.wrapT = RepeatWrapping;
+bluePixelTexture.repeat.set(2, 2);
+bluePixelTexture.needsUpdate = true;
+
 const dimensions = {
   raceCar: [2.6, 2.2, 4.8],
-  blueCar: [2.2, 2.35, 5.1],
+  blueCar: [2.15, 2.05, 5.1],
   airplane: [7.2 * PLANE_SCALE, 2.5 * PLANE_SCALE, 8.2 * PLANE_SCALE],
   train: [1.9, 2.4, TRAIN_LENGTH],
   metro: [2.2, 2.4, METRO_LENGTH],
@@ -40,6 +58,7 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'm
         material.transparent = false;
         material.opacity = 1;
         material.depthWrite = true;
+        if (modelKind === 'blueCar' && !material.map) material.map = bluePixelTexture;
         if (!material.map) continue;
         material.map.magFilter = NearestFilter;
         material.map.minFilter = NearestFilter;
@@ -75,7 +94,7 @@ export function VehicleGlb({ entity, kind, color, interior = false }: { entity: 
   if (kind === 'jeep' || kind === 'carriage' || kind === 'cannon') return <VehicleAccessories entity={entity} kind={kind} interior={interior} />;
   return (
     <Suspense fallback={kind === 'car' ? <CarModel color={color} /> : null}>
-      {!interior || kind !== 'plane' ? <Model kind={kind} color={color} interior={interior} /> : null}
+      {!interior || kind !== 'plane' && kind !== 'train' && kind !== 'metro' && kind !== 'car' ? <Model kind={kind} color={color} interior={interior} /> : null}
       <VehicleAccessories entity={entity} kind={kind} />
     </Suspense>
   );

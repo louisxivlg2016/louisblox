@@ -34,7 +34,7 @@ export function TribePanel() {
       <section className="menu-panel tribe-panel" role="dialog" aria-modal="true" aria-label={translate('Ma tribu', 'My Tribe')}>
         <div className="tribe-heading"><h2>{tribe ? tribe.name : translate('Ma tribu', 'My Tribe')}</h2><button type="button" className="tribe-close" onClick={close} aria-label={translate('Fermer la tribu', 'Close tribe')}>{translate('Fermer ×', 'Close ×')}</button></div>
         {!online && <p>{translate('Connexion au salon en cours…', 'Connecting to room…')}</p>}
-        {invitations.length > 0 && <section className="tribe-invitations"><h3>Invitations</h3>{invitations.map((invitation) => (
+        {invitations.length > 0 && <section className="tribe-invitations"><h3>{translate('Invitations', 'Invitations', 'Invitaciones')}</h3>{invitations.map((invitation) => (
           <div className="tribe-invitation" key={invitation.id}>
             <p><strong>{invitation.name}</strong><small>{invitation.ownerName} invites you to join this tribe.</small></p>
             <div className="tribe-invitation-actions"><button type="button" className="primary-button" aria-label={`Join tribe ${invitation.name}`} onClick={() => answer(invitation.id, true)}>{translate('Rejoindre', 'Join')}</button><button type="button" className="secondary-button" aria-label={`Decline tribe ${invitation.name}`} onClick={() => answer(invitation.id, false)}>{translate('Refuser', 'Decline')}</button></div>
@@ -43,7 +43,7 @@ export function TribePanel() {
         {tribe ? (
           <>
             <p>{tribe.members.length} member{tribe.members.length > 1 ? 's' : ''}{tribe.ownerId === selfId ? ' · You are the leader' : ''}</p>
-            <ul className="tribe-members" aria-label={translate('Membres de la tribu', 'Tribe members')}>{tribe.members.map((member) => <li key={member.playerId} data-player-id={member.playerId}><strong>{member.name}{member.playerId === selfId ? ' (you)' : ''}</strong><small>{member.playerId === tribe.ownerId ? 'Leader · ' : ''}{players.some((player) => player.playerId === member.playerId) ? translate('En ligne', 'Online') : translate('Hors ligne', 'Offline')}</small></li>)}</ul>
+            <ul className="tribe-members" aria-label={translate('Membres de la tribu', 'Tribe members')}>{tribe.members.map((member) => <li key={member.playerId} data-player-id={member.playerId}><strong>{member.name}{member.playerId === selfId ? translate(' (toi)', ' (you)', ' (tú)') : ''}</strong><small>{member.playerId === tribe.ownerId ? translate('Chef · ', 'Leader · ', 'Líder · ') : ''}{players.some((player) => player.playerId === member.playerId) ? translate('En ligne', 'Online') : translate('Hors ligne', 'Offline')}</small></li>)}</ul>
             <section className="tribe-home">
               <h3>{translate('Maison de la tribu', 'Tribe home')}</h3>
               {tribe.home ? <>

@@ -7,8 +7,10 @@ import { PaintballPalette } from './PaintballPalette';
 import { PlaneTitleEditor } from './PlaneTitleEditor';
 import backpackButtonFrUrl from '../../assets/ui/backpack-button.webp';
 import backpackButtonEnUrl from '../../assets/ui/english/backpack.webp';
+import backpackButtonEsUrl from '../../assets/ui/spanish/mochila.webp';
 import shopButtonFrUrl from '../../assets/ui/shop-button.webp';
 import shopButtonEnUrl from '../../assets/ui/english/shop.webp';
+import shopButtonEsUrl from '../../assets/ui/spanish/tienda.webp';
 import teleportButtonUrl from '../../assets/ui/teleport-button.webp';
 import tribeButtonUrl from '../../assets/menu/tribe-button.webp';
 import { Backpack } from './Backpack';
@@ -16,6 +18,7 @@ import { BoutiquePanel } from './BoutiquePanel';
 import { ContainerPanel } from './ContainerPanel';
 import { TouchControls } from './TouchControls';
 import { SirenButton } from './SirenButton';
+import { RadioControls } from './RadioControls';
 import { BookPanel } from './BookPanel';
 import { SignPanel } from './SignPanel';
 import { useSignStore } from '../game/signs';
@@ -103,14 +106,14 @@ export function Hud() {
         <>
           <div className="crosshair" aria-hidden="true"><i /><b /></div>
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
-          {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label={translate('Sac à dos', 'Backpack')}><img src={language === 'fr' ? backpackButtonFrUrl : backpackButtonEnUrl} alt="" /></button>}
-          {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label={translate('Boutique', 'Shop')}><img src={language === 'fr' ? shopButtonFrUrl : shopButtonEnUrl} alt="" /></button>}
-          {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label={translate('Téléportation · T', 'Teleportation · T')}><img src={teleportButtonUrl} alt={translate('Téléportation · T', 'Teleportation · T')} /></button>}
-          {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label={translate('Ouvrir ma tribu', 'Open my tribe')}><img src={tribeButtonUrl} alt="TRIBU" />{tribeInvitations > 0 && <span className="tribe-invitation-count">{tribeInvitations}</span>}</button>}
-          <div className="action-hint">{gameplayMode === 'football' ? translate('Clic gauche : tir · E : tir puissant · T : tacler · G : passer', 'Left click: shoot · E: power shot · T: tackle · G: pass') : <>Left click <strong>{translate('casser / frapper / tirer', 'break / hit / shoot')}</strong> · <strong>E</strong> place / use / mount</>}</div>
+          {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label={translate('Sac à dos', 'Backpack')}><img src={translate(backpackButtonFrUrl, backpackButtonEnUrl, backpackButtonEsUrl)} alt="" /></button>}
+          {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label={translate('Boutique', 'Shop')}><img src={translate(shopButtonFrUrl, shopButtonEnUrl, shopButtonEsUrl)} alt="" /></button>}
+          {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label={translate('Téléportation · T', 'Teleportation · T')}>{language === 'es' ? <span className="localized-button-text">TELETRANSPORTE · T</span> : <img src={teleportButtonUrl} alt={translate('Téléportation · T', 'Teleportation · T')} />}</button>}
+          {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label={translate('Ouvrir ma tribu', 'Open my tribe')}>{language === 'es' ? <span className="localized-button-text">TRIBU</span> : <img src={tribeButtonUrl} alt="TRIBU" />}{tribeInvitations > 0 && <span className="tribe-invitation-count">{tribeInvitations}</span>}</button>}
           {notice && <div className="game-notice">{notice}</div>}
           <EffectsHud />
           <SirenButton />
+          <RadioControls />
           <TouchControls />
         </>
       )}

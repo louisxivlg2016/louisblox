@@ -16,7 +16,15 @@ import worldTabUrl from '../../assets/menu/world-tab.webp';
 import createLobbyTabUrl from '../../assets/menu/create-lobby-tab.webp';
 import worldCodeTabUrl from '../../assets/menu/world-code-tab.webp';
 import worldEditorTabUrl from '../../assets/menu/world-editor-tab.webp';
-import { translate } from '../game/language';
+import worldTabFrUrl from '../../assets/menu/french/monde.webp';
+import createWorldTabFrUrl from '../../assets/menu/french/creer-un-monde.webp';
+import createLobbyTabFrUrl from '../../assets/menu/french/creer-une-salle.webp';
+import worldEditorTabFrUrl from '../../assets/menu/french/editeur-3d.webp';
+import worldTabEsUrl from '../../assets/menu/spanish/mundo.webp';
+import createWorldTabEsUrl from '../../assets/menu/spanish/crear-un-mundo.webp';
+import createLobbyTabEsUrl from '../../assets/menu/spanish/crear-sala.webp';
+import worldEditorTabEsUrl from '../../assets/menu/spanish/editor-3d.webp';
+import { translate, useLanguageStore } from '../game/language';
 
 export type CreateWorldOptions = {
   name: string;
@@ -37,11 +45,11 @@ export function createLobbyOptions(options: CreateWorldOptions, room: string, mo
 }
 
 const initialWorld = createCustomWorld(DEFAULT_WORLD_SOURCE, 73421);
-const CREATE_WORLD_TABS = [
-  ['world', translate('Monde', 'World'), worldTabUrl],
-  ['lobby', translate('Créer ton salon', 'Create your room'), createLobbyTabUrl],
-  ['code', translate('Code du monde', 'World Code'), worldCodeTabUrl],
-  ['editor', translate('Éditeur 3D', '3D Editor'), worldEditorTabUrl],
+const CREATE_WORLD_TABS = () => [
+  ['world', translate('Monde', 'World'), translate(worldTabFrUrl, worldTabUrl, worldTabEsUrl)],
+  ['lobby', translate('Créer ton salon', 'Create your room'), translate(createLobbyTabFrUrl, createLobbyTabUrl, createLobbyTabEsUrl)],
+  ['code', translate('Code du monde', 'World Code'), translate(createWorldTabFrUrl, worldCodeTabUrl, createWorldTabEsUrl)],
+  ['editor', translate('Éditeur 3D', '3D Editor'), translate(worldEditorTabFrUrl, worldEditorTabUrl, worldEditorTabEsUrl)],
 ] as const;
 
 function seedFromName(name: string) {
@@ -49,6 +57,7 @@ function seedFromName(name: string) {
 }
 
 export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () => void; onCreate: (options: CreateWorldOptions) => void; onPlay: () => void | Promise<void> }) {
+  useLanguageStore((state) => state.language);
   const [draft] = useState(readEditorDraft);
   const [options, setOptions] = useState<CreateWorldOptions>({ name: draft?.name ?? translate('Mon aventure', 'My Adventure'), mode: 'creative', template: draft ? 'custom' : 'nature', multiplayer: false, canBreak: true, canPlace: true, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true });
   const [tab, setTab] = useState<'world' | 'lobby' | 'code' | 'editor'>(draft ? 'editor' : 'world');
@@ -135,23 +144,23 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () =
       <div className="create-world-form">
         <div className="world-library-heading"><div><h2>{translate('Créer un monde', 'Create World')}</h2><p>{translate('Choisis un terrain, programme-le, construis-le ou crée ton salon.', 'Choose terrain, program it, build it, or create your room.')}</p></div></div>
         <div className="create-world-tabs" role="tablist" aria-label={translate('Création du monde', 'World creation')}>
-          {CREATE_WORLD_TABS.map(([id, label, image]) => <button type="button" role="tab" id={`create-tab-${id}`} aria-label={label} aria-selected={tab === id} aria-controls={`create-panel-${id}`} className={tab === id ? 'selected' : ''} key={id} onClick={() => openTab(id)}><img src={image} alt="" /></button>)}
+          {CREATE_WORLD_TABS().map(([id, label, image]) => <button type="button" role="tab" id={`create-tab-${id}`} aria-label={label} aria-selected={tab === id} aria-controls={`create-panel-${id}`} className={tab === id ? 'selected' : ''} key={id} onClick={() => openTab(id)}><img src={image} alt="" /></button>)}
         </div>
         {tab === 'world' && <div id="create-panel-world" role="tabpanel" aria-labelledby="create-tab-world" className="create-world-settings">
-          <label htmlFor="world-name">World name
+          <label htmlFor="world-name">{translate('Nom du monde', 'World name', 'Nombre del mundo')}
             <input id="world-name" value={options.name} onChange={(event) => change('name', event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); submit(); } }} placeholder={translate('Nom de ton monde', 'Your world name')} maxLength={48} required autoFocus />
           </label>
           <fieldset>
             <legend>{translate('Qui peut rejoindre ce monde ?', 'Who can join this world?')}</legend>
-            <label><input type="radio" name="world-sharing" checked={!options.multiplayer} onChange={() => change('multiplayer', false)} /> Solo</label>
-            <label><input type="radio" name="world-sharing" checked={options.multiplayer} onChange={() => change('multiplayer', true)} /> Multiplayer</label>
+            <label><input type="radio" name="world-sharing" checked={!options.multiplayer} onChange={() => change('multiplayer', false)} /> {translate('Solo', 'Solo', 'Un jugador')}</label>
+            <label><input type="radio" name="world-sharing" checked={options.multiplayer} onChange={() => change('multiplayer', true)} /> {translate('Multijoueur', 'Multiplayer', 'Multijugador')}</label>
           </fieldset>
-          <label htmlFor="create-world-mode">Game mode
+          <label htmlFor="create-world-mode">{translate('Mode de jeu', 'Game mode', 'Modo de juego')}
             <select id="create-world-mode" value={options.mode} onChange={(event) => change('mode', event.target.value as GameplayMode)}>
               {Object.entries(GAMEPLAY_MODE_LABELS()).map(([mode, label]) => <option key={mode} value={mode}>{label}</option>)}
             </select>
           </label>
-          <label htmlFor="create-world-template">Terrain
+          <label htmlFor="create-world-template">{translate('Terrain', 'Terrain', 'Terreno')}
             <select id="create-world-template" value={options.template} onChange={(event) => { const template = event.target.value as WorldTemplate; change('template', template); if (template === 'custom') openTab('editor'); }}>
               <option value="nature">{translate('Monde naturel infini', 'Infinite natural world')}</option>
               <option value="city-ancient">{translate('Ville ancienne déjà construite', 'Pre-built historic city')}</option>
@@ -159,15 +168,15 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () =
               <option value="custom">{translate('Monde personnalisé · code et éditeur', 'Custom world · code and editor')}</option>
             </select>
           </label>
-          {options.template === 'custom' && <div className="create-custom-summary"><strong>{translate('Ton monde personnalisé', 'Your custom world')}</strong><span>{terrain === 'flat' ? translate('Terrain plat infini', 'Infinite flat terrain') : translate('Paysage naturel infini', 'Infinite natural landscape')} · {blocks.length} blocks · {infiniteEditor ? translate('éditeur infini', 'infinite editor') : translate('éditeur fini 65 × 65', 'finite 65 × 65 editor')}</span><button type="button" className="secondary-button" onClick={() => openTab('editor')}>{translate('Ouvrir l’éditeur 3D', 'Open 3D editor')}</button><button type="button" className="secondary-button" onClick={() => openTab('code')}>{translate('Écrire du code', 'Write code')}</button></div>}
+          {options.template === 'custom' && <div className="create-custom-summary"><strong>{translate('Ton monde personnalisé', 'Your custom world')}</strong><span>{terrain === 'flat' ? translate('Terrain plat infini', 'Infinite flat terrain') : translate('Paysage naturel infini', 'Infinite natural landscape')} · {blocks.length} {translate('blocs', 'blocks', 'bloques')} · {infiniteEditor ? translate('éditeur infini', 'infinite editor') : translate('éditeur fini 65 × 65', 'finite 65 × 65 editor')}</span><button type="button" className="secondary-button" onClick={() => openTab('editor')}>{translate('Ouvrir l’éditeur 3D', 'Open 3D editor')}</button><button type="button" className="secondary-button" onClick={() => openTab('code')}>{translate('Écrire du code', 'Write code')}</button></div>}
           <fieldset>
             <legend>{translate('Autorisations des autres joueurs', 'Other players’ permissions')}</legend>
-            <label className="protection-option"><input type="checkbox" checked={options.canBreak} onChange={(event) => change('canBreak', event.target.checked)} /> Break blocks</label>
-            <label className="protection-option"><input type="checkbox" checked={options.canPlace} onChange={(event) => change('canPlace', event.target.checked)} /> Place blocks</label>
-            <label className="protection-option"><input type="checkbox" checked={options.allowDestructiveFire} onChange={(event) => change('allowDestructiveFire', event.target.checked)} /> Destructive red fire</label>
-            <label className="protection-option"><input type="checkbox" checked={options.allowCampfire} onChange={(event) => change('allowCampfire', event.target.checked)} /> Non-destructive campfire</label>
-            <label className="protection-option"><input type="checkbox" checked={options.allowFloodingWater} onChange={(event) => change('allowFloodingWater', event.target.checked)} /> Flooding water</label>
-            <label className="protection-option"><input type="checkbox" checked={options.allowCalmWater} onChange={(event) => change('allowCalmWater', event.target.checked)} /> Calm water without flooding</label>
+            <label className="protection-option"><input type="checkbox" checked={options.canBreak} onChange={(event) => change('canBreak', event.target.checked)} /> {translate('Casser des blocs', 'Break blocks', 'Romper bloques')}</label>
+            <label className="protection-option"><input type="checkbox" checked={options.canPlace} onChange={(event) => change('canPlace', event.target.checked)} /> {translate('Poser des blocs', 'Place blocks', 'Colocar bloques')}</label>
+            <label className="protection-option"><input type="checkbox" checked={options.allowDestructiveFire} onChange={(event) => change('allowDestructiveFire', event.target.checked)} /> {translate('Feu rouge destructeur', 'Destructive red fire', 'Fuego rojo destructivo')}</label>
+            <label className="protection-option"><input type="checkbox" checked={options.allowCampfire} onChange={(event) => change('allowCampfire', event.target.checked)} /> {translate('Feu de camp non destructeur', 'Non-destructive campfire', 'Fogata no destructiva')}</label>
+            <label className="protection-option"><input type="checkbox" checked={options.allowFloodingWater} onChange={(event) => change('allowFloodingWater', event.target.checked)} /> {translate('Eau avec inondation', 'Flooding water', 'Agua con inundación')}</label>
+            <label className="protection-option"><input type="checkbox" checked={options.allowCalmWater} onChange={(event) => change('allowCalmWater', event.target.checked)} /> {translate('Eau calme sans inondation', 'Calm water without flooding', 'Agua tranquila sin inundación')}</label>
           </fieldset>
         </div>}
         {tab === 'lobby' && <div id="create-panel-lobby" role="tabpanel" aria-labelledby="create-tab-lobby" className="create-lobby-panel">
@@ -184,7 +193,7 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () =
           <aside className="world-code-help">
             <h3>{translate('Commandes disponibles', 'Available commands')}</h3>
             <dl><div><dt>terrain("plat")</dt><dd>{translate('Ou "nature" pour le paysage infini.', 'Or "nature" for an infinite landscape.')}</dd></div><div><dt>bloc(x, y, z, "pierre")</dt><dd>{translate('Pose un bloc. Ajoute ', 'Place a block. Add ')}<code>true</code>{translate(' en dernier argument pour le rendre incassable.', ' as the last argument to make it unbreakable.')}</dd></div><div><dt>remplir(x1, y1, z1, x2, y2, z2, "bois")</dt><dd>{translate('Remplit un volume. Le dernier ', 'Fill a volume. The optional last ')}<code>true</code>{translate(' facultatif protège aussi les blocs.', ' also protects blocks.')}</dd></div><div><dt>sphere(x, y, z, rayon, "verre")</dt><dd>{translate('Construit une sphère.', 'Build a sphere.')}</dd></div><div><dt>effacer(x, y, z)</dt><dd>{translate('Retire un bloc du code.', 'Remove a block from the code.')}</dd></div><div><dt>hauteur(x, z)</dt><dd>{translate('Hauteur du sol naturel.', 'Natural ground height.')}</dd></div><div><dt>aleatoire()</dt><dd>{translate('Nombre reproductible entre 0 et 1.', 'Repeatable number between 0 and 1.')}</dd></div></dl>
-            <p>Variables <code>let</code>, calculations, <code>if</code> conditions, and <code>for</code> loops are supported. {infiniteEditor ? translate('Éditeur infini : x/z libres pour explorer le monde, y de 1 à 48.', 'Infinite editor: x/z are free to explore the world, y from 1 to 48.') : translate('Éditeur fini : x/z de −32 à 32, y de 1 à 48.', 'Finite editor: x/z from −32 to 32, y from 1 to 48.')} Maximum 4,000 blocks.</p>
+            <p>{translate('Les variables let, les calculs, les conditions if et les boucles for sont prises en charge.', 'Variables let, calculations, if conditions, and for loops are supported.', 'Las variables let, los cálculos, las condiciones if y los bucles for son compatibles.')} {infiniteEditor ? translate('Éditeur infini : x/z libres pour explorer le monde, y de 1 à 48.', 'Infinite editor: x/z are free to explore the world, y from 1 to 48.') : translate('Éditeur fini : x/z de −32 à 32, y de 1 à 48.', 'Finite editor: x/z from −32 to 32, y from 1 to 48.')} {translate('Maximum 4 000 blocs.', 'Maximum 4,000 blocks.', 'Máximo 4.000 bloques.')}</p>
             <label htmlFor="world-code-block">Insert block by category
               <select id="world-code-block" value={insertKind} onChange={(event) => setInsertKind(Number(event.target.value) as BlockKind)}>{EDITOR_BLOCK_CATEGORIES.map((category) => <optgroup key={category.id} label={category.name}>{category.kinds.map((kind) => <option key={kind} value={kind}>{selectionInfo(kind).name}</option>)}</optgroup>)}</select>
             </label>
@@ -193,7 +202,7 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () =
           </aside>
         </div>}
         {tab === 'editor' && <div id="create-panel-editor" role="tabpanel" aria-labelledby="create-tab-editor"><WorldEditor blocks={blocks} terrain={terrain} seed={seedFromName(options.name)} onChange={(next) => { setBlocks(next); setDraftNotice(''); }} onTerrainChange={(next) => { setTerrain(next); setDraftNotice(''); }} onSaveDraft={saveDraft} draftNotice={draftNotice} infinite={infiniteEditor} onInfiniteChange={changeInfinite} /></div>}
-        <div className="create-world-submit"><span>{draftNotice || (options.template === 'custom' ? `${blocks.length} blocks · ${terrain === 'flat' ? translate('terrain plat', 'flat terrain') : translate('terrain naturel', 'natural terrain')}` : translate('Ton monde sera sauvegardé dans Mes mondes.', 'Your world will be saved in My Worlds.'))}</span><button className="primary-button" type="button" onClick={() => submit()} disabled={options.template === 'custom' && sourceDirty}>{translate('Créer le monde', 'Create world')}</button></div>
+        <div className="create-world-submit"><span>{draftNotice || (options.template === 'custom' ? `${blocks.length} ${translate('blocs', 'blocks', 'bloques')} · ${terrain === 'flat' ? translate('terrain plat', 'flat terrain') : translate('terrain naturel', 'natural terrain')}` : translate('Ton monde sera sauvegardé dans Mes mondes.', 'Your world will be saved in My Worlds.'))}</span><button className="primary-button" type="button" onClick={() => submit()} disabled={options.template === 'custom' && sourceDirty}>{translate('Créer le monde', 'Create world')}</button></div>
       </div>
     </MenuDialog>
   );

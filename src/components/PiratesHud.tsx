@@ -6,10 +6,11 @@ import { clearInput, releasePointerForOverlay, requestPlay } from '../game/input
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 import { MatchResultActions } from './MatchResultActions';
-import { translate } from '../game/language';
+import { translate, useLanguageStore } from '../game/language';
 import pirateShopButtonUrl from '../../assets/menu/pirate-shop-button.webp';
 
 export function PiratesHud() {
+  const language = useLanguageStore((state) => state.language);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   const mode = useGameStore((state) => state.mode);
   const enabled = useMultiplayerStore((state) => state.enabled);
@@ -65,11 +66,11 @@ export function PiratesHud() {
           )}
         </div>
       )}
-      {team && !winner && <button className="pirate-shop-toggle" aria-label={translate('Boutique pirate', 'Pirate shop')} onClick={() => { releasePointerForOverlay(); setShopOpen(true); }}><img src={pirateShopButtonUrl} alt="" /></button>}
+      {team && !winner && <button className="pirate-shop-toggle" aria-label={translate('Boutique pirate', 'Pirate shop')} onClick={() => { releasePointerForOverlay(); setShopOpen(true); }}>{language === 'es' ? <span className="localized-button-text">TIENDA PIRATA</span> : <img src={pirateShopButtonUrl} alt="" />}</button>}
       {shopOpen && (
         <div className="pirate-shop-panel">
           <h2>{translate('Boutique pirate · {money} pièces', 'Pirate shop · {money} coins')}</h2>
-          {PIRATE_SHOP().map((entry) => <button key={entry.item} disabled={money < entry.cost} onClick={() => buyPirateItem(entry.item)}>{entry.name} · {entry.cost} coins</button>)}
+          {PIRATE_SHOP().map((entry) => <button key={entry.item} disabled={money < entry.cost} onClick={() => buyPirateItem(entry.item)}>{entry.name} · {entry.cost} {translate('pièces', 'coins', 'monedas')}</button>)}
           <button className="primary-button" onClick={() => { setShopOpen(false); void requestPlay(); }}>{translate('Retour au navire', 'Return to ship')}</button>
         </div>
       )}

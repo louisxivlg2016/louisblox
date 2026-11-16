@@ -8,6 +8,7 @@ import { BoutiqueAvatarPreview } from './BoutiqueAvatarPreview';
 import { SettingsPanel } from './SettingsPanel';
 import shopFrUrl from '../../assets/menu/shop.webp';
 import shopEnUrl from '../../assets/menu/english/shop.webp';
+import shopEsUrl from '../../assets/menu/spanish/tienda.webp';
 import settingsButtonUrl from '../../assets/ui/settings-button.webp';
 import { translate, useLanguageStore } from '../game/language';
 
@@ -37,11 +38,11 @@ export function BoutiquePanel() {
   };
   return (
     <div className="menu-backdrop boutique-backdrop">
-      <section className="menu-panel boutique-panel" role="dialog" aria-modal="true" aria-label={translate('Boutique et réglages', 'Shop and settings')} style={{ backgroundImage: `linear-gradient(rgba(20,34,24,.93), rgba(20,34,24,.97)), url(${language === 'fr' ? shopFrUrl : shopEnUrl})`, backgroundSize: 'cover' }}>
+      <section className="menu-panel boutique-panel" role="dialog" aria-modal="true" aria-label={translate('Boutique et réglages', 'Shop and settings')} style={{ backgroundImage: `linear-gradient(rgba(20,34,24,.93), rgba(20,34,24,.97)), url(${translate(shopFrUrl, shopEnUrl, shopEsUrl)})`, backgroundSize: 'cover' }}>
         <div className="boutique-layout">
           <nav className="boutique-tabs" role="tablist" aria-label={translate('Boutique et réglages', 'Shop and settings')}>
             <button className={`boutique-tab ${tab === 'shop' ? 'active' : ''}`} role="tab" aria-selected={tab === 'shop'} onClick={() => setTab('shop')}>{translate('Boutique', 'Shop')}</button>
-            <button className={`boutique-tab image-tab ${tab === 'settings' ? 'active' : ''}`} role="tab" aria-label={translate('Réglages', 'Settings')} aria-selected={tab === 'settings'} onClick={() => setTab('settings')}><img src={settingsButtonUrl} alt="" /></button>
+            <button className={`boutique-tab image-tab ${tab === 'settings' ? 'active' : ''}`} role="tab" aria-label={translate('Réglages', 'Settings')} aria-selected={tab === 'settings'} onClick={() => setTab('settings')}>{language === 'es' ? <span>AJUSTES</span> : <img src={settingsButtonUrl} alt="" />}</button>
           </nav>
           <div className={`boutique-content ${tab === 'shop' ? 'with-preview' : ''}`} role="tabpanel">
             {tab === 'settings' ? <SettingsPanel /> : <>

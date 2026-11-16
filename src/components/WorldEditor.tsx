@@ -207,7 +207,7 @@ export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, 
           {available.map((kind) => <button type="button" key={kind} className={selected === kind ? 'selected' : ''} onClick={() => { setSelected(kind); setTool('place'); }} title={`${selectionInfo(kind).name} · ${worldBlockId(kind)}`} aria-pressed={selected === kind}><ItemIcon kind={kind} /><span>{selectionInfo(kind).name}</span></button>)}
           {available.length === 0 && <p>{translate('Aucun bloc trouvé.', 'No blocks found.')}</p>}
         </div>
-        <label className="world-editor-protected-option"><input type="checkbox" checked={protectedPlacement} onChange={(event) => setProtectedPlacement(event.target.checked)} /> Place unbreakable blocks</label>
+        <label className="world-editor-protected-option"><input type="checkbox" checked={protectedPlacement} onChange={(event) => setProtectedPlacement(event.target.checked)} /> {translate('Poser des blocs incassables', 'Place unbreakable blocks', 'Colocar bloques irrompibles')}</label>
       </div>
       <div className="world-editor-stage">
         <div className="world-editor-toolbar">
@@ -221,7 +221,7 @@ export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, 
             <button type="button" className="world-editor-save" onClick={() => setMessage(onSaveDraft() ? translate('Brouillon sauvegardé sur cet appareil. Tu peux continuer à construire.', 'Draft saved on this device. You can keep building.') : translate('Sauvegarde impossible sur cet appareil.', 'Unable to save on this device.'))}>{translate('Sauvegarder', 'Save')}</button>
           </div>
           <label>{translate('Éditeur', 'Editor')}<select aria-label={translate('Taille de l’éditeur', 'Editor size')} value={infinite ? 'infinite' : 'finite'} onChange={(event) => onInfiniteChange(event.target.value === 'infinite')}><option value="finite">{translate('Fini · 65 × 65', 'Finite · 65 × 65')}</option><option value="infinite">{translate('Infini · exploration libre', 'Infinite · free exploration')}</option></select></label>
-          <label>Terrain<select value={terrain} onChange={(event) => onTerrainChange(event.target.value as CustomTerrain)}><option value="flat">{translate('Plat infini', 'Infinite flat')}</option><option value="natural">{translate('Naturel infini', 'Infinite natural')}</option></select></label>
+          <label>{translate('Terrain', 'Terrain', 'Terreno')}<select value={terrain} onChange={(event) => onTerrainChange(event.target.value as CustomTerrain)}><option value="flat">{translate('Plat infini', 'Infinite flat')}</option><option value="natural">{translate('Naturel infini', 'Infinite natural')}</option></select></label>
         </div>
         <div className="world-editor-canvas">
           <Canvas frameloop={playerVisible ? 'always' : 'demand'} dpr={1} camera={{ position: [20, 20, 24], fov: 50, near: 0.1, far: 200 }} gl={{ antialias: false }} onContextMenu={(event) => event.preventDefault()}>
@@ -232,10 +232,10 @@ export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, 
         <div className="world-editor-coordinates">
           {(['x', 'y', 'z'] as const).map((axis) => <label key={axis}>{axis.toUpperCase()}<input type="number" value={position[axis]} onChange={(event) => setPosition({ ...position, [axis]: event.target.value })} min={axis === 'y' ? 1 : infinite ? -INFINITE_EDITOR_COORDINATE : -CUSTOM_WORLD_RADIUS} max={axis === 'y' ? CUSTOM_WORLD_MAX_Y : infinite ? INFINITE_EDITOR_COORDINATE : CUSTOM_WORLD_RADIUS} /></label>)}
           <button type="button" className="secondary-button" onClick={() => put(Number(position.x), Number(position.y), Number(position.z))}>{translate('Poser ici', 'Place here')}</button>
-          {infinite && <button type="button" className="secondary-button" onClick={() => { const x = Number(position.x); const y = Number(position.y); const z = Number(position.z); if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y) || !Number.isSafeInteger(z) || y < 1 || y > CUSTOM_WORLD_MAX_Y) { setMessage(translate('Coordonnées de téléportation invalides.', 'Invalid teleport coordinates.')); return; } setSpawnPoint({ x, y: y + 0.51, z }); setResetKey((value) => value + 1); setMessage(`Player teleported to ${x}, ${y + 0.51}, ${z}.`); }}>{translate('Aller à X, Y, Z', 'Go to X, Y, Z')}</button>}
+          {infinite && <button type="button" className="secondary-button" onClick={() => { const x = Number(position.x); const y = Number(position.y); const z = Number(position.z); if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y) || !Number.isSafeInteger(z) || y < 1 || y > CUSTOM_WORLD_MAX_Y) { setMessage(translate('Coordonnées de téléportation invalides.', 'Invalid teleport coordinates.')); return; } setSpawnPoint({ x, y: y + 0.51, z }); setResetKey((value) => value + 1); setMessage(translate(`Joueur téléporté à ${x}, ${y + 0.51}, ${z}.`, `Player teleported to ${x}, ${y + 0.51}, ${z}.`, `Jugador teletransportado a ${x}, ${y + 0.51}, ${z}.`)); }}>{translate('Aller à X, Y, Z', 'Go to X, Y, Z')}</button>}
           <button type="button" className="text-button" onClick={() => { if (blocks.length === 0 || window.confirm(translate('Retirer tous les blocs de cette construction ?', 'Remove every block from this construction?'))) { update([]); setMessage(translate('Construction vidée.', 'Construction cleared.')); } }}>{translate('Vider', 'Clear')}</button>
         </div>
-        <p className="world-editor-status" role="status"><strong>{blocks.length} / {CUSTOM_WORLD_MAX_BLOCKS} blocks</strong> · {message}{draftNotice ? ` · ${draftNotice}` : ''}</p>
+        <p className="world-editor-status" role="status"><strong>{blocks.length} / {CUSTOM_WORLD_MAX_BLOCKS} {translate('blocs', 'blocks', 'bloques')}</strong> · {message}{draftNotice ? ` · ${draftNotice}` : ''}</p>
       </div>
     </div>
   );

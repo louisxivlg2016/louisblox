@@ -177,15 +177,15 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
           {requests.map((request) => (
             <div className="friend-request" key={request.requestId}>
               <PlayerRow player={request.from} />
-              <div><button aria-label={`Accept ${request.from.name}`} onClick={() => accept(request)}>{translate('Accepter', 'Accept')}</button><button aria-label={`Decline ${request.from.name}`} onClick={() => { removeRequest(request.requestId); setMessage(translate(`Invitation de ${request.from.name} refusée.`, `Invitation from ${request.from.name} declined.`)); }}>{translate('Refuser', 'Decline')}</button></div>
+              <div><button aria-label={translate(`Accepter ${request.from.name}`, `Accept ${request.from.name}`, `Aceptar a ${request.from.name}`)} onClick={() => accept(request)}>{translate('Accepter', 'Accept')}</button><button aria-label={translate(`Refuser ${request.from.name}`, `Decline ${request.from.name}`, `Rechazar a ${request.from.name}`)} onClick={() => { removeRequest(request.requestId); setMessage(translate(`Invitation de ${request.from.name} refusée.`, `Invitation from ${request.from.name} declined.`)); }}>{translate('Refuser', 'Decline')}</button></div>
             </div>
           ))}
         </div>
       )}
 
-      <div className="friends-heading"><h3>Friends <span>{friends.length}</span></h3><span className="online-dot" /></div>
+      <div className="friends-heading"><h3>{translate('Amis', 'Friends', 'Amigos')} <span>{friends.length}</span></h3><span className="online-dot" /></div>
       <div className="friends-list">
-        {savedFriends.map(({ player, online: isOnline }) => <PlayerRow key={player.playerId} player={player} online={isOnline} action={<span className="friend-actions"><button className="friend-add" disabled={!isOnline} aria-label={`Join ${player.name}`} onClick={() => joinFriend(player)}>{isOnline ? translate('Rejoindre', 'Join') : translate('Hors ligne', 'Offline')}</button><button className="friend-add friend-gift" disabled={!isOnline || apples < 1 || giving.includes(player.playerId)} aria-label={`Give an apple to ${player.name}`} onClick={() => offerApple(player)}>{giving.includes(player.playerId) ? translate('Envoi…', 'Sending…') : `Apple ×${apples}`}</button></span>} />)}
+        {savedFriends.map(({ player, online: isOnline }) => <PlayerRow key={player.playerId} player={player} online={isOnline} action={<span className="friend-actions"><button className="friend-add" disabled={!isOnline} aria-label={translate(`Rejoindre ${player.name}`, `Join ${player.name}`, `Unirse a ${player.name}`)} onClick={() => joinFriend(player)}>{isOnline ? translate('Rejoindre', 'Join') : translate('Hors ligne', 'Offline')}</button><button className="friend-add friend-gift" disabled={!isOnline || apples < 1 || giving.includes(player.playerId)} aria-label={translate(`Donner une pomme à ${player.name}`, `Give an apple to ${player.name}`, `Dar una manzana a ${player.name}`)} onClick={() => offerApple(player)}>{giving.includes(player.playerId) ? translate('Envoi…', 'Sending…') : translate('Pomme', 'Apple', 'Manzana') + ` ×${apples}`}</button></span>} />)}
         {savedFriends.length === 0 && <p className="friends-empty">{translate('Propose des amis parmi les joueurs en ligne.', 'Add friends from the online players.')}</p>}
       </div>
       <div className="friends-heading"><h3>{translate('Tous les joueurs', 'All players')} <span>{filteredPlayers.length}</span></h3></div>

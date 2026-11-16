@@ -22,7 +22,7 @@ export function ProfileDialog({ onClose }: { onClose: () => void }) {
   const appearance = useCharacterStore((state) => state.appearance);
   const seconds = useProfileStore((state) => state.seconds);
   const createdAt = useProfileStore((state) => state.createdAt);
-  const createdLabel = new Date(createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+  const createdLabel = new Date(createdAt).toLocaleDateString(translate('fr-FR', 'en-US', 'es-ES'), { day: 'numeric', month: 'long', year: 'numeric' });
   return (
     <MenuDialog title={translate('Mon profil', 'My Profile')} onClose={onClose} className="profile-dialog">
       <div className="world-library-heading"><h2>{translate('Mon profil', 'My Profile')}</h2></div>

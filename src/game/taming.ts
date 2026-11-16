@@ -165,7 +165,7 @@ export function feedAnimal(world: World, entity: Entity, selected: SelectedKind)
     entity.remove(CamelLeash);
   }
   save(world);
-  store.setNotice(existing ? `${names()[kind] ?? translate('Cet animal', 'This animal')} is happy! Friendship level ${record.friendship} · Next meal in 30 minutes.` : `${names()[kind] ?? translate('Cet animal', 'This animal')} is tamed · Friendship level 1. Feed it at least every 30 minutes.`);
+  store.setNotice(existing ? translate(`${names()[kind] ?? 'Cet animal'} est content ! Niveau d’amitié ${record.friendship} · Prochain repas dans 30 minutes.`, `${names()[kind] ?? 'This animal'} is happy! Friendship level ${record.friendship} · Next meal in 30 minutes.`, `¡${names()[kind] ?? 'Este animal'} está feliz! Nivel de amistad ${record.friendship} · Próxima comida en 30 minutos.`) : translate(`${names()[kind] ?? 'Cet animal'} est apprivoisé · Niveau d’amitié 1. Nourris-le au moins toutes les 30 minutes.`, `${names()[kind] ?? 'This animal'} is tamed · Friendship level 1. Feed it at least every 30 minutes.`, `${names()[kind] ?? 'Este animal'} está domesticado · Nivel de amistad 1. Aliméntalo al menos cada 30 minutos.`));
   return 'fed';
 }
 

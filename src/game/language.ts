@@ -1,10 +1,12 @@
 import { create } from 'zustand';
+import { SPANISH_STRINGS, SPANISH_TEMPLATES } from './spanish';
 
-export type Language = 'fr' | 'en';
+export type Language = 'fr' | 'en' | 'es';
 
 function initialLanguage(): Language {
   try {
-    return localStorage.getItem('louisblox-language') === 'fr' ? 'fr' : 'en';
+    const saved = localStorage.getItem('louisblox-language');
+    return saved === 'fr' || saved === 'es' ? saved : 'en';
   } catch {
     return 'en';
   }
@@ -21,8 +23,33 @@ export const useLanguageStore = create<{ language: Language; setLanguage: (langu
   },
 }));
 
-export function translate(french: string, english: string) {
-  return useLanguageStore.getState().language === 'fr' ? french : english;
+const spanishWords: Record<string, string> = { life: 'vida', lives: 'vidas', second: 'segundo', seconds: 'segundos', block: 'bloque', blocks: 'bloques', world: 'mundo', worlds: 'mundos', player: 'jugador', players: 'jugadores' };
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const spanishPatterns = Object.entries(SPANISH_TEMPLATES).map(([template, spanish]) => {
+  let index = 0;
+  const normalized = template.slice(1, -1).replace(/\$\{[^}]*\}/g, () => `__LB${index++}__`);
+  const source = normalized.split(/__LB\d+__/).map(escapeRegExp).join('([\\s\\S]*?)');
+  return { regex: new RegExp(`^${source}$`), spanish };
+});
+
+function spanishDirect(value: string) {
+  return SPANISH_STRINGS[value] ?? spanishWords[value] ?? value;
+}
+
+export function spanishText(value: string) {
+  const direct = SPANISH_STRINGS[value] ?? spanishWords[value];
+  if (direct) return direct;
+  for (const { regex, spanish } of spanishPatterns) {
+    const match = regex.exec(value);
+    if (!match) continue;
+    return spanish.replace(/__LB(\d+)__/g, (_, index) => spanishDirect(match[Number(index) + 1] ?? ''));
+  }
+  return value;
+}
+
+export function translate(french: string, english: string, spanish?: string) {
+  const language = useLanguageStore.getState().language;
+  return language === 'fr' ? french : language === 'es' ? spanish ?? spanishText(english) : english;
 }
 
 const serverMessages: Record<string, string> = {
@@ -47,7 +74,25 @@ const serverMessages: Record<string, string> = {
 };
 
 export function translateServerMessage(message: string) {
-  if (useLanguageStore.getState().language !== 'fr' || !message) return message;
+  const language = useLanguageStore.getState().language;
+  if (language === 'es') {
+    const direct = spanishText(message);
+    if (direct !== message) return direct;
+    const invitation = message.match(/^Invitation sent to (.+)\.$/);
+    if (invitation) return `Invitación enviada a ${invitation[1]}.`;
+    const alreadyMember = message.match(/^(.+) already belongs to a tribe\.$/);
+    if (alreadyMember) return `${alreadyMember[1]} ya pertenece a una tribu.`;
+    const joined = message.match(/^(.+) joined your tribe\.$/);
+    if (joined) return `${joined[1]} se unió a tu tribu.`;
+    const joinedTribe = message.match(/^You joined tribe (.+)\.$/);
+    if (joinedTribe) return `Te uniste a la tribu ${joinedTribe[1]}.`;
+    const exit = message.match(/^(.+) found the exit!$/);
+    if (exit) return `¡${exit[1]} encontró la salida!`;
+    const offside = message.match(/^Offside by (.+)$/);
+    if (offside) return `Fuera de juego de ${offside[1]}`;
+    return message;
+  }
+  if (language !== 'fr' || !message) return message;
   const direct = serverMessages[message];
   if (direct) return direct;
   const invitation = message.match(/^Invitation sent to (.+)\.$/);
@@ -68,7 +113,7 @@ export function translateServerMessage(message: string) {
 function applyDocumentLanguage(language: Language) {
   if (typeof document === 'undefined') return;
   document.documentElement.lang = language;
-  document.title = language === 'fr' ? 'Louisblox — Explore. Casse. Construis.' : 'Louisblox — Explore. Break. Build.';
+  document.title = language === 'fr' ? 'Louisblox — Explore. Casse. Construis.' : language === 'es' ? 'Louisblox — Explora. Rompe. Construye.' : 'Louisblox — Explore. Break. Build.';
 }
 
 useLanguageStore.subscribe((state) => applyDocumentLanguage(state.language));

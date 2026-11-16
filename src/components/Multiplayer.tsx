@@ -740,7 +740,7 @@ export function MultiplayerConnection() {
         }
       };
       next.onerror = () => {
-        store.setStatus('error', 'Serveur inaccessible. Nouvelle tentative…');
+        store.setStatus('error', translate('Serveur inaccessible. Nouvelle tentative…', 'Server unavailable. Retrying…', 'Servidor no disponible. Reintentando…'));
         next.close();
       };
       next.onclose = (event) => {
@@ -777,7 +777,7 @@ export function MultiplayerConnection() {
         useRemotePlayerStore.getState().setAppearances({});
         useRemotePlayerStore.getState().setWigs({});
       useRemotePlayerStore.getState().setAvatars({});
-        store.setStatus('error', 'Connexion interrompue. Nouvelle tentative…');
+        store.setStatus('error', translate('Connexion interrompue. Nouvelle tentative…', 'Connection interrupted. Retrying…', 'Conexión interrumpida. Reintentando…'));
         reconnectTimer = window.setTimeout(connect, 1500);
       };
     };

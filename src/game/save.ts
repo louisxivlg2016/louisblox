@@ -66,7 +66,7 @@ export function writeWorldSave(worldId: string, save: WorldSave, name = worldId)
   } catch {
     if (!storageWarningShown) {
       storageWarningShown = true;
-      useGameStore.getState().setNotice('Sauvegarde locale impossible. Va dans Mes mondes et clique sur Exporter pour conserver une copie de tes mondes.');
+      useGameStore.getState().setNotice(translate('Sauvegarde locale impossible. Va dans Mes mondes et clique sur Exporter pour conserver une copie de tes mondes.', 'Unable to save locally. Open My worlds and click Export to keep a copy of your worlds.', 'No se pudo guardar localmente. Abre Mis mundos y haz clic en Exportar para conservar una copia de tus mundos.'));
     }
     return null;
   }
