@@ -6,9 +6,10 @@ import { useGameStore } from '../game/store';
 import { defaultAppearance } from '../game/appearance';
 import { BoutiqueAvatarPreview } from './BoutiqueAvatarPreview';
 import { SettingsPanel } from './SettingsPanel';
-import shopUrl from '../../assets/menu/english/shop.webp';
+import shopFrUrl from '../../assets/menu/shop.webp';
+import shopEnUrl from '../../assets/menu/english/shop.webp';
 import settingsButtonUrl from '../../assets/ui/settings-button.webp';
-import { translate } from '../game/language';
+import { translate, useLanguageStore } from '../game/language';
 
 const SKIN_COLORS = ['#f0c7a6', '#e7a0aa', '#c98962', '#966045', '#704735', '#493329'];
 const HAIR_COLORS = ['#49382f', '#25232a', '#8a5838', '#d6b46a', '#d7d0c3', '#a74a82', '#4e79a7', '#50844a'];
@@ -16,6 +17,7 @@ const EYE_COLORS = ['#273b4b', '#3d6e45', '#6f4d35', '#4e79a7', '#784da0', '#a13
 const CLOTHING_COLORS = ['#4d83a7', '#9a5f9f', '#8e303d', '#526647', '#c467a5', '#2d467f', '#b98a53', '#35434c'];
 
 export function BoutiquePanel() {
+  const language = useLanguageStore((state) => state.language);
   const open = useGameStore((state) => state.shopOpen);
   const setOpen = useGameStore((state) => state.setShopOpen);
   const character = useCharacterStore((state) => state.character);
@@ -35,7 +37,7 @@ export function BoutiquePanel() {
   };
   return (
     <div className="menu-backdrop boutique-backdrop">
-      <section className="menu-panel boutique-panel" role="dialog" aria-modal="true" aria-label={translate('Boutique et réglages', 'Shop and settings')} style={{ backgroundImage: `linear-gradient(rgba(20,34,24,.93), rgba(20,34,24,.97)), url(${shopUrl})`, backgroundSize: 'cover' }}>
+      <section className="menu-panel boutique-panel" role="dialog" aria-modal="true" aria-label={translate('Boutique et réglages', 'Shop and settings')} style={{ backgroundImage: `linear-gradient(rgba(20,34,24,.93), rgba(20,34,24,.97)), url(${language === 'fr' ? shopFrUrl : shopEnUrl})`, backgroundSize: 'cover' }}>
         <div className="boutique-layout">
           <nav className="boutique-tabs" role="tablist" aria-label={translate('Boutique et réglages', 'Shop and settings')}>
             <button className={`boutique-tab ${tab === 'shop' ? 'active' : ''}`} role="tab" aria-selected={tab === 'shop'} onClick={() => setTab('shop')}>{translate('Boutique', 'Shop')}</button>

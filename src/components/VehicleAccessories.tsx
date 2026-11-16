@@ -18,7 +18,7 @@ type VehicleModelKind = keyof typeof vehicleModels;
 for (const model of Object.values(vehicleModels)) useGLTF.preload(model);
 useGLTF.preload(horseUrl);
 
-function HunyuanVehicle({ kind, interior, showOccupants }: { kind: VehicleModelKind; interior: boolean; showOccupants: boolean }) {
+function HunyuanVehicle({ kind, interior }: { kind: VehicleModelKind; interior: boolean }) {
   const { scene } = useGLTF(vehicleModels[kind]);
   const model = useMemo(() => {
     const clone = scene.clone(true);
@@ -28,11 +28,9 @@ function HunyuanVehicle({ kind, interior, showOccupants }: { kind: VehicleModelK
       object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) {
-        if (interior || showOccupants) {
-          material.transparent = true;
-          material.opacity = interior ? 0.12 : 0.38;
-          material.depthWrite = false;
-        }
+        material.transparent = false;
+        material.opacity = 1;
+        material.depthWrite = true;
         if (!material.map) continue;
         material.map.magFilter = NearestFilter;
         material.map.minFilter = NearestFilter;
@@ -54,7 +52,7 @@ function HunyuanVehicle({ kind, interior, showOccupants }: { kind: VehicleModelK
       clone.position.y -= bounds.min.y;
     }
     return clone;
-  }, [scene, kind, interior, showOccupants]);
+  }, [scene, kind, interior]);
   return <group name={`${kind}-reference-model`} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
@@ -93,10 +91,10 @@ function HarnessHorse({ entity, x, phase }: { entity: Entity; x: number; phase: 
   return <group ref={group} position={[x, 0.12, -4.1]} rotation={[0, Math.PI, 0]} name="harness-horse" userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
-export function VehicleAccessories({ entity, kind, interior = false, showOccupants = false }: { entity: Entity; kind: VehicleKind; interior?: boolean; showOccupants?: boolean }) {
+export function VehicleAccessories({ entity, kind, interior = false }: { entity: Entity; kind: VehicleKind; interior?: boolean }) {
   if (kind === 'plane') return null;
   if (kind in vehicleModels) return <>
-    <HunyuanVehicle kind={kind as VehicleModelKind} interior={interior} showOccupants={showOccupants} />
+    <HunyuanVehicle kind={kind as VehicleModelKind} interior={interior} />
     {kind === 'carriage' && <><HarnessHorse entity={entity} x={-0.8} phase={0} /><HarnessHorse entity={entity} x={0.8} phase={Math.PI} /></>}
   </>;
   return null;

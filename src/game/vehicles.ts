@@ -24,11 +24,14 @@ export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y
   const bx = Math.round(x);
   const bz = Math.round(z);
   const top = getColumnTop(world, bx, bz);
-  if (top !== undefined && top + 0.5 <= fromY) return top + 0.5;
   const blocks = getBlockIndex(world);
-  for (let y = Math.min(top ?? 80, Math.floor(fromY + 0.5)); y >= MIN_WORLD_Y; y -= 1) {
+  const isGround = (y: number) => {
     const block = blocks.get(voxelKey(bx, y, bz));
-    if (block && !isGrassPlate(block) && !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79)) return y + 0.5;
+    return block && !isGrassPlate(block) && !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79);
+  };
+  if (top !== undefined && top + 0.5 <= fromY && isGround(top)) return top + 0.5;
+  for (let y = Math.min(top ?? 80, Math.floor(fromY + 0.5)); y >= MIN_WORLD_Y; y -= 1) {
+    if (isGround(y)) return y + 0.5;
   }
   return MIN_WORLD_Y + 0.5;
 }
@@ -97,7 +100,9 @@ export function vehicleInteractionPosition(vehicle: Entity) {
 }
 
 export function vehicleSeatPosition(vehicle: Entity, kind: VehicleKind, role: SeatRole, seat = 0) {
-  return vehicleLocalPosition(vehicle, new Vector3(...seatOffset(kind, role, seat)));
+  const offset = new Vector3(...seatOffset(kind, role, seat));
+  if (kind === 'car' && vehicle.get(Vehicle)?.color.toLowerCase() === '#347cd0') offset.x *= -1;
+  return vehicleLocalPosition(vehicle, offset);
 }
 
 export function landPlane(world: World) {

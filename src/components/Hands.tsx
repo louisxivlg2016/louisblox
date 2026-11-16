@@ -75,7 +75,7 @@ export function Hands() {
   }, [camera, scene]);
   useEffect(() => () => heldMaterials.forEach((material) => material.dispose()), [heldMaterials]);
 
-  if (cameraMode !== 'first' || sleeping || riding === 'car') return null;
+  if (cameraMode !== 'first' || sleeping || riding !== null) return null;
   return createPortal(
     <>
       <group visible={!eating}>

@@ -879,7 +879,8 @@
       .appearance-options button.active { border-color: #f2cc62; }
       .color-swatch { width: 32px; height: 32px; padding: 0 !important; border-color: rgba(255,255,255,.4) !important; }
       .menu-action-bar { position: fixed; left: 326px; right: 16px; bottom: 12px; z-index: 41; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 26px; padding: 14px; background: rgba(22,30,43,.97); border: 2px solid #4f4c46; box-shadow: 0 -4px 18px rgba(0,0,0,.28); }
-      .language-panel { position: fixed; top: 12px; right: 12px; z-index: 60; padding: 4px; background: rgba(22,30,43,.96); border: 2px solid #4f4c46; }
+      .language-panel { position: fixed; top: 12px; right: 240px; z-index: 60; padding: 4px; background: rgba(22,30,43,.96); border: 2px solid #4f4c46; }
+      .language-panel::before { content: 'Langue'; position: absolute; top: -23px; right: 0; color: #d8e2ee; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
       .language-switch { display: flex; align-items: center; justify-content: center; gap: 8px; }
       .language-switch button { min-width: 52px; padding: 10px 12px; color: #d8e2ee; background: #26344c; border: 2px solid #61708f; cursor: pointer; font-weight: 700; }
       .language-switch button.active { color: #2d2410; background: #f5d553; border-color: #fff0a0; }
@@ -1037,7 +1038,7 @@
         .world-card img { height: 145px; }
       }
       @media (max-width: 650px) {
-        .language-panel { top: 4px; right: 6px; }
+        .language-panel { top: 64px; right: 6px; }
         .language-panel button { min-width: 44px; padding: 6px 8px; }
         .menu-sidebar { padding: 12px 10px; }
         .menu-action-bar { bottom: 6px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; }

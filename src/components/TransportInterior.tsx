@@ -36,7 +36,7 @@ function CabinShell({ cabin, showFloor = true }: { cabin: CabinDefinition; showF
       {[-1, 1].map((side) => (
         <mesh key={side} position={[side * (cabin.halfWidth + 0.12), cabin.floor + height / 2, middle]}>
           <boxGeometry args={[0.2, height, length + 0.4]} />
-          <meshLambertMaterial color="#cfdae0" transparent opacity={0.2} depthWrite={false} />
+          <meshLambertMaterial color="#cfdae0" />
         </mesh>
       ))}
       {[-1, 1].map((side) => <PixelPart key={side} position={[side * (cabin.halfWidth + 0.12), cabin.floor + height / 2, cabin.front - 0.1]} size={[0.16, height, 0.2]} color="#a9b9c4" />)}
@@ -44,12 +44,12 @@ function CabinShell({ cabin, showFloor = true }: { cabin: CabinDefinition; showF
       <PixelPart position={[0, cabin.floor + 0.22, cabin.front - 0.1]} size={[cabin.halfWidth * 2 + 0.4, 0.44, 0.2]} color="#a9b9c4" />
       <mesh name="plane-windshield" position={[0, cabin.floor + height * 0.56, cabin.front - 0.115]}>
         <boxGeometry args={[cabin.halfWidth * 2 + 0.2, height * 0.66, 0.035]} />
-        <meshLambertMaterial color="#9ed6ec" transparent opacity={0.1} depthWrite={false} />
+        <meshLambertMaterial color="#9ed6ec" />
       </mesh>
       <PixelPart position={[0, cabin.floor + height / 2, cabin.rear + 0.1]} size={[cabin.halfWidth * 2 + 0.4, height, 0.2]} color="#a9b9c4" />
       <mesh position={[0, cabin.ceiling + 0.1, middle]}>
         <boxGeometry args={[cabin.halfWidth * 2 + 0.4, 0.2, length + 0.4]} />
-        <meshLambertMaterial color="#dce5e8" transparent opacity={0.24} depthWrite={false} />
+        <meshLambertMaterial color="#dce5e8" />
       </mesh>
     </group>
   );
@@ -97,10 +97,11 @@ function TrainInterior({ kind, driverPresent, passengerSeat }: { kind: 'train' |
   );
 }
 
-export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
+export function VehicleInterior({ kind, driverPresent, passengerSeat, rightHandDrive = false }: {
   kind: VehicleKind;
   driverPresent: boolean;
   passengerSeat: number | null;
+  rightHandDrive?: boolean;
 }) {
   if (kind === 'plane') return <PlaneInterior driverPresent={driverPresent} />;
   if (kind === 'train' || kind === 'metro') return <TrainInterior kind={kind} driverPresent={driverPresent} passengerSeat={passengerSeat} />;
@@ -110,5 +111,6 @@ export function VehicleInterior({ kind, driverPresent, passengerSeat }: {
   }
   if (kind === 'cannon') return null;
   if (kind === 'jeep') return <SteeringWheel position={[-0.58, 1.3, -0.65]} />;
-  return <><SteeringWheel position={[-0.58, 1.05, -0.65]} /><Seat position={[0.58, 0.68, -0.05]} /></>;
+  const driverX = rightHandDrive ? 0.58 : -0.58;
+  return <><SteeringWheel position={[driverX, 1.05, -0.65]} /><Seat position={[-driverX, 0.68, -0.05]} /></>;
 }

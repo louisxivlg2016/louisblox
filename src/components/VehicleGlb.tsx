@@ -20,13 +20,13 @@ const models = {
 };
 const dimensions = {
   raceCar: [2.6, 2.2, 4.8],
-  blueCar: [2.6, 2.2, 4.8],
+  blueCar: [2.2, 2.35, 5.1],
   airplane: [7.2 * PLANE_SCALE, 2.5 * PLANE_SCALE, 8.2 * PLANE_SCALE],
   train: [1.9, 2.4, TRAIN_LENGTH],
   metro: [2.2, 2.4, METRO_LENGTH],
 } as const;
 
-function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane' | 'train' | 'metro' | 'boat'; color: string; interior: boolean; showOccupants: boolean }) {
+function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'metro' | 'boat'; color: string; interior: boolean }) {
   const modelKind = kind === 'car' && color.toLowerCase() === '#347cd0' ? 'blueCar' : kind === 'car' ? 'raceCar' : kind === 'plane' ? 'airplane' : kind === 'train' ? 'train' : 'metro';
   const { scene } = useGLTF(models[modelKind]);
   const model = useMemo(() => {
@@ -37,11 +37,9 @@ function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane'
       object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) {
-        if (interior || showOccupants) {
-          material.transparent = true;
-          material.opacity = Math.min(material.opacity, interior ? kind === 'car' ? 0.03 : 0.18 : 0.38);
-          material.depthWrite = false;
-        }
+        material.transparent = false;
+        material.opacity = 1;
+        material.depthWrite = true;
         if (!material.map) continue;
         material.map.magFilter = NearestFilter;
         material.map.minFilter = NearestFilter;
@@ -51,7 +49,8 @@ function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane'
     });
     const uniformScale = modelKind === 'metro' || modelKind === 'train';
     const targetLength = modelKind === 'train' ? TRAIN_LENGTH : METRO_LENGTH;
-    if (modelKind === 'raceCar' || modelKind === 'blueCar') clone.rotation.y = Math.PI / 2;
+    if (modelKind === 'raceCar') clone.rotation.y = Math.PI / 2;
+    if (modelKind === 'blueCar') clone.rotation.y = Math.PI;
     if (modelKind === 'airplane') clone.rotation.y = Math.PI / 2;
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
@@ -66,18 +65,18 @@ function Model({ kind, color, interior, showOccupants }: { kind: 'car' | 'plane'
     }
     clone.position.set(-center.x, -box.min.y * clone.scale.y, -center.z);
     return clone;
-  }, [scene, modelKind, interior, kind, showOccupants]);
+  }, [scene, modelKind, interior, kind]);
   return <primitive object={model} />;
 }
 
-export function VehicleGlb({ entity, kind, color, interior = false, showOccupants = false }: { entity: import('koota').Entity; kind: VehicleKind; color: string; interior?: boolean; showOccupants?: boolean }) {
+export function VehicleGlb({ entity, kind, color, interior = false }: { entity: import('koota').Entity; kind: VehicleKind; color: string; interior?: boolean }) {
   if (kind === 'boat') return <group scale={[1.2, 1.2, 1.45]}><BoatModel color={color} /></group>;
-  if (kind === 'police' || kind === 'firetruck') return <Suspense fallback={null}><VehicleAccessories entity={entity} kind={kind} interior={interior} showOccupants={showOccupants} /></Suspense>;
-  if (kind === 'jeep' || kind === 'carriage' || kind === 'cannon') return <VehicleAccessories entity={entity} kind={kind} interior={interior} showOccupants={showOccupants} />;
+  if (kind === 'police' || kind === 'firetruck') return <Suspense fallback={null}><VehicleAccessories entity={entity} kind={kind} interior={interior} /></Suspense>;
+  if (kind === 'jeep' || kind === 'carriage' || kind === 'cannon') return <VehicleAccessories entity={entity} kind={kind} interior={interior} />;
   return (
     <Suspense fallback={kind === 'car' ? <CarModel color={color} /> : null}>
-      {!interior || kind !== 'plane' ? <Model kind={kind} color={color} interior={interior} showOccupants={showOccupants} /> : null}
-      <VehicleAccessories entity={entity} kind={kind} showOccupants={showOccupants} />
+      {!interior || kind !== 'plane' ? <Model kind={kind} color={color} interior={interior} /> : null}
+      <VehicleAccessories entity={entity} kind={kind} />
     </Suspense>
   );
 }

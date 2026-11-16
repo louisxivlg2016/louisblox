@@ -8,12 +8,14 @@ import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVel
 import { useMazeStore } from '../mazeClient';
 import { canWalkInVehicle, isAnimalMount, vehicleViewDistance } from '../vehicleTypes';
 import { VehiclePosition } from '../traits';
+import { groundAt } from '../vehicles';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
 
 const sleepBlends = new WeakMap<World, number>();
 const flightBlends = new WeakMap<World, number>();
 const sleepCameraPosition = new Vector3();
+const cameraTarget = new Vector3();
 
 export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const entity = world.queryFirst(Player);
@@ -75,7 +77,9 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   if (cameraMode === 'front' || cameraMode === 'third') {
     const direction = cameraMode === 'front' ? -1 : 1;
     camera.position.set(center.x + Math.sin(state.yaw) * distance * direction, center.y + height, center.z + Math.cos(state.yaw) * distance * direction);
-    camera.lookAt(center.x, center.y + targetHeight, center.z);
+    camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z) + 0.35);
+    cameraTarget.set(center.x, center.y + targetHeight, center.z);
+    camera.lookAt(cameraTarget);
   } else {
     camera.position.copy(position);
     if (walkingCabin) camera.position.y += 1.62;
