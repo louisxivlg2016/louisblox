@@ -49,6 +49,7 @@ export type Voxel = {
   meat?: import('./animals').AnimalKind;
   protected?: boolean;
   waterlogged?: boolean;
+  floodSource?: boolean;
 };
 
 export type VoxelHit = {

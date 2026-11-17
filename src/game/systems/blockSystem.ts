@@ -1,7 +1,7 @@
 import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Camera } from 'three';
-import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel } from '../chunks';
+import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel, setVoxelFloodSource } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
 import { isBed, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, signFacing } from '../extraBlocks';
@@ -236,6 +236,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       const orientation = isSlab(kind) ? hit.normal.y === -1 ? 1 : hit.normal.y === 0 ? 2 : 0 : isStair(kind) && hit.normal.y === -1 ? 1 : undefined;
       const placed = addVoxel(world, x, y, z, kind, orientation, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || isSlab(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
       if (placed) playSound('placeBlock', 0.45);
+      if (placed && kind === BlockKind.Water) setVoxelFloodSource(world, placed, true);
       if (placed && store.gameplayMode === 'survival') changeInventory(kind, -1);
       if (kind === BlockKind.Tnt) {
         const bomb = spawnBomb(world, x, y, z);

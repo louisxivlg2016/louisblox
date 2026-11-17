@@ -42,7 +42,7 @@ import { createCustomWorld, DEFAULT_WORLD_SOURCE, sanitizeCustomWorld } from './
 import { initTaming } from './taming';
 import { translate } from './language';
 
-export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean; waterlogged?: boolean } | null;
+export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean; waterlogged?: boolean; floodSource?: boolean } | null;
 export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: VehicleKind };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
@@ -219,6 +219,7 @@ function blockEdit(block: Voxel): ChunkEdit {
   if (block.meat !== undefined) edit.meat = block.meat;
   if (block.protected === true) edit.protected = true;
   if (block.waterlogged === true) edit.waterlogged = true;
+  if (block.floodSource === true) edit.floodSource = true;
   return Object.keys(edit).length === 1 ? block.kind : edit;
 }
 
@@ -286,7 +287,7 @@ export function loadChunk(world: World, cx: number, cz: number) {
       else {
         const [x, y, z] = position.split(',').map(Number);
         const data = typeof kind === 'number' ? { kind, open: false } : kind;
-        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing, text: typeof data.text === 'string' ? data.text.replace(/\r/g, '').slice(0, 120) : undefined, food: data.food, meat: data.meat, protected: data.protected, waterlogged: data.waterlogged });
+        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing, text: typeof data.text === 'string' ? data.text.replace(/\r/g, '').slice(0, 120) : undefined, food: data.food, meat: data.meat, protected: data.protected, waterlogged: data.waterlogged, floodSource: data.floodSource });
       }
     }
   }
@@ -554,8 +555,25 @@ export function setVoxelWaterlogged(world: World, target: Voxel, waterlogged: bo
   const block = state.blocks.get(voxelKey(target.x, target.y, target.z));
   if (!block || block !== target || waterlogged && !hasWaterOpening(block)) return;
   if (waterlogged) block.waterlogged = true;
-  else delete block.waterlogged;
+  else {
+    delete block.waterlogged;
+    delete block.floodSource;
+  }
   indexBlock(state, block);
+  const cx = chunkCoordinate(block.x);
+  const cz = chunkCoordinate(block.z);
+  editsFor(state, cx, cz).set(voxelKey(block.x, block.y, block.z), blockEdit(block));
+  recordVoxelEdit(state, cx, cz, block.x, block.y, block.z);
+  return block;
+}
+
+export function setVoxelFloodSource(world: World, target: Voxel, floodSource: boolean, authoritative = false) {
+  if (!authoritative && !canEditAt(target.x, target.z, 'interact')) return;
+  const state = stateFor(world);
+  const block = state.blocks.get(voxelKey(target.x, target.y, target.z));
+  if (!block || block !== target || !isWaterBlock(block.kind) && !block.waterlogged) return;
+  if (floodSource) block.floodSource = true;
+  else delete block.floodSource;
   const cx = chunkCoordinate(block.x);
   const cz = chunkCoordinate(block.z);
   editsFor(state, cx, cz).set(voxelKey(block.x, block.y, block.z), blockEdit(block));
@@ -591,6 +609,7 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
     else delete block.protected;
   }
   if (!hasWaterOpening(block)) delete block.waterlogged;
+  if (!isWaterBlock(kind) && !block.waterlogged) delete block.floodSource;
   indexBlock(state, block);
   const cx = chunkCoordinate(hit.x);
   const cz = chunkCoordinate(hit.z);
@@ -655,10 +674,18 @@ export function applyVoxelEdit(world: World, position: string, edit: ChunkEdit, 
     return;
   }
   const data = typeof edit === 'number' ? { kind: edit } : edit;
-  const block = state.blocks.get(position) ?? addVoxel(world, x, y, z, data.kind, data.growth, data.facing, 0, data.food, data.meat, data.protected, authoritative);
+  const existing = state.blocks.get(position);
+  if (existing && isWaterBlock(data.kind) && hasWaterOpening(existing)) {
+    setVoxelWaterlogged(world, existing, true, authoritative);
+    setVoxelFloodSource(world, existing, data.floodSource === true, authoritative);
+    clearPaintSplashAt(world, x, y, z);
+    return;
+  }
+  const block = existing ?? addVoxel(world, x, y, z, data.kind, data.growth, data.facing, 0, data.food, data.meat, data.protected, authoritative);
   if (block) {
     replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, data.kind, data.open, data.growth, data.items, data.facing, data.food, data.meat, data.protected, authoritative);
     if (hasWaterOpening(block) || block.waterlogged) setVoxelWaterlogged(world, block, data.waterlogged === true && hasWaterOpening(block), authoritative);
+    if (isWaterBlock(data.kind) || block.waterlogged) setVoxelFloodSource(world, block, data.floodSource === true, authoritative);
     if (typeof data.text === 'string') setVoxelText(world, { x, y, z }, data.text);
   }
   if (isWaterBlock(data.kind)) clearPaintSplashAt(world, x, y, z);
