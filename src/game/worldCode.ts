@@ -2,9 +2,9 @@ import { BLOCK_INFO, BlockKind, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
 import { translate } from './language';
 
-export const CUSTOM_WORLD_RADIUS = 32;
-export const CUSTOM_WORLD_MAX_Y = 48;
-export const CUSTOM_WORLD_MAX_BLOCKS = 4000;
+export const CUSTOM_WORLD_RADIUS = 64;
+export const CUSTOM_WORLD_MAX_Y = 64;
+export const CUSTOM_WORLD_MAX_BLOCKS = 12000;
 export const CUSTOM_WORLD_MAX_SOURCE = 240000;
 export const INFINITE_EDITOR_COORDINATE = 1000000000;
 
@@ -48,6 +48,11 @@ for (const [name, value] of Object.entries(BlockKind)) {
 }
 blockAliases.set('eau', BlockKind.CalmWater);
 blockAliases.set('eau_inondation', BlockKind.Water);
+blockAliases.set('ble', BlockKind.Wheat);
+blockAliases.set('mais', BlockKind.Corn);
+blockAliases.set('tomate', BlockKind.Tomato);
+blockAliases.set('carotte', BlockKind.Carrot);
+blockAliases.set('pasteque', BlockKind.Watermelon);
 
 export function resolveWorldBlock(value: string) {
   return blockAliases.get(identifier(value));
@@ -301,7 +306,7 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
   let randomState = seed >>> 0;
   const tick = (line?: number) => {
     operations += 1;
-    if (operations > 100000) throw new Error(translate(`Ligne ${line ?? 1} : le code fait trop d’opérations. Réduis les boucles.`, `Line ${line ?? 1}: code performs too many operations. Reduce the loops.`));
+    if (operations > 250000) throw new Error(translate(`Ligne ${line ?? 1} : le code fait trop d’opérations. Réduis les boucles.`, `Line ${line ?? 1}: code performs too many operations. Reduce the loops.`));
   };
   const number = (value: Value, name: string, line: number) => {
     if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(translate(`Ligne ${line} : ${name} doit être un nombre fini.`, `Line ${line}: ${name} must be a finite number.`));
@@ -317,7 +322,7 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
     const y = integer(args[offset + 1], 'y', line);
     const z = integer(args[offset + 2], 'z', line);
     const limit = infinite ? INFINITE_EDITOR_COORDINATE : CUSTOM_WORLD_RADIUS;
-    if (!Number.isSafeInteger(x) || !Number.isSafeInteger(z) || Math.abs(x) > limit || Math.abs(z) > limit || y < 1 || y > CUSTOM_WORLD_MAX_Y) throw new Error(infinite ? translate(`Ligne ${line} : coordonnées entières trop grandes, y entre 1 et 48.`, `Line ${line}: integer coordinates too large, y from 1 to 48.`) : translate(`Ligne ${line} : x et z entre -32 et 32, y entre 1 et 48.`, `Line ${line}: x and z from -32 to 32, y from 1 to 48.`));
+    if (!Number.isSafeInteger(x) || !Number.isSafeInteger(z) || Math.abs(x) > limit || Math.abs(z) > limit || y < 1 || y > CUSTOM_WORLD_MAX_Y) throw new Error(infinite ? translate(`Ligne ${line} : coordonnées entières trop grandes, y entre 1 et ${CUSTOM_WORLD_MAX_Y}.`, `Line ${line}: integer coordinates too large, y from 1 to ${CUSTOM_WORLD_MAX_Y}.`) : translate(`Ligne ${line} : x et z entre -${CUSTOM_WORLD_RADIUS} et ${CUSTOM_WORLD_RADIUS}, y entre 1 et ${CUSTOM_WORLD_MAX_Y}.`, `Line ${line}: x and z from -${CUSTOM_WORLD_RADIUS} to ${CUSTOM_WORLD_RADIUS}, y from 1 to ${CUSTOM_WORLD_MAX_Y}.`));
     return [x, y, z];
   };
   const kind = (value: Value, line: number) => {
@@ -375,6 +380,142 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
       }
       return;
     }
+    if (name === 'ligne') {
+      if (args.length !== 7 && args.length !== 8) throw new Error(translate(`Ligne ${line} : ligne attend 7 arguments, plus true facultatif pour protéger.`, `Line ${line}: line expects 7 arguments, plus optional true for protection.`));
+      const start = position(args, 0, line);
+      const end = position(args, 3, line);
+      const block = kind(args[6], line);
+      const steps = Math.max(Math.abs(end[0] - start[0]), Math.abs(end[1] - start[1]), Math.abs(end[2] - start[2]), 1);
+      for (let index = 0; index <= steps; index += 1) {
+        const ratio = index / steps;
+        position(start.map((value, axis) => Math.round(value + (end[axis] - value) * ratio)), 0, line);
+        put(Math.round(start[0] + (end[0] - start[0]) * ratio), Math.round(start[1] + (end[1] - start[1]) * ratio), Math.round(start[2] + (end[2] - start[2]) * ratio), block, line, args[7] === true);
+      }
+      return;
+    }
+    if (name === 'mur') {
+      if (args.length !== 8 && args.length !== 9) throw new Error(translate(`Ligne ${line} : mur attend 8 arguments, plus true facultatif pour protéger.`, `Line ${line}: wall expects 8 arguments, plus optional true for protection.`));
+      const start = position(args, 0, line);
+      const end = position(args, 3, line);
+      const height = integer(args[6], 'hauteur', line);
+      const block = kind(args[7], line);
+      if (height < 1 || height > 32) throw new Error(translate(`Ligne ${line} : la hauteur du mur doit être entre 1 et 32.`, `Line ${line}: wall height must be between 1 and 32.`));
+      const steps = Math.max(Math.abs(end[0] - start[0]), Math.abs(end[2] - start[2]), 1);
+      for (let index = 0; index <= steps; index += 1) {
+        const ratio = index / steps;
+        const x = Math.round(start[0] + (end[0] - start[0]) * ratio);
+        const z = Math.round(start[2] + (end[2] - start[2]) * ratio);
+        for (let y = start[1]; y < start[1] + height; y += 1) put(x, y, z, block, line, args[8] === true);
+      }
+      return;
+    }
+    if (name === 'cylindre') {
+      if (args.length !== 6 && args.length !== 7) throw new Error(translate(`Ligne ${line} : cylindre attend 6 arguments, plus true facultatif pour protéger.`, `Line ${line}: cylinder expects 6 arguments, plus optional true for protection.`));
+      const [cx, cy, cz] = position(args, 0, line);
+      const radius = integer(args[3], 'rayon', line);
+      const height = integer(args[4], 'hauteur', line);
+      const block = kind(args[5], line);
+      if (radius < 1 || radius > 24 || height < 1 || height > 32) throw new Error(translate(`Ligne ${line} : le rayon doit être entre 1 et 24 et la hauteur entre 1 et 32.`, `Line ${line}: radius must be between 1 and 24 and height between 1 and 32.`));
+      for (let y = cy; y < cy + height; y += 1) for (let x = -radius; x <= radius; x += 1) for (let z = -radius; z <= radius; z += 1) {
+        if (x * x + z * z <= radius * radius) position([cx + x, y, cz + z], 0, line), put(cx + x, y, cz + z, block, line, args[6] === true);
+      }
+      return;
+    }
+    if (name === 'pyramide') {
+      if (args.length !== 5 && args.length !== 6) throw new Error(translate(`Ligne ${line} : pyramide attend 5 arguments, plus true facultatif pour protéger.`, `Line ${line}: pyramid expects 5 arguments, plus optional true for protection.`));
+      const [cx, cy, cz] = position(args, 0, line);
+      const size = integer(args[3], 'taille', line);
+      const block = kind(args[4], line);
+      if (size < 1 || size > 16) throw new Error(translate(`Ligne ${line} : la taille doit être entre 1 et 16.`, `Line ${line}: size must be between 1 and 16.`));
+      for (let layer = 0; layer < size; layer += 1) for (let x = -size + layer + 1; x <= size - layer - 1; x += 1) for (let z = -size + layer + 1; z <= size - layer - 1; z += 1) {
+        position([cx + x, cy + layer, cz + z], 0, line);
+        put(cx + x, cy + layer, cz + z, block, line, args[5] === true);
+      }
+      return;
+    }
+    if (name === 'arbre') {
+      if (args.length !== 3 && args.length !== 4) throw new Error(translate(`Ligne ${line} : arbre attend 3 arguments, plus true facultatif pour protéger.`, `Line ${line}: tree expects 3 arguments, plus optional true for protection.`));
+      const [x, y, z] = position(args, 0, line);
+      for (let trunk = 0; trunk < 4; trunk += 1) put(x, y + trunk, z, BlockKind.Wood, line, args[3] === true);
+      for (let dx = -2; dx <= 2; dx += 1) for (let dz = -2; dz <= 2; dz += 1) for (let dy = 0; dy <= 1; dy += 1) {
+        if (Math.abs(dx) + Math.abs(dz) + dy <= 3) position([x + dx, y + 4 + dy, z + dz], 0, line), put(x + dx, y + 4 + dy, z + dz, BlockKind.Leaves, line, args[3] === true);
+      }
+      put(x, y + 6, z, BlockKind.Leaves, line, args[3] === true);
+      return;
+    }
+    if (name === 'maison') {
+      if (args.length !== 8 && args.length !== 9) throw new Error(translate(`Ligne ${line} : maison attend 8 arguments, plus true facultatif pour protéger.`, `Line ${line}: house expects 8 arguments, plus optional true for protection.`));
+      const [cx, cy, cz] = position(args, 0, line);
+      const width = integer(args[3], 'largeur', line);
+      const depth = integer(args[4], 'profondeur', line);
+      const height = integer(args[5], 'hauteur', line);
+      const wall = kind(args[6], line);
+      const roof = kind(args[7], line);
+      if (width < 3 || depth < 3 || width > 24 || depth > 24 || height < 2 || height > 16) throw new Error(translate(`Ligne ${line} : dimensions invalides pour la maison.`, `Line ${line}: invalid house dimensions.`));
+      const halfX = Math.floor(width / 2);
+      const halfZ = Math.floor(depth / 2);
+      for (let x = cx - halfX; x <= cx + halfX; x += 1) for (let z = cz - halfZ; z <= cz + halfZ; z += 1) {
+        put(x, cy, z, BlockKind.OakPlanks, line, args[8] === true);
+        for (let y = cy + 1; y < cy + height; y += 1) {
+          const edge = x === cx - halfX || x === cx + halfX || z === cz - halfZ || z === cz + halfZ;
+          const doorway = z === cz + halfZ && x === cx && y <= cy + 2;
+          if (edge && !doorway) put(x, y, z, wall, line, args[8] === true);
+        }
+        for (let layer = 0; layer < 3; layer += 1) if (Math.abs(x - cx) <= halfX - layer) put(x, cy + height + layer, z, roof, line, args[8] === true);
+      }
+      put(cx, cy + 1, cz + halfZ, BlockKind.DoorBrown, line, args[8] === true);
+      for (const side of [-1, 1]) {
+        put(cx + side * halfX, cy + 2, cz, BlockKind.Glass, line, args[8] === true);
+        put(cx + side, cy + 2, cz - halfZ, BlockKind.Glass, line, args[8] === true);
+      }
+      put(cx - 1, cy + 1, cz - 1, BlockKind.Bed, line, args[8] === true);
+      put(cx + 1, cy + 1, cz, BlockKind.Chest, line, args[8] === true);
+      return;
+    }
+    if (name === 'route') {
+      if (args.length !== 8 && args.length !== 9) throw new Error(translate(`Ligne ${line} : route attend 8 arguments, plus true facultatif pour protéger.`, `Line ${line}: road expects 8 arguments, plus optional true for protection.`));
+      const start = position(args, 0, line);
+      const end = position(args, 3, line);
+      const width = integer(args[6], 'largeur', line);
+      const block = kind(args[7], line);
+      if (width < 1 || width > 15 || width % 2 === 0) throw new Error(translate(`Ligne ${line} : la largeur doit être un nombre impair entre 1 et 15.`, `Line ${line}: width must be an odd number between 1 and 15.`));
+      const steps = Math.max(Math.abs(end[0] - start[0]), Math.abs(end[2] - start[2]), 1);
+      const horizontal = Math.abs(end[0] - start[0]) >= Math.abs(end[2] - start[2]);
+      for (let index = 0; index <= steps; index += 1) {
+        const ratio = index / steps;
+        const x = Math.round(start[0] + (end[0] - start[0]) * ratio);
+        const z = Math.round(start[2] + (end[2] - start[2]) * ratio);
+        for (let offset = -(width - 1) / 2; offset <= (width - 1) / 2; offset += 1) put(x + (horizontal ? 0 : offset), start[1], z + (horizontal ? offset : 0), block, line, args[8] === true);
+      }
+      return;
+    }
+    if (name === 'champ') {
+      if (args.length !== 6 && args.length !== 7) throw new Error(translate(`Ligne ${line} : champ attend 6 arguments, plus true facultatif pour protéger.`, `Line ${line}: field expects 6 arguments, plus optional true for protection.`));
+      const [cx, cy, cz] = position(args, 0, line);
+      const width = integer(args[3], 'largeur', line);
+      const depth = integer(args[4], 'profondeur', line);
+      const crop = kind(args[5], line);
+      if (width < 1 || depth < 1 || width > 32 || depth > 32) throw new Error(translate(`Ligne ${line} : le champ est limité à 32 × 32.`, `Line ${line}: field is limited to 32 × 32.`));
+      for (let dx = 0; dx < width; dx += 1) for (let dz = 0; dz < depth; dz += 1) {
+        const x = cx + dx;
+        const z = cz + dz;
+        if (dx % 5 === 0) put(x, cy, z, BlockKind.CalmWater, line, args[6] === true);
+        else {
+          put(x, cy, z, BlockKind.Dirt, line, args[6] === true);
+          if (dz % 2 === 0) put(x, cy + 1, z, crop, line, args[6] === true);
+        }
+      }
+      return;
+    }
+    if (name === 'panneau') {
+      if (args.length !== 4 && args.length !== 5) throw new Error(translate(`Ligne ${line} : panneau attend 4 arguments, plus true facultatif pour protéger.`, `Line ${line}: sign expects 4 arguments, plus optional true for protection.`));
+      const [x, y, z] = position(args, 0, line);
+      if (typeof args[3] !== 'string') throw new Error(translate(`Ligne ${line} : écris le texte du panneau entre guillemets.`, `Line ${line}: write the sign text in quotes.`));
+      put(x, y, z, BlockKind.Wood, line, args[4] === true);
+      const sign = { x, y: y + 1, z, kind: BlockKind.Sign, text: args[3].slice(0, 120), ...(args[4] === true ? { protected: true } : {}) };
+      blocks.set(voxelKey(x, y + 1, z), sign);
+      return;
+    }
     if (name === 'hauteur') {
       arity(args, 2, name, line);
       const x = integer(args[0], 'x', line);
@@ -389,7 +530,7 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
       value ^= value + Math.imul(value ^ value >>> 7, value | 61);
       return ((value ^ value >>> 14) >>> 0) / 4294967296;
     }
-    throw new Error(`Ligne ${line} : commande « ${name} » inconnue. Utilise terrain, bloc, remplir, sphere, effacer, hauteur ou aleatoire.`);
+    throw new Error(`Ligne ${line} : commande « ${name} » inconnue. Utilise terrain, bloc, remplir, sphere, ligne, mur, cylindre, pyramide, arbre, maison, route, champ, panneau, effacer, hauteur ou aleatoire.`);
   };
   const evaluate = (expression: Expression, scope: Scope): Value => {
     if (expression.type === 'value') return expression.value;
