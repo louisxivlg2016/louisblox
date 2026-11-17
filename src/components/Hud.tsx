@@ -18,7 +18,6 @@ import { Backpack } from './Backpack';
 import { BoutiquePanel } from './BoutiquePanel';
 import { ContainerPanel } from './ContainerPanel';
 import { TouchControls } from './TouchControls';
-import { Minimap } from './Minimap';
 import { SirenButton } from './SirenButton';
 import { RadioControls } from './RadioControls';
 import { VehiclePassengers } from './VehiclePassengers';
@@ -120,7 +119,6 @@ export function Hud() {
           <RadioControls />
           <VehiclePassengers />
           <TouchControls />
-          <Minimap />
         </>
       )}
 

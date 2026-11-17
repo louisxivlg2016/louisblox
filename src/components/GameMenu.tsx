@@ -54,6 +54,7 @@ type ModeCard = {
   description: (enabled: boolean) => string;
   tag: (enabled: boolean) => string;
 };
+const POPULAR_MODES = new Set<GameplayMode>(['survival', 'creative', 'pirates', 'football', 'city-ancient', 'city-modern']);
 const MODE_CARDS = (): ModeCard[] => [
   { mode: 'survival', image: translate(survivalFrUrl, survivalEnUrl, survivalEsUrl), alt: translate('Zombie du mode Survie', 'Survival mode zombie'), name: translate('Survie', 'Survival'), description: (enabled) => enabled ? translate('Monde public avec tous les joueurs', 'Public world with every player') : translate('Nouveau monde solo à mains nues', 'New solo world with bare hands'), tag: (enabled) => enabled ? translate('Multijoueur', 'Multiplayer') : 'Solo' },
   { mode: 'creative', image: translate(creativeFrUrl, creativeEnUrl, creativeEsUrl), alt: translate('Monde du mode Créatif', 'Creative mode world'), name: translate('Créatif', 'Creative'), tagClass: 'creative', description: (enabled) => enabled ? translate('Monde public avec tous les joueurs', 'Public world with every player') : translate('Nouveau monde solo avec tous les objets', 'New solo world with every item'), tag: (enabled) => enabled ? translate('Multijoueur', 'Multiplayer') : 'Solo' },
@@ -184,7 +185,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
                     <img src={card.image} alt={card.alt} />
                     <span className="world-card-label"><strong>{card.name}</strong><small>{locked ? translate('Active le multijoueur pour jouer', 'Enable multiplayer to play') : card.description(enabled)}</small></span>
                     <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{locked ? translate('Multijoueur requis', 'Multiplayer required') : card.tag(enabled)}</span>
-                    {enabled && <span className="world-mode-player-count" aria-label={`${playerCount} ${translate('joueur', 'player')}${playerCount > 1 ? 's' : ''} ${translate('en', 'in')} ${card.name}`}>{playerCount} {translate('joueur', 'player')}{playerCount > 1 ? 's' : ''}</span>}
+                    {enabled && <span className="world-mode-badges">
+                      {POPULAR_MODES.has(card.mode) && <span className="world-mode-popular">{translate('Populaire', 'Popular')}</span>}
+                      <span className="world-mode-player-count" aria-label={`${playerCount} ${translate('joueur', 'player')}${playerCount > 1 ? 's' : ''} ${translate('en', 'in')} ${card.name}`}>{playerCount} {translate('joueur', 'player')}{playerCount > 1 ? 's' : ''}</span>
+                    </span>}
                   </button>
                 </div>
               );
