@@ -19,6 +19,7 @@ import { ContainerPanel } from './ContainerPanel';
 import { TouchControls } from './TouchControls';
 import { SirenButton } from './SirenButton';
 import { RadioControls } from './RadioControls';
+import { VehiclePassengers } from './VehiclePassengers';
 import { BookPanel } from './BookPanel';
 import { SignPanel } from './SignPanel';
 import { useSignStore } from '../game/signs';
@@ -114,6 +115,7 @@ export function Hud() {
           <EffectsHud />
           <SirenButton />
           <RadioControls />
+          <VehiclePassengers />
           <TouchControls />
         </>
       )}

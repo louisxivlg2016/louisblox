@@ -148,7 +148,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     return true;
   }
   if (meta.category === 'vehicle' && interact > 0) {
-    const nearby = world.query(Vehicle, VehiclePosition, VehicleMotion).some((entity) => entity.get(VehiclePosition)!.distanceTo(player) < 6);
+    const nearby = world.query(Vehicle, VehiclePosition, VehicleMotion).some((entity) => entity.get(VehiclePosition)!.distanceTo(player) < 2);
     if (nearby) return false;
     const blocks = getBlockIndex(world);
     const kind = selected === 'plane' ? 'plane' : selected === 'train' ? 'train' : selected === 'metro' ? 'metro' : selected === 'boat' || meta.shape === 'boat' || meta.shape === 'hovercraft' ? 'boat' : selected === 'jeep' ? 'jeep' : selected === 'police_car' ? 'police' : selected === 'firetruck' ? 'firetruck' : selected === 'carriage' ? 'carriage' : selected === 'cannon' ? 'cannon' : 'car';
@@ -168,12 +168,8 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     const hit = raycastVoxel(blocks, origin, direction, 6);
     const x = hit ? hit.x + hit.normal.x * 1.5 : player.x + direction.x * 3;
     const z = hit ? hit.z + hit.normal.z * 1.5 : player.z + direction.z * 3;
-    const ground = groundAt(world, x, z, player.y + 4);
-    if (ground <= SEA_LEVEL) {
-      useGameStore.getState().setNotice(translate('La voiture doit être posée sur la terre ferme.', 'The car must be placed on land.'));
-      return true;
-    }
-    spawnVehicle(world, kind, x, ground, z, meta.color);
+    const y = hit ? hit.y + hit.normal.y * 1.5 : player.y + direction.y * 3;
+    spawnVehicle(world, kind, x, y, z, meta.color, 0, undefined, true);
     useGameStore.getState().setNotice(translate(`${kind === 'plane' ? 'Avion' : kind === 'train' ? 'Train' : kind === 'metro' ? 'Métro' : 'Voiture'} prêt ! Approche-toi et appuie sur E pour choisir ta place.`, `${kind === 'plane' ? 'Airplane' : kind === 'train' ? 'Train' : kind === 'metro' ? 'Metro' : 'Vehicle'} ready! Come closer and press E to choose your seat.`));
     return true;
   }

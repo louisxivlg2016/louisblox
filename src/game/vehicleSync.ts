@@ -4,6 +4,7 @@ import { Player, PlayerMount, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion
 import { dismount } from './vehicles';
 import { isVehicleKind } from './vehicleTypes';
 import type { VehicleKind } from './vehicleTypes';
+import { syncVehicleRadioPlayback } from './radio';
 
 export type VehicleSnapshot = {
   id: string;
@@ -14,6 +15,8 @@ export type VehicleSnapshot = {
   z: number;
   yaw: number;
   driver?: boolean;
+  radioEnabled?: boolean;
+  radioTrack?: number;
 };
 export type VehicleSyncMessage =
   | { type: 'vehicle-spawn' | 'vehicle-state'; vehicle: VehicleSnapshot }
@@ -65,7 +68,7 @@ function snapshotFromEntity(entity: Entity): VehicleSnapshot | null {
   const position = entity.get(VehiclePosition);
   const motion = entity.get(VehicleMotion);
   if (!vehicle?.id || !position || !motion) return null;
-  return { id: vehicle.id, kind: vehicle.kind, color: vehicle.color, x: position.x, y: position.y, z: position.z, yaw: motion.yaw, driver: motion.mounted };
+  return { id: vehicle.id, kind: vehicle.kind, color: vehicle.color, x: position.x, y: position.y, z: position.z, yaw: motion.yaw, driver: motion.mounted, radioEnabled: motion.radioEnabled, radioTrack: motion.radioTrack };
 }
 
 function motionKey(snapshot: VehicleSnapshot) {
@@ -107,16 +110,17 @@ export function applyVehicleSnapshot(world: World, snapshot: VehicleSnapshot) {
       entity = world.spawn(
         Vehicle({ id: snapshot.id, kind: snapshot.kind, color: snapshot.color }),
         VehiclePosition(new Vector3(snapshot.x, snapshot.y, snapshot.z)),
-        VehicleMotion({ yaw: snapshot.yaw, mounted: snapshot.driver === true, homeX: snapshot.x, homeY: snapshot.y, homeZ: snapshot.z, homeYaw: snapshot.yaw }),
+        VehicleMotion({ yaw: snapshot.yaw, mounted: snapshot.driver === true, homeX: snapshot.x, homeY: snapshot.y, homeZ: snapshot.z, homeYaw: snapshot.yaw, radioEnabled: snapshot.radioEnabled === true, radioTrack: snapshot.radioTrack ?? 0 }),
         VehicleMesh(),
         VehicleHealth(),
       );
     } else {
       entity.set(Vehicle, { kind: snapshot.kind, color: snapshot.color });
       entity.get(VehiclePosition)?.set(snapshot.x, snapshot.y, snapshot.z);
-      entity.set(VehicleMotion, { yaw: snapshot.yaw, mounted: mounted === entity && mount?.role === 'driver' ? true : snapshot.driver === true });
+      entity.set(VehicleMotion, { yaw: snapshot.yaw, mounted: mounted === entity && mount?.role === 'driver' ? true : snapshot.driver === true, radioEnabled: snapshot.radioEnabled === true, radioTrack: snapshot.radioTrack ?? 0 });
     }
     stateFor(world).last.set(snapshot.id, motionKey(snapshot));
+    if (mounted === entity) syncVehicleRadioPlayback(snapshot.radioEnabled === true, snapshot.radioTrack ?? 0);
   } finally {
     applying.set(world, false);
   }

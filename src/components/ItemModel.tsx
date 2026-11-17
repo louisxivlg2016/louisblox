@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { CylinderGeometry, MeshLambertMaterial, TorusGeometry } from 'three';
 import { animalMaterial } from '../game/animalTextures';
 import { MEAT_COLORS } from '../game/meats';
 import type { AnimalKind } from '../game/animals';
@@ -207,12 +208,15 @@ export function SaddleModel() {
 }
 
 export function SteeringWheel({ position = [0, 0, 0] }: { position?: [number, number, number] }) {
+  const rimMaterial = new MeshLambertMaterial({ color: '#252c32' });
+  const hubMaterial = new MeshLambertMaterial({ color: '#65747c' });
   return (
     <group name="steering-wheel" position={position} rotation={[-0.3, 0, 0]}>
-      {[[0, 0.18], [0.13, 0.13], [0.18, 0], [0.13, -0.13], [0, -0.18], [-0.13, -0.13], [-0.18, 0], [-0.13, 0.13]].map(([x, y]) => (
-        <PixelPart key={`${x},${y}`} position={[x, y, 0]} size={[0.075, 0.075, 0.06]} color="#252c32" />
+      <mesh name="round-steering-rim" geometry={new TorusGeometry(0.18, 0.025, 6, 18)} material={rimMaterial} />
+      <mesh name="steering-hub" geometry={new CylinderGeometry(0.06, 0.06, 0.06, 10)} material={hubMaterial} rotation={[Math.PI / 2, 0, 0]} />
+      {[-Math.PI / 2, Math.PI / 6, Math.PI * 5 / 6].map((angle) => (
+        <PixelPart key={angle} position={[Math.cos(angle) * 0.09, Math.sin(angle) * 0.09, 0]} size={[0.035, 0.15, 0.035]} color="#65747c" rotation={[0, 0, angle - Math.PI / 2]} />
       ))}
-      <PixelPart position={[0, 0, 0]} size={[0.13, 0.055, 0.06]} color="#65747c" />
       <PixelPart position={[0, -0.13, 0.12]} size={[0.065, 0.3, 0.065]} color="#46545d" rotation={[0.65, 0, 0]} />
     </group>
   );

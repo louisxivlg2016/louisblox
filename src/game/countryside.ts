@@ -61,7 +61,14 @@ export function generateCountrysideChunk(cx: number, cz: number, seed: number): 
     }
   }
   for (let x = cx * 16; x < (cx + 1) * 16; x += 1) {
-    for (let z = -1; z <= 1; z += 1) put(x, GROUND, z, BlockKind.ConcreteGray);
+    for (let z = -2; z <= 2; z += 1) put(x, GROUND, z, z === 0 && ((x % 8) + 8) % 8 < 4 ? BlockKind.ConcreteWhite : BlockKind.ConcreteGray);
+  }
+  for (let z = cz * 16; z < (cz + 1) * 16; z += 1) {
+    for (let x = -2; x <= 2; x += 1) put(x, GROUND, z, x === 0 && ((z % 8) + 8) % 8 < 4 ? BlockKind.ConcreteWhite : BlockKind.ConcreteGray);
+  }
+  for (const corridor of [-384, 384]) {
+    for (let z = cz * 16; z < (cz + 1) * 16; z += 1) for (let x = corridor - 2; x <= corridor + 2; x += 1) put(x, GROUND, z, BlockKind.ConcreteGray);
+    for (let x = cx * 16; x < (cx + 1) * 16; x += 1) for (let z = corridor - 2; z <= corridor + 2; z += 1) put(x, GROUND, z, BlockKind.ConcreteGray);
   }
   for (const site of sites) {
     for (let x = site.x - 2; x <= site.x + 2; x += 1) {

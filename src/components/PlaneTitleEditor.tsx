@@ -24,7 +24,7 @@ export function PlaneTitleEditor() {
     <div className="backpack-backdrop">
       <form className="book-panel backpack-panel plane-title-panel" aria-label={translate('Modifier le titre de l’avion', 'Edit airplane title')} onSubmit={(event) => { event.preventDefault(); setTitle(draft); close(); }}>
         <div className="backpack-header"><h2>{translate('Titre de l’avion', 'Airplane Title')}</h2><button type="button" className="secondary-button" onClick={close}>{translate('Fermer', 'Close')}</button></div>
-        <label className="book-field">Gold text on fuselage
+        <label className="book-field">{translate('Texte doré sur la carlingue', 'Gold text on fuselage', 'Texto dorado en el fuselaje')}
           <input aria-label={translate('Nouveau titre de l’avion', 'New airplane title')} value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={24} autoFocus />
         </label>
         <button className="primary-button" type="submit">{translate('Appliquer', 'Apply')}</button>

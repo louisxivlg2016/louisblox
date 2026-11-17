@@ -116,6 +116,7 @@ export function MultiplayerLobby({ onPlay, onCreateRoom, createLabel = translate
     if (resolving) return;
     setResolving(true);
     try {
+      if (await findAndJoin(room)) return;
       if (!canCreateWorld()) {
         useMultiplayerStore.getState().setStatus('error', translate('Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes avant de créer un salon.', 'You already have 20 worlds. Delete one in My Worlds before creating a room.'));
         return;

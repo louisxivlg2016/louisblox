@@ -46,8 +46,8 @@ function landingGroundAt(world: World, x: number, z: number, fromY: number) {
   return isWaterBlock(water?.kind) ? Math.max(solidGround, SEA_LEVEL + 0.02) : solidGround;
 }
 
-export function spawnVehicle(world: World, kind: VehicleKind, x: number, y: number, z: number, color = '#d63935', yaw = 0, id = crypto.randomUUID()) {
-  const spawnY = kind === 'plane' ? groundAt(world, x, z, y + 0.01) : y;
+export function spawnVehicle(world: World, kind: VehicleKind, x: number, y: number, z: number, color = '#d63935', yaw = 0, id = crypto.randomUUID(), freePlacement = false) {
+  const spawnY = freePlacement ? y : kind === 'plane' ? groundAt(world, x, z, y + 0.01) : y;
   const entity = world.spawn(
     Vehicle({ id, color, kind }),
     VehiclePosition(new Vector3(x, spawnY, z)),
@@ -68,7 +68,12 @@ function ensureTrainTrack(world: World, x: number, z: number, yaw: number, fromY
   const ground = groundAt(world, bx, bz, fromY);
   if (ground <= SEA_LEVEL) return;
   const y = ground + 1;
-  if (getBlockIndex(world).has(voxelKey(bx, y, bz))) return;
+  const blocks = getBlockIndex(world);
+  for (let railY = Math.floor(ground); railY <= Math.ceil(y); railY += 1) {
+    const existing = blocks.get(voxelKey(bx, railY, bz));
+    if (existing && isRail(existing.kind)) return;
+  }
+  if (blocks.has(voxelKey(bx, y, bz))) return;
   const facing = Math.abs(Math.sin(yaw)) > Math.abs(Math.cos(yaw)) ? 'east' : 'north';
   addVoxel(world, bx, y, bz, EXTRA_BLOCKS.Rail, undefined, facing);
 }
@@ -255,17 +260,20 @@ function drivingInput() {
   };
 }
 
-function moveMount(world: World, position: Vector3, yaw: number, speed: number, dt: number, clearance = 1.55) {
+function moveMount(world: World, position: Vector3, yaw: number, speed: number, dt: number, clearance = 1.55, motion?: { velocityY: number }) {
   const x = position.x - Math.sin(yaw) * speed * dt;
   const z = position.z - Math.cos(yaw) * speed * dt;
-  const ground = groundAt(world, x, z, position.y + 1.01);
-  if (ground > position.y + 1.01 || ground < SEA_LEVEL - 0.5 || Math.abs(ground - position.y) > 3) return false;
+  const ground = groundAt(world, x, z, MAX_BUILD_Y);
+  if (ground > position.y + 1.01) return false;
+  const velocityY = motion ? Math.max(-30, motion.velocityY - 24 * dt) : 0;
+  const y = ground < position.y ? Math.max(ground, position.y + velocityY * dt) : ground;
   const blocks = getBlockIndex(world);
   for (const height of [0.65, clearance]) {
-    const block = blocks.get(voxelKey(Math.round(x), Math.round(ground + height), Math.round(z)));
+    const block = blocks.get(voxelKey(Math.round(x), Math.round(y + height), Math.round(z)));
     if (block && isCollidable(block) && !isRail(block.kind) && !isVehicleFoliage(block.kind)) return false;
   }
-  position.set(x, ground, z);
+  position.set(x, y, z);
+  if (motion) motion.velocityY = y === ground ? 0 : velocityY;
   return true;
 }
 
@@ -340,10 +348,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
     const target = landing ? 0 : active ? input.forward * (input.forward < 0 ? 2.5 : maximum) : 0;
     motion.speed += Math.max(-20 * dt, Math.min(20 * dt, target - motion.speed));
     if (Math.abs(motion.speed) < 0.03) motion.speed = 0;
-    if (driving && state) {
-      motion.yaw = state.yaw;
-      if (active && input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(motion.speed || 1);
-    }
+    if (driving && state && active && input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(motion.speed || 1);
     if (vehicle.kind === 'plane') {
       if (active && (isDown('Space') || isDown('KeyC'))) mount.landing = false;
       const vertical = active ? Number(isDown('Space')) - Number(isDown('KeyC')) - Number(landing) : 0;
@@ -357,7 +362,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
       }
     } else if (vehicle.kind === 'boat') {
       if (motion.speed !== 0 && !moveBoat(world, position, motion.yaw, motion.speed, dt)) motion.speed = 0;
-    } else if (motion.speed !== 0 && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' || vehicle.kind === 'metro' ? 2.55 : vehicle.kind === 'car' ? 2.3 : vehicle.kind === 'firetruck' ? 3.5 : 1.55)) {
+    } else if ((motion.speed !== 0 || position.y > groundAt(world, position.x, position.z, MAX_BUILD_Y) + 0.001) && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' || vehicle.kind === 'metro' ? 2.55 : vehicle.kind === 'car' ? 2.3 : vehicle.kind === 'firetruck' ? 3.5 : 1.55, motion)) {
       motion.speed = 0;
     }
     if (vehicle.kind === 'train' || vehicle.kind === 'metro') {

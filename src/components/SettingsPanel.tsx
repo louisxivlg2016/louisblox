@@ -4,7 +4,6 @@ import { ProtectionPanel } from './ProtectionPanel';
 import { sendTribe, useTribeStore } from '../game/tribes';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { playerIdentity } from '../game/playerIdentity';
-import { usePlaneTitleStore } from '../game/planeTitle';
 import { translate } from '../game/language';
 import { LanguagePanel } from './LanguagePanel';
 import { setAudioPreference, useAudioSettings } from '../game/audio';
@@ -12,8 +11,6 @@ import { setAudioPreference, useAudioSettings } from '../game/audio';
 export function SettingsPanel() {
   const audioSettings = useAudioSettings();
   const [name, setName] = useState(translate('Ma tribu', 'My Tribe'));
-  const planeTitle = usePlaneTitleStore((state) => state.title);
-  const setPlaneTitle = usePlaneTitleStore((state) => state.setTitle);
   const online = useMultiplayerStore((state) => state.status === 'online');
   const tribes = useTribeStore((state) => state.tribes);
   const invitations = useTribeStore((state) => state.invitations);
@@ -34,11 +31,6 @@ export function SettingsPanel() {
         <h3>{translate('Audio', 'Audio', 'Audio')}</h3>
         <label className="protection-option"><input type="checkbox" checked={audioSettings.music} onChange={(event) => setAudioPreference('music', event.target.checked)} /> {translate('Musique et radio', 'Music and radio', 'Música y radio')}</label>
         <label className="protection-option"><input type="checkbox" checked={audioSettings.sounds} onChange={(event) => setAudioPreference('sounds', event.target.checked)} /> {translate('Bruits du jeu et des véhicules', 'Game and vehicle sounds', 'Sonidos del juego y de los vehículos')}</label>
-      </section>
-      <section className="settings-tribe" aria-label={translate('Titre de l’avion', 'Airplane Title')}>
-        <h3>{translate('Titre de l’avion', 'Airplane Title')}</h3>
-        <label htmlFor="plane-title">{translate('Texte doré sur la carlingue', 'Gold text on the fuselage')}</label>
-        <input id="plane-title" aria-label={translate('Titre de l’avion', 'Airplane Title')} value={planeTitle} onChange={(event) => setPlaneTitle(event.target.value)} maxLength={24} />
       </section>
       <section className="settings-tribe" aria-label={translate('Ma tribu', 'My Tribe')}>
         <h3>{translate('Tribu', 'Tribe')}</h3>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { requestPlay } from '../game/input';
 import { getItemMeta, ITEM_ORDER, selectionInfo } from '../game/items';
 import { GALLERY_CATEGORIES, GALLERY_ITEMS } from '../game/galleryCatalog';
@@ -34,6 +34,7 @@ export function Backpack() {
   const discardMeat = useGameStore((state) => state.discardMeat);
   const [galleryCategory, setGalleryCategory] = useState('Tools & Weapons');
   const [gallerySearch, setGallerySearch] = useState('');
+  const dragSlot = useRef<{ index: number; kind: SelectedKind; pointerId: number; x: number; y: number } | null>(null);
   const survival = gameplayMode === 'survival';
   const inventory = { itemCounts, gameplayMode };
   if (!open) return null;
@@ -138,6 +139,28 @@ export function Backpack() {
               key={`${kind ?? translate('vide', 'empty')}-${index}`}
               className="backpack-block active-slot"
               onClick={() => assign(index)}
+              draggable={kind !== null}
+              onDragStart={(event) => {
+                if (kind === null) return;
+                event.dataTransfer.setData('text/plain', String(kind));
+                setBackpackItem(kind);
+              }}
+              onDragEnd={(event) => {
+                if (kind !== null && event.dataTransfer.dropEffect === 'none') setHotbarSlot(index, null);
+              }}
+              onPointerDown={(event) => {
+                if (kind === null) return;
+                dragSlot.current = { index, kind, pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+                event.currentTarget.setPointerCapture(event.pointerId);
+              }}
+              onPointerUp={(event) => {
+                const drag = dragSlot.current;
+                dragSlot.current = null;
+                if (!drag || drag.pointerId !== event.pointerId) return;
+                const outside = !document.elementFromPoint(event.clientX, event.clientY)?.closest('.backpack-panel');
+                if (outside && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 24) setHotbarSlot(drag.index, null);
+              }}
+              onPointerCancel={() => { dragSlot.current = null; }}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => { event.preventDefault(); assign(index); }}
               aria-label={`Slot ${index === 9 ? '0' : index + 1} : ${kind === null ? translate('vide', 'empty') : selectionInfo(kind).name}`}

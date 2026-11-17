@@ -21,7 +21,7 @@ export function RadioControls() {
   const results = RADIO_TRACKS.map((track, index) => ({ track, index })).filter(({ track }) => normalizeSearch(track.title).includes(normalizedQuery)).slice(0, 6);
   return (
     <div className="radio-controls">
-      <button type="button" className={`radio-toggle ${enabled ? 'active' : ''}`} aria-pressed={enabled} aria-label={enabled ? translate('Arrêter la radio · R', 'Stop radio · R', 'Apagar la radio · R') : translate('Démarrer la radio · R', 'Start radio · R', 'Encender la radio · R')} onClick={toggleVehicleRadio} disabled={!musicEnabled}>Radio · R</button>
+      <button type="button" className={`radio-toggle ${enabled ? 'active' : ''}`} aria-pressed={enabled} aria-label={enabled ? translate('Arrêter la radio · R', 'Stop radio · R', 'Apagar la radio · R') : translate('Démarrer la radio · R', 'Start radio · R', 'Encender la radio · R')} onClick={() => toggleVehicleRadio()} disabled={!musicEnabled}>Radio · R</button>
       {enabled && <>
         <button type="button" className="radio-previous" aria-label={translate('Chanson précédente · K', 'Previous song · K', 'Canción anterior · K')} title={translate('Chanson précédente · K', 'Previous song · K', 'Canción anterior · K')} onClick={previousRadioTrack}>←</button>
         <span className="radio-track" title={RADIO_TRACKS[trackIndex].title}>{RADIO_TRACKS[trackIndex].title}</span>

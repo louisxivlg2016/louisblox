@@ -6,6 +6,7 @@ import { world } from '../game/world';
 import { canWalkInVehicle } from '../game/vehicleTypes';
 import type { VehicleKind } from '../game/vehicleTypes';
 import { translate } from '../game/language';
+import { usePlaneTitleStore } from '../game/planeTitle';
 
 const names = (): Record<VehicleKind, string> => ({ car: translate('Voiture', 'Car'), plane: translate('Avion', 'Airplane'), train: 'Train', metro: translate('Métro', 'Metro'), boat: translate('Bateau', 'Boat'), jeep: 'Jeep', police: translate('Voiture de police', 'Police Car'), firetruck: translate('Camion de pompier', 'Fire Truck'), carriage: translate('Calèche', 'Carriage'), cannon: translate('Canon', 'Cannon') });
 
@@ -29,6 +30,7 @@ export function SeatChoicePanel() {
         <div className="seat-choice-actions">
           <button className="primary-button" disabled={choice.vehicle.get(VehicleMotion)?.mounted} onClick={() => choose('driver')}>{choice.kind === 'carriage' ? translate('Cocher', 'Drive carriage') : choice.kind === 'plane' ? translate('Piloter', 'Pilot') : choice.kind === 'cannon' ? translate('Utiliser le canon', 'Use cannon') : translate('Conduire', 'Drive')}</button>
           {choice.kind !== 'cannon' && <button className="primary-button" onClick={() => choose('passenger')}>{translate('Passager', 'Passenger', 'Pasajero')}{walkable ? translate(' · marcher à bord', ' · walk on board') : ''}</button>}
+          {choice.kind === 'plane' && <button type="button" className="secondary-button" onClick={() => { usePlaneTitleStore.getState().setEditorOpen(true); setSeatChoice(null); }}>{translate('Modifier le titre de l’avion', 'Edit airplane title', 'Editar el título del avión')}</button>}
         </div>
       </section>
     </div>

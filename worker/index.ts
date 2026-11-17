@@ -71,6 +71,8 @@ type SharedVehicle = {
   z: number;
   yaw: number;
   driver: boolean;
+  radioEnabled?: boolean;
+  radioTrack?: number;
 };
 
 export type PlayerAttachment = {
@@ -233,6 +235,8 @@ function parseVehicle(value: unknown): SharedVehicle | null {
     z: data.z as number,
     yaw: data.yaw as number,
     driver: data.driver === true,
+    radioEnabled: data.radioEnabled === true,
+    radioTrack: typeof data.radioTrack === 'number' && Number.isInteger(data.radioTrack) && data.radioTrack >= 0 && data.radioTrack < 1000 ? data.radioTrack : 0,
   };
 }
 
@@ -400,7 +404,7 @@ export class GameRoom extends DurableObject<Env> {
   private publisherId?: string;
   private publisherName?: string;
 
-  private publishWorld(attachment?: PlayerAttachment) {
+  private async publishWorld(attachment?: PlayerAttachment) {
     const ownerId = this.protection?.ownerId ?? attachment?.playerId ?? this.publisherId;
     if (!ownerId) return;
     if (attachment) {
@@ -408,16 +412,16 @@ export class GameRoom extends DurableObject<Env> {
       this.publisherName = attachment.name;
     }
     const directory = this.env.PLAYER_DIRECTORY.get(this.env.PLAYER_DIRECTORY.idFromName('global'));
-    this.ctx.waitUntil(directory.fetch('https://directory/world', {
+    await directory.fetch('https://directory/world', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: this.worldId ?? attachment?.room ?? 'main-room', name: this.worldName ?? this.worldId ?? attachment?.room ?? 'main-room', ownerId, ownerName: this.publisherName ?? 'Creator', gameplayMode: this.gameplayMode, template: this.worldTemplate, players: this.ctx.getWebSockets().length }),
-    }));
+    });
   }
 
   private async saveWorld(publisher?: PlayerAttachment) {
     await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName, template: this.worldTemplate, customWorld: this.customWorld, protection: this.protection, tribes: this.tribes, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot(), deadAnimals: [...this.deadAnimals], deadTraders: [...this.deadTraders], deathWorldId: this.deathWorldId } satisfies StoredWorld);
-    this.publishWorld(publisher);
+    await this.publishWorld(publisher);
   }
 
   private canEditAt(playerId: string, x: number, z: number, action: 'break' | 'place' | 'interact' = 'interact', kind?: number) {
@@ -563,7 +567,7 @@ export class GameRoom extends DurableObject<Env> {
     } catch {
       appearance = parseAppearance(null, character);
     }
-    const attachment: PlayerAttachment = { playerId, joinedAt: Date.now(), name, character, outfit, wig, avatar, appearance, room, presenceAt: 0, state: null };
+    const attachment: PlayerAttachment = { playerId, joinedAt: Date.now(), name, character, outfit, wig, avatar, appearance, room, presenceAt: 0, state: { x: 0, y: 8.51, z: 0, yaw: 0, pitch: 0, flying: false, moving: false } };
     server.serializeAttachment(attachment);
     this.ctx.acceptWebSocket(server);
     this.publishPresence(attachment);

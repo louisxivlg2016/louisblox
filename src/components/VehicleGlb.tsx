@@ -10,6 +10,7 @@ import { BoatModel, CarModel } from './ItemModel';
 import { METRO_LENGTH, PLANE_SCALE, TRAIN_LENGTH } from '../game/vehicles';
 import type { VehicleKind } from '../game/vehicleTypes';
 import { VehicleAccessories } from './VehicleAccessories';
+import { PlaneTitle } from './PlaneTitle';
 
 const models = {
   raceCar: raceCarUrl,
@@ -71,7 +72,8 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'm
         material.map.generateMipmaps = false;
         material.map.needsUpdate = true;
       }
-      if (modelKind === 'blueCar' && partName.startsWith('dark bumper')) object.scale.y *= 0.45;
+      if (modelKind === 'blueCar' && partName.startsWith('dark bumper')) object.scale.y *= 0.25;
+      if (modelKind === 'blueCar' && partName === 'strong black chassis') object.scale.y *= 0.6;
     });
     if (modelKind === 'blueCar') {
       const glass = new MeshLambertMaterial({ color: '#9fd3e5', transparent: true, opacity: 0.28, depthWrite: false });
@@ -116,6 +118,7 @@ export function VehicleGlb({ entity, kind, color, interior = false }: { entity: 
     <Suspense fallback={kind === 'car' ? <CarModel color={color} /> : null}>
       {!interior || kind !== 'plane' && kind !== 'train' && kind !== 'metro' && kind !== 'car' ? <Model kind={kind} color={color} interior={interior} /> : null}
       <VehicleAccessories entity={entity} kind={kind} />
+      {!interior && kind === 'plane' && <PlaneTitle />}
     </Suspense>
   );
 }

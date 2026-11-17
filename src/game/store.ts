@@ -58,7 +58,7 @@ type GameStore = {
   environment: EnvironmentSnapshot;
   setMode: (mode: GameMode) => void;
   selectBlock: (kind: SelectedKind) => void;
-  setHotbarSlot: (index: number, kind: SelectedKind) => void;
+  setHotbarSlot: (index: number, kind: SelectedKind | null) => void;
   setBackpackItem: (kind: SelectedKind | null) => void;
   setItemCount: (kind: ItemKind | GalleryItemId, count: number) => void;
   equipArmor: (kind: ArmorKind | null) => void;

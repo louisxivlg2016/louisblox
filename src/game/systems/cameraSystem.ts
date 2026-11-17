@@ -9,7 +9,7 @@ import { useMazeStore } from '../mazeClient';
 import { canWalkInVehicle, isAnimalMount, vehicleViewDistance } from '../vehicleTypes';
 import { VehiclePosition } from '../traits';
 import { groundAt } from '../vehicles';
-import { chunkCoordinate, loadChunkForCamera, releaseCameraChunk } from '../chunks';
+import { chunkCoordinate, loadChunk, loadChunkForCamera, releaseCameraChunk } from '../chunks';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
 
@@ -82,6 +82,11 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
       const chunkX = chunkCoordinate(camera.position.x);
       const chunkZ = chunkCoordinate(camera.position.z);
       loadChunkForCamera(world, chunkX, chunkZ);
+      if (exteriorPlane) {
+        const planeChunkX = chunkCoordinate(center.x);
+        const planeChunkZ = chunkCoordinate(center.z);
+        for (let dx = -1; dx <= 1; dx += 1) for (let dz = -1; dz <= 1; dz += 1) loadChunk(world, planeChunkX + dx, planeChunkZ + dz);
+      }
     }
     camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z) + 0.35);
     cameraTarget.set(center.x, center.y + targetHeight, center.z);

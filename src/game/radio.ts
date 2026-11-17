@@ -3,13 +3,37 @@ import { setMusicSuppressed, useAudioSettings } from './audio';
 import { RADIO_TRACKS } from './radioTracks';
 import { useGameStore } from './store';
 import { isAnimalMount } from './vehicleTypes';
+import { world } from './world';
+import { Player, PlayerMount, VehicleMotion } from './traits';
 
 let audio: HTMLAudioElement | null = null;
 
-export const useRadioStore = create<{ enabled: boolean; trackIndex: number }>(() => ({ enabled: false, trackIndex: 0 }));
+export const useRadioStore = create<{ enabled: boolean; trackIndex: number; outside: boolean }>(() => ({ enabled: false, trackIndex: 0, outside: false }));
 
 function currentTrack() {
   return RADIO_TRACKS[useRadioStore.getState().trackIndex];
+}
+
+function syncRadioMotion() {
+  const mounted = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
+  const state = useRadioStore.getState();
+  if (!mounted) return;
+  mounted.set(VehicleMotion, { radioEnabled: state.enabled, radioTrack: state.trackIndex });
+  window.dispatchEvent(new Event('louisblox:radio-sync'));
+}
+
+export function syncVehicleRadioPlayback(enabled: boolean, trackIndex: number) {
+  const current = useRadioStore.getState();
+  if (enabled) {
+    if (current.enabled && current.trackIndex === trackIndex) return;
+    useRadioStore.setState({ enabled: true, trackIndex, outside: false });
+    setMusicSuppressed(true);
+    playTrack();
+  } else if (current.enabled && !current.outside) {
+    useRadioStore.setState({ enabled: false, outside: false });
+    audio?.pause();
+    setMusicSuppressed(false);
+  }
 }
 
 function playTrack() {
@@ -24,15 +48,16 @@ function playTrack() {
   }
   audio.src = currentTrack().url;
   void audio.play().catch(() => {
-    useRadioStore.setState({ enabled: false });
+    useRadioStore.setState({ enabled: false, outside: false });
     setMusicSuppressed(false);
   });
 }
 
 export function stopVehicleRadio() {
-  useRadioStore.setState({ enabled: false });
+  useRadioStore.setState({ enabled: false, outside: false });
   audio?.pause();
   setMusicSuppressed(false);
+  syncRadioMotion();
 }
 
 export function nextRadioTrack() {
@@ -48,18 +73,20 @@ export function selectRadioTrack(index: number) {
   useRadioStore.setState({ trackIndex });
   if (useRadioStore.getState().enabled) playTrack();
   else toggleVehicleRadio();
+  syncRadioMotion();
 }
 
-export function toggleVehicleRadio() {
+export function toggleVehicleRadio(outsideVehicle = false) {
   const game = useGameStore.getState();
-  if (!game.riding || isAnimalMount(game.riding) || game.mode !== 'play' || !useAudioSettings.getState().music) return false;
+  if (!outsideVehicle && (!game.riding || isAnimalMount(game.riding)) || game.mode !== 'play' || !useAudioSettings.getState().music) return false;
   if (useRadioStore.getState().enabled) {
     stopVehicleRadio();
     return false;
   }
-  useRadioStore.setState({ enabled: true });
+  useRadioStore.setState({ enabled: true, outside: outsideVehicle });
   setMusicSuppressed(true);
   playTrack();
+  syncRadioMotion();
   return true;
 }
 
@@ -70,7 +97,7 @@ if (typeof window !== 'undefined') {
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLElement && target.isContentEditable) return;
     if (event.code === 'KeyR') {
       event.preventDefault();
-      toggleVehicleRadio();
+      toggleVehicleRadio(event.ctrlKey);
       return;
     }
     if (!useRadioStore.getState().enabled) return;
@@ -85,7 +112,8 @@ if (typeof window !== 'undefined') {
     }
   });
   useGameStore.subscribe((state) => {
-    if (useRadioStore.getState().enabled && (state.mode !== 'play' || !state.riding || isAnimalMount(state.riding))) stopVehicleRadio();
+    const radio = useRadioStore.getState();
+    if (radio.enabled && (state.mode !== 'play' || !radio.outside && (!state.riding || isAnimalMount(state.riding)))) stopVehicleRadio();
   });
   useAudioSettings.subscribe((state) => {
     if (!state.music) stopVehicleRadio();

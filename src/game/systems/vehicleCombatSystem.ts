@@ -7,6 +7,8 @@ import { Player, PlayerMount, PlayerPosition, Vehicle, VehicleHealth, VehicleMes
 import { destroyVehicle } from '../vehicleSync';
 import type { VehicleKind } from '../vehicleTypes';
 import { translate } from '../language';
+import { getBlockIndex } from '../chunks';
+import { raycastVoxel } from '../voxel';
 
 const origin = new Vector3();
 const direction = new Vector3();
@@ -24,7 +26,8 @@ export function vehicleCombatSystem(world: World, camera: Camera, dt: number, to
   camera.getWorldDirection(direction);
   const mounted = playerEntity?.get(PlayerMount)?.vehicle;
   let target: { entity: import('koota').Entity; kind: VehicleKind; id: string; health: number } | null = null;
-  let closest = 12;
+  const obstruction = raycastVoxel(getBlockIndex(world), origin, direction, 12);
+  let closest = obstruction?.distance ?? 12;
   const raycaster = new Raycaster(origin, direction);
 
   for (const entity of world.query(Vehicle, VehiclePosition, VehicleHealth, VehicleMesh)) {

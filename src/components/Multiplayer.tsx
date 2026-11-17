@@ -7,7 +7,7 @@ import { useWorld } from 'koota/react';
 import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Group } from 'three';
-import { applyVoxelEdits, getWorldSeed, groupVoxelEdits, isChunkLoaded, loadLevel, onVoxelEdit, snapshotVehicles, snapshotWorldEdits, streamChunks } from '../game/chunks';
+import { applyVoxelEdits, chunkCoordinate, getWorldSeed, groupVoxelEdits, isChunkLoaded, loadChunk, loadLevel, onVoxelEdit, snapshotVehicles, snapshotWorldEdits, streamChunks } from '../game/chunks';
 import type { ChunkEdit } from '../game/chunks';
 import { isPlayerSnapshot, resolveMultiplayerUrl } from '../game/multiplayer';
 import type { PlayerSnapshot } from '../game/multiplayer';
@@ -30,7 +30,7 @@ import { PlayerNameTag } from './PlayerNameTag';
 import { attachCharacterHand } from '../game/characterRig';
 import { clearTeleportRequests, receiveTeleportRequest, receiveTeleportResponse, setTeleportSocket } from '../game/teleportRequests';
 import { dismount } from '../game/vehicles';
-import { applyVehicleRemoval, applyVehicleSnapshot, isVehicleSnapshot, onVehicleSync } from '../game/vehicleSync';
+import { applyVehicleRemoval, applyVehicleSnapshot, isVehicleSnapshot, onVehicleSync, syncVehicleMotion } from '../game/vehicleSync';
 import type { VehicleSnapshot } from '../game/vehicleSync';
 import { isAnimalMount } from '../game/vehicleTypes';
 import { appearanceSkinColor } from '../game/appearance';
@@ -51,7 +51,7 @@ import { battleTeamColor } from '../game/battleArena';
 import { removeBattleTargetPose, updateBattleTargetPose } from '../game/battleCombat';
 import { useEmoteStore } from '../game/emotes';
 import { receiveAppleGift } from '../game/gifts';
-import { applyProtection, isWorldProtection, setProtectionSocket, useProtectionStore } from '../game/protection';
+import { applyProtection, isWorldProtection, setProtectionSocket, updateProtection, useProtectionStore } from '../game/protection';
 import { clearMinigames, receiveMinigameMessage, setMinigameSocket } from '../game/minigameSync';
 import { applyAnimalSnapshots, applyFishSnapshots, isAnimalSnapshot, isFishSnapshot, setAnimalSocket } from '../game/animalSync';
 import { clearTribes, receiveTribeMessage, setTribeSocket, teleportToPendingTribeHome } from '../game/tribes';
@@ -141,7 +141,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
     if (!group.current) return;
     const mount = world.queryFirst(Player)?.get(PlayerMount);
     const vehicleId = mount?.vehicle?.get(Vehicle)?.id;
-    const hiddenOccupant = useGameStore.getState().cameraMode === 'first' && mount?.kind === 'car' && vehicleId !== undefined && state.vehicleId === vehicleId;
+    const hiddenOccupant = vehicleId !== undefined && state.vehicleId === vehicleId;
     group.current.visible = !state.effects?.includes('invisibility') && !hiddenOccupant;
     const amount = 1 - Math.exp(-delta * 14);
     const seatedHeight = state.mounted && !isAnimalMount(state.vehicleKind) ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
@@ -341,7 +341,7 @@ export function MultiplayerConnection() {
       ]);
     };
     const applyPendingVehicles = () => {
-      if (pendingWorld.current || world.query(Chunk).length < 9) return;
+      if (pendingWorld.current) return;
       for (const vehicle of pendingVehicles.current.values()) applyVehicleSnapshot(world, vehicle);
       pendingVehicles.current.clear();
     };
@@ -473,7 +473,7 @@ export function MultiplayerConnection() {
       const ready: Array<[string, ChunkEdit]> = [];
       for (const [position, edit] of pendingRemoteEdits.current) {
         const [x, , z] = position.split(',').map(Number);
-        if (!isChunkLoaded(world, x, z)) continue;
+        if (!isChunkLoaded(world, x, z)) loadChunk(world, chunkCoordinate(x), chunkCoordinate(z));
         ready.push([position, edit]);
         pendingRemoteEdits.current.delete(position);
       }
@@ -493,13 +493,18 @@ export function MultiplayerConnection() {
       for (let index = 0; index < edits.length; index += 256) current.send(JSON.stringify({ type: 'edits', edits: edits.slice(index, index + 256) }));
     };
     const unsubscribe = onVoxelEdit(world, (position, edit) => {
-      if (applyingRemote.current || socket.current?.readyState !== WebSocket.OPEN) return;
+      if (applyingRemote.current) return;
       pendingEdits.current.set(position, edit);
     });
     const unsubscribeVehicles = onVehicleSync(world, (message) => {
       const current = socket.current;
       if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify(message));
     });
+    const syncRadio = () => {
+      const mounted = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
+      if (mounted) syncVehicleMotion(world, mounted, true);
+    };
+    window.addEventListener('louisblox:radio-sync', syncRadio);
     const unsubscribeProjectiles = onProjectileSync(world, (message) => {
       const current = socket.current;
       if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify(message));
@@ -784,6 +789,8 @@ export function MultiplayerConnection() {
 
     const sendTimer = window.setInterval(() => {
       applyPendingWorld();
+      applyPendingVehicles();
+      applyRemoteEdits();
       flushEdits();
       const current = socket.current;
       if (current?.readyState === WebSocket.OPEN && Date.now() - lastPresence > 60000) {
@@ -812,6 +819,7 @@ export function MultiplayerConnection() {
       window.clearInterval(sendTimer);
       if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
       unsubscribe();
+      window.removeEventListener('louisblox:radio-sync', syncRadio);
       unsubscribeVehicles();
       unsubscribeProjectiles();
       unsubscribeDroppedItems();
