@@ -1,4 +1,7 @@
-import { Suspense } from 'react';
+import { Suspense, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import type { Group } from 'three';
+import { useVehicleSteeringStore } from '../game/vehicleSteering';
 import { CylinderGeometry, MeshLambertMaterial, TorusGeometry } from 'three';
 import { animalMaterial } from '../game/animalTextures';
 import { MEAT_COLORS } from '../game/meats';
@@ -208,10 +211,14 @@ export function SaddleModel() {
 }
 
 export function SteeringWheel({ position = [0, 0, 0] }: { position?: [number, number, number] }) {
+  const group = useRef<Group>(null);
+  useFrame(() => {
+    if (group.current) group.current.rotation.z = useVehicleSteeringStore.getState().angle;
+  });
   const rimMaterial = new MeshLambertMaterial({ color: '#252c32' });
   const hubMaterial = new MeshLambertMaterial({ color: '#65747c' });
   return (
-    <group name="steering-wheel" position={position} rotation={[-0.3, 0, 0]}>
+    <group ref={group} name="steering-wheel" position={position} rotation={[-0.3, 0, 0]}>
       <mesh name="round-steering-rim" geometry={new TorusGeometry(0.18, 0.025, 6, 18)} material={rimMaterial} />
       <mesh name="steering-hub" geometry={new CylinderGeometry(0.06, 0.06, 0.06, 10)} material={hubMaterial} rotation={[Math.PI / 2, 0, 0]} />
       {[-Math.PI / 2, Math.PI / 6, Math.PI * 5 / 6].map((angle) => (

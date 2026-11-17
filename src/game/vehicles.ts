@@ -19,6 +19,7 @@ import type { Camera } from 'three';
 import type { MountKind, SeatRole, VehicleKind } from './vehicleTypes';
 import { translate } from './language';
 import { useRadioStore } from './radio';
+import { useVehicleSteeringStore } from './vehicleSteering';
 export { METRO_LENGTH, PLANE_SCALE, TRAIN_LENGTH } from './vehicleTypes';
 
 const isVehicleFoliage = (kind: BlockKind) => kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves;
@@ -348,7 +349,17 @@ export function vehicleMovementSystem(world: World, dt: number) {
     const target = landing ? 0 : active ? input.forward * (input.forward < 0 ? 2.5 : maximum) : 0;
     motion.speed += Math.max(-20 * dt, Math.min(20 * dt, target - motion.speed));
     if (Math.abs(motion.speed) < 0.03) motion.speed = 0;
-    if (driving && state && active && input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(motion.speed || 1);
+    if (driving && state) {
+      const previousYaw = motion.yaw;
+      if (active && input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(motion.speed || 1);
+      else if (active && input.forward !== 0 && Math.abs(motion.speed) > 0.05) motion.yaw = turnToward(motion.yaw, state.yaw, dt * 1.4 * Math.sign(motion.speed || 1));
+      const delta = Math.atan2(Math.sin(motion.yaw - previousYaw), Math.cos(motion.yaw - previousYaw));
+      const steering = useVehicleSteeringStore.getState();
+      useVehicleSteeringStore.setState({ angle: turnToward(steering.angle, delta * 1.5, dt * 7) });
+    } else {
+      const steering = useVehicleSteeringStore.getState();
+      useVehicleSteeringStore.setState({ angle: turnToward(steering.angle, 0, dt * 7) });
+    }
     if (vehicle.kind === 'plane') {
       if (active && (isDown('Space') || isDown('KeyC'))) mount.landing = false;
       const vertical = active ? Number(isDown('Space')) - Number(isDown('KeyC')) - Number(landing) : 0;
