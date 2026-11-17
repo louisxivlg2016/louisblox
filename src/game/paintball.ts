@@ -72,14 +72,18 @@ export function paintballColor(kind: SelectedKind) {
   return isPaintballGun(kind) ? usePaintballStore.getState().color : null;
 }
 
-export function spawnPaintStroke(world: World, from: Vector3, to: Vector3, normal: Vector3, color: string, width = 0.1) {
+export function spawnPaintStroke(world: World, from: Vector3, to: Vector3, normal: Vector3, color: string, width = 0.1, exact = false) {
   const direction = normal.clone();
   if (direction.lengthSq() === 0) direction.set(0, 1, 0);
   direction.normalize();
-  const paintFrom = from.clone().addScaledVector(direction, 0.012);
-  const paintTo = to.clone().addScaledVector(direction, 0.012);
+  const paintFrom = from.clone();
+  const paintTo = to.clone();
+  if (!exact) {
+    paintFrom.addScaledVector(direction, 0.012);
+    paintTo.addScaledVector(direction, 0.012);
+  }
   world.spawn(
-    Explosion({ time: Infinity, maxTime: Infinity, paintColor: color, paintNormal: direction, paintFrom, paintTo, paintWidth: width * (0.9 + Math.sin(from.x * 19.3 + from.y * 13.7 + from.z * 7.1) * 0.12) }),
+    Explosion({ time: Infinity, maxTime: Infinity, paintColor: color, paintNormal: direction, paintFrom, paintTo, paintWidth: exact ? width : width * (0.9 + Math.sin(from.x * 19.3 + from.y * 13.7 + from.z * 7.1) * 0.12) }),
     ExplosionPosition(paintFrom.clone().add(paintTo).multiplyScalar(0.5)),
     ExplosionMesh(),
     ExplosionMaterial(),
@@ -88,6 +92,49 @@ export function spawnPaintStroke(world: World, from: Vector3, to: Vector3, norma
 
 export function spawnPaintSplash(world: World, position: Vector3, normal: Vector3, color: string) {
   spawnPaintStroke(world, position, position, normal, color);
+}
+
+type SavedVector = [number, number, number];
+export type SavedPaintStroke = { color: string; normal: SavedVector; from: SavedVector; to: SavedVector; width: number };
+
+const saveVector = (vector: Vector3): SavedVector => [vector.x, vector.y, vector.z];
+
+export function snapshotPaintStrokes(world: World): SavedPaintStroke[] {
+  const strokes: SavedPaintStroke[] = [];
+  for (const entity of world.query(Explosion)) {
+    const paint = entity.get(Explosion);
+    if (!paint?.paintColor || !paint.paintNormal || !paint.paintFrom || !paint.paintTo) continue;
+    strokes.push({ color: paint.paintColor, normal: saveVector(paint.paintNormal), from: saveVector(paint.paintFrom), to: saveVector(paint.paintTo), width: paint.paintWidth ?? 0.1 });
+  }
+  return strokes;
+}
+
+function restoredVector(value: unknown) {
+  if (!Array.isArray(value) || value.length !== 3 || !value.every((coordinate) => typeof coordinate === 'number' && Number.isFinite(coordinate))) return null;
+  return new Vector3(value[0], value[1], value[2]);
+}
+
+export function restorePaintStrokes(world: World, saved: unknown) {
+  if (!Array.isArray(saved)) return;
+  for (const entry of saved) {
+    if (!entry || typeof entry !== 'object') continue;
+    const stroke = entry as Partial<SavedPaintStroke>;
+    const normal = restoredVector(stroke.normal);
+    const from = restoredVector(stroke.from);
+    const to = restoredVector(stroke.to);
+    if (!normal || !from || !to || typeof stroke.color !== 'string' || typeof stroke.width !== 'number' || !Number.isFinite(stroke.width) || stroke.width <= 0) continue;
+    spawnPaintStroke(world, from, to, normal, stroke.color.slice(0, 32), stroke.width, true);
+  }
+}
+
+export function clearAllPaint(world: World) {
+  let removed = 0;
+  for (const entity of [...world.query(Explosion)]) {
+    if (!entity.get(Explosion)?.paintColor) continue;
+    entity.destroy();
+    removed += 1;
+  }
+  return removed;
 }
 
 export function clearPaintSplashAt(world: World, x: number, y: number, z: number) {

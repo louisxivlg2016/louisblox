@@ -29,7 +29,7 @@ import {
   Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition, Trader, TraderMesh, TraderPosition, CamelLeash,
 } from './traits';
 import { createMeatInventory } from './meats';
-import { clearPaintSplashAt, normalizePaintballCounts, normalizePaintballGun } from './paintball';
+import { clearPaintSplashAt, normalizePaintballCounts, normalizePaintballGun, restorePaintStrokes } from './paintball';
 import { useGameStore } from './store';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
@@ -66,6 +66,7 @@ export type WorldSave = {
   elapsed: number;
   edits: Array<[string, Array<[string, ChunkEdit]>]>;
   protection?: WorldProtection;
+  paint?: import('./paintball').SavedPaintStroke[];
 };
 
 type SavedTrader = { data: { homeX: number; homeZ: number; targetX: number; targetZ: number; phase: number; walking: boolean; health: number; panic: number; fireIn: number }; position: Vector3; yaw: number };
@@ -712,6 +713,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     batchDepth: 0,
     pendingRevisions: new Set(),
   });
+  restorePaintStrokes(world, restore?.paint);
   initTaming(world);
   const restorePosition = restore !== null && restore.version >= 2;
   const gameplayMode = restore?.gameplayMode ?? (restore ? 'creative' : useGameStore.getState().gameplayMode);

@@ -1,7 +1,7 @@
 import { spanishText, useLanguageStore } from './language';
 
 const names: Record<string, string> = {
-  Main: 'Hand', Bâton: 'Stick', Cisailles: 'Shears', 'Seau vide': 'Empty Bucket', 'Seau plein d’eau': 'Water Bucket', 'Seau toujours vide': 'Always Empty Bucket',
+  Main: 'Hand', Bâton: 'Stick', Cisailles: 'Shears', 'Seau vide': 'Empty Bucket', 'Seau plein d’eau': 'Water Bucket', 'Seau toujours vide': 'Always Empty Bucket', 'Seau effaceur de peinture': 'Paint Cleaning Bucket',
   'Épée en bois': 'Wooden Sword', 'Épée en pierre': 'Stone Sword', 'Épée en fer': 'Iron Sword', 'Épée en or': 'Gold Sword', 'Épée en diamant': 'Diamond Sword', 'Épée en argent': 'Silver Sword',
   'Pioche en bois': 'Wooden Pickaxe', 'Pioche en pierre': 'Stone Pickaxe', 'Pioche en fer': 'Iron Pickaxe', 'Pioche en or': 'Gold Pickaxe', 'Pioche en diamant': 'Diamond Pickaxe', 'Pioche en argent': 'Silver Pickaxe',
   'Pelle en bois': 'Wooden Shovel', 'Pelle en pierre': 'Stone Shovel', 'Pelle en fer': 'Iron Shovel', 'Pelle en or': 'Gold Shovel', 'Pelle en diamant': 'Diamond Shovel', 'Pelle en argent': 'Silver Shovel',

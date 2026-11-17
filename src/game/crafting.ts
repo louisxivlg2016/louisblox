@@ -64,6 +64,7 @@ export function recipeFor(kind: SelectedKind): Recipe | null {
   if (typeof kind === 'number') return blockRecipe(kind);
   if (kind === 'hand') return null;
   if (kind === 'bucket' || kind === 'empty_bucket') return recipe(kind, 1, [[BlockKind.IronOre, 3]]);
+  if (kind === 'paint_cleaning_bucket') return recipe(kind, 1, [[BlockKind.IronOre, 1], [BlockKind.Leaves, 2]]);
   if (kind === 'shears') return recipe(kind, 1, [[BlockKind.IronOre, 2]]);
   if (kind === 'stick') return recipe('stick', 4, [[BlockKind.OakPlanks, 2]]);
   if (kind === 'bread') return recipe('bread', 1, [[BlockKind.Wheat, 3]]);

@@ -40,9 +40,9 @@ export function MeatModel({ kind }: { kind: AnimalKind }) {
   );
 }
 
-function BucketModel({ filled }: { filled: boolean }) {
+function BucketModel({ filled, cleaner = false }: { filled: boolean; cleaner?: boolean }) {
   return (
-    <group name={filled ? 'water-bucket' : 'empty-bucket'}>
+    <group name={cleaner ? 'paint-cleaning-bucket' : filled ? 'water-bucket' : 'empty-bucket'}>
       <PixelPart position={[0, -0.22, 0]} size={[0.46, 0.07, 0.4]} color="#6d7c85" />
       <PixelPart position={[-0.23, 0, 0]} size={[0.07, 0.44, 0.4]} color="#a7b4bb" />
       <PixelPart position={[0.23, 0, 0]} size={[0.07, 0.44, 0.4]} color="#a7b4bb" />
@@ -52,7 +52,7 @@ function BucketModel({ filled }: { filled: boolean }) {
       <PixelPart position={[0.24, 0.25, 0]} size={[0.08, 0.07, 0.46]} color="#d3dce0" />
       <PixelPart position={[0, 0.25, -0.2]} size={[0.46, 0.07, 0.06]} color="#d3dce0" />
       <PixelPart position={[0, 0.25, 0.2]} size={[0.46, 0.07, 0.06]} color="#d3dce0" />
-      {filled && <PixelPart position={[0, 0.17, 0]} size={[0.38, 0.04, 0.32]} color="#359bd5" />}
+      {(filled || cleaner) && <PixelPart position={[0, 0.17, 0]} size={[0.38, 0.04, 0.32]} color={cleaner ? '#db87a7' : '#359bd5'} />}
       <PixelPart position={[-0.29, 0.38, 0]} size={[0.06, 0.26, 0.06]} color="#7f8e96" />
       <PixelPart position={[0.29, 0.38, 0]} size={[0.06, 0.26, 0.06]} color="#7f8e96" />
       <PixelPart position={[0, 0.51, 0]} size={[0.58, 0.06, 0.06]} color="#9baab2" />
@@ -544,7 +544,7 @@ export function ItemModel({ kind, held = false, flipWeapons = false }: ModelProp
   let model;
   if (isPaintballGun(kind)) model = <WeaponWithFallback kind="paintball" />;
   else if (isGalleryItem(kind)) model = <GalleryModel kind={kind} />;
-  else if (kind === 'bucket' || kind === 'water_bucket' || kind === 'empty_bucket') model = <BucketModel filled={kind === 'water_bucket'} />;
+  else if (kind === 'bucket' || kind === 'water_bucket' || kind === 'empty_bucket' || kind === 'paint_cleaning_bucket') model = <BucketModel filled={kind === 'water_bucket'} cleaner={kind === 'paint_cleaning_bucket'} />;
   else if (kind === 'extinguisher') model = <WeaponWithFallback kind="extinguisher" />;
   else if (kind === 'parachute') model = <ParachuteModel held />;
   else if (meta.category === 'sword') model = <SwordModel color={meta.color} />;

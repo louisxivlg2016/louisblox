@@ -16,7 +16,7 @@ import { HorseRider, Player, PlayerPosition, Vehicle, VehicleMotion, VehiclePosi
 import { groundAt, spawnVehicle } from '../vehicles';
 import { BlockKind, isWaterBlock, raycastVoxel, voxelKey } from '../voxel';
 import { fireProjectile } from './projectileSystem';
-import { isPaintballGun, paintballColor } from '../paintball';
+import { clearAllPaint, isPaintballGun, paintballColor } from '../paintball';
 import { drawPaintStroke, endPaintStroke } from '../paintStrokes';
 import { drainConnectedWater } from './waterSystem';
 import { tryFireBombLauncher, updateBombLauncher } from '../weaponAmmo';
@@ -102,6 +102,11 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
 
   if (useFood(world, selected, origin, direction, interact)) return true;
   if (meta.shape === 'shears' && interact > 0) return useShears(world, origin, direction);
+  if (selected === 'paint_cleaning_bucket' && interact > 0) {
+    const removed = clearAllPaint(world);
+    store.setNotice(removed > 0 ? translate(`Tous les dessins ont été effacés (${removed} traits).`, `All drawings were erased (${removed} strokes).`) : translate('Il n’y a aucun dessin à effacer.', 'There are no drawings to erase.'));
+    return true;
+  }
   if (selected === 'empty_bucket' && interact > 0) return useBucket(world, true, origin, direction, true);
   if ((selected === 'bucket' || selected === 'water_bucket') && interact > 0) return useBucket(world, selected === 'water_bucket', origin, direction);
   if (selected === 'extinguisher' && (interact > 0 || isMouseButtonDown(0) || isDown('KeyE')) && cooldown <= 0) {
