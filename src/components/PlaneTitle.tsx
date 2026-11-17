@@ -39,5 +39,5 @@ export function VehicleTitle({ title, width, height, position, name }: { title: 
 
 export function PlaneTitle() {
   const title = usePlaneTitleStore((state) => state.title);
-  return <VehicleTitle title={title} width={16} height={4} position={[4.5, 9, -10]} name="plane-gold-title" />;
+  return <VehicleTitle title={title} width={16} height={4} position={[7.5, 9, -10]} name="plane-gold-title" />;
 }
