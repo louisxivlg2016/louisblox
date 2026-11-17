@@ -169,6 +169,7 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
   mount.landing = false;
   mount.cabinPosition = walkable ? new Vector3(...seatOffset(kind, role, 0)) : null;
   useGameStore.getState().setRiding(kind, role);
+  if (kind === 'train' || kind === 'metro') useGameStore.setState({ cameraMode: 'first' });
   useGameStore.getState().setNotice(
     kind === 'horse' ? role === 'passenger' ? translate('Passager du cheval · E : descendre', 'Horse passenger · E: dismount') : vehicle.get(HorseRider)?.saddled ? translate('Cheval sellé · WASD : le guider · Espace : sauter · E : descendre', 'Saddled horse · WASD: guide · Space: jump · E: dismount') : translate('Cheval sans selle · WASD / flèches : le guider · Espace : sauter · E : descendre', 'Unsaddled horse · WASD / arrows: guide · Space: jump · E: dismount')
       : kind === 'camel' ? role === 'passenger' ? translate('Passager du chameau · E : descendre', 'Camel passenger · E: dismount') : guidedCamel ? translate('Chameau attaché au marchand · Il guide le trajet · E : descendre', 'Camel tied to trader · he leads the journey · E: dismount') : translate('Chameau · WASD / flèches : le guider · Espace : sauter · E : descendre', 'Camel · WASD / arrows: guide · Space: jump · E: dismount')
