@@ -13,8 +13,9 @@ import { BlockKind } from '../game/voxel';
 import { ItemModel, isWeaponItem, itemGripOffset } from './ItemModel';
 import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
-import { isStair, isUtilityBlock, stairSource } from '../game/extraBlocks';
+import { isSlab, isStair, isUtilityBlock, slabSource, stairSource } from '../game/extraBlocks';
 import { StairModel } from './StairModel';
+import { SlabModel } from './SlabModel';
 
 function createSkinTexture(base: string) {
   const canvas = document.createElement('canvas');
@@ -59,7 +60,7 @@ export function Hands() {
   const sleeping = useGameStore((state) => state.sleepProgress !== null);
   const skinColor = useCharacterStore((state) => state.appearance.skinColor);
   const skinTexture = useMemo(() => createSkinTexture(skinColor), [skinColor]);
-  const selectedBlock = typeof selected === 'number' ? isStair(selected) ? stairSource(selected) as BlockKind : selected : BlockKind.Grass;
+  const selectedBlock = typeof selected === 'number' ? isStair(selected) ? stairSource(selected) as BlockKind : isSlab(selected) ? slabSource(selected) as BlockKind : selected : BlockKind.Grass;
   const heldMaterials = useMemo(() => blockMaterials[selectedBlock].map((material) => {
     const clone = material.clone() as MeshLambertMaterial;
     clone.fog = false;
@@ -94,6 +95,8 @@ export function Hands() {
           <group position={[0.46, -0.3, -1]} scale={0.32}><UtilityBlockModel kind={selected} withLight={false} held /></group>
         ) : isStair(selected) ? (
           <group position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.32}><StairModel kind={selected} materials={heldMaterials} renderOrder={11} followPlayer /></group>
+        ) : isSlab(selected) ? (
+          <group position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.32}><SlabModel kind={selected} materials={heldMaterials} followPlayer /></group>
         ) : (
           <mesh args={[blockGeometry, heldMaterials]} position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.16} renderOrder={11} frustumCulled={false} />
         )

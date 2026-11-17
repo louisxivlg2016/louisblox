@@ -1,7 +1,8 @@
 import type { World } from 'koota';
-import { addVoxel, batchVoxelEdits, getBlockIndex, getWaterIndex, isChunkLoaded, removeVoxel } from '../chunks';
+import { addVoxel, batchVoxelEdits, getBlockIndex, getWaterIndex, isChunkLoaded, removeVoxel, setVoxelWaterlogged } from '../chunks';
 import { MIN_WORLD_Y } from '../levels';
 import { Player, PlayerPosition } from '../traits';
+import { isTrapdoor } from '../extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import type { Voxel, VoxelHit } from '../voxel';
 
@@ -30,7 +31,7 @@ export function drainConnectedWater(world: World, hit: VoxelHit) {
       const key = voxelKey(x, y, z);
       if (visited.has(key)) continue;
       const block = blocks.get(key);
-      if (!isWaterBlock(block?.kind)) continue;
+      if (!isWaterBlock(block?.kind) && block?.waterlogged !== true) continue;
       visited.add(key);
       water.push(block!);
     }
@@ -40,8 +41,13 @@ export function drainConnectedWater(world: World, hit: VoxelHit) {
     for (const block of water) {
       const key = voxelKey(block.x, block.y, block.z);
       if (blocks.get(key) !== block) continue;
-      removeVoxel(world, { block, x: block.x, y: block.y, z: block.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 });
-      if (!blocks.has(key)) drained += 1;
+      if (block.waterlogged) {
+        setVoxelWaterlogged(world, block, false);
+        if (!block.waterlogged) drained += 1;
+      } else {
+        removeVoxel(world, { block, x: block.x, y: block.y, z: block.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 });
+        if (!blocks.has(key)) drained += 1;
+      }
     }
   });
   return drained;
@@ -67,7 +73,8 @@ export function waterSystem(world: World, dt: number) {
       const z = source.z + dz;
       if (y < MIN_WORLD_Y) continue;
       const key = voxelKey(x, y, z);
-      if (blocks.has(key) || !isChunkLoaded(world, x, z)) continue;
+      const target = blocks.get(key);
+      if (target && !(isTrapdoor(target.kind) && target.open && !target.waterlogged) || !isChunkLoaded(world, x, z)) continue;
       const priority = (x - player.x) ** 2 + (z - player.z) ** 2 + (dy === 0 ? 0.5 : 0);
       const previous = candidates.get(key);
       if (!previous || priority < previous.priority) candidates.set(key, { x, y, z, priority });

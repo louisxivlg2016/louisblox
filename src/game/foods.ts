@@ -91,10 +91,6 @@ export function useFood(world: World, selected: ItemKind | GalleryItemId, origin
     }
     return true;
   }
-  if (hit) {
-    useGameStore.getState().setNotice(translate('Vise le dessus libre d’un bloc pour poser la nourriture.', 'Aim at the free top of a block to place food.'));
-    return true;
-  }
   eatItem(world, selected);
   return true;
 }

@@ -1,7 +1,7 @@
 import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { brickTexture, texture } from './textures';
-import { EXTRA_BLOCK_META, isCrop, isDoor, isGlass, isGrassPlate, isSapling, isSign, isStair, isTrapdoor, isUtilityBlock } from './extraBlocks';
+import { EXTRA_BLOCK_META, isCrop, isDoor, isGlass, isGrassPlate, isSapling, isSign, isSlab, isStair, isTrapdoor, isUtilityBlock } from './extraBlocks';
 import { getVitrailDesign, getVitrailTexture } from './vitrailDesigns';
 import type { ExtraBlockKind } from './extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
@@ -116,7 +116,7 @@ function usesSeparateModel(kind: BlockKind) {
 }
 
 function computeSeparateModel(kind: BlockKind) {
-  return kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || kind === BlockKind.Food || kind === BlockKind.JungleVine || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isStair(kind) || isUtilityBlock(kind) || isSign(kind);
+  return kind === BlockKind.Candle || kind === BlockKind.Campfire || kind === BlockKind.Wildfire || kind === BlockKind.Food || kind === BlockKind.JungleVine || isCrop(kind) || isSapling(kind) || isDoor(kind) || isTrapdoor(kind) || isStair(kind) || isSlab(kind) || isUtilityBlock(kind) || isSign(kind);
 }
 
 function visibleFace(block: Voxel, neighbor: Voxel | undefined) {
@@ -262,8 +262,8 @@ const concreteColors = new Map<BlockKind, Color>();
 export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxel>, lookup = createChunkLookup(blocks, blockIndex)) {
   createAtlas();
   const groups = new Map<string, GeometryGroup>();
-  for (const block of blocks) {
-    if (isGrassPlate(block) || usesSeparateModel(block.kind)) continue;
+  const appendBlock = (block: Voxel) => {
+    if (isGrassPlate(block) || usesSeparateModel(block.kind)) return;
     const groupName = groupFor(block.kind);
     const concrete = block.kind >= BlockKind.ConcreteWhite && block.kind <= BlockKind.ConcreteBlack;
     let color: Color | null = null;
@@ -284,6 +284,10 @@ export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxe
       const mirrorV = isGlass(block.kind) && (face.direction[1] !== 0 ? block.z % 2 !== 0 : block.y % 2 !== 0);
       addFace(group, block, face, tileUV(faceTexture(block, face.direction), mirrorU, mirrorV), color);
     }
+  };
+  for (const block of blocks) {
+    if (block.waterlogged && block.open) appendBlock({ ...block, kind: BlockKind.Water });
+    appendBlock(block);
   }
   const sharedMaterials = getMaterials();
   return [...groups.entries()].map(([name, group]) => ({

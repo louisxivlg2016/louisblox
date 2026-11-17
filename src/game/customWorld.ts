@@ -1,6 +1,6 @@
 import { CHUNK_SIZE, generateChunk, safeSpawnAt } from './levels';
 import type { GeneratedChunk } from './levels';
-import { isChest, isCrop, isDoor, isLadder, isRail, isSign, isTrafficSign, isTrapdoor, isBed, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
+import { isChest, isCrop, isDoor, isLadder, isRail, isSign, isTrafficSign, isTrapdoor, isSlab, isStair, isBed, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
 import type { CustomWorldDefinition } from './worldCode';
@@ -13,7 +13,7 @@ export function customBlock(block: Voxel): Voxel {
   if (isChest(result.kind)) result.items = [];
   if (result.kind === BlockKind.Food) result.food = 'bread';
   if (isSign(result.kind)) result.text = result.kind === BlockKind.ParisStreetSign ? PARIS_STREET_SIGN_TEXT : '';
-  if (isLadder(result.kind) || isDoor(result.kind) || isTrapdoor(result.kind) || isRail(result.kind) || isSign(result.kind) || isBed(result.kind) || result.kind === BlockKind.TrafficLight || isTrafficSign(result.kind)) result.facing = isBed(result.kind) ? 'south' : 'north';
+  if (isLadder(result.kind) || isDoor(result.kind) || isTrapdoor(result.kind) || isRail(result.kind) || isSign(result.kind) || isBed(result.kind) || isStair(result.kind) || isSlab(result.kind) || result.kind === BlockKind.TrafficLight || isTrafficSign(result.kind)) result.facing = isBed(result.kind) ? 'south' : 'north';
   return result;
 }
 

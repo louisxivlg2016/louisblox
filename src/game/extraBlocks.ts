@@ -152,6 +152,64 @@ export const EXTRA_BLOCKS = {
   StairGoldOre: 177,
   StairDiamondOre: 178,
   StairBedrock: 179,
+  SlabOak: 180,
+  SlabPine: 181,
+  SlabAutumn: 182,
+  SlabStone: 183,
+  SlabSand: 184,
+  SlabBeigeBrick: 185,
+  SlabWhiteBrick: 186,
+  SlabGrayBrick: 187,
+  SlabConcreteWhite: 188,
+  SlabConcreteOrange: 189,
+  SlabConcreteMagenta: 190,
+  SlabConcreteLightBlue: 191,
+  SlabConcreteYellow: 192,
+  SlabConcreteLime: 193,
+  SlabConcretePink: 194,
+  SlabConcreteGray: 195,
+  SlabConcreteLightGray: 196,
+  SlabConcreteCyan: 197,
+  SlabConcretePurple: 198,
+  SlabConcreteBlue: 199,
+  SlabConcreteBrown: 200,
+  SlabConcreteGreen: 201,
+  SlabConcreteRed: 202,
+  SlabConcreteBlack: 203,
+  SlabWood: 204,
+  SlabDirt: 205,
+  SlabGrass: 206,
+  SlabSnow: 207,
+  SlabIce: 208,
+  SlabCoalOre: 209,
+  SlabIronOre: 210,
+  SlabGoldOre: 211,
+  SlabDiamondOre: 212,
+  SlabBedrock: 213,
+  SlabGlass: 214,
+  SlabGlassWhite: 215,
+  SlabGlassOrange: 216,
+  SlabGlassMagenta: 217,
+  SlabGlassLightBlue: 218,
+  SlabGlassYellow: 219,
+  SlabGlassLime: 220,
+  SlabGlassPink: 221,
+  SlabGlassGray: 222,
+  SlabGlassLightGray: 223,
+  SlabGlassCyan: 224,
+  SlabGlassPurple: 225,
+  SlabGlassBlue: 226,
+  SlabGlassBrown: 227,
+  SlabGlassGreen: 228,
+  SlabGlassRed: 229,
+  SlabGlassBlack: 230,
+  TrapdoorIron: 231,
+  TrapdoorGold: 232,
+  TrapdoorCopper: 233,
+  TrapdoorOakSmall: 234,
+  TrapdoorIronSmall: 235,
+  TrapdoorGoldSmall: 236,
+  TrapdoorCopperSmall: 237,
 } as const;
 
 export const PARIS_STREET_SIGN_TEXT = '4th arrondissement\nPeace Street';
@@ -161,8 +219,11 @@ export const SAPLING_KINDS = [EXTRA_BLOCKS.OakSapling, EXTRA_BLOCKS.PineSapling,
 export const isSapling = (kind: number) => (SAPLING_KINDS as readonly number[]).includes(kind);
 export const isGlass = (kind: number) => kind === EXTRA_BLOCKS.Glass || kind >= EXTRA_BLOCKS.GlassWhite && kind <= EXTRA_BLOCKS.GlassBlack;
 export const isDoor = (kind: number) => kind >= EXTRA_BLOCKS.DoorWhite && kind <= EXTRA_BLOCKS.DoorBlack;
-export const isTrapdoor = (kind: number) => kind >= EXTRA_BLOCKS.TrapdoorWhite && kind <= EXTRA_BLOCKS.TrapdoorBlack;
+export const isTrapdoor = (kind: number) => kind >= EXTRA_BLOCKS.TrapdoorWhite && kind <= EXTRA_BLOCKS.TrapdoorBlack || kind >= EXTRA_BLOCKS.TrapdoorIron && kind <= EXTRA_BLOCKS.TrapdoorCopperSmall;
+export const isSmallTrapdoor = (kind: number) => kind >= EXTRA_BLOCKS.TrapdoorOakSmall && kind <= EXTRA_BLOCKS.TrapdoorCopperSmall;
+export const isMetalTrapdoor = (kind: number) => kind >= EXTRA_BLOCKS.TrapdoorIron && kind <= EXTRA_BLOCKS.TrapdoorCopper || kind >= EXTRA_BLOCKS.TrapdoorIronSmall && kind <= EXTRA_BLOCKS.TrapdoorCopperSmall;
 export const isStair = (kind: number) => kind >= EXTRA_BLOCKS.StairOak && kind <= EXTRA_BLOCKS.StairBedrock;
+export const isSlab = (kind: number) => kind >= EXTRA_BLOCKS.SlabOak && kind <= EXTRA_BLOCKS.SlabGlassBlack;
 export const STAIR_SOURCES: Readonly<Partial<Record<ExtraBlockKind, number>>> = {
   [EXTRA_BLOCKS.StairOak]: EXTRA_BLOCKS.OakPlanks,
   [EXTRA_BLOCKS.StairPine]: EXTRA_BLOCKS.PinePlanks,
@@ -200,6 +261,11 @@ export const STAIR_SOURCES: Readonly<Partial<Record<ExtraBlockKind, number>>> = 
   [EXTRA_BLOCKS.StairBedrock]: 17,
 };
 export const stairSource = (kind: number) => STAIR_SOURCES[kind as ExtraBlockKind];
+export const SLAB_SOURCES: Readonly<Partial<Record<ExtraBlockKind, number>>> = {
+  ...Object.fromEntries(Object.entries(STAIR_SOURCES).map(([kind, source]) => [Number(kind) - EXTRA_BLOCKS.StairOak + EXTRA_BLOCKS.SlabOak, source])),
+  ...Object.fromEntries([EXTRA_BLOCKS.Glass, ...Array.from({ length: 16 }, (_, index) => EXTRA_BLOCKS.GlassWhite + index)].map((source, index) => [EXTRA_BLOCKS.SlabGlass + index, source])),
+};
+export const slabSource = (kind: number) => SLAB_SOURCES[kind as ExtraBlockKind];
 export const isUpsideDownStair = (block: Pick<import('./voxel').Voxel, 'kind' | 'growth'>) => isStair(block.kind) && block.growth === 1;
 export const isGrassPlate = (block: Pick<import('./voxel').Voxel, 'kind' | 'growth'> | undefined) => block?.growth === 0 && [0, 11, 12, 142].includes(block.kind);
 export const stairFacingFromYaw = (yaw: number): NonNullable<import('./voxel').Voxel['facing']> => {
@@ -239,7 +305,7 @@ function block(name: string, color: string, hardness: number): ExtraBlockMeta {
   return { name, color, hardness, palette: palette(color) };
 }
 
-export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
+const BASE_EXTRA_BLOCK_META: Record<number, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.BeigeBrick]: block('Brique beige', '#c8a77a', 2.2),
   [EXTRA_BLOCKS.WhiteBrick]: block('Brique blanche', '#e4e4df', 2.2),
   [EXTRA_BLOCKS.GrayBrick]: block('Brique grise', '#85898c', 2.2),
@@ -298,6 +364,13 @@ export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.TrapdoorGreen]: block('Trappe verte', '#3f7c3a', 0.8),
   [EXTRA_BLOCKS.TrapdoorRed]: block('Trappe rouge', '#b83935', 0.8),
   [EXTRA_BLOCKS.TrapdoorBlack]: block('Trappe noire', '#25282b', 0.8),
+  [EXTRA_BLOCKS.TrapdoorIron]: block('Trappe en fer', '#a8b5bc', 2.4),
+  [EXTRA_BLOCKS.TrapdoorGold]: block('Trappe en or', '#e3bd32', 1.8),
+  [EXTRA_BLOCKS.TrapdoorCopper]: block('Trappe en cuivre', '#b8734d', 2),
+  [EXTRA_BLOCKS.TrapdoorOakSmall]: block('Petit bouchon en chêne', '#b98a53', 0.8),
+  [EXTRA_BLOCKS.TrapdoorIronSmall]: block('Petit bouchon en fer', '#a8b5bc', 2.4),
+  [EXTRA_BLOCKS.TrapdoorGoldSmall]: block('Petit bouchon en or', '#e3bd32', 1.8),
+  [EXTRA_BLOCKS.TrapdoorCopperSmall]: block('Petit bouchon en cuivre', '#b8734d', 2),
   [EXTRA_BLOCKS.Corn]: block('Graines de maïs', '#d8bd3d', 0.15),
   [EXTRA_BLOCKS.Wheat]: block('Graines de blé', '#bda366', 0.15),
   [EXTRA_BLOCKS.Tomato]: block('Graines de tomate', '#c84a3c', 0.15),
@@ -394,3 +467,26 @@ export const EXTRA_BLOCK_META: Record<ExtraBlockKind, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.StairDiamondOre]: block('Escalier en diamant', '#45c8cf', 10),
   [EXTRA_BLOCKS.StairBedrock]: block('Escalier en bedrock', '#2d2d2d', 30),
 };
+
+const SLAB_BASE_MATERIALS: Record<number, ExtraBlockMeta> = {
+  0: block('herbe', '#69a947', 0.55),
+  1: block('terre', '#8b5e3c', 0.6),
+  2: block('pierre', '#858585', 2.5),
+  3: block('sable', '#dfcf8a', 0.5),
+  4: block('bûche', '#8b633c', 1.8),
+  6: block('neige', '#edf5f7', 0.25),
+  13: block('charbon', '#424242', 4),
+  14: block('fer', '#b88b6a', 6),
+  15: block('or', '#e3bd32', 7),
+  16: block('diamant', '#45c8cf', 10),
+  17: block('bedrock', '#2d2d2d', 30),
+  18: block('glace', '#a8d5e2', 1.5),
+};
+
+export const EXTRA_BLOCK_META = {
+  ...BASE_EXTRA_BLOCK_META,
+  ...Object.fromEntries(Object.entries(SLAB_SOURCES).map(([kind, source]) => {
+    const material = BASE_EXTRA_BLOCK_META[source] ?? SLAB_BASE_MATERIALS[source];
+    return [kind, { name: `Plaque en ${material.name.toLocaleLowerCase('fr')}`, color: material.color, hardness: material.hardness, palette: material.palette }];
+  })),
+} as Record<ExtraBlockKind, ExtraBlockMeta>;

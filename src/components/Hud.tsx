@@ -151,8 +151,7 @@ export function Hud() {
                 className={`hotbar-slot ${selected === kind ? 'selected' : ''}`}
                 onClick={() => {
                   if (kind === null) return;
-                  if (window.matchMedia('(pointer: coarse)').matches) void import('../game/droppedItems').then(({ dropSelectedItem }) => dropSelectedItem());
-                  else selectBlock(kind);
+                  selectBlock(kind);
                 }}
                 disabled={kind === null}
                 aria-label={`${index + 1} : ${kind === null ? translate('vide', 'empty') : selectionInfo(kind).name}`}

@@ -1,5 +1,5 @@
 import { BLOCK_INFO, BlockKind } from './voxel';
-import { isBed, isChest, isDoor, isLadder, isSign, isStair, isTrapdoor, stairSource } from './extraBlocks';
+import { isBed, isChest, isDoor, isLadder, isMetalTrapdoor, isSign, isSlab, isStair, isTrapdoor, slabSource, stairSource } from './extraBlocks';
 import { GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
 import { localizedItemName } from './english';
 import type { GalleryItemId } from './galleryCatalog';
@@ -179,16 +179,16 @@ export function isSword(kind: SelectedKind) {
 }
 
 export function isWoodBlock(kind: BlockKind) {
-  const source = isStair(kind) ? stairSource(kind) : undefined;
+  const source = isStair(kind) ? stairSource(kind) : isSlab(kind) ? slabSource(kind) : undefined;
   return kind === BlockKind.Wood || kind >= BlockKind.OakPlanks && kind <= BlockKind.AutumnPlanks
     || source === BlockKind.Wood || source !== undefined && source >= BlockKind.OakPlanks && source <= BlockKind.AutumnPlanks
-    || isDoor(kind) || isTrapdoor(kind) || isChest(kind) || isLadder(kind) || isSign(kind) || isBed(kind);
+    || isDoor(kind) || isTrapdoor(kind) && !isMetalTrapdoor(kind) || isChest(kind) || isLadder(kind) || isSign(kind) || isBed(kind);
 }
 
 export function miningSpeed(selection: SelectedKind, block: BlockKind) {
   if (typeof selection === 'number' || block === BlockKind.Bedrock) return 1;
   const meta = getItemMeta(selection);
-  const material = isStair(block) ? stairSource(block) as BlockKind : block;
+  const material = isStair(block) ? stairSource(block) as BlockKind : isSlab(block) ? slabSource(block) as BlockKind : block;
   const hardBlock = material === BlockKind.Stone || material === BlockKind.CoalOre || material === BlockKind.IronOre
     || material === BlockKind.GoldOre || material === BlockKind.DiamondOre || material === BlockKind.Ice
     || (material >= BlockKind.BeigeBrick && material <= BlockKind.ConcreteBlack);

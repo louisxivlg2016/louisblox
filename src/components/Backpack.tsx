@@ -156,7 +156,10 @@ export function Backpack() {
                 setBackpackItem(kind);
               }}
               onDragEnd={(event) => {
-                if (kind !== null && event.dataTransfer.dropEffect === 'none') discardSlot(index);
+                const moved = dragSlot.current !== null && Math.hypot(event.clientX - dragSlot.current.x, event.clientY - dragSlot.current.y) > 24;
+                const outside = !document.elementFromPoint(event.clientX, event.clientY)?.closest('.backpack-panel');
+                dragSlot.current = null;
+                if (kind !== null && moved && outside && event.dataTransfer.dropEffect === 'none') discardSlot(index);
               }}
               onPointerDown={(event) => {
                 if (kind === null) return;

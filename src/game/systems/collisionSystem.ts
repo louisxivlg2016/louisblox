@@ -1,4 +1,4 @@
-import { isCrop, isDoor, isGrassPlate, isLadder, isRail, isStair, isTrapdoor, isUpsideDownStair } from '../extraBlocks';
+import { isCrop, isDoor, isGrassPlate, isLadder, isRail, isSlab, isSmallTrapdoor, isStair, isTrapdoor, isUpsideDownStair } from '../extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import type { Voxel } from '../voxel';
 import type { CabinDefinition } from '../vehicleTypes';
@@ -10,14 +10,35 @@ const RADIUS = 0.35;
 const HEIGHT = 1.8;
 const EPSILON = 0.0001;
 const MAX_SUBSTEP = 0.18;
+const overlaps = (minA: number, maxA: number, minB: number, maxB: number) => minA < maxB - EPSILON && maxA > minB + EPSILON;
 
 export function isCollidable(block: Voxel | undefined) {
   if (!block || isGrassPlate(block) || isWaterBlock(block.kind) || block.kind === BlockKind.Food || block.kind === BlockKind.JungleVine || isCrop(block.kind) || isLadder(block.kind) || isRail(block.kind)) return false;
   return !(isDoor(block.kind) || isTrapdoor(block.kind)) || !block.open;
 }
 
+function slabCollides(block: Voxel, position: Vector, height: number) {
+  const wall = block.growth === 2;
+  const centerX = wall && block.facing === 'east' ? -0.41 : wall && block.facing === 'west' ? 0.41 : 0;
+  const centerZ = wall && block.facing === 'south' ? -0.41 : wall && block.facing === 'north' ? 0.41 : 0;
+  const minX = block.x + centerX - (wall && (block.facing === 'east' || block.facing === 'west') ? 0.09 : 0.5);
+  const maxX = block.x + centerX + (wall && (block.facing === 'east' || block.facing === 'west') ? 0.09 : 0.5);
+  const minZ = block.z + centerZ - (wall && (block.facing === 'north' || block.facing === 'south') ? 0.09 : 0.5);
+  const maxZ = block.z + centerZ + (wall && (block.facing === 'north' || block.facing === 'south') ? 0.09 : 0.5);
+  const minY = wall ? block.y - 0.5 : block.growth === 1 ? block.y + 0.32 : block.y - 0.5;
+  const maxY = wall ? block.y + 0.5 : block.growth === 1 ? block.y + 0.5 : block.y - 0.32;
+  return overlaps(position.x - RADIUS, position.x + RADIUS, minX, maxX)
+    && overlaps(position.z - RADIUS, position.z + RADIUS, minZ, maxZ)
+    && overlaps(position.y, position.y + height, minY, maxY);
+}
+
+function smallTrapdoorCollides(block: Voxel, position: Vector, height: number) {
+  return overlaps(position.x - RADIUS, position.x + RADIUS, block.x - 0.23, block.x + 0.23)
+    && overlaps(position.z - RADIUS, position.z + RADIUS, block.z - 0.23, block.z + 0.23)
+    && overlaps(position.y, position.y + height, block.y - 0.04, block.y + 0.04);
+}
+
 function stairCollides(block: Voxel, position: Vector, height: number) {
-  const overlaps = (minA: number, maxA: number, minB: number, maxB: number) => minA < maxB - EPSILON && maxA > minB + EPSILON;
   const xOverlap = overlaps(position.x - RADIUS, position.x + RADIUS, block.x - 0.5, block.x + 0.5);
   const zOverlap = overlaps(position.z - RADIUS, position.z + RADIUS, block.z - 0.5, block.z + 0.5);
   const upsideDown = isUpsideDownStair(block);
@@ -49,6 +70,14 @@ function collides(blocks: ReadonlyMap<string, Voxel>, position: Vector, cabin?: 
         if (!isCollidable(block)) continue;
         if (block && isStair(block.kind)) {
           if (stairCollides(block, position, height)) return true;
+          continue;
+        }
+        if (block && isSlab(block.kind)) {
+          if (slabCollides(block, position, height)) return true;
+          continue;
+        }
+        if (block && isSmallTrapdoor(block.kind)) {
+          if (smallTrapdoorCollides(block, position, height)) return true;
           continue;
         }
         return true;
@@ -107,7 +136,7 @@ export function moveVoxelCharacter(
     let climbed = false;
 
     if (canStep && y <= 0 && horizontalHit) {
-      const candidateHeights = [...new Set([Math.round((start.y - 0.5) * 2) / 2 + 1 + EPSILON, Math.round(start.y - 0.5) + 1.5 + EPSILON])];
+      const candidateHeights = [...new Set([start.y + 0.18 + EPSILON, Math.round((start.y - 0.5) * 2) / 2 + 1 + EPSILON, Math.round(start.y - 0.5) + 1.5 + EPSILON])];
       for (const candidateY of candidateHeights) {
         const candidate = { ...start, y: candidateY };
         if (candidate.y - start.y > 1.05 || collides(blocks, candidate, cabin, height)) continue;

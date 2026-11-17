@@ -91,10 +91,12 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
       }
     });
     clone.quaternion.identity();
+    const yawOffset = kind === 'giraffe' ? -Math.PI / 2 : kind === 'monkey' || kind === 'ocelot' || kind === 'bear' || kind === 'snowBear' || kind === 'wolf' || kind === 'snowWolf' ? Math.PI : 0;
+    clone.rotation.y = yawOffset;
     if (kind === 'camel') clone.position.y += 0.72;
     return clone;
   }, [scene, kind]);
-  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck', kind === 'giraffe' ? -Math.PI / 2 : kind === 'monkey' || kind === 'ocelot' ? Math.PI : 0, kind === 'giraffe' ? 'z' : 'x');
+  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck', 0, kind === 'giraffe' ? 'z' : 'x');
   return <group name={`reference-${kind}`} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 

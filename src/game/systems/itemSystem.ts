@@ -6,6 +6,7 @@ import { addVoxel, getBlockIndex } from '../chunks';
 import { consumeActions, isDown, isMouseButtonDown } from '../input';
 import { getItemMeta } from '../items';
 import { isGalleryItem } from '../galleryCatalog';
+import { isTrapdoor } from '../extraBlocks';
 import { useGalleryItem, useShears } from '../galleryActions';
 import { useFood } from '../foods';
 import { hasInventory } from '../inventory';
@@ -45,17 +46,18 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
   const store = useGameStore.getState();
   const blocks = getBlockIndex(world);
   const hit = raycastVoxel(blocks, origin, direction, 6, alwaysEmpty || !filled);
-  if (alwaysEmpty && hit && isWaterBlock(hit.block.kind)) {
+  if (alwaysEmpty && hit && (isWaterBlock(hit.block.kind) || hit.block.waterlogged === true)) {
     const drained = drainConnectedWater(world, hit);
     store.setNotice(drained > 0 ? translate(`Eau retirée (${drained} blocs). Le seau reste toujours vide.`, `Water removed (${drained} blocks). The bucket remains empty.`) : translate('Tu ne peux pas récupérer cette eau ici.', 'You cannot collect this water here.'));
     return true;
   }
   if (filled) {
     if (hit) {
-      const x = hit.x + hit.normal.x;
-      const y = hit.y + hit.normal.y;
-      const z = hit.z + hit.normal.z;
-      if (y >= MIN_WORLD_Y && y <= MAX_BUILD_Y && !blocks.has(voxelKey(x, y, z)) && addVoxel(world, x, y, z, BlockKind.CalmWater)) {
+      const fillingTrapdoor = isTrapdoor(hit.block.kind) && hit.block.open && !hit.block.waterlogged;
+      const x = hit.x + (fillingTrapdoor ? 0 : hit.normal.x);
+      const y = hit.y + (fillingTrapdoor ? 0 : hit.normal.y);
+      const z = hit.z + (fillingTrapdoor ? 0 : hit.normal.z);
+      if (y >= MIN_WORLD_Y && y <= MAX_BUILD_Y && (fillingTrapdoor || !blocks.has(voxelKey(x, y, z))) && addVoxel(world, x, y, z, BlockKind.CalmWater)) {
         if (!alwaysEmpty) changeHeldBucket('water_bucket', 'bucket');
         store.setNotice(alwaysEmpty ? translate('Eau posée. Le seau reste toujours vide.', 'Water placed. The bucket remains empty.') : translate('Tout le contenu du seau est vidé : 1 bloc d’eau calme, sans inondation.', 'The bucket is emptied: 1 calm water block, without flooding.'));
         return true;
@@ -64,7 +66,7 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
     store.setNotice(alwaysEmpty ? translate('Vise un bloc avec le seau toujours vide pour poser de l’eau.', 'Aim at a block with the always-empty bucket to place water.') : translate('Vise un bloc avec le seau plein pour y poser l’eau.', 'Aim at a block with the full bucket to place water.'));
     return true;
   }
-  if (hit && isWaterBlock(hit.block.kind)) {
+  if (hit && (isWaterBlock(hit.block.kind) || hit.block.waterlogged === true)) {
     const drained = drainConnectedWater(world, hit);
     if (drained > 0) {
       changeHeldBucket('bucket', 'water_bucket');

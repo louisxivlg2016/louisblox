@@ -48,6 +48,7 @@ export type Voxel = {
   food?: import('./items').SelectedKind;
   meat?: import('./animals').AnimalKind;
   protected?: boolean;
+  waterlogged?: boolean;
 };
 
 export type VoxelHit = {

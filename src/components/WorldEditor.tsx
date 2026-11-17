@@ -14,7 +14,8 @@ import { selectionInfo } from '../game/items';
 import { translate } from '../game/language';
 import { EditorPlayer } from './EditorPlayer';
 import { StairModel } from './StairModel';
-import { isStair, isUpsideDownStair } from '../game/extraBlocks';
+import { SlabModel } from './SlabModel';
+import { isSlab, isStair, isUpsideDownStair } from '../game/extraBlocks';
 
 const ALL_BLOCKS = [...new Set(Object.values(BlockKind).filter((kind) => typeof kind === 'number' && kind in BLOCK_INFO))] as BlockKind[];
 const matrix = new Matrix4();
@@ -46,9 +47,11 @@ function BlockInstanceGroup({ kind, values, erase, onInteract }: { kind: BlockKi
     mesh.current.instanceMatrix.needsUpdate = true;
     mesh.current.computeBoundingSphere();
   }, [values]);
-  if (isStair(kind)) return values.map((target) => (
+  if (isStair(kind) || isSlab(kind)) return values.map((target) => (
     <group key={`${target.block.x},${target.block.y},${target.block.z}`} onClick={(event) => { if (event.delta > 5) return; event.stopPropagation(); onInteract(target, event.face?.normal ?? { x: 0, y: 1, z: 0 }, erase); }} onPointerDown={(event) => { if (event.button !== 2) return; event.stopPropagation(); onInteract(target, event.face?.normal ?? { x: 0, y: 1, z: 0 }, true); }}>
-      <StairModel kind={kind} facing={target.block.facing} upsideDown={isUpsideDownStair(target.block)} position={[target.block.x, target.block.y, target.block.z]} />
+      {isStair(kind)
+        ? <StairModel kind={kind} facing={target.block.facing} upsideDown={isUpsideDownStair(target.block)} position={[target.block.x, target.block.y, target.block.z]} />
+        : <SlabModel kind={kind} facing={target.block.facing} growth={target.block.growth} position={[target.block.x, target.block.y, target.block.z]} />}
     </group>
   ));
   return (
@@ -156,7 +159,7 @@ export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, 
     setHistory((current) => [...current.slice(-39), blocks]);
     onChange(next);
   };
-  const put = (x: number, y: number, z: number, kind = selected) => {
+  const put = (x: number, y: number, z: number, kind = selected, normal = { x: 0, y: 1, z: 0 }) => {
     const limit = infinite ? INFINITE_EDITOR_COORDINATE : CUSTOM_WORLD_RADIUS;
     if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y) || !Number.isSafeInteger(z) || Math.abs(x) > limit || Math.abs(z) > limit || y < 1 || y > CUSTOM_WORLD_MAX_Y) {
       setMessage(infinite ? translate('Coordonnées entières trop grandes. Y doit être entre 1 et 48.', 'Integer coordinates are too large. Y must be between 1 and 48.') : translate('Coordonnées : x et z de -32 à 32, y de 1 à 48.', 'Coordinates: x and z from -32 to 32, y from 1 to 48.'));
@@ -167,7 +170,9 @@ export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, 
       setMessage(translate(`La construction est limitée à ${CUSTOM_WORLD_MAX_BLOCKS} blocs.`, `Construction is limited to ${CUSTOM_WORLD_MAX_BLOCKS} blocks.`));
       return;
     }
-    update([...next, { x, y, z, kind, ...(isStair(kind) ? { facing: 'south' } : {}), ...(protectedPlacement ? { protected: true } : {}) }]);
+    const facing = normal.x === 1 ? 'east' : normal.x === -1 ? 'west' : normal.z === 1 ? 'south' : 'north';
+    const growth = normal.y === -1 ? 1 : normal.y === 0 ? 2 : 0;
+    update([...next, { x, y, z, kind, ...(isStair(kind) || isSlab(kind) ? { facing: isStair(kind) ? 'south' : facing } : {}), ...(isSlab(kind) ? { growth } : {}), ...(protectedPlacement ? { protected: true } : {}) }]);
     setMessage(`${selectionInfo(kind).name} placed at ${x}, ${y}, ${z}${protectedPlacement ? translate(' · incassable', ' · unbreakable') : ''}.`);
   };
   const interact = ({ block, base }: PreviewBlock, normal: { x: number; y: number; z: number }, remove: boolean) => {
@@ -183,7 +188,7 @@ export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, 
       setMessage(`${selectionInfo(block.kind).name} removed.`);
       return;
     }
-    put(block.x + Math.round(normal.x), block.y + Math.round(normal.y), block.z + Math.round(normal.z));
+    put(block.x + Math.round(normal.x), block.y + Math.round(normal.y), block.z + Math.round(normal.z), selected, normal);
   };
   const undo = () => {
     const previous = history.at(-1);

@@ -38,16 +38,37 @@ const stairMaterials: Record<string, string> = {
   chêne: 'Oak', sapin: 'Pine', 'bois d’automne': 'Autumn Wood', pierre: 'Stone', sable: 'Sand', 'brique beige': 'Beige Brick', 'brique blanche': 'White Brick', 'brique grise': 'Gray Brick',
   bûche: 'Log', terre: 'Dirt', herbe: 'Grass', neige: 'Snow', glace: 'Ice', charbon: 'Coal', fer: 'Iron', or: 'Gold', diamant: 'Diamond', bedrock: 'Bedrock',
 };
+const slabMaterials: Record<string, string> = {
+  ...stairMaterials,
+  'planches de chêne': 'Oak Planks', 'planches de sapin': 'Pine Planks', 'planches d’arbre d’automne': 'Autumn Wood Planks',
+};
 
 export function englishItemName(name: string) {
   const direct = names[name];
   if (direct) return direct;
   if (name.startsWith('Porte ')) return `${colors[name.slice(6)] ?? name.slice(6)} Door`;
-  if (name.startsWith('Trappe ')) return `${colors[name.slice(7)] ?? name.slice(7)} Trapdoor`;
+  if (name.startsWith('Trappe ')) {
+    const material = name.slice(7);
+    const translated = material === 'fer' ? 'Iron' : material === 'or' ? 'Gold' : material === 'cuivre' ? 'Copper' : colors[material] ?? material;
+    return `${translated} Trapdoor`;
+  }
+  if (name.startsWith('Petit bouchon en ')) {
+    const material = name.slice(17);
+    const translated = material === 'chêne' ? 'Oak' : material === 'fer' ? 'Iron' : material === 'or' ? 'Gold' : material === 'cuivre' ? 'Copper' : material;
+    return `Small ${translated} Plug`;
+  }
   if (name.startsWith('Lit ')) return `${colors[name.slice(4)] ?? name.slice(4)} Bed`;
   if (name.startsWith('Verre ') && name.endsWith(' à motif')) return `${colors[name.slice(6, -8)] ?? name.slice(6, -8)} Patterned Glass`;
   if (name.startsWith('Escalier en béton ')) return `${colors[name.slice(18)] ?? name.slice(18)} Concrete Stairs`;
   if (name.startsWith('Escalier en ')) return `${stairMaterials[name.slice(12)] ?? name.slice(12)} Stairs`;
+  if (name.startsWith('Plaque en béton ')) return `${colors[name.slice(16)] ?? name.slice(16)} Concrete Slab`;
+  if (name.startsWith('Plaque en verre')) {
+    const material = name.slice(10);
+    if (material === 'verre') return 'Glass Slab';
+    const color = material.slice(6, -8);
+    return `${colors[color] ?? color} Patterned Glass Slab`;
+  }
+  if (name.startsWith('Plaque en ')) return `${slabMaterials[name.slice(10)] ?? name.slice(10)} Slab`;
   return name;
 }
 

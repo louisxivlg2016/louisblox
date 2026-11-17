@@ -65,7 +65,7 @@ function Atmosphere() {
   const skyDaylight = Math.max(0, (daylight - 0.2) / 0.8);
   const center = camera.position;
   const cameraBlock = getBlockIndex(world).get(voxelKey(Math.floor(center.x + 0.5), Math.floor(center.y + 0.5), Math.floor(center.z + 0.5)));
-  const underwater = isWaterBlock(cameraBlock?.kind);
+  const underwater = isWaterBlock(cameraBlock?.kind) || cameraBlock?.waterlogged === true;
   const enclosed = cameraBlock !== undefined && !underwater;
   const exteriorPlane = useGameStore((state) => state.riding === 'plane' && state.cameraMode !== 'first');
   const waterColor = new Color('#217fac');
