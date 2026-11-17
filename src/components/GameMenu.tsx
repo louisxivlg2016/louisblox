@@ -54,7 +54,7 @@ type ModeCard = {
   description: (enabled: boolean) => string;
   tag: (enabled: boolean) => string;
 };
-const POPULAR_MODES = new Set<GameplayMode>(['survival', 'creative', 'pirates', 'football', 'city-ancient', 'city-modern']);
+const POPULAR_MODES = new Set<GameplayMode>(['survival', 'creative', 'battle', 'pirates', 'football', 'city-ancient', 'city-modern']);
 const MODE_CARDS = (): ModeCard[] => [
   { mode: 'survival', image: translate(survivalFrUrl, survivalEnUrl, survivalEsUrl), alt: translate('Zombie du mode Survie', 'Survival mode zombie'), name: translate('Survie', 'Survival'), description: (enabled) => enabled ? translate('Monde public avec tous les joueurs', 'Public world with every player') : translate('Nouveau monde solo à mains nues', 'New solo world with bare hands'), tag: (enabled) => enabled ? translate('Multijoueur', 'Multiplayer') : 'Solo' },
   { mode: 'creative', image: translate(creativeFrUrl, creativeEnUrl, creativeEsUrl), alt: translate('Monde du mode Créatif', 'Creative mode world'), name: translate('Créatif', 'Creative'), tagClass: 'creative', description: (enabled) => enabled ? translate('Monde public avec tous les joueurs', 'Public world with every player') : translate('Nouveau monde solo avec tous les objets', 'New solo world with every item'), tag: (enabled) => enabled ? translate('Multijoueur', 'Multiplayer') : 'Solo' },
