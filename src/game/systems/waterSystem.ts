@@ -15,7 +15,15 @@ const directions = [
   [0, 0, -1],
 ] as const;
 
-type FlowCandidate = { x: number; y: number; z: number; priority: number };
+type FlowCandidate = { source: Voxel; x: number; y: number; z: number; priority: number; lateral: boolean };
+const flowEnergy = new WeakMap<Voxel, number>();
+const FLOW_DISTANCE = 12;
+
+function canEnter(world: World, blocks: ReadonlyMap<string, Voxel>, x: number, y: number, z: number) {
+  if (y < MIN_WORLD_Y || !isChunkLoaded(world, x, z)) return false;
+  const target = blocks.get(voxelKey(x, y, z));
+  return !target || hasWaterOpening(target) && !target.waterlogged;
+}
 
 export function drainConnectedWater(world: World, hit: VoxelHit) {
   const blocks = getBlockIndex(world);
@@ -63,28 +71,37 @@ export function waterSystem(world: World, dt: number) {
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return;
   const blocks = getBlockIndex(world);
-  const candidates = new Map<string, FlowCandidate>();
+  const candidates: FlowCandidate[] = [];
 
   for (const source of getWaterIndex(world).values()) {
     if (Math.abs(source.x - player.x) > 20 || Math.abs(source.z - player.z) > 20) continue;
+    const energy = flowEnergy.get(source) ?? 0;
     for (const [dx, dy, dz] of directions) {
       const x = source.x + dx;
       const y = source.y + dy;
       const z = source.z + dz;
-      if (y < MIN_WORLD_Y) continue;
-      const key = voxelKey(x, y, z);
-      const target = blocks.get(key);
-      if (target && !(hasWaterOpening(target) && !target.waterlogged) || !isChunkLoaded(world, x, z)) continue;
-      const priority = (x - player.x) ** 2 + (z - player.z) ** 2 + (dy === 0 ? 0.5 : 0);
-      const previous = candidates.get(key);
-      if (!previous || priority < previous.priority) candidates.set(key, { x, y, z, priority });
+      if (!canEnter(world, blocks, x, y, z)) continue;
+      const lateral = dy === 0;
+      if (lateral && energy === 0 && !canEnter(world, blocks, x, y - 1, z)) continue;
+      candidates.push({ source, x, y, z, priority: (lateral ? 1 : 0) + (x - player.x) ** 2 * 0.0001 + (z - player.z) ** 2 * 0.0001, lateral });
     }
   }
 
-  const flowing = [...candidates.values()].sort((a, b) => a.priority - b.priority || b.y - a.y);
+  candidates.sort((a, b) => a.priority - b.priority);
   batchVoxelEdits(world, () => {
-    for (const target of flowing.slice(0, 48)) {
-      addVoxel(world, target.x, target.y, target.z, BlockKind.Water);
+    let moved = 0;
+    for (const candidate of candidates) {
+      if (moved >= 48) break;
+      const { source, x, y, z, lateral } = candidate;
+      if (blocks.get(voxelKey(source.x, source.y, source.z)) !== source || !canEnter(world, blocks, x, y, z)) continue;
+      const energy = flowEnergy.get(source) ?? 0;
+      const target = addVoxel(world, x, y, z, BlockKind.Water);
+      if (!target) continue;
+      if (source.waterlogged) setVoxelWaterlogged(world, source, false, true);
+      else removeVoxel(world, { block: source, x: source.x, y: source.y, z: source.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, true);
+      flowEnergy.delete(source);
+      flowEnergy.set(target, lateral ? energy > 0 ? energy - 1 : FLOW_DISTANCE : Math.max(energy, FLOW_DISTANCE));
+      moved += 1;
     }
   });
 }
