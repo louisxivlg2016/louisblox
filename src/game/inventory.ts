@@ -28,7 +28,7 @@ export function changeInventory(kind: SelectedKind, amount: number) {
       if (empty >= 0) {
         const hotbarSlots = [...state.hotbarSlots];
         hotbarSlots[empty] = kind;
-        return { itemCounts, hotbarSlots, selected: state.selected === 'hand' ? kind : state.selected };
+        return { itemCounts, hotbarSlots, selected: state.selected === 'hand' ? kind : state.selected, selectedSlot: state.selected === 'hand' ? empty : state.selectedSlot };
       }
     }
     if (state.gameplayMode !== 'survival' || count > 0 || kind === 'hand') return { itemCounts };
@@ -36,6 +36,7 @@ export function changeInventory(kind: SelectedKind, amount: number) {
       itemCounts,
       hotbarSlots: state.hotbarSlots.map((slot) => slot === kind ? null : slot),
       selected: state.selected === kind ? 'hand' as const : state.selected,
+      selectedSlot: state.selected === kind ? 0 : state.selectedSlot,
     };
   });
 }

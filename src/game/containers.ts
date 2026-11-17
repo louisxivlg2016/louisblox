@@ -59,7 +59,7 @@ export function withdrawChest(world: World, index: number) {
   const item = store.chestItems[index];
   if (item === undefined) return;
   const items = store.chestItems.filter((_, itemIndex) => itemIndex !== index);
-  const slot = Math.max(0, store.hotbarSlots.indexOf(store.selected));
+  const slot = store.hotbarSlots[store.selectedSlot] === store.selected ? store.selectedSlot : Math.max(0, store.hotbarSlots.indexOf(store.selected));
   store.setHotbarSlot(slot, item);
   updateChest(world, items);
   store.setNotice(translate(`${selectionInfo(item).name} ajouté à la case ${slot === 9 ? '0' : slot + 1}.`, `${selectionInfo(item).name} added to slot ${slot === 9 ? '0' : slot + 1}.`));

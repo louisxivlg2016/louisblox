@@ -21,6 +21,7 @@ type GameStore = {
   mode: GameMode;
   gameplayMode: GameplayMode;
   selected: SelectedKind;
+  selectedSlot: number;
   hotbarSlots: Array<SelectedKind | null>;
   backpackItem: SelectedKind | null;
   itemCounts: Record<string, number>;
@@ -57,7 +58,7 @@ type GameStore = {
   coordinates: Coordinates;
   environment: EnvironmentSnapshot;
   setMode: (mode: GameMode) => void;
-  selectBlock: (kind: SelectedKind) => void;
+  selectBlock: (kind: SelectedKind, slot?: number) => void;
   setHotbarSlot: (index: number, kind: SelectedKind | null) => void;
   setBackpackItem: (kind: SelectedKind | null) => void;
   setItemCount: (kind: ItemKind | GalleryItemId, count: number) => void;
@@ -117,6 +118,7 @@ export const useGameStore = create<GameStore>((set) => ({
   worldTemplate: 'nature',
   customWorld: null,
   selected: BlockKind.Grass,
+  selectedSlot: 0,
   hotbarSlots: [...HOTBAR_BLOCKS.slice(0, 10)],
   backpackItem: null,
   itemCounts: { ...DEFAULT_ITEM_COUNTS },
@@ -146,11 +148,12 @@ export const useGameStore = create<GameStore>((set) => ({
   setMode: (mode) => set({ mode }),
   setShopOpen: (shopOpen) => set({ shopOpen }),
   setBookOpen: (bookOpen) => set({ bookOpen, backpackItem: null }),
-  selectBlock: (selected) => set((state) => {
+  selectBlock: (selected, slot) => set((state) => {
     selected = normalizePaintballGun(selected);
     const key = typeof selected === 'number' ? `block_${selected}` : selected;
     if (state.gameplayMode === 'survival' && selected !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: translate('Récolte et fabrique cet objet avant de l’utiliser.', 'Gather and craft this item before using it.') };
-    return { selected };
+    const matchingSlot = slot !== undefined && state.hotbarSlots[slot] === selected ? slot : state.hotbarSlots.indexOf(selected);
+    return { selected, selectedSlot: matchingSlot >= 0 ? matchingSlot : state.selectedSlot };
   }),
   setHotbarSlot: (index, kind) => set((state) => {
     if (kind === null) {
@@ -163,7 +166,7 @@ export const useGameStore = create<GameStore>((set) => ({
     if (state.gameplayMode === 'survival' && kind !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: translate('Cet objet n’a pas encore été fabriqué.', 'This item has not been crafted yet.') };
     const hotbarSlots = [...state.hotbarSlots];
     hotbarSlots[index] = kind;
-    return { hotbarSlots, selected: kind, backpackItem: null };
+    return { hotbarSlots, selected: kind, selectedSlot: index, backpackItem: null };
   }),
   setBackpackItem: (backpackItem) => set({ backpackItem }),
   setItemCount: (kind, count) => set((state) => {
@@ -173,6 +176,7 @@ export const useGameStore = create<GameStore>((set) => ({
       itemCounts,
       hotbarSlots: state.hotbarSlots.map((slot) => slot === kind || typeof slot === 'number' && `block_${slot}` === kind ? null : slot),
       selected: state.selected === kind || typeof state.selected === 'number' && `block_${state.selected}` === kind ? 'hand' as const : state.selected,
+      selectedSlot: state.selected === kind || typeof state.selected === 'number' && `block_${state.selected}` === kind ? 0 : state.selectedSlot,
     };
   }),
   equipArmor: (equippedArmor) => set({ equippedArmor }),
@@ -204,6 +208,7 @@ export const useGameStore = create<GameStore>((set) => ({
       worldTemplate: gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : template,
       customWorld,
       selected: gameplayMode === 'battle' ? 'pistol_iron' : gameplayMode === 'pirates' ? 'pistol_bomb' : gameplayMode === 'survival' || gameplayMode === 'football' || gameplayMode === 'maze' ? 'hand' : BlockKind.Grass,
+      selectedSlot: 0,
       hotbarSlots: gameplayMode === 'battle'
         ? ['pistol_iron', 'rifle_auto', 'pistol_bomb', 'bow', 'sword_iron', ...HOTBAR_BLOCKS.slice(0, 5)]
         : gameplayMode === 'pirates' ? [...PIRATE_KITS().defender.hotbar] : gameplayMode === 'survival' || gameplayMode === 'football' || gameplayMode === 'maze' ? ['hand', ...Array(9).fill(null)] : [...HOTBAR_BLOCKS.slice(0, 10)],

@@ -53,6 +53,7 @@ export function Hud() {
   const language = useLanguageStore((state) => state.language);
   const mode = useGameStore((state) => state.mode);
   const selected = useGameStore((state) => state.selected);
+  const selectedSlot = useGameStore((state) => state.selectedSlot);
   const bombAmmo = useBombLauncherStore((state) => state.ammo);
   const bombReloading = useBombLauncherStore((state) => state.reloadUntil !== null);
   const hotbarSlots = useGameStore((state) => state.hotbarSlots);
@@ -148,10 +149,10 @@ export function Hud() {
             {hotbarSlots.map((kind, index) => (
               <button
                 key={`${kind ?? translate('vide', 'empty')}-${index}`}
-                className={`hotbar-slot ${selected === kind ? 'selected' : ''}`}
+                className={`hotbar-slot ${selectedSlot === index && selected === kind ? 'selected' : ''}`}
                 onClick={() => {
                   if (kind === null) return;
-                  selectBlock(kind);
+                  selectBlock(kind, index);
                 }}
                 disabled={kind === null}
                 aria-label={`${index + 1} : ${kind === null ? translate('vide', 'empty') : selectionInfo(kind).name}`}

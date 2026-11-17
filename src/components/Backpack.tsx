@@ -46,14 +46,14 @@ export function Backpack() {
     if (backpackItem !== null) setHotbarSlot(index, backpackItem);
     else {
       const kind = hotbarSlots[index];
-      if (kind !== null) useGameStore.getState().selectBlock(kind);
+      if (kind !== null) useGameStore.getState().selectBlock(kind, index);
     }
   };
   const discardSlot = (index: number) => {
     const kind = hotbarSlots[index];
     if (kind === null) return;
     setHotbarSlot(index, null);
-    if (useGameStore.getState().selected === kind) useGameStore.getState().selectBlock('hand');
+    if (useGameStore.getState().selected === kind && useGameStore.getState().selectedSlot === index) useGameStore.getState().selectBlock('hand');
   };
   const resources = (Object.entries(meat) as Array<[AnimalKind, number]>).filter(([, count]) => count > 0);
   const query = normalizeSearch(gallerySearch);

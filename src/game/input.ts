@@ -276,7 +276,7 @@ export function initInput() {
       const digit = Number(event.code.slice(-1));
       const index = digit === 0 ? 9 : digit - 1;
       const selected = useGameStore.getState().hotbarSlots[index];
-      if (selected !== null) useGameStore.getState().selectBlock(selected);
+      if (selected !== null) useGameStore.getState().selectBlock(selected, index);
     }
   });
 
@@ -393,12 +393,13 @@ export function initInput() {
   window.addEventListener('wheel', (event) => {
     if (useGameStore.getState().mode !== 'play') return;
     const state = useGameStore.getState();
-    const current = state.hotbarSlots.indexOf(state.selected as (typeof state.hotbarSlots)[number]);
+    const current = state.hotbarSlots[state.selectedSlot] === state.selected ? state.selectedSlot : state.hotbarSlots.indexOf(state.selected as (typeof state.hotbarSlots)[number]);
     const direction = event.deltaY > 0 ? 1 : -1;
     for (let offset = 1; offset <= state.hotbarSlots.length; offset += 1) {
-      const selected = state.hotbarSlots[(current + direction * offset + state.hotbarSlots.length * 2) % state.hotbarSlots.length];
+      const index = (current + direction * offset + state.hotbarSlots.length * 2) % state.hotbarSlots.length;
+      const selected = state.hotbarSlots[index];
       if (selected !== null) {
-        state.selectBlock(selected);
+        state.selectBlock(selected, index);
         break;
       }
     }

@@ -41,7 +41,7 @@ export function choosePirateKit(_kit?: PirateKit) {
   if (!team) return false;
   const loadout = PIRATE_LOADOUT;
   usePirateStore.setState({ kit: null });
-  useGameStore.setState({ hotbarSlots: [...loadout], selected: loadout[0] });
+  useGameStore.setState({ hotbarSlots: [...loadout], selected: loadout[0], selectedSlot: 0 });
   kitRequestPending = false;
   respawnAtBase(world, team);
   useGameStore.getState().setMode('play');
@@ -86,7 +86,7 @@ export function receivePirateState(value: unknown) {
   if (localId && kit) kitRequestPending = false;
   if (!previousKit && kit) {
     const loadout = PIRATE_LOADOUT;
-    useGameStore.setState({ hotbarSlots: [...loadout], selected: loadout[0] });
+    useGameStore.setState({ hotbarSlots: [...loadout], selected: loadout[0], selectedSlot: 0 });
   }
   usePirateStore.setState({ kits, coins, objectives, eliminated, winner, prices, kit });
 }
@@ -99,10 +99,10 @@ export function receivePirateInventory(value: unknown) {
   const item = data.item as import('./items').ItemKind;
   store.setItemCount(item, (store.itemCounts[item] ?? 0) + data.amount);
   if (store.gameplayMode === 'pirates') {
-    const selectedIndex = Math.max(0, store.hotbarSlots.indexOf(store.selected));
+    const selectedIndex = store.hotbarSlots[store.selectedSlot] === store.selected ? store.selectedSlot : Math.max(0, store.hotbarSlots.indexOf(store.selected));
     const hotbarSlots = [...store.hotbarSlots];
     hotbarSlots[selectedIndex] = item;
-    useGameStore.setState({ hotbarSlots, selected: item });
+    useGameStore.setState({ hotbarSlots, selected: item, selectedSlot: selectedIndex });
   }
   const localId = useBattleStore.getState().localPlayerId;
   if (localId && typeof data.coins === 'number') usePirateStore.setState((state) => ({ coins: { ...state.coins, [localId]: Math.max(0, Math.floor(data.coins as number)) } }));

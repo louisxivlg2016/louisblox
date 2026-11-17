@@ -125,7 +125,7 @@ export function Game() {
   }, [world, generation, worldId]);
   useEffect(() => setMusicMode(gameplayMode), [gameplayMode]);
   useEffect(() => {
-    if (gameplayMode === 'pirates') useGameStore.setState({ hotbarSlots: [...PIRATE_LOADOUT], selected: PIRATE_LOADOUT[0] });
+    if (gameplayMode === 'pirates') useGameStore.setState({ hotbarSlots: [...PIRATE_LOADOUT], selected: PIRATE_LOADOUT[0], selectedSlot: 0 });
   }, [gameplayMode]);
   useEffect(() => {
     if (gameplayMode === 'battle' && outfit !== 'military') setOutfit('military');

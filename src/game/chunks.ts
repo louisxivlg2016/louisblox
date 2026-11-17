@@ -741,12 +741,14 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   const restoredSelection = sports ? 'hand' : restore && isSelectedKind(restore.selected) ? normalizePaintballGun(restore.selected) : gameplayMode === 'survival' ? 'hand' : BlockKind.Grass;
   const selected = gameplayMode === 'survival' && restoredSelection !== 'hand'
     && (itemCounts[typeof restoredSelection === 'number' ? `block_${restoredSelection}` : restoredSelection] ?? 0) <= 0 ? 'hand' : restoredSelection;
+  const hotbarSlots = sports ? ['hand', ...Array(9).fill(null)] as Array<SelectedKind | null> : hotbar.map((kind, index) => gameplayMode !== 'survival' ? kind ?? BlockKind.Grass : index === 0 ? 'hand'
+    : kind !== null && kind !== 'hand' && (itemCounts[typeof kind === 'number' ? `block_${kind}` : kind] ?? 0) > 0 ? kind : null);
   useGameStore.setState({
     gameplayMode,
     meat: { ...createMeatInventory(), ...restore?.meat },
     selected,
-    hotbarSlots: sports ? ['hand', ...Array(9).fill(null)] : hotbar.map((kind, index) => gameplayMode !== 'survival' ? kind ?? BlockKind.Grass : index === 0 ? 'hand'
-      : kind !== null && kind !== 'hand' && (itemCounts[typeof kind === 'number' ? `block_${kind}` : kind] ?? 0) > 0 ? kind : null),
+    selectedSlot: Math.max(0, hotbarSlots.indexOf(selected)),
+    hotbarSlots,
     itemCounts,
     equippedArmor: restore?.equippedArmor ?? null,
     riding: null,
