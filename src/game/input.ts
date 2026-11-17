@@ -417,7 +417,7 @@ export function initInput() {
 }
 
 export function releasePointerForOverlay() {
-  pointerLockFallback = true;
+  pointerLockFallback = false;
   clearInput(true);
   if (document.pointerLockElement) document.exitPointerLock();
 }
