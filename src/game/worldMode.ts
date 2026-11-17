@@ -8,6 +8,7 @@ export const isMinigameMode = (mode: GameplayMode) => mode === 'battle' || mode 
 export const isMultiplayerOnlyMode = (mode: GameplayMode) => mode === 'pirates' || mode === 'football';
 export const hasTeamCombat = (mode: GameplayMode) => mode === 'battle' || mode === 'pirates';
 export const CITY_LIMIT = 5000;
+export const CITY_CENTER_LIMIT = 800;
 
 export const GAMEPLAY_MODE_LABELS = (): Record<GameplayMode, string> => ({
   creative: translate('Créatif', 'Creative'),

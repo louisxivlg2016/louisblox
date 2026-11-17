@@ -19,17 +19,17 @@ function hash(x: number, z: number, seed: number) {
 }
 
 function siteAt(cellX: number, cellZ: number, seed: number): VillageSite {
-  const x = cellX * SPACING + 320;
+  const x = cellX * SPACING + 1000;
   const z = cellZ * SPACING + 32;
   const distance = Math.hypot(x, z);
-  const houses = distance < 600 ? 10 : distance < 1100 ? 6 : 4;
-  return { x, z, houses, radius: houses === 10 ? 62 : 48, name: `${NAMES[Math.floor(hash(cellX, cellZ, seed + 70) * NAMES.length)]}${distance < 600 ? ' · Grand village' : distance < 1100 ? ' · Village' : ' · Hameau'}` };
+  const houses = distance < 1400 ? 10 : distance < 2400 ? 6 : 4;
+  return { x, z, houses, radius: houses === 10 ? 62 : 48, name: `${NAMES[Math.floor(hash(cellX, cellZ, seed + 70) * NAMES.length)]}${distance < 1400 ? ' · Grand village' : distance < 2400 ? ' · Village' : ' · Hameau'}` };
 }
 
 function sitesNear(cx: number, cz: number, seed: number) {
   const sites: VillageSite[] = [];
-  for (let cellX = Math.floor((cx * 16 - SPACING) / SPACING); cellX <= Math.floor((cx * 16 + 15 + SPACING) / SPACING); cellX += 1) {
-    for (let cellZ = Math.floor((cz * 16 - SPACING) / SPACING); cellZ <= Math.floor((cz * 16 + 15 + SPACING) / SPACING); cellZ += 1) {
+  for (let cellX = Math.floor(cx * 16 / SPACING) - 2; cellX <= Math.floor((cx * 16 + 15) / SPACING) + 2; cellX += 1) {
+    for (let cellZ = Math.floor(cz * 16 / SPACING) - 2; cellZ <= Math.floor((cz * 16 + 15) / SPACING) + 2; cellZ += 1) {
       const site = siteAt(cellX, cellZ, seed);
       if (site.x + site.radius >= cx * 16 && site.x - site.radius < (cx + 1) * 16 && site.z + site.radius >= cz * 16 && site.z - site.radius < (cz + 1) * 16) sites.push(site);
     }

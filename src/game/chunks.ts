@@ -10,7 +10,7 @@ import { spawnPirateCannons } from './pirateCannons';
 import { footballSpawn, generateFootballChunk } from './footballArena';
 import { generateMazeChunk, mazeSpawn } from './maze';
 import type { GameplayMode } from './worldMode';
-import { isCityMode, isMinigameMode } from './worldMode';
+import { CITY_CENTER_LIMIT, isCityMode, isMinigameMode } from './worldMode';
 import { generateCityChunk } from './cities';
 import { spawnCountrysideAnimals } from './countryside';
 import { generateVillageBlocks } from './villages';
@@ -304,7 +304,7 @@ export function loadChunk(world: World, cx: number, cz: number) {
     state.blocks.set(voxelKey(block.x, block.y, block.z), block);
     indexBlock(state, block);
   }
-  const countryside = template === 'city-ancient' && Math.max(Math.abs(cx * 16 + 8), Math.abs(cz * 16 + 8)) > 240;
+  const countryside = template === 'city-ancient' && Math.max(Math.abs(cx * 16 + 8), Math.abs(cz * 16 + 8)) > CITY_CENTER_LIMIT;
   data.animals = countryside ? spawnCountrysideAnimals(world, cx, cz, state.seed) : isMinigameMode(mode) || isCityMode(mode) || template === 'custom' && customWorld?.terrain === 'flat' ? [] : spawnChunkAnimals(world, cx, cz, generated.water, state.seed);
   for (const animal of data.animals) {
     const trader = animal.get(Trader);
