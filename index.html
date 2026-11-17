@@ -361,7 +361,7 @@
       .backpack-active-slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
       .active-slot-container { display: grid; min-width: 0; gap: 3px; }
       .active-slot { min-width: 0; min-height: 76px; justify-content: center; gap: 5px; padding: 6px 3px; border-style: dashed; border-color: rgba(255, 255, 255, 0.3); }
-      .active-slot-drop { min-height: 25px; padding: 2px; color: #ffe4df; background: #70443e; border: 1px solid #a76c60; cursor: pointer; font-size: 10px; }
+      .active-slot-drop { display: none; min-height: 25px; padding: 2px; color: #ffe4df; background: #70443e; border: 1px solid #a76c60; cursor: pointer; font-size: 10px; }
       .active-slot-number { color: #fff; font-size: 11px; font-weight: 700; text-shadow: 1px 1px #000; }
       .emote-toggle { position: absolute; left: 18px; bottom: 86px; z-index: 12; padding: 10px 14px; pointer-events: auto; color: #fff; font-size: 11px; font-weight: 700; background: rgba(87, 83, 55, 0.92); border: 2px solid rgba(255, 255, 255, 0.35); }
       .emote-backdrop { position: absolute; inset: 0; z-index: 45; display: grid; place-items: center; pointer-events: auto; background: rgba(0, 0, 0, 0.25); }
@@ -1166,6 +1166,7 @@
       .tribe-notice { padding: 8px; color: #d8efbd; background: rgba(105, 132, 73, 0.16); }
       @media (max-width: 650px) { .tribe-toggle { left: 12px; top: 70px; min-height: 48px; } }
       @media (pointer: coarse) {
+        .active-slot-drop { display: block; }
         .touch-gesture-hint { display: none; }
         .touch-joystick { left: 12px; bottom: 92px; width: 104px; height: 104px; }
         .touch-knob { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
