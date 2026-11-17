@@ -1,5 +1,7 @@
 import type { World } from 'koota';
-import { getWorldSeed, streamChunks } from './chunks';
+import { getBlockIndex, getWorldSeed, streamChunks } from './chunks';
+import { groundAt } from './vehicles';
+import { isCollidable } from './systems/collisionSystem';
 import { biomeAt, safeSpawnAt } from './levels';
 import type { Biome } from './levels';
 import { nearestRuinOfType } from './ruins';
@@ -8,6 +10,23 @@ import { Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVel
 import { dismount } from './vehicles';
 import { useGameStore } from './store';
 import type { Home } from './homes';
+
+function safeDestination(world: World, x: number, y: number, z: number) {
+  const blocks = getBlockIndex(world);
+  for (let radius = 0; radius <= 8; radius += 1) {
+    for (let dx = -radius; dx <= radius; dx += 1) {
+      for (let dz = -radius; dz <= radius; dz += 1) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
+        const nextX = Math.round(x + dx);
+        const nextZ = Math.round(z + dz);
+        const ground = groundAt(world, nextX, nextZ, y + 12);
+        const feet = Math.floor(ground + 0.5);
+        if (!isCollidable(blocks.get(`${nextX},${feet},${nextZ}`)) && !isCollidable(blocks.get(`${nextX},${feet + 1},${nextZ}`))) return { x: nextX, y: ground + 0.02, z: nextZ };
+      }
+    }
+  }
+  return { x, y, z };
+}
 
 export function teleportToBiome(world: World, biome: Biome) {
   const entity = world.queryFirst(Player);
@@ -41,12 +60,13 @@ export function teleportToBiome(world: World, biome: Biome) {
   const destination = best ?? fallback;
   if (!destination) return null;
 
-  streamChunks(world, destination.x, destination.z);
-  position.set(destination.x, destination.y, destination.z);
-  entity.get(PlayerBody)?.value?.setTranslation(destination, true);
+  const safe = safeDestination(world, destination.x, destination.y, destination.z);
+  streamChunks(world, safe.x, safe.z);
+  position.set(safe.x, safe.y, safe.z);
+  entity.get(PlayerBody)?.value?.setTranslation(safe, true);
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false });
-  return destination;
+  return safe;
 }
 
 export function teleportToRuin(world: World, type: RuinType) {
@@ -55,12 +75,13 @@ export function teleportToRuin(world: World, type: RuinType) {
   if (!entity || !position) return null;
   const site = nearestRuinOfType(position.x, position.z, getWorldSeed(world), type);
   const destination = { x: site.x, y: site.baseY + 1.01, z: site.z };
-  streamChunks(world, destination.x, destination.z);
-  position.set(destination.x, destination.y, destination.z);
-  entity.get(PlayerBody)?.value?.setTranslation(destination, true);
+  const safe = safeDestination(world, destination.x, destination.y, destination.z);
+  streamChunks(world, safe.x, safe.z);
+  position.set(safe.x, safe.y, safe.z);
+  entity.get(PlayerBody)?.value?.setTranslation(safe, true);
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false });
-  return destination;
+  return safe;
 }
 
 export function teleportToHome(world: World, destination: Pick<Home, 'x' | 'y' | 'z' | 'yaw' | 'pitch'>) {
@@ -71,11 +92,12 @@ export function teleportToHome(world: World, destination: Pick<Home, 'x' | 'y' |
   const sleeping = world.queryFirst(Sleep);
   if (sleeping) sleeping.destroy();
   useGameStore.getState().setSleepProgress(null);
-  streamChunks(world, destination.x, destination.z);
-  position.set(destination.x, destination.y, destination.z);
-  entity.get(PlayerBody)?.value?.setTranslation(destination, true);
+  const safe = safeDestination(world, destination.x, destination.y, destination.z);
+  streamChunks(world, safe.x, safe.z);
+  position.set(safe.x, safe.y, safe.z);
+  entity.get(PlayerBody)?.value?.setTranslation(safe, true);
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false, yaw: destination.yaw, pitch: destination.pitch });
   useGameStore.getState().setFlying(false);
-  return { x: destination.x, y: destination.y, z: destination.z };
+  return { x: safe.x, y: safe.y, z: safe.z };
 }

@@ -73,7 +73,7 @@ export function generateCountrysideChunk(cx: number, cz: number, seed: number): 
   for (let z = cz * 16; z < (cz + 1) * 16; z += 1) {
     for (let x = -4; x <= 4; x += 1) put(x, GROUND, z, highwayBlock(x, z));
   }
-  for (const corridor of [-1536, -1152, -768, -384, 384, 768, 1152, 1536]) {
+  for (const corridor of [Math.floor(cx * 16 / 48) * 48, Math.floor(cz * 16 / 48) * 48]) {
     for (let z = cz * 16; z < (cz + 1) * 16; z += 1) for (let x = corridor - 4; x <= corridor + 4; x += 1) put(x, GROUND, z, highwayBlock(x - corridor, z));
     for (let x = cx * 16; x < (cx + 1) * 16; x += 1) for (let z = corridor - 4; z <= corridor + 4; z += 1) put(x, GROUND, z, highwayBlock(z - corridor, x));
   }

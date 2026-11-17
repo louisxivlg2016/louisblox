@@ -409,7 +409,7 @@ export class GameRoom extends DurableObject<Env> {
     if (!ownerId) return;
     if (attachment) {
       this.publisherId = ownerId;
-      this.publisherName = attachment.name;
+      if (attachment.playerId === ownerId) this.publisherName = attachment.name;
     }
     const directory = this.env.PLAYER_DIRECTORY.get(this.env.PLAYER_DIRECTORY.idFromName('global'));
     await directory.fetch('https://directory/world', {
