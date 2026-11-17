@@ -30,7 +30,7 @@ export function PlaneTitle() {
   return (
     <group name="plane-gold-title">
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * 4.5, 10.5, -10]} rotation={[0, side * Math.PI / 2, 0]} material={material}>
+        <mesh key={side} position={[side * 4.5, 9, -10]} rotation={[0, side * Math.PI / 2, 0]} material={material}>
           <planeGeometry args={[16, 4]} />
         </mesh>
       ))}
