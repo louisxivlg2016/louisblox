@@ -1,7 +1,7 @@
 import { BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, NearestFilter, SRGBColorSpace } from 'three';
 import type { Material } from 'three';
 import { brickTexture, texture } from './textures';
-import { EXTRA_BLOCK_META, isCrop, isDoor, isGlass, isGrassPlate, isSapling, isSign, isSlab, isStair, isTrapdoor, isUtilityBlock } from './extraBlocks';
+import { EXTRA_BLOCK_META, hasWaterOpening, isCrop, isDoor, isGlass, isGrassPlate, isSapling, isSign, isSlab, isStair, isTrapdoor, isUtilityBlock } from './extraBlocks';
 import { getVitrailDesign, getVitrailTexture } from './vitrailDesigns';
 import type { ExtraBlockKind } from './extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
@@ -286,7 +286,7 @@ export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxe
     }
   };
   for (const block of blocks) {
-    if (block.waterlogged && block.open) appendBlock({ ...block, kind: BlockKind.Water });
+    if (block.waterlogged && hasWaterOpening(block)) appendBlock({ ...block, kind: BlockKind.Water });
     appendBlock(block);
   }
   const sharedMaterials = getMaterials();

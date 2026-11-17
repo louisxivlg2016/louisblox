@@ -18,7 +18,7 @@ import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnChunkFish } from './fish';
 import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
-import { isBed, isChest, isCrop, isDoor, isFireBlock, isGrassPlate, isLadder, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
+import { hasWaterOpening, isBed, isChest, isCrop, isDoor, isFireBlock, isGrassPlate, isLadder, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
 import { clearFires, extinguishFireAt, spawnFire } from './fireLifecycle';
 import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
 import type { ArmorKind, SelectedKind } from './items';
@@ -122,7 +122,7 @@ function refreshTop(state: WorldChunks, x: number, z: number, fromY = MAX_BUILD_
 
 function indexBlock(state: WorldChunks, block: Voxel) {
   const position = voxelKey(block.x, block.y, block.z);
-  if (block.kind === BlockKind.Water || block.waterlogged === true && block.open === true) state.water.set(position, block);
+  if (block.kind === BlockKind.Water || block.waterlogged === true && hasWaterOpening(block)) state.water.set(position, block);
   else state.water.delete(position);
   if (supportsGround(block)) {
     const column = columnKey(block.x, block.z);
@@ -549,7 +549,7 @@ export function setVoxelWaterlogged(world: World, target: Voxel, waterlogged: bo
   if (!authoritative && !canEditAt(target.x, target.z, 'interact')) return;
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(target.x, target.y, target.z));
-  if (!block || block !== target || !isTrapdoor(block.kind) || waterlogged && !block.open) return;
+  if (!block || block !== target || waterlogged && !hasWaterOpening(block)) return;
   if (waterlogged) block.waterlogged = true;
   else delete block.waterlogged;
   indexBlock(state, block);
@@ -586,7 +586,7 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
     if (protectedBlock) block.protected = true;
     else delete block.protected;
   }
-  if (!isTrapdoor(kind) || !block.open) delete block.waterlogged;
+  if (!hasWaterOpening(block)) delete block.waterlogged;
   indexBlock(state, block);
   const cx = chunkCoordinate(hit.x);
   const cz = chunkCoordinate(hit.z);
@@ -612,7 +612,7 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
   const data = chunkEntity.get(ChunkData)!;
   const position = voxelKey(x, y, z);
   const existing = state.blocks.get(position);
-  if (existing && isWaterBlock(kind) && isTrapdoor(existing.kind) && existing.open) return setVoxelWaterlogged(world, existing, true, true);
+  if (existing && isWaterBlock(kind) && hasWaterOpening(existing)) return setVoxelWaterlogged(world, existing, true, true);
   if (existing && isFireBlock(existing.kind) && isWaterBlock(kind)) extinguishFireAt(world, x, y, z);
   else if (existing && !isWaterBlock(existing.kind)) return;
   if (existing) data.blocks = data.blocks.filter((block) => voxelKey(block.x, block.y, block.z) !== position);
@@ -654,7 +654,7 @@ export function applyVoxelEdit(world: World, position: string, edit: ChunkEdit, 
   const block = state.blocks.get(position) ?? addVoxel(world, x, y, z, data.kind, data.growth, data.facing, 0, data.food, data.meat, data.protected, authoritative);
   if (block) {
     replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, data.kind, data.open, data.growth, data.items, data.facing, data.food, data.meat, data.protected, authoritative);
-    if (isTrapdoor(block.kind)) setVoxelWaterlogged(world, block, data.waterlogged === true && block.open === true, authoritative);
+    if (hasWaterOpening(block) || block.waterlogged) setVoxelWaterlogged(world, block, data.waterlogged === true && hasWaterOpening(block), authoritative);
     if (typeof data.text === 'string') setVoxelText(world, { x, y, z }, data.text);
   }
   if (isWaterBlock(data.kind)) clearPaintSplashAt(world, x, y, z);

@@ -2,7 +2,7 @@ import type { World } from 'koota';
 import { addVoxel, batchVoxelEdits, getBlockIndex, getWaterIndex, isChunkLoaded, removeVoxel, setVoxelWaterlogged } from '../chunks';
 import { MIN_WORLD_Y } from '../levels';
 import { Player, PlayerPosition } from '../traits';
-import { isTrapdoor } from '../extraBlocks';
+import { hasWaterOpening } from '../extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import type { Voxel, VoxelHit } from '../voxel';
 
@@ -74,7 +74,7 @@ export function waterSystem(world: World, dt: number) {
       if (y < MIN_WORLD_Y) continue;
       const key = voxelKey(x, y, z);
       const target = blocks.get(key);
-      if (target && !(isTrapdoor(target.kind) && target.open && !target.waterlogged) || !isChunkLoaded(world, x, z)) continue;
+      if (target && !(hasWaterOpening(target) && !target.waterlogged) || !isChunkLoaded(world, x, z)) continue;
       const priority = (x - player.x) ** 2 + (z - player.z) ** 2 + (dy === 0 ? 0.5 : 0);
       const previous = candidates.get(key);
       if (!previous || priority < previous.priority) candidates.set(key, { x, y, z, priority });

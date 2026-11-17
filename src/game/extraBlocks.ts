@@ -270,6 +270,7 @@ export const SLAB_SOURCES: Readonly<Partial<Record<ExtraBlockKind, number>>> = {
 export const slabSource = (kind: number) => SLAB_SOURCES[kind as ExtraBlockKind];
 export const isUpsideDownStair = (block: Pick<import('./voxel').Voxel, 'kind' | 'growth'>) => isStair(block.kind) && block.growth === 1;
 export const isGrassPlate = (block: Pick<import('./voxel').Voxel, 'kind' | 'growth'> | undefined) => block?.growth === 0 && [0, 11, 12, 142].includes(block.kind);
+export const hasWaterOpening = (block: Pick<import('./voxel').Voxel, 'kind' | 'open' | 'growth'> | undefined) => block !== undefined && (isSlab(block.kind) || isStair(block.kind) || isGrassPlate(block) || (isDoor(block.kind) || isTrapdoor(block.kind)) && block.open === true);
 export const stairFacingFromYaw = (yaw: number): NonNullable<import('./voxel').Voxel['facing']> => {
   const x = -Math.sin(yaw);
   const z = -Math.cos(yaw);

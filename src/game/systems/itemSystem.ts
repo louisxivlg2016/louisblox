@@ -6,7 +6,7 @@ import { addVoxel, getBlockIndex } from '../chunks';
 import { consumeActions, isDown, isMouseButtonDown } from '../input';
 import { getItemMeta } from '../items';
 import { isGalleryItem } from '../galleryCatalog';
-import { isTrapdoor } from '../extraBlocks';
+import { hasWaterOpening } from '../extraBlocks';
 import { useGalleryItem, useShears } from '../galleryActions';
 import { useFood } from '../foods';
 import { hasInventory } from '../inventory';
@@ -53,11 +53,11 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
   }
   if (filled) {
     if (hit) {
-      const fillingTrapdoor = isTrapdoor(hit.block.kind) && hit.block.open && !hit.block.waterlogged;
-      const x = hit.x + (fillingTrapdoor ? 0 : hit.normal.x);
-      const y = hit.y + (fillingTrapdoor ? 0 : hit.normal.y);
-      const z = hit.z + (fillingTrapdoor ? 0 : hit.normal.z);
-      if (y >= MIN_WORLD_Y && y <= MAX_BUILD_Y && (fillingTrapdoor || !blocks.has(voxelKey(x, y, z))) && addVoxel(world, x, y, z, BlockKind.CalmWater)) {
+      const fillingOpening = hasWaterOpening(hit.block) && !hit.block.waterlogged;
+      const x = hit.x + (fillingOpening ? 0 : hit.normal.x);
+      const y = hit.y + (fillingOpening ? 0 : hit.normal.y);
+      const z = hit.z + (fillingOpening ? 0 : hit.normal.z);
+      if (y >= MIN_WORLD_Y && y <= MAX_BUILD_Y && (fillingOpening || !blocks.has(voxelKey(x, y, z))) && addVoxel(world, x, y, z, BlockKind.CalmWater)) {
         if (!alwaysEmpty) changeHeldBucket('water_bucket', 'bucket');
         store.setNotice(alwaysEmpty ? translate('Eau posée. Le seau reste toujours vide.', 'Water placed. The bucket remains empty.') : translate('Tout le contenu du seau est vidé : 1 bloc d’eau calme, sans inondation.', 'The bucket is emptied: 1 calm water block, without flooding.'));
         return true;
