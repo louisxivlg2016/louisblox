@@ -110,10 +110,8 @@ export function generateCountrysideChunk(cx: number, cz: number, seed: number): 
     put(site.x - 30, GROUND + 1, 3, BlockKind.Wood);
     put(site.x - 30, GROUND + 2, 3, BlockKind.Wood);
     put(site.x - 30, GROUND + 3, 3, BlockKind.Sign, { facing: 'north', text: site.name });
-    if (site.houses === 10) {
-      put(site.x + 4, GROUND + 1, site.z + 4, BlockKind.Wood);
-      put(site.x + 4, GROUND + 2, site.z + 4, BlockKind.Sign, { facing: 'north', text: `Civilisation · ${site.name}` });
-    }
+    put(site.x + 4, GROUND + 1, site.z + 4, BlockKind.Wood);
+    put(site.x + 4, GROUND + 2, site.z + 4, BlockKind.Sign, { facing: 'north', text: `Civilisation · ${site.name}` });
     for (const offset of [-18, 0, 18]) {
       put(site.x + offset, GROUND + 1, site.z + 4, BlockKind.StreetLamp);
       put(site.x + offset, GROUND + 1, site.z - 4, BlockKind.StreetLamp);
