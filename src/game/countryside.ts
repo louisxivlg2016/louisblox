@@ -18,6 +18,13 @@ function hash(x: number, z: number, seed: number) {
   return ((value ^ (value >>> 16)) >>> 0) / 4294967295;
 }
 
+function highwayBlock(offset: number, along: number) {
+  const lane = Math.abs(offset);
+  if (lane === 4) return BlockKind.Dirt;
+  if (lane === 0) return ((along % 8) + 8) % 8 < 4 ? BlockKind.ConcreteWhite : BlockKind.ConcreteBlack;
+  return lane === 2 ? BlockKind.ConcreteBlack : BlockKind.ConcreteGray;
+}
+
 function siteAt(cellX: number, cellZ: number, seed: number): VillageSite {
   const x = cellX * SPACING + 1000;
   const z = cellZ * SPACING + 32;
@@ -61,14 +68,14 @@ export function generateCountrysideChunk(cx: number, cz: number, seed: number): 
     }
   }
   for (let x = cx * 16; x < (cx + 1) * 16; x += 1) {
-    for (let z = -2; z <= 2; z += 1) put(x, GROUND, z, z === 0 && ((x % 8) + 8) % 8 < 4 ? BlockKind.ConcreteWhite : BlockKind.ConcreteGray);
+    for (let z = -4; z <= 4; z += 1) put(x, GROUND, z, highwayBlock(z, x));
   }
   for (let z = cz * 16; z < (cz + 1) * 16; z += 1) {
-    for (let x = -2; x <= 2; x += 1) put(x, GROUND, z, x === 0 && ((z % 8) + 8) % 8 < 4 ? BlockKind.ConcreteWhite : BlockKind.ConcreteGray);
+    for (let x = -4; x <= 4; x += 1) put(x, GROUND, z, highwayBlock(x, z));
   }
   for (const corridor of [-384, 384]) {
-    for (let z = cz * 16; z < (cz + 1) * 16; z += 1) for (let x = corridor - 2; x <= corridor + 2; x += 1) put(x, GROUND, z, BlockKind.ConcreteGray);
-    for (let x = cx * 16; x < (cx + 1) * 16; x += 1) for (let z = corridor - 2; z <= corridor + 2; z += 1) put(x, GROUND, z, BlockKind.ConcreteGray);
+    for (let z = cz * 16; z < (cz + 1) * 16; z += 1) for (let x = corridor - 4; x <= corridor + 4; x += 1) put(x, GROUND, z, highwayBlock(x - corridor, z));
+    for (let x = cx * 16; x < (cx + 1) * 16; x += 1) for (let z = corridor - 4; z <= corridor + 4; z += 1) put(x, GROUND, z, highwayBlock(z - corridor, x));
   }
   for (const site of sites) {
     for (let x = site.x - 2; x <= site.x + 2; x += 1) {
