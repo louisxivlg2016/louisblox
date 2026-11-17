@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { World } from 'koota';
-import type { Vector3 } from 'three';
+import { Vector3 } from 'three';
 import { GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
 import type { GalleryItemId } from './galleryCatalog';
 import type { SelectedKind } from './items';
@@ -90,10 +90,17 @@ export function spawnPaintSplash(world: World, position: Vector3, normal: Vector
   spawnPaintStroke(world, position, position, normal, color);
 }
 
-export function clearPaintSplashAt(world: World, x: number, y: number, z: number, radius = 1.75) {
+export function clearPaintSplashAt(world: World, x: number, y: number, z: number) {
   for (const entity of world.query(Explosion, ExplosionPosition)) {
-    if (!entity.get(Explosion)?.paintColor) continue;
+    const explosion = entity.get(Explosion);
+    if (!explosion?.paintColor) continue;
     const position = entity.get(ExplosionPosition)!;
-    if (Math.hypot(position.x - x, position.y - y, position.z - z) <= radius) entity.destroy();
+    const from = explosion.paintFrom ?? position;
+    const to = explosion.paintTo ?? position;
+    const segment = to.clone().sub(from);
+    const lengthSquared = segment.lengthSq();
+    const t = lengthSquared > 0 ? Math.max(0, Math.min(1, new Vector3(x - from.x, y - from.y, z - from.z).dot(segment) / lengthSquared)) : 0;
+    const closest = from.clone().addScaledVector(segment, t);
+    if (Math.abs(closest.x - x) <= 0.56 && Math.abs(closest.y - y) <= 0.56 && Math.abs(closest.z - z) <= 0.56) entity.destroy();
   }
 }

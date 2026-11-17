@@ -460,6 +460,7 @@ export function removeVoxel(world: World, hit: VoxelHit, authoritative = false) 
   if (!chunkEntity || !data) return;
 
   const position = voxelKey(hit.x, hit.y, hit.z);
+  clearPaintSplashAt(world, hit.x, hit.y, hit.z);
   data.blocks = data.blocks.filter((block) => voxelKey(block.x, block.y, block.z) !== position);
   state.blocks.delete(position);
   unindexBlock(state, hit.block);
@@ -482,6 +483,7 @@ export function explodeVoxels(world: World, x: number, y: number, z: number, rad
         const distance = Math.hypot(block.x - x, block.y - y, block.z - z);
         if (distance <= radius && block.kind !== BlockKind.Bedrock && block.protected !== true && !(useGameStore.getState().gameplayMode === 'pirates' && block.kind === BlockKind.Chest)) {
           const position = voxelKey(block.x, block.y, block.z);
+          clearPaintSplashAt(world, block.x, block.y, block.z);
           state.blocks.delete(position);
           unindexBlock(state, block);
           if (isFireBlock(block.kind)) extinguishFireAt(world, block.x, block.y, block.z);
@@ -566,6 +568,7 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
   const block = state.blocks.get(voxelKey(hit.x, hit.y, hit.z));
   if (!block) return;
   const wasFire = isFireBlock(block.kind);
+  if (block.kind !== kind) clearPaintSplashAt(world, hit.x, hit.y, hit.z);
   block.kind = kind;
   if (open !== undefined) block.open = open;
   if (isCrop(kind)) block.growth = growth ?? block.growth ?? 3;
