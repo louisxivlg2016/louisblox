@@ -52,8 +52,8 @@ export function englishItemName(name: string) {
     const translated = material === 'fer' ? 'Iron' : material === 'or' ? 'Gold' : material === 'cuivre' ? 'Copper' : colors[material] ?? material;
     return `${translated} Trapdoor`;
   }
-  if (name.startsWith('Petit bouchon en ')) {
-    const material = name.slice(17);
+  if (name.startsWith('Petite trappe bouchon en ')) {
+    const material = name.slice(25);
     const translated = material === 'chêne' ? 'Oak' : material === 'fer' ? 'Iron' : material === 'or' ? 'Gold' : material === 'cuivre' ? 'Copper' : material;
     return `Small ${translated} Plug`;
   }

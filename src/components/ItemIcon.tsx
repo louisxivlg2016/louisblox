@@ -1,7 +1,7 @@
 import { getItemMeta, selectionInfo } from '../game/items';
 import type { ItemKind, SelectedKind } from '../game/items';
 import { BlockKind } from '../game/voxel';
-import { isGlass, isSlab, isStair, isTrafficSign, slabSource, stairSource } from '../game/extraBlocks';
+import { isGlass, isSlab, isSmallTrapdoor, isStair, isTrafficSign, slabSource, stairSource } from '../game/extraBlocks';
 import { getVitrailDesign, getVitrailIcon } from '../game/vitrailDesigns';
 import { brickTexture, texture } from '../game/textures';
 import { isReferenceFood, referenceFoodIcons } from './ReferenceFoodModel';
@@ -83,6 +83,7 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
   }
   if (typeof kind === 'number' && isGlass(kind) && kind !== BlockKind.Glass) return <img className="block-swatch block-icon stained-glass-icon" src={getVitrailIcon(kind)} alt={getVitrailDesign(kind)?.name ?? ''} />;
   if (typeof kind === 'number') {
+    if (isSmallTrapdoor(kind)) return <img className="block-swatch block-icon" style={{ transform: 'scale(0.5)' }} src={blockIcon(kind)} alt={info.name} />;
     if (isStair(kind)) {
       const source = stairSource(kind) as BlockKind;
       return <span className="block-swatch stair-block-icon"><img className="stair-icon-lower" src={blockIcon(source)} alt="" /><img className="stair-icon-upper" src={blockIcon(source)} alt="" /></span>;

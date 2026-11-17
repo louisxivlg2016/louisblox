@@ -214,7 +214,9 @@ export const EXTRA_BLOCKS = {
 
 export const PARIS_STREET_SIGN_TEXT = '4th arrondissement\nPeace Street';
 export type ExtraBlockKind = (typeof EXTRA_BLOCKS)[keyof typeof EXTRA_BLOCKS];
-export const EXTRA_BLOCK_ORDER = Object.values(EXTRA_BLOCKS).filter((kind) => kind !== EXTRA_BLOCKS.Watermelon) as ExtraBlockKind[];
+export const EXTRA_BLOCK_ORDER = Object.values(EXTRA_BLOCKS)
+  .filter((kind) => kind !== EXTRA_BLOCKS.Watermelon && (kind < EXTRA_BLOCKS.TrapdoorIron || kind > EXTRA_BLOCKS.TrapdoorCopperSmall))
+  .flatMap((kind) => kind === EXTRA_BLOCKS.TrapdoorBlack ? [kind, EXTRA_BLOCKS.TrapdoorIron, EXTRA_BLOCKS.TrapdoorGold, EXTRA_BLOCKS.TrapdoorCopper, EXTRA_BLOCKS.TrapdoorOakSmall, EXTRA_BLOCKS.TrapdoorIronSmall, EXTRA_BLOCKS.TrapdoorGoldSmall, EXTRA_BLOCKS.TrapdoorCopperSmall] : [kind]) as ExtraBlockKind[];
 export const SAPLING_KINDS = [EXTRA_BLOCKS.OakSapling, EXTRA_BLOCKS.PineSapling, EXTRA_BLOCKS.AutumnSapling] as const;
 export const isSapling = (kind: number) => (SAPLING_KINDS as readonly number[]).includes(kind);
 export const isGlass = (kind: number) => kind === EXTRA_BLOCKS.Glass || kind >= EXTRA_BLOCKS.GlassWhite && kind <= EXTRA_BLOCKS.GlassBlack;
@@ -367,10 +369,10 @@ const BASE_EXTRA_BLOCK_META: Record<number, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.TrapdoorIron]: block('Trappe en fer', '#a8b5bc', 2.4),
   [EXTRA_BLOCKS.TrapdoorGold]: block('Trappe en or', '#e3bd32', 1.8),
   [EXTRA_BLOCKS.TrapdoorCopper]: block('Trappe en cuivre', '#b8734d', 2),
-  [EXTRA_BLOCKS.TrapdoorOakSmall]: block('Petit bouchon en chêne', '#b98a53', 0.8),
-  [EXTRA_BLOCKS.TrapdoorIronSmall]: block('Petit bouchon en fer', '#a8b5bc', 2.4),
-  [EXTRA_BLOCKS.TrapdoorGoldSmall]: block('Petit bouchon en or', '#e3bd32', 1.8),
-  [EXTRA_BLOCKS.TrapdoorCopperSmall]: block('Petit bouchon en cuivre', '#b8734d', 2),
+  [EXTRA_BLOCKS.TrapdoorOakSmall]: block('Petite trappe bouchon en chêne', '#b98a53', 0.8),
+  [EXTRA_BLOCKS.TrapdoorIronSmall]: block('Petite trappe bouchon en fer', '#a8b5bc', 2.4),
+  [EXTRA_BLOCKS.TrapdoorGoldSmall]: block('Petite trappe bouchon en or', '#e3bd32', 1.8),
+  [EXTRA_BLOCKS.TrapdoorCopperSmall]: block('Petite trappe bouchon en cuivre', '#b8734d', 2),
   [EXTRA_BLOCKS.Corn]: block('Graines de maïs', '#d8bd3d', 0.15),
   [EXTRA_BLOCKS.Wheat]: block('Graines de blé', '#bda366', 0.15),
   [EXTRA_BLOCKS.Tomato]: block('Graines de tomate', '#c84a3c', 0.15),
