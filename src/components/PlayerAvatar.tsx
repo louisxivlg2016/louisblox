@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Entity } from 'koota';
 import type { Group } from 'three';
@@ -47,6 +47,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   const headRef = useRef<Group>(null);
   const bodyMesh = useRef<Group>(null);
   const phase = useRef(0);
+  const [walking, setWalking] = useState(false);
 
   useFrame((_, delta) => {
     if (bodyMesh.current) bodyMesh.current.rotation.x = entity?.get(PlayerState)?.parachuting ? -Math.PI / 2 : 0;
@@ -59,7 +60,8 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
     const state = entity.get(PlayerState);
     const mounted = entity.get(PlayerMount)?.vehicle;
     const speed = velocity ? Math.hypot(velocity.x, velocity.z) : 0;
-    const moving = !sleeping && (!riding && !mounted || walkingCabin) && state?.grounded && !state.flying && speed > 0.1;
+    const moving = Boolean(!sleeping && (!riding && !mounted || walkingCabin) && state?.grounded && !state.flying && speed > 0.1);
+    if (walking !== moving) setWalking(moving);
     const waving = emote === 'wave';
     if (waving) phase.current += delta * 10;
     else if (moving) phase.current += delta * (5 + Math.min(speed, 4));
@@ -135,10 +137,10 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   return (
     <group
       ref={bodyMesh}
-      visible={preview || !riding && (cameraMode !== 'first' || sleeping)}
+      visible={preview || !riding && (cameraMode !== 'first' || sleeping) || ridingRole === 'passenger' && cameraMode !== 'first'}
     >
       {(!hasFullCharacter(outfit, wig) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
-      <CharacterOutfit character={character} outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding) && !walkingCabin} head={headContent} headRef={headRef} appearance={appearance} avatar={avatar} />
+      <CharacterOutfit character={character} outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding) && (!walkingCabin || !walking)} head={headContent} headRef={headRef} appearance={appearance} avatar={avatar} />
       {classicDetails}
       <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />

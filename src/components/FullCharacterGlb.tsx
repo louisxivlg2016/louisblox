@@ -107,7 +107,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
       current.current = name;
     }
     group.current.userData.clip = name;
-    const sitting = seated || emote === 'sit' || Boolean(mounted?.vehicle && !walkingCabin);
+    const sitting = seated || emote === 'sit' || Boolean(mounted?.vehicle && !walking);
     group.current.userData.gesture = sitting ? 'sit' : emote;
     if (animations.length === 0) {
       const time = performance.now() / 1000;

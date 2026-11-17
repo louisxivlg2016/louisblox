@@ -1004,10 +1004,12 @@ export class GameRoom extends DurableObject<Env> {
       if (!vehicle || !playerId) return;
       const driverId = this.vehicleDrivers.get(vehicle.id);
       if (driverId && driverId !== playerId) {
-        if (!vehicle.driver) {
-          const current = this.vehicles.get(vehicle.id);
-          if (current) ws.send(JSON.stringify({ type: 'vehicle-state', vehicle: current }));
-        }
+        const current = this.vehicles.get(vehicle.id);
+        if (!vehicle.driver && current && (vehicle.radioEnabled || current.radioEnabled)) {
+          const shared = { ...current, radioEnabled: vehicle.radioEnabled, radioTrack: vehicle.radioTrack };
+          this.vehicles.set(vehicle.id, shared);
+          this.broadcast({ type, vehicle: shared }, ws);
+        } else if (current) ws.send(JSON.stringify({ type: 'vehicle-state', vehicle: current }));
         return;
       }
       if (vehicle.driver) this.vehicleDrivers.set(vehicle.id, playerId);

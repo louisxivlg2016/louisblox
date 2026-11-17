@@ -81,7 +81,7 @@ export function FootballerAvatar({ moving, airborne, remote = false, seated = fa
     const walkingCabin = Boolean(mounted?.kind && canWalkInVehicle(mounted.kind, mounted.role));
     const walking = moving ?? Boolean((!mounted?.vehicle || walkingCabin) && state?.grounded && !state.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
     const jumping = airborne ?? Boolean(!state?.grounded || state?.flying || Math.abs(velocity?.y ?? 0) > 2);
-    const sitting = seated || emote === 'sit' || Boolean(mounted?.vehicle && !walkingCabin);
+    const sitting = seated || emote === 'sit' || Boolean(mounted?.vehicle && !walking);
     const time = performance.now() / 1000;
     const swing = walking && !jumping && !sitting ? Math.sin(time * 8) * 0.48 : 0;
     if (leftArm.current) leftArm.current.rotation.x = MathUtils.damp(leftArm.current.rotation.x, swing, 14, delta);
