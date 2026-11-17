@@ -77,14 +77,20 @@ export function generateCountrysideChunk(cx: number, cz: number, seed: number): 
     for (let z = cz * 16; z < (cz + 1) * 16; z += 1) for (let x = corridor - 4; x <= corridor + 4; x += 1) put(x, GROUND, z, highwayBlock(x - corridor, z));
     for (let x = cx * 16; x < (cx + 1) * 16; x += 1) for (let z = corridor - 4; z <= corridor + 4; z += 1) put(x, GROUND, z, highwayBlock(z - corridor, x));
   }
+  for (const marker of [-1536, -1152, -768, -384, 384, 768, 1152, 1536]) {
+    if (marker < cx * 16 || marker >= (cx + 1) * 16) continue;
+    blocks.set(voxelKey(marker, GROUND + 1, 3), { x: marker, y: GROUND + 1, z: 3, kind: BlockKind.Wood });
+    blocks.set(voxelKey(marker, GROUND + 2, 3), { x: marker, y: GROUND + 2, z: 3, kind: BlockKind.Sign, text: 'Civilisation · Route des villages' });
+  }
   for (const site of sites) {
+    const pathKind = site.houses === 10 ? BlockKind.ConcreteGray : BlockKind.Dirt;
     for (let x = site.x - 2; x <= site.x + 2; x += 1) {
-      for (let z = Math.min(0, site.z); z <= Math.max(0, site.z); z += 1) put(x, GROUND, z, BlockKind.Dirt);
+      for (let z = Math.min(0, site.z); z <= Math.max(0, site.z); z += 1) put(x, GROUND, z, pathKind);
     }
     for (let offset = -28; offset <= 28; offset += 1) {
       for (let side = -1; side <= 1; side += 1) {
-        put(site.x + offset, GROUND, site.z + side, BlockKind.Dirt);
-        put(site.x + side, GROUND, site.z + offset, BlockKind.Dirt);
+        put(site.x + offset, GROUND, site.z + side, pathKind);
+        put(site.x + side, GROUND, site.z + offset, pathKind);
       }
     }
     for (const [offsetX, offsetZ] of HOUSE_OFFSETS.slice(0, site.houses)) {
@@ -131,9 +137,14 @@ export function generateCountrysideChunk(cx: number, cz: number, seed: number): 
     for (const dx of [-1, 0, 1]) put(barnX + dx, GROUND + 2, barnZ + 3, BlockKind.DoorBrown, { facing: 'north' });
     for (const side of [-1, 1]) put(barnX + side * 4, GROUND + 4, barnZ, BlockKind.Glass);
 
-    const fieldX = site.x + 41;
-    const fieldZ = site.z - 18;
-    for (let dx = -10; dx <= 10; dx += 1) for (let dz = -8; dz <= 8; dz += 1) {
+    const fields = [
+      { x: site.x + 41, z: site.z - 18 },
+      ...(site.houses === 10 ? [{ x: site.x - 8, z: site.z + 45 }, { x: site.x + 41, z: site.z + 45 }] : []),
+    ];
+    for (const field of fields) {
+      const fieldX = field.x;
+      const fieldZ = field.z;
+      for (let dx = -10; dx <= 10; dx += 1) for (let dz = -8; dz <= 8; dz += 1) {
       const border = Math.abs(dx) === 10 || Math.abs(dz) === 8;
       if (border) {
         if ((dx + dz) % 2 === 0) put(fieldX + dx, GROUND + 1, fieldZ + dz, BlockKind.OakPlanks);
@@ -145,7 +156,8 @@ export function generateCountrysideChunk(cx: number, cz: number, seed: number): 
         if (dz % 2 === 0) put(fieldX + dx, GROUND + 1, fieldZ + dz, BlockKind.Wheat, { growth: 3 });
       }
     }
-    for (const offset of [-5, 5]) put(fieldX + offset, GROUND + 1, fieldZ + 9, BlockKind.StreetLamp);
+    }
+    for (const offset of [-5, 5]) put(fields[0].x + offset, GROUND + 1, fields[0].z + 9, BlockKind.StreetLamp);
   }
   return { blocks: [...blocks.values()], water };
 }

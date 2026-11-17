@@ -172,5 +172,9 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
       }
     }
   }
+  if (!modern && cx === 0 && cz === 0) {
+    put(0, GROUND + 1, 0, BlockKind.Wood);
+    blocks.set(voxelKey(0, GROUND + 2, 0), { x: 0, y: GROUND + 2, z: 0, kind: BlockKind.Sign, text: 'Civilisation · Capitale' });
+  }
   return { blocks: [...blocks.values()], water };
 }
