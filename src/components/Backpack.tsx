@@ -44,6 +44,16 @@ export function Backpack() {
   };
   const assign = (index: number) => {
     if (backpackItem !== null) setHotbarSlot(index, backpackItem);
+    else {
+      const kind = hotbarSlots[index];
+      if (kind !== null) useGameStore.getState().selectBlock(kind);
+    }
+  };
+  const discardSlot = (index: number) => {
+    const kind = hotbarSlots[index];
+    if (kind === null) return;
+    setHotbarSlot(index, null);
+    if (useGameStore.getState().selected === kind) useGameStore.getState().selectBlock('hand');
   };
   const resources = (Object.entries(meat) as Array<[AnimalKind, number]>).filter(([, count]) => count > 0);
   const query = normalizeSearch(gallerySearch);
@@ -135,8 +145,8 @@ export function Backpack() {
         <div className="backpack-active-area">
           <p className="backpack-label">{translate('Cases actives · choisis un objet puis une case, ou fais-le glisser', 'Active slots · choose an item then a slot, or drag it')}</p>
           <div className="backpack-active-slots">{hotbarSlots.map((kind, index) => (
+            <div className="active-slot-container" key={`${kind ?? translate('vide', 'empty')}-${index}`}>
             <button
-              key={`${kind ?? translate('vide', 'empty')}-${index}`}
               className="backpack-block active-slot"
               onClick={() => assign(index)}
               draggable={kind !== null}
@@ -146,7 +156,7 @@ export function Backpack() {
                 setBackpackItem(kind);
               }}
               onDragEnd={(event) => {
-                if (kind !== null && event.dataTransfer.dropEffect === 'none') setHotbarSlot(index, null);
+                if (kind !== null && event.dataTransfer.dropEffect === 'none') discardSlot(index);
               }}
               onPointerDown={(event) => {
                 if (kind === null) return;
@@ -158,7 +168,7 @@ export function Backpack() {
                 dragSlot.current = null;
                 if (!drag || drag.pointerId !== event.pointerId) return;
                 const outside = !document.elementFromPoint(event.clientX, event.clientY)?.closest('.backpack-panel');
-                if (outside && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 24) setHotbarSlot(drag.index, null);
+                if (outside && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 24) discardSlot(drag.index);
               }}
               onPointerCancel={() => { dragSlot.current = null; }}
               onDragOver={(event) => event.preventDefault()}
@@ -169,6 +179,8 @@ export function Backpack() {
               <span className="active-slot-number">{index === 9 ? '0' : index + 1}</span>
               {kind !== null && <ItemIcon kind={kind} />}
             </button>
+            {kind !== null && <button type="button" className="active-slot-drop" onClick={(event) => { event.stopPropagation(); discardSlot(index); }} aria-label={translate(`Jeter ${selectionInfo(kind).name}`, `Drop ${selectionInfo(kind).name}`, `Tirar ${selectionInfo(kind).name}`)}>{translate('Jeter', 'Drop', 'Tirar')}</button>}
+            </div>
           ))}</div>
         </div>
       </section>

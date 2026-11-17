@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { useWorld } from 'koota/react';
-import { Color } from 'three';
+import { Color, FogExp2 } from 'three';
 import { getBlockIndex, loadLevel } from '../game/chunks';
 import { readWorldSave } from '../game/save';
 import { useGameStore } from '../game/store';
@@ -66,27 +66,36 @@ function Atmosphere() {
   const center = camera.position;
   const cameraBlock = getBlockIndex(world).get(voxelKey(Math.floor(center.x + 0.5), Math.floor(center.y + 0.5), Math.floor(center.z + 0.5)));
   const underwater = isWaterBlock(cameraBlock?.kind);
+  const enclosed = cameraBlock !== undefined && !underwater;
   const exteriorPlane = useGameStore((state) => state.riding === 'plane' && state.cameraMode !== 'first');
   const waterColor = new Color('#217fac');
-  const skyColor = underwater
-    ? waterColor
-    : rainy
-      ? new Color('#46515b').lerp(new Color('#89949c'), daylight)
-      : new Color('#000000').lerp(new Color('#55b5ef'), skyDaylight);
-  const fogColor = underwater
-    ? waterColor
-    : rainy
-      ? new Color('#56616a').lerp(new Color('#9aa4ab'), daylight)
-      : new Color('#000000').lerp(new Color('#8bc8ed'), skyDaylight);
+  const skyColor = enclosed
+    ? new Color('#101010')
+    : underwater
+      ? waterColor
+      : rainy
+        ? new Color('#46515b').lerp(new Color('#89949c'), daylight)
+        : new Color('#000000').lerp(new Color('#55b5ef'), skyDaylight);
+  const fogColor = enclosed
+    ? new Color('#101010')
+    : underwater
+      ? waterColor
+      : rainy
+        ? new Color('#56616a').lerp(new Color('#9aa4ab'), daylight)
+        : new Color('#000000').lerp(new Color('#8bc8ed'), skyDaylight);
   const sunPosition: [number, number, number] = [center.x + Math.cos(angle) * 100, center.y + Math.sin(angle) * 100, center.z - 50];
   const moonPosition: [number, number, number] = [center.x - Math.cos(angle) * 100, center.y - Math.sin(angle) * 100, center.z - 50];
   const sunVisible = !underwater && !rainy && Math.sin(angle) > -0.05;
   const moonVisible = !underwater && !rainy && Math.sin(angle) < 0.05;
+  useFrame(({ scene }) => {
+    if (scene.fog instanceof FogExp2) scene.fog.color.copy(fogColor);
+    if (scene.background instanceof Color) scene.background.copy(skyColor);
+  });
 
   return (
     <>
       <color attach="background" args={[skyColor]} />
-      <fog attach="fog" args={[fogColor, underwater ? 0.1 : exteriorPlane ? 1200 : rainy ? 26 : 45, underwater ? 18 : exteriorPlane ? 3200 : rainy ? 90 : 130]} />
+      <fog attach="fog" args={[fogColor, enclosed ? 0.2 : underwater ? 0.1 : exteriorPlane ? 1200 : rainy ? 26 : 45, enclosed ? 35 : underwater ? 18 : exteriorPlane ? 3200 : rainy ? 90 : 130]} />
       <hemisphereLight args={['#d9f0ff', '#617043', 0.25 + daylight * 1.55]} />
       <directionalLight position={daylight > 0.25 ? sunPosition : moonPosition} intensity={0.08 + daylight * 2} color={daylight > 0.3 ? '#fff5d9' : '#91a9d4'} />
       <mesh position={sunPosition} visible={sunVisible}>

@@ -1,6 +1,8 @@
 import type { World } from 'koota';
 import { Euler, PerspectiveCamera, Vector3 } from 'three';
 import type { Camera } from 'three';
+import { Color, FogExp2, Scene } from 'three';
+import { isWaterBlock, voxelKey } from '../voxel';
 import { useGameStore } from '../store';
 import { useEmoteStore } from '../emotes';
 import { turnToward } from '../rotation';
@@ -9,7 +11,7 @@ import { useMazeStore } from '../mazeClient';
 import { canWalkInVehicle, isAnimalMount, vehicleViewDistance } from '../vehicleTypes';
 import { VehiclePosition } from '../traits';
 import { groundAt } from '../vehicles';
-import { chunkCoordinate, loadChunk, loadChunkForCamera, releaseCameraChunk } from '../chunks';
+import { chunkCoordinate, getBlockIndex, loadChunk, loadChunkForCamera, releaseCameraChunk } from '../chunks';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
 
@@ -104,6 +106,14 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
     if (mounted && !walkingCabin) camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z) + 0.2);
     rotation.set(state.pitch, state.yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(rotation);
+  }
+  const scene = camera.parent instanceof Scene ? camera.parent : null;
+  if (scene) {
+    const block = getBlockIndex(world).get(voxelKey(Math.floor(camera.position.x + 0.5), Math.floor(camera.position.y + 0.5), Math.floor(camera.position.z + 0.5)));
+    if (block && !isWaterBlock(block.kind)) {
+      scene.fog = new FogExp2('#101010', 0.035);
+      if (scene.background instanceof Color) scene.background.set('#101010');
+    } else scene.fog = null;
   }
   camera.updateMatrixWorld();
 }
