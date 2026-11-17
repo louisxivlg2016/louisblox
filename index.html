@@ -264,7 +264,7 @@
         border-radius: 8px;
       }
       .touch-button:active { background: rgba(105, 151, 77, 0.92); transform: translateY(2px); }
-      .minimap { position: absolute; top: 160px; left: 18px; z-index: 11; display: grid; justify-items: center; padding: 5px 5px 3px; pointer-events: none; background: rgba(15, 28, 20, .88); border: 3px solid #71885e; box-shadow: 0 3px 0 rgba(0,0,0,.45); }
+      .minimap { position: absolute; top: 100px; left: 18px; z-index: 11; display: grid; justify-items: center; padding: 5px 5px 3px; pointer-events: none; background: rgba(15, 28, 20, .88); border: 3px solid #71885e; box-shadow: 0 3px 0 rgba(0,0,0,.45); }
       .minimap canvas { display: block; width: 164px; height: 164px; image-rendering: pixelated; }
       .minimap-north { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); color: #fff4a8; font-size: 12px; font-weight: 900; text-shadow: 1px 1px 2px #000; }
       .minimap small { padding-top: 3px; color: #d8e5ca; font-size: 10px; }
@@ -275,7 +275,7 @@
       .world-map-header .secondary-button { width: auto; margin: 0; padding: 8px 12px; }
       .world-map-canvas { display: block; width: min(516px, 65vmin); height: auto; aspect-ratio: 1; image-rendering: pixelated; }
       .world-map-panel > small { padding-top: 8px; color: #d8e5ca; }
-      @media (pointer: coarse) { .minimap { top: 138px; left: 8px; padding: 3px 3px 2px; border-width: 2px; } .minimap canvas { width: 108px; height: 108px; } .minimap small { font-size: 8px; } .world-map-canvas { width: min(82vw, 65vh); } }
+      @media (pointer: coarse) { .minimap { top: 82px; left: 8px; padding: 3px 3px 2px; border-width: 2px; } .minimap canvas { width: 108px; height: 108px; } .minimap small { font-size: 8px; } .world-map-canvas { width: min(82vw, 65vh); } }
       .touch-flight { background: rgba(66, 125, 159, 0.82); }
       .touch-attack { background: rgba(143, 76, 62, 0.82); }
       .backpack-toggle { position: absolute; top: 18px; left: 50%; z-index: 12; width: 140px; padding: 0; transform: translateX(-50%); pointer-events: auto; background: transparent; border: 0; cursor: pointer; }
@@ -1153,7 +1153,7 @@
         .boutique-dressing-room { right: 12px; bottom: 12px; padding: 5px; }
         .boutique-dressing-room .boutique-avatar-3d { flex-basis: 150px; width: 150px; height: 180px; }
       }
-      .tribe-toggle { position: absolute; left: 18px; top: 82px; z-index: 12; width: 118px; min-height: 44px; padding: 0; pointer-events: auto; color: #fff; background: transparent; border: 0; touch-action: manipulation; }
+      .tribe-toggle { position: absolute; left: 18px; top: 18px; z-index: 12; width: 118px; min-height: 44px; padding: 0; pointer-events: auto; color: #fff; background: transparent; border: 0; touch-action: manipulation; }
       .tribe-toggle img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
       .tribe-invitation-count { position: absolute; top: -5px; right: -5px; min-width: 22px; padding: 3px 5px; color: #fff4a8; background: #653719; border: 2px solid #f1cf67; font-size: 12px; text-align: center; }
       .tribe-backdrop { z-index: 55; }
@@ -1201,7 +1201,7 @@
         .backpack-toggle img, .shop-toggle img { height: 56px; object-fit: contain; }
         .battle-scoreboard.pirate-scoreboard { top: 6px; gap: 5px; max-width: calc(100vw - 180px); padding: 5px 7px; font-size: 9px; }
         .pirate-scoreboard strong { display: none; }
-        .tribe-toggle { top: 120px; left: 6px; width: 54px; min-height: 44px; padding: 0; }
+        .tribe-toggle { top: 18px; left: 6px; width: 54px; min-height: 44px; padding: 0; }
         .chat-toggle { top: 60px; bottom: auto; left: 6px; width: 64px; min-height: 52px; padding: 3px; border-width: 2px; }
         .chat-toggle img { max-height: 44px; }
         .emote-toggle { top: 4px; right: 84px; bottom: auto; left: auto; width: 72px; height: 64px; padding: 3px; }
@@ -1226,7 +1226,7 @@
         .shop-toggle { right: 142px; width: 70px; }
         .emote-toggle { right: 76px; width: 62px; height: 58px; }
         .teleport-toggle { width: 66px; height: 66px; }
-        .tribe-toggle { top: 124px; }
+        .tribe-toggle { top: 18px; }
       }
     </style>
   </head>
