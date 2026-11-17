@@ -1,0 +1,139 @@
+import { useEffect, useRef, useState } from 'react';
+import { getBlockIndex, getColumnTop, onVoxelEdit } from '../game/chunks';
+import { releasePointerForOverlay, requestPlay } from '../game/input';
+import { translate } from '../game/language';
+import { useRemotePlayerStore } from '../game/multiplayerStore';
+import { useGameStore } from '../game/store';
+import { Player, PlayerPosition, PlayerState } from '../game/traits';
+import { BLOCK_INFO, BlockKind, isWaterBlock, voxelKey } from '../game/voxel';
+import { world } from '../game/world';
+
+const CELL = 4;
+const MINI_RADIUS = 20;
+const MAP_RADIUS = 64;
+const allowedModes = new Set(['creative', 'survival', 'pirates', 'football', 'city-modern', 'city-ancient']);
+
+export function Minimap() {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const largeCanvas = useRef<HTMLCanvasElement>(null);
+  const coordinates = useRef<HTMLElement>(null);
+  const largeCoordinates = useRef<HTMLElement>(null);
+  const [mapOpen, setMapOpen] = useState(false);
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
+
+  useEffect(() => {
+    if (!allowedModes.has(gameplayMode) || !canvas.current) return;
+    let dirty = true;
+    const draw = (element: HTMLCanvasElement, radius: number, label: HTMLElement | null) => {
+      const playerEntity = world.queryFirst(Player);
+      const player = playerEntity?.get(PlayerPosition);
+      if (!player) return;
+      const size = element.width;
+      const center = size / 2;
+      const centerX = Math.round(player.x);
+      const centerZ = Math.round(player.z);
+      const blocks = getBlockIndex(world);
+      const context = element.getContext('2d')!;
+      context.clearRect(0, 0, size, size);
+      for (let dz = -radius; dz <= radius; dz += 1) {
+        for (let dx = -radius; dx <= radius; dx += 1) {
+          const x = centerX + dx;
+          const z = centerZ + dz;
+          const top = getColumnTop(world, x, z);
+          let block = top === undefined ? undefined : blocks.get(voxelKey(x, top, z));
+          if (top !== undefined) {
+            for (let y = top + 1; y <= top + 5; y += 1) {
+              const above = blocks.get(voxelKey(x, y, z));
+              if (above && (isWaterBlock(above.kind) || above.waterlogged)) block = above;
+            }
+          }
+          context.fillStyle = block ? block.waterlogged ? BLOCK_INFO[BlockKind.Water].color : BLOCK_INFO[block.kind]?.color ?? '#657064' : '#17231c';
+          context.fillRect((dx + radius) * CELL, (dz + radius) * CELL, CELL, CELL);
+        }
+      }
+      for (const remote of Object.values(useRemotePlayerStore.getState().players)) {
+        const dx = (remote.x - centerX) * CELL;
+        const dz = (remote.z - centerZ) * CELL;
+        if (Math.abs(dx) > center - 5 || Math.abs(dz) > center - 5) continue;
+        context.fillStyle = '#ff665c';
+        context.beginPath();
+        context.arc(center + dx, center + dz, 4, 0, Math.PI * 2);
+        context.fill();
+      }
+      const yaw = playerEntity?.get(PlayerState)?.yaw ?? 0;
+      context.save();
+      context.translate(center, center);
+      context.rotate(-yaw);
+      context.fillStyle = '#fff4a8';
+      context.strokeStyle = '#3c3210';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(0, -10);
+      context.lineTo(7, 8);
+      context.lineTo(0, 5);
+      context.lineTo(-7, 8);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.restore();
+      if (label) label.textContent = `${centerX} · ${centerZ}`;
+    };
+    const update = () => {
+      if (!dirty) return;
+      dirty = false;
+      if (canvas.current) draw(canvas.current, MINI_RADIUS, coordinates.current);
+      if (mapOpen && largeCanvas.current) draw(largeCanvas.current, MAP_RADIUS, largeCoordinates.current);
+    };
+    const unsubscribe = onVoxelEdit(world, () => { dirty = true; });
+    const timer = window.setInterval(() => { dirty = true; update(); }, 500);
+    update();
+    return () => {
+      unsubscribe();
+      window.clearInterval(timer);
+    };
+  }, [gameplayMode, mapOpen]);
+
+  useEffect(() => {
+    if (!mapOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.code !== 'Escape') return;
+      event.preventDefault();
+      setMapOpen(false);
+      void requestPlay();
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [mapOpen]);
+
+  if (!allowedModes.has(gameplayMode)) return null;
+  const openMap = () => {
+    setMapOpen(true);
+    releasePointerForOverlay();
+  };
+  const closeMap = () => {
+    setMapOpen(false);
+    void requestPlay();
+  };
+  return (
+    <>
+      <div className="minimap" aria-label={translate('Minicarte', 'Minimap')}>
+        <canvas ref={canvas} width={(MINI_RADIUS * 2 + 1) * CELL} height={(MINI_RADIUS * 2 + 1) * CELL} role="img" aria-label={translate('Carte pixelisée du terrain autour du joueur', 'Pixelated map of the terrain around the player')} />
+        <span className="minimap-north">N</span>
+        <small ref={coordinates} />
+        <button type="button" className="minimap-expand" onClick={openMap}>{translate('Agrandir la carte', 'Open map')}</button>
+      </div>
+      {mapOpen && (
+        <div className="world-map-backdrop" role="dialog" aria-modal="true" aria-label={translate('Carte du monde', 'World map')} onClick={(event) => { if (event.target === event.currentTarget) closeMap(); }}>
+          <section className="world-map-panel">
+            <div className="world-map-header">
+              <strong>{translate('Carte du monde', 'World map')}</strong>
+              <button type="button" className="secondary-button" onClick={closeMap}>{translate('Fermer', 'Close')}</button>
+            </div>
+            <canvas ref={largeCanvas} className="world-map-canvas" width={(MAP_RADIUS * 2 + 1) * CELL} height={(MAP_RADIUS * 2 + 1) * CELL} role="img" aria-label={translate('Grande carte pixelisée du terrain', 'Large pixelated terrain map')} />
+            <small ref={largeCoordinates} />
+          </section>
+        </div>
+      )}
+    </>
+  );
+}
