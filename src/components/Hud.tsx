@@ -5,6 +5,7 @@ import { selectionInfo } from '../game/items';
 import { ItemIcon } from './ItemIcon';
 import { PaintballPalette } from './PaintballPalette';
 import { PlaneTitleEditor } from './PlaneTitleEditor';
+import { PoliceTitleEditor } from './PoliceTitleEditor';
 import backpackButtonFrUrl from '../../assets/ui/backpack-button.webp';
 import backpackButtonEnUrl from '../../assets/ui/english/backpack.webp';
 import backpackButtonEsUrl from '../../assets/ui/spanish/mochila.webp';
@@ -130,6 +131,7 @@ export function Hud() {
       <EmotePanel />
       <PaintballPalette />
       <PlaneTitleEditor />
+      <PoliceTitleEditor />
 
       {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && !tradeOpen && !homeOpen && !tribeOpen && (
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />

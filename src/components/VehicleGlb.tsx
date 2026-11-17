@@ -11,6 +11,7 @@ import { METRO_LENGTH, PLANE_SCALE, TRAIN_LENGTH } from '../game/vehicles';
 import type { VehicleKind } from '../game/vehicleTypes';
 import { VehicleAccessories } from './VehicleAccessories';
 import { PlaneTitle } from './PlaneTitle';
+import { PoliceTitle } from './PoliceTitle';
 
 const models = {
   raceCar: raceCarUrl,
@@ -112,7 +113,7 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'm
 
 export function VehicleGlb({ entity, kind, color, interior = false }: { entity: import('koota').Entity; kind: VehicleKind; color: string; interior?: boolean }) {
   if (kind === 'boat') return <group scale={[1.2, 1.2, 1.45]}><BoatModel color={color} /></group>;
-  if (kind === 'police' || kind === 'firetruck') return <Suspense fallback={null}><VehicleAccessories entity={entity} kind={kind} interior={interior} /></Suspense>;
+  if (kind === 'police' || kind === 'firetruck') return <Suspense fallback={null}><VehicleAccessories entity={entity} kind={kind} interior={interior} />{!interior && kind === 'police' && <PoliceTitle />}</Suspense>;
   if (kind === 'jeep' || kind === 'carriage' || kind === 'cannon') return <VehicleAccessories entity={entity} kind={kind} interior={interior} />;
   return (
     <Suspense fallback={kind === 'car' ? <CarModel color={color} /> : null}>

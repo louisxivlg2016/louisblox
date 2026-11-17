@@ -2,8 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { CanvasTexture, DoubleSide, MeshLambertMaterial, SRGBColorSpace } from 'three';
 import { usePlaneTitleStore } from '../game/planeTitle';
 
-export function PlaneTitle() {
-  const title = usePlaneTitleStore((state) => state.title);
+export function VehicleTitle({ title, width, height, position, name }: { title: string; width: number; height: number; position: [number, number, number]; name: string }) {
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
@@ -28,12 +27,17 @@ export function PlaneTitle() {
     material.dispose();
   }, [texture, material]);
   return (
-    <group name="plane-gold-title">
+    <group name={name}>
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * 4.5, 9, -10]} rotation={[0, side * Math.PI / 2, 0]} material={material}>
-          <planeGeometry args={[16, 4]} />
+        <mesh key={side} position={[position[0] * side, position[1], position[2]]} rotation={[0, side * Math.PI / 2, 0]} material={material}>
+          <planeGeometry args={[width, height]} />
         </mesh>
       ))}
     </group>
   );
+}
+
+export function PlaneTitle() {
+  const title = usePlaneTitleStore((state) => state.title);
+  return <VehicleTitle title={title} width={16} height={4} position={[4.5, 9, -10]} name="plane-gold-title" />;
 }
