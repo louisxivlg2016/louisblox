@@ -264,6 +264,11 @@
         border-radius: 8px;
       }
       .touch-button:active { background: rgba(105, 151, 77, 0.92); transform: translateY(2px); }
+      .minimap { position: absolute; top: 160px; left: 18px; z-index: 11; display: grid; justify-items: center; padding: 5px 5px 3px; pointer-events: none; background: rgba(15, 28, 20, .88); border: 3px solid #71885e; box-shadow: 0 3px 0 rgba(0,0,0,.45); }
+      .minimap canvas { display: block; width: 164px; height: 164px; image-rendering: pixelated; }
+      .minimap-north { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); color: #fff4a8; font-size: 12px; font-weight: 900; text-shadow: 1px 1px 2px #000; }
+      .minimap small { padding-top: 3px; color: #d8e5ca; font-size: 10px; }
+      @media (pointer: coarse) { .minimap { top: 138px; left: 8px; padding: 3px 3px 2px; border-width: 2px; } .minimap canvas { width: 108px; height: 108px; } .minimap small { font-size: 8px; } }
       .touch-flight { background: rgba(66, 125, 159, 0.82); }
       .touch-attack { background: rgba(143, 76, 62, 0.82); }
       .backpack-toggle { position: absolute; top: 18px; left: 50%; z-index: 12; width: 140px; padding: 0; transform: translateX(-50%); pointer-events: auto; background: transparent; border: 0; cursor: pointer; }
