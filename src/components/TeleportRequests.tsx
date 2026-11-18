@@ -114,6 +114,7 @@ export function TeleportPanel() {
           {notice && <span className="teleport-request-status" role="status">{notice}</span>}
         </div>
       )}
+      <button type="button" className="teleport-exit" onPointerDown={(event) => { if (event.pointerType === 'touch') { event.preventDefault(); event.stopPropagation(); close(); } }} onClick={close} aria-label={translate('Quitter la téléportation', 'Exit teleportation')}>{translate('Quitter la téléportation', 'Exit teleportation')} <span aria-hidden="true">×</span></button>
     </div>
   );
 }

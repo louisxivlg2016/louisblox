@@ -68,7 +68,7 @@ export async function listModePlayers(mode: GameplayMode): Promise<ModePlayer[]>
   return data.players.flatMap((value): ModePlayer[] => {
     if (!value || typeof value !== 'object') return [];
     const player = value as Record<string, unknown>;
-    if (typeof player.playerId !== 'string' || typeof player.name !== 'string' || typeof player.room !== 'string' || player.gameplayMode !== mode) return [];
+    if (typeof player.playerId !== 'string' || typeof player.name !== 'string' || typeof player.room !== 'string' || player.gameplayMode !== undefined && player.gameplayMode !== mode) return [];
     return [{ playerId: player.playerId, name: player.name, room: player.room, gameplayMode: mode }];
   });
 }

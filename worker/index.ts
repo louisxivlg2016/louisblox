@@ -597,6 +597,7 @@ export class GameRoom extends DurableObject<Env> {
     if (now - attachment.presenceAt < 60000) return;
     attachment.presenceAt = now;
     const directory = this.env.PLAYER_DIRECTORY.get(this.env.PLAYER_DIRECTORY.idFromName('global'));
+    this.ctx.waitUntil(this.publishWorld(attachment));
     this.ctx.waitUntil(directory.fetch('https://directory/presence', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -4,6 +4,7 @@ import type { EmoteKind } from './emotes';
 import { isPotionEffect } from './effects';
 import { isGameplayMode } from './worldMode';
 import { isAnimalMount, isVehicleKind, type MountKind } from './vehicleTypes';
+import { useMultiplayerStore } from './multiplayerStore';
 
 export type HorseSnapshot = { id: string; x: number; y: number; z: number; yaw: number };
 
@@ -50,7 +51,7 @@ export function resolveMultiplayerUrl(
   },
 ) {
   const params = new URLSearchParams(location.search);
-  const override = params.get('server')?.trim();
+  const override = params.get('server')?.trim() || useMultiplayerStore.getState().server.trim();
   const configured = environment.VITE_WS_URL?.trim() || environment.NEXT_PUBLIC_WS_URL?.trim();
   const local = location.protocol === 'http:' && isLocalHostname(location.hostname);
   const endpoint = override || (local
