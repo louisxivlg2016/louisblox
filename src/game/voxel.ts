@@ -1,5 +1,5 @@
 import type { Vector3 } from 'three';
-import { EXTRA_BLOCKS, EXTRA_BLOCK_META, EXTRA_BLOCK_ORDER, isDoor, isTrapdoor } from './extraBlocks';
+import { EXTRA_BLOCKS, EXTRA_BLOCK_META, EXTRA_BLOCK_ORDER, isDoor, isSlab, isTrapdoor } from './extraBlocks';
 
 export const BlockKind = {
   Grass: 0,
@@ -156,6 +156,42 @@ export const BLOCK_HARDNESS = {
 
 export const voxelKey = (x: number, y: number, z: number) => `${x},${y},${z}`;
 
+function raycastSlab(block: Voxel, origin: Vector3, direction: Vector3, entry: number, exit: number, entryNormal: VoxelHit['normal']) {
+  const wall = block.growth === 2;
+  const min = { x: block.x - 0.5, y: block.y - 0.5, z: block.z - 0.5 };
+  const max = { x: block.x + 0.5, y: block.y + 0.5, z: block.z + 0.5 };
+  if (wall && block.facing === 'east') max.x = block.x - 0.32;
+  else if (wall && block.facing === 'west') min.x = block.x + 0.32;
+  else if (wall && block.facing === 'south') max.z = block.z - 0.32;
+  else if (wall) min.z = block.z + 0.32;
+  if (!wall && block.growth === 1) min.y = block.y + 0.32;
+  else if (!wall) max.y = block.y - 0.32;
+
+  let near = Math.max(0, entry);
+  let far = exit;
+  const normal = { ...entryNormal };
+  for (const axis of ['x', 'y', 'z'] as const) {
+    const component = direction[axis];
+    if (Math.abs(component) < 1e-10) {
+      if (origin[axis] < min[axis] || origin[axis] > max[axis]) return null;
+      continue;
+    }
+    const entering = component > 0 ? min[axis] : max[axis];
+    const leaving = component > 0 ? max[axis] : min[axis];
+    const axisNear = (entering - origin[axis]) / component;
+    const axisFar = (leaving - origin[axis]) / component;
+    if (axisNear > near) {
+      near = axisNear;
+      normal.x = axis === 'x' ? component > 0 ? -1 : 1 : 0;
+      normal.y = axis === 'y' ? component > 0 ? -1 : 1 : 0;
+      normal.z = axis === 'z' ? component > 0 ? -1 : 1 : 0;
+    }
+    far = Math.min(far, axisFar);
+    if (near > far) return null;
+  }
+  return { distance: near, normal };
+}
+
 export function raycastVoxel(
   blocks: Map<string, Voxel>,
   origin: Vector3,
@@ -182,7 +218,10 @@ export function raycastVoxel(
   for (let steps = 0; steps < 128 && distance <= maxDistance; steps += 1) {
     const block = blocks.get(voxelKey(x, y, z));
     if (block !== undefined && (includeWater || !isWaterBlock(block.kind)) && (!block.open || isDoor(block.kind) || isTrapdoor(block.kind))) {
-      return { block, x, y, z, normal, distance };
+      const exit = Math.min(maxX, maxY, maxZ, maxDistance);
+      const slabHit = isSlab(block.kind) ? raycastSlab(block, origin, direction, distance, exit, normal) : null;
+      if (!isSlab(block.kind)) return { block, x, y, z, normal, distance };
+      if (slabHit) return { block, x, y, z, normal: slabHit.normal, distance: slabHit.distance };
     }
 
     if (maxX <= maxY && maxX <= maxZ) {
