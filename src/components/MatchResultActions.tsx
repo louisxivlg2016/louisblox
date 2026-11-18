@@ -4,7 +4,7 @@ import { clearMinigames } from '../game/minigameSync';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 import { canCreateWorld } from '../game/save';
-import { releasePointerForOverlay } from '../game/input';
+import { releasePointerForOverlay, requestPlay } from '../game/input';
 import { translate } from '../game/language';
 
 export function MatchResultActions() {
@@ -27,6 +27,7 @@ export function MatchResultActions() {
     url.searchParams.set('room', worldId);
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
     useGameStore.getState().setMode('play');
+    void requestPlay();
   };
   const quit = () => {
     clearBattle();

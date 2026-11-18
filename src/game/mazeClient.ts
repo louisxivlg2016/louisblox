@@ -8,7 +8,7 @@ import { getBlockIndex, replaceVoxel } from './chunks';
 import { world } from './world';
 import { MAZE_BARRIERS, MAZE_OVERVIEW, mazeSpawn } from './maze';
 import { playWhistle } from './audio';
-import { stopMining } from './input';
+import { releasePointerForOverlay, stopMining } from './input';
 import { translate } from './language';
 
 export type MazePhase = 'waiting' | 'ready' | 'countdown' | 'running' | 'finished';
@@ -66,10 +66,12 @@ export function receiveMazeState(value: unknown) {
     lastWhistle = token;
   }
   const phases: MazePhase[] = ['waiting', 'ready', 'countdown', 'running', 'finished'];
+  const phase = phases.includes(data.phase as MazePhase) ? data.phase as MazePhase : 'waiting';
+  if (phase === 'finished' && useMazeStore.getState().phase !== 'finished') releasePointerForOverlay();
   const barriersOpen = data.barriersOpen === true;
   if (useMazeStore.getState().barriersOpen !== barriersOpen) applyMazeBarriers(barriersOpen);
   useMazeStore.setState({
-    phase: phases.includes(data.phase as MazePhase) ? data.phase as MazePhase : 'waiting',
+    phase,
     phaseUntil: number(data.phaseUntil, 0), startedAt: number(data.startedAt, 0),
     winner: typeof data.winner === 'string' ? data.winner : null,
     winnerName: typeof data.winnerName === 'string' ? data.winnerName.slice(0, 24) : null,
@@ -127,6 +129,7 @@ export function mazeControlSystem(_world: World) {
     const position = _world.queryFirst(Player)?.get(PlayerPosition);
     if (current.phase === 'running' && position && Math.abs(position.x - 18) <= 2 && position.z >= -25 && position.z <= -22 && Math.abs(position.y - 8.51) < 4) {
       playWhistle('goal');
+      releasePointerForOverlay();
       useMazeStore.setState({ phase: 'finished', winner: 'solo', winnerName: useMultiplayerStore.getState().playerName, finishMs: Date.now() - current.startedAt, notice: translate('Course terminée', 'Race finished'), whistleToken: current.whistleToken + 1 });
     }
   }
