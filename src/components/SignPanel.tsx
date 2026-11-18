@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { requestPlay } from '../game/input';
 import { MAX_SIGN_LENGTH, saveSign, useSignStore } from '../game/signs';
+import { DEFAULT_SIGN_TEXT_SIZE, SIGN_TEXT_SIZES } from '../game/voxel';
 import { BlockKind } from '../game/voxel';
 import { world } from '../game/world';
 import { translate } from '../game/language';
@@ -10,9 +11,13 @@ export function SignPanel() {
   const closeSign = useSignStore((state) => state.closeSign);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const [length, setLength] = useState(0);
+  const [textSize, setTextSize] = useState<number>(DEFAULT_SIGN_TEXT_SIZE);
 
   useEffect(() => {
-    if (editing) setLength(editing.text.length);
+    if (editing) {
+      setLength(editing.text.length);
+      setTextSize(editing.textSize);
+    }
   }, [editing?.x, editing?.y, editing?.z]);
 
   if (!editing) return null;
@@ -30,9 +35,15 @@ export function SignPanel() {
         </div>
         <form onSubmit={(event) => {
           event.preventDefault();
-          saveSign(world, editing, textRef.current?.value ?? editing.text);
+          saveSign(world, editing, textRef.current?.value ?? editing.text, textSize);
           void requestPlay();
         }}>
+          <label className="book-field">
+            {translate('Taille de l’écriture', 'Text size', 'Tamaño del texto')}
+            <select aria-label={translate('Taille de l’écriture', 'Text size', 'Tamaño del texto')} value={textSize} onChange={(event) => setTextSize(Number(event.target.value))}>
+              {SIGN_TEXT_SIZES.map((size) => <option key={size} value={size}>{size === 15 ? translate('Petit', 'Small', 'Pequeño') : size === 30 ? translate('Grand', 'Large', 'Grande') : 'Normal'}</option>)}
+            </select>
+          </label>
           <label className="book-field">
             {paris ? translate('Texte de la plaque', 'Street sign text') : translate('Texte du panneau', 'Sign text')}
             <textarea ref={textRef} autoFocus defaultValue={editing.text} rows={6} maxLength={MAX_SIGN_LENGTH} onInput={(event) => setLength(event.currentTarget.value.length)} placeholder={paris ? '4th arrondissement\nPeace Street' : translate('Écris quelque chose…', 'Write something…')} />

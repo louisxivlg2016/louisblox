@@ -2,8 +2,10 @@ import { useEffect, useMemo } from 'react';
 import { CanvasTexture, NearestFilter, SRGBColorSpace } from 'three';
 import { PixelPart } from './ItemModel';
 import { PARIS_STREET_SIGN_TEXT } from '../game/extraBlocks';
+import { cleanSignTextSize, DEFAULT_SIGN_TEXT_SIZE } from '../game/voxel';
 
-function parisSignTexture(text: string) {
+function parisSignTexture(text: string, textSize: number) {
+  const scale = cleanSignTextSize(textSize) / DEFAULT_SIGN_TEXT_SIZE;
   const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
   const district = (lines.length > 1 ? lines[0] : '4th arrondissement').toLocaleUpperCase('en-US');
   const street = (lines.length > 1 ? lines.slice(1).join(' ') : lines[0] || 'Peace Street').toLocaleUpperCase('en-US');
@@ -24,11 +26,11 @@ function parisSignTexture(text: string) {
   context.fillStyle = '#f4f7ef';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.font = 'bold 15px monospace';
+  context.font = `bold ${15 * scale}px monospace`;
   context.fillText(district, 128, 22, 230);
-  let size = 27;
+  let size = 27 * scale;
   context.font = `bold ${size}px monospace`;
-  while (context.measureText(street).width > 232 && size > 11) {
+  while (context.measureText(street).width > 232 && size > 11 * scale) {
     size -= 1;
     context.font = `bold ${size}px monospace`;
   }
@@ -41,8 +43,8 @@ function parisSignTexture(text: string) {
   return texture;
 }
 
-export function ParisStreetSignModel({ text = PARIS_STREET_SIGN_TEXT, held = false }: { text?: string; held?: boolean }) {
-  const texture = useMemo(() => parisSignTexture(text), [text]);
+export function ParisStreetSignModel({ text = PARIS_STREET_SIGN_TEXT, textSize = DEFAULT_SIGN_TEXT_SIZE, held = false }: { text?: string; textSize?: number; held?: boolean }) {
+  const texture = useMemo(() => parisSignTexture(text, textSize), [text, textSize]);
   useEffect(() => () => texture.dispose(), [texture]);
   return (
     <group name="paris-street-sign" scale={held ? 0.65 : 1}>

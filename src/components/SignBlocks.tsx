@@ -1,13 +1,14 @@
 import { useEffect, useMemo } from 'react';
 import { CanvasTexture, NearestFilter, SRGBColorSpace } from 'three';
-import { BlockKind } from '../game/voxel';
+import { BlockKind, cleanSignTextSize, DEFAULT_SIGN_TEXT_SIZE } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { facingYaw } from '../game/extraBlocks';
 import { wallMount } from '../game/wallMount';
 import { PixelPart } from './ItemModel';
 import { ParisStreetSignModel } from './ParisStreetSign';
 
-function signTexture(text: string) {
+function signTexture(text: string, textSize: number) {
+  const size = cleanSignTextSize(textSize);
   const canvas = document.createElement('canvas');
   canvas.width = 256;
   canvas.height = 160;
@@ -18,16 +19,20 @@ function signTexture(text: string) {
   for (let y = 12; y < 160; y += 32) {
     for (let x = (y % 64) + 4; x < 256; x += 58) context.fillRect(x, y, 26, 3);
   }
+  const maxChars = Math.max(4, Math.floor(400 / size));
+  const lineHeight = size * 1.2;
+  const maxLines = Math.max(1, Math.floor(150 / lineHeight));
   const lines = text.split('\n').flatMap((line) => {
     if (!line) return [''];
     const parts: string[] = [];
-    for (let index = 0; index < line.length; index += 20) parts.push(line.slice(index, index + 20));
+    for (let index = 0; index < line.length; index += maxChars) parts.push(line.slice(index, index + maxChars));
     return parts;
-  }).slice(0, 6);
+  }).slice(0, maxLines);
   context.fillStyle = '#30251c';
-  context.font = 'bold 20px monospace';
+  context.font = `bold ${size}px monospace`;
   context.textAlign = 'center';
-  lines.forEach((line, index) => context.fillText(line, 128, 30 + index * 24, 244));
+  context.textBaseline = 'middle';
+  lines.forEach((line, index) => context.fillText(line, 128, 80 + (index - (lines.length - 1) / 2) * lineHeight, 244));
   const texture = new CanvasTexture(canvas);
   texture.magFilter = NearestFilter;
   texture.minFilter = NearestFilter;
@@ -36,8 +41,8 @@ function signTexture(text: string) {
   return texture;
 }
 
-export function SignModel({ text = '', wallMounted = false }: { text?: string; wallMounted?: boolean }) {
-  const texture = useMemo(() => signTexture(text), [text]);
+export function SignModel({ text = '', textSize = DEFAULT_SIGN_TEXT_SIZE, wallMounted = false }: { text?: string; textSize?: number; wallMounted?: boolean }) {
+  const texture = useMemo(() => signTexture(text, textSize), [text, textSize]);
   useEffect(() => () => texture.dispose(), [texture]);
   return (
     <group>
@@ -54,6 +59,6 @@ export function SignModel({ text = '', wallMounted = false }: { text?: string; w
 export function SignBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIndex: ReadonlyMap<string, Voxel> }) {
   return blocks.map((block) => {
     const mount = wallMount(blockIndex, block, facingYaw(block.facing));
-    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y - 0.5, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} scale={0.6} userData={{ wallMounted: mount.mounted }}>{block.kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel text={block.text} /> : <SignModel text={block.text ?? ''} wallMounted={mount.mounted} />}</group>;
+    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y - 0.5, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} scale={0.6} userData={{ wallMounted: mount.mounted }}>{block.kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel text={block.text} textSize={block.textSize} /> : <SignModel text={block.text ?? ''} textSize={block.textSize} wallMounted={mount.mounted} />}</group>;
   });
 }

@@ -34,6 +34,9 @@ export const BlockKind = {
 
 export type BlockKind = (typeof BlockKind)[keyof typeof BlockKind];
 export const isWaterBlock = (kind: number | undefined) => kind === BlockKind.Water || kind === BlockKind.CalmWater;
+export const SIGN_TEXT_SIZES = [15, 20, 30] as const;
+export const DEFAULT_SIGN_TEXT_SIZE = 20;
+export const cleanSignTextSize = (value: unknown) => typeof value === 'number' && (SIGN_TEXT_SIZES as readonly number[]).includes(value) ? value : DEFAULT_SIGN_TEXT_SIZE;
 
 export type Voxel = {
   x: number;
@@ -44,6 +47,7 @@ export type Voxel = {
   growth?: number;
   items?: import('./items').SelectedKind[];
   text?: string;
+  textSize?: number;
   facing?: 'north' | 'south' | 'east' | 'west';
   food?: import('./items').SelectedKind;
   meat?: import('./animals').AnimalKind;

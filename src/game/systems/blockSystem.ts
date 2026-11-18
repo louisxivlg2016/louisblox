@@ -142,7 +142,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   const actions = pendingActions ?? consumeActions();
   if (useGameStore.getState().mode !== 'play' || !hit) return;
   if ((actions.place > 0 || actions.harvest > 0) && isSign(hit.block.kind)) {
-    useSignStore.getState().openSign(hit, hit.block.text ?? '', hit.block.kind);
+    useSignStore.getState().openSign(hit, hit.block.text ?? '', hit.block.kind, hit.block.textSize);
     if (document.pointerLockElement) document.exitPointerLock();
     return;
   }

@@ -31,7 +31,7 @@ import {
 import { createMeatInventory } from './meats';
 import { clearPaintSplashAt, normalizePaintballCounts, normalizePaintballGun, restorePaintStrokes } from './paintball';
 import { useGameStore } from './store';
-import { BlockKind, isWaterBlock, voxelKey } from './voxel';
+import { BlockKind, cleanSignTextSize, DEFAULT_SIGN_TEXT_SIZE, isWaterBlock, voxelKey } from './voxel';
 import type { Voxel, VoxelHit } from './voxel';
 import { canEditAt, newProtection, useProtectionStore } from './protection';
 import type { WorldProtection } from './protection';
@@ -42,7 +42,7 @@ import { createCustomWorld, DEFAULT_WORLD_SOURCE, sanitizeCustomWorld } from './
 import { initTaming } from './taming';
 import { translate } from './language';
 
-export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean; waterlogged?: boolean; floodSource?: boolean } | null;
+export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; textSize?: number; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean; waterlogged?: boolean; floodSource?: boolean } | null;
 export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: VehicleKind };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
@@ -215,6 +215,7 @@ function blockEdit(block: Voxel): ChunkEdit {
   if (block.items !== undefined) edit.items = block.items;
   if (block.facing !== undefined) edit.facing = block.facing;
   if (block.text !== undefined) edit.text = block.text;
+  if (block.textSize !== undefined) edit.textSize = block.textSize;
   if (block.food !== undefined) edit.food = block.food;
   if (block.meat !== undefined) edit.meat = block.meat;
   if (block.protected === true) edit.protected = true;
@@ -223,12 +224,17 @@ function blockEdit(block: Voxel): ChunkEdit {
   return Object.keys(edit).length === 1 ? block.kind : edit;
 }
 
-export function setVoxelText(world: World, position: { x: number; y: number; z: number }, text: string) {
+export function setVoxelText(world: World, position: { x: number; y: number; z: number }, text: string, textSize?: number) {
   if (!canEditAt(position.x, position.z)) return false;
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(position.x, position.y, position.z));
   if (!block) return false;
   block.text = text.replace(/\r/g, '').slice(0, 120);
+  if (textSize !== undefined) {
+    const size = cleanSignTextSize(textSize);
+    if (size === DEFAULT_SIGN_TEXT_SIZE) delete block.textSize;
+    else block.textSize = size;
+  }
   const cx = chunkCoordinate(position.x);
   const cz = chunkCoordinate(position.z);
   editsFor(state, cx, cz).set(voxelKey(position.x, position.y, position.z), blockEdit(block));
@@ -287,7 +293,7 @@ export function loadChunk(world: World, cx: number, cz: number) {
       else {
         const [x, y, z] = position.split(',').map(Number);
         const data = typeof kind === 'number' ? { kind, open: false } : kind;
-        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing, text: typeof data.text === 'string' ? data.text.replace(/\r/g, '').slice(0, 120) : undefined, food: data.food, meat: data.meat, protected: data.protected, waterlogged: data.waterlogged, floodSource: data.floodSource });
+        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing, text: typeof data.text === 'string' ? data.text.replace(/\r/g, '').slice(0, 120) : undefined, textSize: data.textSize === undefined ? undefined : cleanSignTextSize(data.textSize), food: data.food, meat: data.meat, protected: data.protected, waterlogged: data.waterlogged, floodSource: data.floodSource });
       }
     }
   }
@@ -687,7 +693,7 @@ export function applyVoxelEdit(world: World, position: string, edit: ChunkEdit, 
     replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, data.kind, data.open, data.growth, data.items, data.facing, data.food, data.meat, data.protected, authoritative);
     if (hasWaterOpening(block) || block.waterlogged) setVoxelWaterlogged(world, block, data.waterlogged === true && hasWaterOpening(block), authoritative);
     if (isWaterBlock(data.kind) || block.waterlogged) setVoxelFloodSource(world, block, data.floodSource === true, authoritative);
-    if (typeof data.text === 'string') setVoxelText(world, { x, y, z }, data.text);
+    if (typeof data.text === 'string') setVoxelText(world, { x, y, z }, data.text, data.textSize);
   }
   if (isWaterBlock(data.kind)) clearPaintSplashAt(world, x, y, z);
 }
