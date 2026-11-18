@@ -32,6 +32,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   const riding = useGameStore((state) => state.riding);
   const ridingRole = useGameStore((state) => state.ridingRole);
   const walkingCabin = canWalkInVehicle(riding, ridingRole ?? 'driver');
+  const steering = Boolean(riding && ridingRole === 'driver' && !walkingCabin);
   const character = useCharacterStore((state) => state.character);
   const outfit = useCharacterStore((state) => state.outfit);
   const wig = useCharacterStore((state) => state.wig);
@@ -69,11 +70,11 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
     const swing = moving ? Math.sin(phase.current) * 0.85 : 0;
     const amount = Math.min(1, delta * 12);
     const fullHand = attachCharacterHand(bodyMesh.current, rightArm.current, hasFullCharacter(outfit, wig));
-    if (leftArm.current) leftArm.current.rotation.x += (swing - leftArm.current.rotation.x) * amount;
+    if (leftArm.current) leftArm.current.rotation.x += ((steering ? 1.05 : swing) - leftArm.current.rotation.x) * amount;
     if (rightArm.current && !fullHand) {
       const bite = eating ? Math.sin(Math.min(1, (performance.now() - eating.startedAt) / 850) * Math.PI) : 0;
       if (eating) rightArm.current.rotation.x = 1.25 + bite * 0.65;
-      else rightArm.current.rotation.x += ((waving ? Math.PI : -swing) - rightArm.current.rotation.x) * amount;
+      else rightArm.current.rotation.x += ((steering ? 1.05 : waving ? Math.PI : -swing) - rightArm.current.rotation.x) * amount;
       rightArm.current.rotation.z += ((waving ? Math.sin(phase.current) * 0.45 : 0) - rightArm.current.rotation.z) * amount;
     }
     if (leftLeg.current) leftLeg.current.rotation.x += (-swing - leftLeg.current.rotation.x) * amount;
@@ -148,7 +149,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
       </group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
-        <group name="held-item" visible={!eating && !preview && !sleeping && held !== 'parachute'} position={heldItemPosition(held, hasFullCharacter(outfit, wig))} scale={typeof held === 'number' ? 0.5 : typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
+        <group name="held-item" visible={!eating && !preview && !sleeping && !steering && held !== 'parachute'} position={heldItemPosition(held, hasFullCharacter(outfit, wig))} scale={typeof held === 'number' ? 0.5 : typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof held === 'number'
             ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : isStair(held) ? <StairModel kind={held} followPlayer /> : isSlab(held) ? <SlabModel kind={held} followPlayer /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
             : <ItemModel kind={held} flipWeapons={hasFullCharacter(outfit, wig)} />}
@@ -157,16 +158,16 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
       {eating && <group name="eating-food" position={[0, 1.72, -0.42]} scale={0.65}><ItemModel kind={eating.kind} /></group>}
       {riding && !walkingCabin || emote === 'sit' ? (
         <>
-          <group name="left-leg" visible={!hasFullCharacter(outfit, wig)} position={[-0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <group name="left-leg" visible={!hasFullCharacter(outfit, wig)} position={[-0.3, 0.78, 0]} rotation={[Math.PI / 2, 0, 0]}>
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
-            <group name="left-knee" position={[0, -0.72, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <group name="left-knee" position={[0, -0.72, 0]} rotation={[-Math.PI / 2, 0, 0]}>
               <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
               <PixelPart position={[0, -0.5, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
             </group>
           </group>
-          <group name="right-leg" visible={!hasFullCharacter(outfit, wig)} position={[0.3, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <group name="right-leg" visible={!hasFullCharacter(outfit, wig)} position={[0.3, 0.78, 0]} rotation={[Math.PI / 2, 0, 0]}>
             <PixelPart position={[0, -0.38, 0]} size={[0.23, 0.76, 0.27]} color={legs} />
-            <group name="right-knee" position={[0, -0.72, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <group name="right-knee" position={[0, -0.72, 0]} rotation={[-Math.PI / 2, 0, 0]}>
               <PixelPart position={[0, -0.25, 0]} size={[0.23, 0.5, 0.25]} color={legs} />
               <PixelPart position={[0, -0.5, -0.04]} size={[0.25, 0.14, 0.34]} color={armor ?? '#302b2b'} />
             </group>

@@ -91,8 +91,8 @@ export function seatOffset(kind: VehicleKind, role: SeatRole, seat = 0): [number
     const cabin = CABINS[kind]!;
     return role === 'driver' ? [-0.65, cabin.floor + 0.68, cabin.front + 1.1] : [0, cabin.floor + 0.55, cabin.rear - 1.2 - seat * 2];
   }
-  if (kind === 'jeep') return role === 'driver' ? [-0.58, 1.05, -0.05] : [0.58, 1.05, -0.05];
-  return role === 'driver' ? [-0.58, 0.65, -0.05] : [0.58, 1.05, -0.05];
+  if (kind === 'jeep') return role === 'driver' ? [-0.58, 1.05, -0.02] : [0.58, 1.05, -0.02];
+  return role === 'driver' ? [-0.58, 0.65, -0.02] : [0.58, 1.05, -0.02];
 }
 
 export function vehicleLocalPosition(vehicle: Entity, local: Vector3) {
@@ -262,18 +262,46 @@ function drivingInput() {
   };
 }
 
-function moveMount(world: World, position: Vector3, yaw: number, speed: number, dt: number, clearance = 1.55, motion?: { velocityY: number }) {
+function vehicleHalfExtents(kind: VehicleKind): [number, number] {
+  if (kind === 'train') return [0.9, 7.6];
+  if (kind === 'metro') return [1.05, 6.6];
+  if (kind === 'firetruck') return [1.35, 3.2];
+  if (kind === 'police') return [1.2, 2.5];
+  if (kind === 'carriage') return [1.2, 2.4];
+  if (kind === 'car') return [1.15, 2.35];
+  if (kind === 'jeep') return [1.15, 2.25];
+  return [0.9, 1.7];
+}
+
+function hitsVehicleWall(world: World, x: number, y: number, z: number, yaw: number, clearance: number, kind: VehicleKind) {
+  const blocks = getBlockIndex(world);
+  const [halfWidth, halfLength] = vehicleHalfExtents(kind);
+  const heights = [0.65];
+  for (let height = 1.5; height < clearance; height += 0.85) heights.push(height);
+  heights.push(clearance);
+  const cosine = Math.cos(yaw);
+  const sine = Math.sin(yaw);
+  for (const height of heights) {
+    for (const localX of [0, -halfWidth, halfWidth]) {
+      for (const localZ of [0, -halfLength, halfLength]) {
+        const pointX = x + localX * cosine + localZ * sine;
+        const pointZ = z - localX * sine + localZ * cosine;
+        const block = blocks.get(voxelKey(Math.round(pointX), Math.round(y + height), Math.round(pointZ)));
+        if (block && isCollidable(block) && !isRail(block.kind) && !isVehicleFoliage(block.kind)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function moveMount(world: World, position: Vector3, yaw: number, speed: number, dt: number, clearance = 1.55, motion?: { velocityY: number }, kind: VehicleKind = 'car') {
   const x = position.x - Math.sin(yaw) * speed * dt;
   const z = position.z - Math.cos(yaw) * speed * dt;
   const ground = groundAt(world, x, z, position.y + 0.05);
   if (ground > position.y + 1.01) return false;
   const velocityY = motion ? Math.max(-30, motion.velocityY - 24 * dt) : 0;
   const y = ground < position.y ? Math.max(ground, position.y + velocityY * dt) : ground;
-  const blocks = getBlockIndex(world);
-  for (const height of [0.65, clearance]) {
-    const block = blocks.get(voxelKey(Math.round(x), Math.round(y + height), Math.round(z)));
-    if (block && isCollidable(block) && !isRail(block.kind) && !isVehicleFoliage(block.kind)) return false;
-  }
+  if (hitsVehicleWall(world, x, y, z, yaw, clearance, kind)) return false;
   position.set(x, y, z);
   if (motion) motion.velocityY = y === ground ? 0 : velocityY;
   return true;
@@ -354,7 +382,8 @@ export function vehicleMovementSystem(world: World, dt: number) {
       else if (active && input.forward !== 0 && Math.abs(motion.speed) > 0.05) motion.yaw = turnToward(motion.yaw, state.yaw, dt * 1.4 * Math.sign(motion.speed || 1));
       const delta = Math.atan2(Math.sin(motion.yaw - previousYaw), Math.cos(motion.yaw - previousYaw));
       const steering = useVehicleSteeringStore.getState();
-      useVehicleSteeringStore.setState({ angle: turnToward(steering.angle, delta * 1.5, dt * 7) });
+      const target = Math.max(-1, Math.min(1, delta * 45)) * Math.PI * 0.65;
+      useVehicleSteeringStore.setState({ angle: turnToward(steering.angle, target, dt * 5) });
     } else {
       const steering = useVehicleSteeringStore.getState();
       useVehicleSteeringStore.setState({ angle: turnToward(steering.angle, 0, dt * 7) });
@@ -372,7 +401,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
       }
     } else if (vehicle.kind === 'boat') {
       if (motion.speed !== 0 && !moveBoat(world, position, motion.yaw, motion.speed, dt)) motion.speed = 0;
-    } else if ((motion.speed !== 0 || position.y > groundAt(world, position.x, position.z, position.y + 0.05) + 0.001) && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' || vehicle.kind === 'metro' ? 2.55 : vehicle.kind === 'car' ? 2.3 : vehicle.kind === 'firetruck' ? 3.5 : 1.55, motion)) {
+    } else if ((motion.speed !== 0 || position.y > groundAt(world, position.x, position.z, position.y + 0.05) + 0.001) && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' || vehicle.kind === 'metro' ? 2.55 : vehicle.kind === 'car' ? 2.3 : vehicle.kind === 'firetruck' ? 3.5 : 1.55, motion, vehicle.kind)) {
       motion.speed = 0;
     }
     if (vehicle.kind === 'train' || vehicle.kind === 'metro') {

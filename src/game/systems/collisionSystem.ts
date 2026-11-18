@@ -1,5 +1,5 @@
-import { isCrop, isDoor, isGrassPlate, isLadder, isRail, isSlab, isSmallTrapdoor, isStair, isTrapdoor, isUpsideDownStair } from '../extraBlocks';
-import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
+import { facingYaw, isCrop, isDoor, isGrassPlate, isLadder, isRail, isSign, isSlab, isSmallTrapdoor, isStair, isTrapdoor, isUpsideDownStair } from '../extraBlocks';
+import { BlockKind, cleanSignTextSize, DEFAULT_SIGN_TEXT_SIZE, isWaterBlock, voxelKey } from '../voxel';
 import type { Voxel } from '../voxel';
 import type { CabinDefinition } from '../vehicleTypes';
 
@@ -38,6 +38,22 @@ function smallTrapdoorCollides(block: Voxel, position: Vector, height: number) {
     && overlaps(position.y, position.y + height, block.y - 0.04, block.y + 0.04);
 }
 
+function signCollides(block: Voxel, position: Vector, height: number) {
+  const yaw = facingYaw(block.facing);
+  const cosine = Math.cos(yaw);
+  const sine = Math.sin(yaw);
+  const dx = position.x - block.x;
+  const dz = position.z - block.z;
+  const localX = dx * cosine - dz * sine;
+  const localZ = dx * sine + dz * cosine;
+  const scale = 0.6 * cleanSignTextSize(block.textSize) / DEFAULT_SIGN_TEXT_SIZE;
+  const halfWidth = Math.min(0.5, scale * 0.5);
+  const halfDepth = Math.min(0.09, scale * 0.06);
+  return overlaps(localX - RADIUS, localX + RADIUS, -halfWidth, halfWidth)
+    && overlaps(localZ - RADIUS, localZ + RADIUS, -halfDepth, halfDepth)
+    && overlaps(position.y, position.y + height, block.y - 0.5, block.y + 0.5);
+}
+
 function stairCollides(block: Voxel, position: Vector, height: number) {
   const xOverlap = overlaps(position.x - RADIUS, position.x + RADIUS, block.x - 0.5, block.x + 0.5);
   const zOverlap = overlaps(position.z - RADIUS, position.z + RADIUS, block.z - 0.5, block.z + 0.5);
@@ -68,6 +84,10 @@ function collides(blocks: ReadonlyMap<string, Voxel>, position: Vector, cabin?: 
       for (let z = minZ; z <= maxZ; z += 1) {
         const block = blocks.get(voxelKey(x, y, z));
         if (!isCollidable(block)) continue;
+        if (block && isSign(block.kind)) {
+          if (signCollides(block, position, height)) return true;
+          continue;
+        }
         if (block && isStair(block.kind)) {
           if (stairCollides(block, position, height)) return true;
           continue;

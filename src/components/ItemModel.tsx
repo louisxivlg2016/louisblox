@@ -247,7 +247,7 @@ export function CarModel({ color = '#d63935' }: { color?: string }) {
       <PixelPart position={[-0.5, 0.42, -1.57]} size={[0.34, 0.16, 0.04]} color="#fff0b3" />
       <PixelPart position={[0.5, 0.42, -1.57]} size={[0.34, 0.16, 0.04]} color="#fff0b3" />
       <PixelPart position={[0, 0.62, 0.3]} size={[0.46, 0.15, 0.5]} color="#4c3b35" />
-      <SteeringWheel position={[-0.35, 0.8, -0.48]} />
+      <SteeringWheel position={[blue ? 0.58 : -0.58, 1.03, -0.63]} />
       {blue && (
         <>
           <PixelPart position={[0, 1.25, 0.12]} size={[1.36, 0.12, 1.4]} color={color} />

@@ -199,14 +199,14 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   }
 
   if (actions.place > 0 || actions.harvest > 0) {
-    const replacingWater = isWaterBlock(hit.block.kind);
+    const kind = useGameStore.getState().selected;
+    const replacingWater = isWaterBlock(hit.block.kind) && kind !== BlockKind.Water;
     const x = hit.x + (replacingWater ? 0 : hit.normal.x);
     const y = hit.y + (replacingWater ? 0 : hit.normal.y);
     const z = hit.z + (replacingWater ? 0 : hit.normal.z);
     const inBounds = y >= MIN_WORLD_Y && y <= MAX_BUILD_Y;
 
     if (inBounds && (replacingWater || !blocks.has(voxelKey(x, y, z))) && !intersectsPlayer(x, y, z, player)) {
-      const kind = useGameStore.getState().selected;
       if (typeof kind !== 'number') return;
       if (isCeilingLight(kind) && hit.normal.y !== -1) {
         store.setNotice(translate('Cette lumière se fixe sous un plafond.', 'This light attaches to the underside of a ceiling.', 'Esta luz se fija debajo de un techo.'));

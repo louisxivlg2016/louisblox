@@ -228,8 +228,8 @@ function blockEdit(block: Voxel): ChunkEdit {
   return Object.keys(edit).length === 1 ? block.kind : edit;
 }
 
-export function setVoxelText(world: World, position: { x: number; y: number; z: number }, text: string, textSize?: number) {
-  if (!canEditAt(position.x, position.z)) return false;
+export function setVoxelText(world: World, position: { x: number; y: number; z: number }, text: string, textSize?: number, authoritative = false) {
+  if (!authoritative && !canEditAt(position.x, position.z)) return false;
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(position.x, position.y, position.z));
   if (!block) return false;
@@ -707,7 +707,7 @@ export function applyVoxelEdit(world: World, position: string, edit: ChunkEdit, 
     replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, data.kind, data.open, data.growth, data.items, data.facing, data.food, data.meat, data.protected, authoritative);
     if (hasWaterOpening(block) || block.waterlogged) setVoxelWaterlogged(world, block, data.waterlogged === true && hasWaterOpening(block), authoritative);
     if (isWaterBlock(data.kind) || block.waterlogged) setVoxelFloodSource(world, block, data.floodSource === true, authoritative);
-    if (typeof data.text === 'string') setVoxelText(world, { x, y, z }, data.text, data.textSize);
+    if (typeof data.text === 'string') setVoxelText(world, { x, y, z }, data.text, data.textSize ?? DEFAULT_SIGN_TEXT_SIZE, authoritative);
   }
   if (isWaterBlock(data.kind)) clearPaintSplashAt(world, x, y, z);
 }
