@@ -4,7 +4,7 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel, setVoxelFloodSource } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isBed, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, signFacing } from '../extraBlocks';
+import { isBed, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, signFacing, slabSource } from '../extraBlocks';
 import { useSignStore } from '../signs';
 import { startSleep } from './sleepSystem';
 import { openChest, openFurnace } from '../containers';
@@ -226,6 +226,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         store.setNotice(translate(`${cropDefinition(kind).name} planté. La récolte sera prête dans 24 secondes.`, `${cropDefinition(kind).name} planted. The crop will be ready in 24 seconds.`));
         return;
       }
+      const uprightGlassSlab = isSlab(kind) && isGlass(slabSource(kind) ?? kind);
       const extendingWallSlab = isSlab(kind) && isSlab(hit.block.kind) && hit.block.growth === 2 && hit.normal.y !== 0;
       const facing = extendingWallSlab ? hit.block.facing
         : isLadder(kind) || isSlab(kind)
@@ -235,7 +236,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
           : kind === BlockKind.TrafficLight
             ? Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'south' : 'north'
             : Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
-      const orientation = isSlab(kind) ? extendingWallSlab ? 2 : hit.normal.y === -1 ? 1 : hit.normal.y === 0 ? 2 : 0 : isStair(kind) && hit.normal.y === -1 ? 1 : undefined;
+      const orientation = isSlab(kind) ? uprightGlassSlab || extendingWallSlab ? 2 : hit.normal.y === -1 ? 1 : hit.normal.y === 0 ? 2 : 0 : isStair(kind) && hit.normal.y === -1 ? 1 : undefined;
       const placed = addVoxel(world, x, y, z, kind, orientation, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || isSlab(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
       if (placed) playSound('placeBlock', 0.45);
       if (placed && kind === BlockKind.Water) setVoxelFloodSource(world, placed, true);
