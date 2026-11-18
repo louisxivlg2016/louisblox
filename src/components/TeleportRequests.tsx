@@ -81,21 +81,6 @@ export function TeleportPanel() {
         <strong>{translate('Se téléporter', 'Teleport')}</strong>
         <button type="button" className="teleport-close" onPointerDown={(event) => { if (event.pointerType === 'touch') { event.preventDefault(); event.stopPropagation(); close(); } }} onClick={close} aria-label={translate('Fermer la téléportation', 'Close teleportation')}>{translate('Fermer', 'Close')} <span aria-hidden="true">×</span></button>
       </div>
-      {cityDestinations ? cityDestinations.map((destination) => (
-        <button key={destination.name} onClick={() => travelToCity(destination)}>{destination.name}</button>
-      )) : <>
-        {DESTINATIONS.map((biome) => (
-          <button key={biome} onClick={() => travel(biome)}>{BIOME_NAMES()[biome]}</button>
-        ))}
-        {RUINS.map((ruin) => (
-          <button key={ruin.type} onClick={() => travelToRuin(ruin.type)}>{ruin.name}</button>
-        ))}
-      </>}
-      <div className="home-destinations">
-        <strong>Mes maisons ({homes.length} / {MAX_HOMES})</strong>
-        {homes.map((home) => <button key={home.id} className="home-destination" onClick={() => travelHome(home)}>{home.name}</button>)}
-        <button className="home-manage-button" onClick={manageHomes}>{translate('Créer ou gérer mes maisons · M', 'Create or manage my homes · M')}</button>
-      </div>
       {enabled && online && (
         <div className="player-teleport">
           <strong>{translate('Demander à rejoindre un joueur', 'Ask to join a player')}</strong>
@@ -114,6 +99,21 @@ export function TeleportPanel() {
           {notice && <span className="teleport-request-status" role="status">{notice}</span>}
         </div>
       )}
+      {cityDestinations ? cityDestinations.map((destination) => (
+        <button key={destination.name} onClick={() => travelToCity(destination)}>{destination.name}</button>
+      )) : <>
+        {DESTINATIONS.map((biome) => (
+          <button key={biome} onClick={() => travel(biome)}>{BIOME_NAMES()[biome]}</button>
+        ))}
+        {RUINS.map((ruin) => (
+          <button key={ruin.type} onClick={() => travelToRuin(ruin.type)}>{ruin.name}</button>
+        ))}
+      </>}
+      <div className="home-destinations">
+        <strong>Mes maisons ({homes.length} / {MAX_HOMES})</strong>
+        {homes.map((home) => <button key={home.id} className="home-destination" onClick={() => travelHome(home)}>{home.name}</button>)}
+        <button className="home-manage-button" onClick={manageHomes}>{translate('Créer ou gérer mes maisons · M', 'Create or manage my homes · M')}</button>
+      </div>
       <button type="button" className="teleport-exit" onPointerDown={(event) => { if (event.pointerType === 'touch') { event.preventDefault(); event.stopPropagation(); close(); } }} onClick={close} aria-label={translate('Quitter la téléportation', 'Exit teleportation')}>{translate('Quitter la téléportation', 'Exit teleportation')} <span aria-hidden="true">×</span></button>
     </div>
   );

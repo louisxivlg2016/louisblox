@@ -434,6 +434,8 @@ export class GameRoom extends DurableObject<Env> {
     if (protection?.ownerId === playerId) return true;
     if (protection?.bannedPlayerIds?.includes(playerId)) return false;
     if (!protection?.enabled || Math.hypot(x - protection.centerX, z - protection.centerZ) > protection.radius) return true;
+    if (action === 'break' && protection.canBreak !== true) return false;
+    if (action === 'place' && protection.canPlace !== true) return false;
     if (protection.allowedPlayerIds.includes(playerId)) return true;
     if (action === 'break') return protection.canBreak === true;
     if (action === 'place') {
@@ -803,6 +805,15 @@ export class GameRoom extends DurableObject<Env> {
     await this.ensureWorld();
     if (typeof type === 'string' && type.startsWith('tribe-')) {
       await this.handleTribeMessage(ws, this.attachment(ws), type, data as Record<string, unknown>);
+      return;
+    }
+    if (type === 'leave') {
+      const attachment = this.attachment(ws);
+      if (attachment) {
+        this.removePresence(attachment);
+        this.publishWorld();
+        this.broadcast({ type: 'leave', playerId: attachment.playerId }, ws);
+      }
       return;
     }
     if (type === 'presence') {

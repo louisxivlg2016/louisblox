@@ -811,6 +811,11 @@ export function MultiplayerConnection() {
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 
+    const sendLeave = () => {
+      const current = socket.current;
+      if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify({ type: 'leave' }));
+    };
+    window.addEventListener('pagehide', sendLeave);
     connect();
     return () => {
       disposed = true;
@@ -822,6 +827,8 @@ export function MultiplayerConnection() {
       unsubscribeProjectiles();
       unsubscribeDroppedItems();
       setDroppedItemSocket(null);
+      window.removeEventListener('pagehide', sendLeave);
+      sendLeave();
       const current = socket.current;
       socket.current = null;
       setProtectionSocket(null);
