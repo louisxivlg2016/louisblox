@@ -38,7 +38,6 @@ export function App() {
             const { gl, camera } = r3f;
             gl.domElement.addEventListener('webglcontextlost', (event) => {
               event.preventDefault();
-              window.setTimeout(() => window.location.reload(), 250);
             });
             if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') Object.assign(window, {
               louisbloxRenderer: gl,
