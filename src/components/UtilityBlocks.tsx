@@ -10,6 +10,8 @@ import { wallMount } from '../game/wallMount';
 import { ParisStreetSignModel } from './ParisStreetSign';
 
 const fire = new MeshBasicMaterial({ color: '#ff9a32' });
+const lanternGlow = new MeshBasicMaterial({ color: '#ffd47a' });
+const modernLightGlow = new MeshBasicMaterial({ color: '#e6f8ff' });
 
 export function FurnaceModel() {
   return (
@@ -106,8 +108,40 @@ export function TrafficLightModel() {
   );
 }
 
+export function LanternModel({ withLight = true }: { withLight?: boolean }) {
+  return (
+    <group name="ceiling-lantern">
+      <PixelPart position={[0, 0.87, 0]} size={[0.08, 0.26, 0.08]} color="#4b4640" />
+      <PixelPart position={[0, 0.73, 0]} size={[0.54, 0.08, 0.54]} color="#62594b" />
+      <PixelPart position={[0, 0.67, 0]} size={[0.44, 0.07, 0.44]} color="#3f3c37" />
+      <mesh name="lantern-glow" position={[0, 0.42, 0]} material={lanternGlow}>
+        <boxGeometry args={[0.34, 0.43, 0.34]} />
+      </mesh>
+      {[-0.22, 0.22].flatMap((x) => [-0.22, 0.22].map((z) => (
+        <PixelPart key={`${x},${z}`} position={[x, 0.42, z]} size={[0.06, 0.49, 0.06]} color="#393a37" />
+      )))}
+      <PixelPart position={[0, 0.17, 0]} size={[0.54, 0.09, 0.54]} color="#62594b" />
+      <PixelPart position={[0, 0.1, 0]} size={[0.38, 0.06, 0.38]} color="#3f3c37" />
+      {withLight && <pointLight name="lantern-light" position={[0, 0.4, 0]} color="#ffc56e" intensity={2.4} distance={12} decay={2} />}
+    </group>
+  );
+}
+
+export function ModernCeilingLightModel({ withLight = true }: { withLight?: boolean }) {
+  return (
+    <group name="modern-ceiling-light">
+      <PixelPart position={[0, 0.96, 0]} size={[0.9, 0.08, 0.9]} color="#c7d1d8" />
+      <PixelPart position={[0, 0.905, 0]} size={[0.8, 0.05, 0.8]} color="#f0f4f5" />
+      <mesh name="modern-ceiling-light-panel" position={[0, 0.87, 0]} material={modernLightGlow}>
+        <boxGeometry args={[0.68, 0.035, 0.68]} />
+      </mesh>
+      {withLight && <pointLight name="modern-ceiling-light-source" position={[0, 0.68, 0]} color="#dff5ff" intensity={3} distance={14} decay={2} />}
+    </group>
+  );
+}
+
 export function UtilityBlockModel({ kind, withLight = true, held = false, wallMounted = false }: { kind: BlockKind; withLight?: boolean; held?: boolean; wallMounted?: boolean }) {
-  return kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel held={held} /> : isTrafficSign(kind) ? <Suspense fallback={null}><TrafficSignModel kind={kind} held={held} wallMounted={wallMounted} /></Suspense> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
+  return kind === BlockKind.Lantern ? <LanternModel withLight={withLight} /> : kind === BlockKind.ModernCeilingLight ? <ModernCeilingLightModel withLight={withLight} /> : kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel held={held} /> : isTrafficSign(kind) ? <Suspense fallback={null}><TrafficSignModel kind={kind} held={held} wallMounted={wallMounted} /></Suspense> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
 }
 
 export function UtilityBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIndex: ReadonlyMap<string, Voxel> }) {

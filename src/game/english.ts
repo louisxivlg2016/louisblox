@@ -25,7 +25,7 @@ const names: Record<string, string> = {
   'Planches de sapin': 'Pine Planks', 'Planches d’arbre d’automne': 'Autumn Wood Planks', 'Graines de maïs': 'Corn Seeds', 'Graines de blé': 'Wheat Seeds',
   'Graines de tomate': 'Tomato Seeds', 'Graines de carotte': 'Carrot Seeds', 'Graines de pastèque': 'Watermelon Seeds', Four: 'Furnace', Coffre: 'Chest', Échelle: 'Ladder',
   'Feu de camp': 'Campfire', 'Feu rouge destructeur': 'Destructive Red Fire', 'Rail de train': 'Train Rail', 'Panneau à écrire': 'Writable Sign', 'Feu rouge de circulation': 'Traffic Light',
-  'Lampadaire moderne': 'Modern Street Lamp', 'Lampadaire parisien': 'Parisian Street Lamp', 'Panneau STOP': 'Stop Sign', 'Cédez le passage': 'Yield', 'Sens interdit': 'No Entry',
+  'Lampadaire moderne': 'Modern Street Lamp', 'Lampadaire parisien': 'Parisian Street Lamp', 'Lanterne de plafond': 'Ceiling Lantern', 'Lumière moderne de plafond': 'Modern Ceiling Light', 'Panneau STOP': 'Stop Sign', 'Cédez le passage': 'Yield', 'Sens interdit': 'No Entry',
   'Sens unique': 'One Way', 'Limitation 50': 'Speed Limit 50', 'Passage piéton': 'Pedestrian Crossing', École: 'School', Parking: 'Parking', 'Direction tout droit': 'Straight Ahead',
   Danger: 'Danger', Giratoire: 'Roundabout', 'Route prioritaire': 'Priority Road', 'Plaque de rue parisienne': 'Parisian Street Sign',
 };

@@ -52,6 +52,8 @@ function blockRecipe(kind: BlockKind): Recipe | null {
   if (kind === BlockKind.Ladder) return recipe(kind, 2, [['stick', 3]]);
   if (kind === BlockKind.Rail) return recipe(kind, 4, [[BlockKind.IronOre, 2], ['stick', 1]]);
   if (kind === BlockKind.Candle) return recipe(kind, 1, [[BlockKind.CoalOre, 1], ['stick', 1]]);
+  if (kind === BlockKind.Lantern) return recipe(kind, 1, [[BlockKind.IronOre, 2], [BlockKind.Candle, 1]]);
+  if (kind === BlockKind.ModernCeilingLight) return recipe(kind, 1, [[BlockKind.IronOre, 2], [BlockKind.Glass, 1], [BlockKind.CoalOre, 1]]);
   if (kind === BlockKind.Tnt) return recipe(kind, 1, [[BlockKind.CoalOre, 2], [BlockKind.Sand, 3]]);
   if (kind === BlockKind.Campfire) return recipe(kind, 1, [[BlockKind.Wood, 2], [BlockKind.CoalOre, 1]]);
   if (kind === BlockKind.Wildfire) return recipe(kind, 1, [[BlockKind.CoalOre, 2], [BlockKind.Wood, 1]]);

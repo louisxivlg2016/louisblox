@@ -4,7 +4,7 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel, setVoxelFloodSource } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isBed, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, signFacing, slabSource } from '../extraBlocks';
+import { isBed, isCeilingLight, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, signFacing, slabSource } from '../extraBlocks';
 import { useSignStore } from '../signs';
 import { startSleep } from './sleepSystem';
 import { openChest, openFurnace } from '../containers';
@@ -208,6 +208,10 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     if (inBounds && (replacingWater || !blocks.has(voxelKey(x, y, z))) && !intersectsPlayer(x, y, z, player)) {
       const kind = useGameStore.getState().selected;
       if (typeof kind !== 'number') return;
+      if (isCeilingLight(kind) && hit.normal.y !== -1) {
+        store.setNotice(translate('Cette lumière se fixe sous un plafond.', 'This light attaches to the underside of a ceiling.', 'Esta luz se fija debajo de un techo.'));
+        return;
+      }
       if (!hasInventory(kind, store)) {
         store.setNotice(translate('Récolte ou fabrique ce bloc avant de le poser.', 'Gather or craft this block before placing it.'));
         return;

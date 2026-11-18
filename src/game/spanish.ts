@@ -499,6 +499,8 @@ export const SPANISH_STRINGS: Record<string, string> = {
   "Monkey": "Mono",
   "Multiplayer": "Multijugador",
   "Modern Street Lamp": "Lámpara de calle moderna",
+  "Ceiling Lantern": "Linterna de techo",
+  "Modern Ceiling Light": "Luz moderna de techo",
   "Mutton": "Carne de cordero",
   "Move once before creating the home.": "Muévase una vez antes de crear la casa.",
   "Modern city with villas and glass buildings": "Ciudad moderna con villas y edificios de cristal.",
