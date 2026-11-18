@@ -31,7 +31,7 @@ export function DoorInstances({ blocks }: { blocks: Voxel[] }) {
           <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y + 0.49, block.z]} rotation={[0, facing, 0]}>
             <group position={[-0.47, 0, 0]} rotation={[0, block.open ? -Math.PI / 2 : 0, 0]}>
               <group position={[0.47, 0, 0]}>
-                <PixelPart position={[0, 0, 0]} size={[0.92, 1.96, 0.14]} color={color} />
+                <PixelPart position={[0, 0, 0]} size={[1, 1.96, 0.14]} color={color} />
                 <PixelPart position={[0, 0.45, -0.08]} size={[0.6, 0.49, 0.035]} color={color} />
                 <PixelPart position={[0, -0.36, -0.08]} size={[0.6, 0.49, 0.035]} color={color} />
                 <PixelPart position={[0, 0.45, 0.08]} size={[0.6, 0.49, 0.035]} color={color} />
