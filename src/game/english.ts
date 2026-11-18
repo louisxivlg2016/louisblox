@@ -17,7 +17,7 @@ const names: Record<string, string> = {
   Herbe: 'Grass', Terre: 'Dirt', Pierre: 'Stone', Sable: 'Sand', Bois: 'Wood', Feuilles: 'Leaves', 'Aiguilles de sapin': 'Pine Needles', Neige: 'Snow', Cactus: 'Cactus',
   'Feuilles d’automne': 'Autumn Leaves', 'Herbe dorée': 'Golden Grass', 'Herbe forestière': 'Forest Grass', 'Herbe de jungle': 'Jungle Grass', 'Feuilles tropicales': 'Tropical Leaves', 'Liane de jungle': 'Jungle Vine',
   Charbon: 'Coal', Fer: 'Iron', Or: 'Gold', Diamant: 'Diamond', Glace: 'Ice', 'Bombe TNT': 'TNT Bomb', Bougie: 'Candle', 'Eau innondation': 'Flooding Water',
-  'Eau calme (sans inondation)': 'Calm Water (No Flooding)', Nourriture: 'Food', 'Brique beige': 'Beige Brick', 'Brique blanche': 'White Brick', 'Brique grise': 'Gray Brick', Verre: 'Glass',
+  'Eau calme (sans inondation)': 'Calm Water (No Flooding)', Nourriture: 'Food', 'Brique beige': 'Beige Brick', 'Brique blanche': 'White Brick', 'Brique grise': 'Gray Brick', 'Brique rouge': 'Red Brick', Verre: 'Glass',
   'Béton blanc': 'White Concrete', 'Béton orange': 'Orange Concrete', 'Béton magenta': 'Magenta Concrete', 'Béton bleu clair': 'Light Blue Concrete', 'Béton jaune': 'Yellow Concrete',
   'Béton lime': 'Lime Concrete', 'Béton rose': 'Pink Concrete', 'Béton gris': 'Gray Concrete', 'Béton gris clair': 'Light Gray Concrete', 'Béton cyan': 'Cyan Concrete',
   'Béton violet': 'Purple Concrete', 'Béton bleu': 'Blue Concrete', 'Béton marron': 'Brown Concrete', 'Béton vert': 'Green Concrete', 'Béton rouge': 'Red Concrete', 'Béton noir': 'Black Concrete',

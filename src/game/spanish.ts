@@ -657,6 +657,7 @@ export const SPANISH_STRINGS: Record<string, string> = {
   "Red": "Rojo",
   "Recenter": "Recentrar",
   "Red Concrete": "Hormigón rojo",
+  "Red Brick": "Ladrillo rojo",
   "Regeneration": "Regeneración",
   "Race finished": "Carrera terminada",
   "Purple Night": "Noche Púrpura",

@@ -265,7 +265,7 @@ function drivingInput() {
 function moveMount(world: World, position: Vector3, yaw: number, speed: number, dt: number, clearance = 1.55, motion?: { velocityY: number }) {
   const x = position.x - Math.sin(yaw) * speed * dt;
   const z = position.z - Math.cos(yaw) * speed * dt;
-  const ground = groundAt(world, x, z, MAX_BUILD_Y);
+  const ground = groundAt(world, x, z, position.y + 0.05);
   if (ground > position.y + 1.01) return false;
   const velocityY = motion ? Math.max(-30, motion.velocityY - 24 * dt) : 0;
   const y = ground < position.y ? Math.max(ground, position.y + velocityY * dt) : ground;
@@ -372,7 +372,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
       }
     } else if (vehicle.kind === 'boat') {
       if (motion.speed !== 0 && !moveBoat(world, position, motion.yaw, motion.speed, dt)) motion.speed = 0;
-    } else if ((motion.speed !== 0 || position.y > groundAt(world, position.x, position.z, MAX_BUILD_Y) + 0.001) && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' || vehicle.kind === 'metro' ? 2.55 : vehicle.kind === 'car' ? 2.3 : vehicle.kind === 'firetruck' ? 3.5 : 1.55, motion)) {
+    } else if ((motion.speed !== 0 || position.y > groundAt(world, position.x, position.z, position.y + 0.05) + 0.001) && !moveMount(world, position, motion.yaw, motion.speed, dt, vehicle.kind === 'train' || vehicle.kind === 'metro' ? 2.55 : vehicle.kind === 'car' ? 2.3 : vehicle.kind === 'firetruck' ? 3.5 : 1.55, motion)) {
       motion.speed = 0;
     }
     if (vehicle.kind === 'train' || vehicle.kind === 'metro') {

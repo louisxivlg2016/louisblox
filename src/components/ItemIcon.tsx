@@ -61,7 +61,7 @@ const trafficSignLabels: Partial<Record<BlockKind, { label: string; className?: 
 function blockIcon(kind: BlockKind) {
   const cached = iconCache.get(kind);
   if (cached) return cached;
-  const source = kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick ? brickTexture(kind) : texture(kind, 'side');
+  const source = kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick || kind === BlockKind.RedBrick ? brickTexture(kind) : texture(kind, 'side');
   const url = source.image.toDataURL();
   iconCache.set(kind, url);
   return url;
@@ -95,7 +95,7 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
       return <img className="block-swatch block-icon" style={{ objectFit: 'cover', transform: 'scaleY(0.35)' }} src={blockIcon(source)} alt="" />;
     }
     if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) return <span className="block-swatch block-concrete" style={{ backgroundColor: info.color }} />;
-    const brick = kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick;
+    const brick = kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick || kind === BlockKind.RedBrick;
     return <img className={`block-swatch block-icon${brick ? ' block-icon-smooth' : ''}`} src={blockIcon(kind)} alt="" />;
   }
   const meta = getItemMeta(kind);

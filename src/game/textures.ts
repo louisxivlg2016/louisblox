@@ -79,7 +79,7 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
 
   if (kind === BlockKind.Tnt) paintTnt(context, face);
 
-  if (kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick) {
+  if (kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick || kind === BlockKind.GrayBrick || kind === BlockKind.RedBrick) {
     paintBricks(context, kind);
   }
 
@@ -254,6 +254,7 @@ function paintBricks(context: CanvasRenderingContext2D, kind: BlockKind) {
     [BlockKind.WhiteBrick]: { base: '#dedecd', alternate: '#d6d7c4', mortar: '#919487' },
     [BlockKind.BeigeBrick]: { base: '#c5b183', alternate: '#bda879', mortar: '#82704f' },
     [BlockKind.GrayBrick]: { base: '#85888a', alternate: '#7c8083', mortar: '#45494d' },
+    [BlockKind.RedBrick]: { base: '#b83c32', alternate: '#a9322c', mortar: '#672b28' },
   };
   const style = styles[kind];
   const size = context.canvas.width;
@@ -303,7 +304,7 @@ function material(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   if (kind === BlockKind.BeigeBrick || kind === BlockKind.WhiteBrick) {
     return new MeshBasicMaterial({ map: brickTexture(kind) });
   }
-  if (kind === BlockKind.GrayBrick) {
+  if (kind === BlockKind.GrayBrick || kind === BlockKind.RedBrick) {
     return new MeshLambertMaterial({ map: brickTexture(kind) });
   }
   if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) {

@@ -192,7 +192,7 @@ export function miningSpeed(selection: SelectedKind, block: BlockKind) {
   const material = isStair(block) ? stairSource(block) as BlockKind : isSlab(block) ? slabSource(block) as BlockKind : block;
   const hardBlock = material === BlockKind.Stone || material === BlockKind.CoalOre || material === BlockKind.IronOre
     || material === BlockKind.GoldOre || material === BlockKind.DiamondOre || material === BlockKind.Ice
-    || (material >= BlockKind.BeigeBrick && material <= BlockKind.ConcreteBlack);
+    || (material >= BlockKind.BeigeBrick && material <= BlockKind.ConcreteBlack) || material === BlockKind.RedBrick;
   const softBlock = material === BlockKind.Grass || material === BlockKind.Dirt || material === BlockKind.Sand
     || material === BlockKind.Snow || material === BlockKind.AutumnGrass || material === BlockKind.ForestGrass || material === BlockKind.JungleGrass;
   const woodBlock = isWoodBlock(block);

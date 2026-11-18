@@ -40,6 +40,7 @@ function blockRecipe(kind: BlockKind): Recipe | null {
   }
   if (kind >= BlockKind.Bed && kind <= BlockKind.BedBlack) return recipe(kind, 1, [[BlockKind.OakPlanks, 3], [BlockKind.Leaves, 2]]);
   if (kind >= BlockKind.BeigeBrick && kind <= BlockKind.GrayBrick) return recipe(kind, 1, [[BlockKind.Stone, 3]]);
+  if (kind === BlockKind.RedBrick) return recipe(kind, 1, [[BlockKind.Stone, 3], [BlockKind.ConcreteRed, 1]]);
   if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) return recipe(kind, 1, [[BlockKind.Stone, 2], [BlockKind.Sand, 1]]);
   if (isGlass(kind)) {
     if (kind === BlockKind.Glass) return recipe(kind, 1, [[BlockKind.Sand, 2], [BlockKind.CoalOre, 1]]);

@@ -93,7 +93,7 @@ function tileUV(key: string, mirrorU = false, mirrorV = false) {
 }
 
 function isBrick(kind: BlockKind) {
-  return kind >= BlockKind.BeigeBrick && kind <= BlockKind.GrayBrick;
+  return kind >= BlockKind.BeigeBrick && kind <= BlockKind.GrayBrick || kind === BlockKind.RedBrick;
 }
 
 function groupFor(kind: BlockKind) {
@@ -249,7 +249,7 @@ function brickMaterial(kind: BlockKind) {
   let material = brickMaterials.get(kind);
   if (!material) {
     const map = brickTexture(kind);
-    material = kind === BlockKind.GrayBrick
+    material = kind === BlockKind.GrayBrick || kind === BlockKind.RedBrick
       ? new MeshLambertMaterial({ map, vertexColors: true })
       : new MeshBasicMaterial({ map, vertexColors: true });
     brickMaterials.set(kind, material);

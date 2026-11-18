@@ -2,7 +2,7 @@ import type { World } from 'koota';
 import { Euler, PerspectiveCamera, Vector3 } from 'three';
 import type { Camera } from 'three';
 import { Color, FogExp2, Scene } from 'three';
-import { isWaterBlock, voxelKey } from '../voxel';
+import { isWaterBlock, raycastVoxel, voxelKey } from '../voxel';
 import { useGameStore } from '../store';
 import { useEmoteStore } from '../emotes';
 import { turnToward } from '../rotation';
@@ -20,6 +20,7 @@ const sleepBlends = new WeakMap<World, number>();
 const flightBlends = new WeakMap<World, number>();
 const sleepCameraPosition = new Vector3();
 const cameraTarget = new Vector3();
+const cameraOffset = new Vector3();
 
 function moveCameraOutOfSolidBlocks(world: World, camera: Camera) {
   const blocks = getBlockIndex(world);
@@ -86,8 +87,8 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const center = mount?.vehicle?.get(VehiclePosition) ?? position;
   const distance = mount?.kind && !isAnimalMount(mount.kind) ? vehicleViewDistance(mount.kind) : 3;
   const exteriorPlane = mount?.kind === 'plane' && cameraMode !== 'first';
-  const height = exteriorPlane ? 22 : Math.max(0.8, Math.min(6, (cameraMode === 'third' ? 4.2 : 1.8) - Math.sin(state.pitch) * 1.5));
-  const targetHeight = exteriorPlane ? 14 : cameraMode === 'third' ? 0.55 : 0.4;
+  const height = exteriorPlane ? 22 : Math.max(0.8, Math.min(6, (cameraMode === 'third' ? 2.35 : 2.05) - Math.sin(state.pitch) * 1.5));
+  const targetHeight = exteriorPlane ? 14 : cameraMode === 'third' ? 0.95 : 0.9;
   if (camera instanceof PerspectiveCamera && camera.far !== (exteriorPlane ? 500 : 130)) {
     camera.far = exteriorPlane ? 500 : 130;
     if ('updateProjectionMatrix' in camera) camera.updateProjectionMatrix();
@@ -105,8 +106,15 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
         for (let dx = -1; dx <= 1; dx += 1) for (let dz = -1; dz <= 1; dz += 1) loadChunk(world, planeChunkX + dx, planeChunkZ + dz);
       }
     }
-    camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z) + 0.35);
+    camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z, center.y + 0.2) + 0.35);
     cameraTarget.set(center.x, center.y + targetHeight, center.z);
+    cameraOffset.copy(camera.position).sub(cameraTarget);
+    const rayDistance = cameraOffset.length();
+    if (rayDistance > 0.001) {
+      cameraOffset.divideScalar(rayDistance);
+      const hit = raycastVoxel(getBlockIndex(world), cameraTarget, cameraOffset, rayDistance);
+      if (hit) camera.position.copy(cameraTarget).addScaledVector(cameraOffset, Math.max(0.15, hit.distance - 0.25));
+    }
     camera.lookAt(cameraTarget);
   } else {
     releaseCameraChunk(world);
@@ -118,7 +126,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
       camera.position.z -= Math.cos(state.yaw) * 0.65;
     } else if (mount?.kind === 'plane') camera.position.y += 1;
     else camera.position.y += mount?.vehicle && !isAnimalMount(mount.kind) ? mount.kind === 'car' ? 0.65 : 0.55 : 1.62;
-    if (mounted && !walkingCabin) camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z) + 0.2);
+    if (mounted && !walkingCabin) camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z, center.y + 0.2) + 0.2);
     moveCameraOutOfSolidBlocks(world, camera);
     rotation.set(state.pitch, state.yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(rotation);

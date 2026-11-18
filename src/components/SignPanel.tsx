@@ -41,7 +41,7 @@ export function SignPanel() {
           <label className="book-field">
             {translate('Taille de l’écriture', 'Text size', 'Tamaño del texto')}
             <select aria-label={translate('Taille de l’écriture', 'Text size', 'Tamaño del texto')} value={textSize} onChange={(event) => setTextSize(Number(event.target.value))}>
-              {SIGN_TEXT_SIZES.map((size) => <option key={size} value={size}>{size === 15 ? translate('Petit', 'Small', 'Pequeño') : size === 30 ? translate('Grand', 'Large', 'Grande') : 'Normal'}</option>)}
+              {SIGN_TEXT_SIZES.map((size) => <option key={size} value={size}>{size === 15 ? translate('Petit', 'Small', 'Pequeño') : size === 30 ? translate('Grand', 'Large', 'Grande') : size === 60 ? translate('Très grand', 'Very large', 'Muy grande') : 'Normal'}</option>)}
             </select>
           </label>
           <label className="book-field">

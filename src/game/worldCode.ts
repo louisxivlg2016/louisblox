@@ -63,7 +63,7 @@ export type EditorBlockCategory = { id: string; name: string; kinds: BlockKind[]
 export const EDITOR_BLOCK_CATEGORIES: EditorBlockCategory[] = [
   { id: 'nature', name: 'Terrain and ores', kinds: [BlockKind.Grass, BlockKind.ForestGrass, BlockKind.AutumnGrass, BlockKind.JungleGrass, BlockKind.Dirt, BlockKind.Stone, BlockKind.Sand, BlockKind.Snow, BlockKind.Bedrock, BlockKind.CoalOre, BlockKind.IronOre, BlockKind.GoldOre, BlockKind.DiamondOre] },
   { id: 'plants', name: 'Trees and crops', kinds: [BlockKind.Wood, BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple, BlockKind.Cactus, BlockKind.OakSapling, BlockKind.PineSapling, BlockKind.AutumnSapling, BlockKind.Corn, BlockKind.Wheat, BlockKind.Tomato, BlockKind.Carrot, BlockKind.Watermelon] },
-  { id: 'wood', name: translate('Bois et briques', 'Wood and bricks'), kinds: [BlockKind.OakPlanks, BlockKind.PinePlanks, BlockKind.AutumnPlanks, BlockKind.BeigeBrick, BlockKind.WhiteBrick, BlockKind.GrayBrick] },
+  { id: 'wood', name: translate('Bois et briques', 'Wood and bricks'), kinds: [BlockKind.OakPlanks, BlockKind.PinePlanks, BlockKind.AutumnPlanks, BlockKind.BeigeBrick, BlockKind.WhiteBrick, BlockKind.GrayBrick, BlockKind.RedBrick] },
   { id: 'concrete', name: translate('Béton', 'Concrete'), kinds: Array.from({ length: 16 }, (_, index) => (BlockKind.ConcreteWhite + index) as BlockKind) },
   { id: 'stairs', name: 'Stairs', kinds: Array.from({ length: 34 }, (_, index) => (BlockKind.StairOak + index) as BlockKind) },
   { id: 'slabs', name: translate('Plaques', 'Slabs'), kinds: Array.from({ length: 51 }, (_, index) => (BlockKind.SlabOak + index) as BlockKind) },

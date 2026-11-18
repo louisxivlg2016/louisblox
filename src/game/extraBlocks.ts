@@ -212,6 +212,7 @@ export const EXTRA_BLOCKS = {
   TrapdoorCopperSmall: 237,
   Lantern: 238,
   ModernCeilingLight: 239,
+  RedBrick: 240,
 } as const;
 
 export const PARIS_STREET_SIGN_TEXT = '4th arrondissement\nPeace Street';
@@ -315,6 +316,7 @@ const BASE_EXTRA_BLOCK_META: Record<number, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.BeigeBrick]: block('Brique beige', '#c8a77a', 2.2),
   [EXTRA_BLOCKS.WhiteBrick]: block('Brique blanche', '#e4e4df', 2.2),
   [EXTRA_BLOCKS.GrayBrick]: block('Brique grise', '#85898c', 2.2),
+  [EXTRA_BLOCKS.RedBrick]: block('Brique rouge', '#b83c32', 2.2),
   [EXTRA_BLOCKS.Glass]: block('Verre', '#bfe8f2', 0.35),
   [EXTRA_BLOCKS.ConcreteWhite]: block('Béton blanc', '#d8dedc', 2.4),
   [EXTRA_BLOCKS.ConcreteOrange]: block('Béton orange', '#e88422', 2.4),

@@ -3,7 +3,7 @@ import { Vector3 } from 'three';
 import { DroppedItem } from './traits';
 import { useEffectStore } from './effects';
 import { CHUNK_SIZE, MAX_BUILD_Y, MIN_WORLD_Y, VIEW_DISTANCE, biomeAt, generateChunk, safeSpawnAt } from './levels';
-import type { LevelData } from './levels';
+import type { GeneratedChunk, LevelData } from './levels';
 import { battleSpawn, generateBattleChunk } from './battleArena';
 import { generatePirateChunk, pirateSpawn } from './pirates';
 import { spawnPirateCannons } from './pirateCannons';
@@ -75,6 +75,7 @@ type WorldChunks = {
   world: World;
   seed: number;
   chunks: Map<string, Entity>;
+  chunkCache: Map<string, GeneratedChunk>;
   blocks: Map<string, Voxel>;
   water: Map<string, Voxel>;
   tops: Map<string, number>;
@@ -84,6 +85,7 @@ type WorldChunks = {
   streamCenter: string | null;
   cameraChunk: string | null;
   streamOrder: Array<{ x: number; z: number }>;
+  unloadOrder: Entity[];
   batchDepth: number;
   pendingRevisions: Set<Entity>;
 };
@@ -193,10 +195,12 @@ function touchChunk(entity: Entity | undefined) {
 }
 
 function touchNeighbors(state: WorldChunks, cx: number, cz: number) {
-  touchChunk(state.chunks.get(chunkKey(cx + 1, cz)));
-  touchChunk(state.chunks.get(chunkKey(cx - 1, cz)));
-  touchChunk(state.chunks.get(chunkKey(cx, cz + 1)));
-  touchChunk(state.chunks.get(chunkKey(cx, cz - 1)));
+  const neighbors = [state.chunks.get(chunkKey(cx + 1, cz)), state.chunks.get(chunkKey(cx - 1, cz)), state.chunks.get(chunkKey(cx, cz + 1)), state.chunks.get(chunkKey(cx, cz - 1))];
+  for (const entity of neighbors) {
+    if (!entity) continue;
+    if (state.batchDepth > 0) state.pendingRevisions.add(entity);
+    else touchChunk(entity);
+  }
 }
 
 function touchVoxel(state: WorldChunks, cx: number, cz: number, x: number, z: number, touched = new Set<Entity>()) {
@@ -283,8 +287,9 @@ export function loadChunk(world: World, cx: number, cz: number) {
   const template = useGameStore.getState().worldTemplate;
   const battle = mode === 'battle';
   const customWorld = template === 'custom' ? useGameStore.getState().customWorld : null;
-  const generated = mode === 'pirates' ? generatePirateChunk(cx, cz) : mode === 'football' ? generateFootballChunk(cx, cz) : mode === 'maze' ? generateMazeChunk(cx, cz) : battle ? generateBattleChunk(cx, cz) : template === 'custom' ? generateCustomChunk(cx, cz, state.seed, customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, state.seed)) : template === 'city-ancient' || template === 'city-modern' ? generateCityChunk(cx, cz, state.seed, template === 'city-modern') : generateChunk(cx, cz, state.seed);
-  if (!isMinigameMode(mode) && !isCityMode(mode) && template !== 'custom') generated.blocks.push(...generateVillageBlocks(cx, cz, state.seed));
+  const cached = state.chunkCache.get(key);
+  const generated = cached ?? (mode === 'pirates' ? generatePirateChunk(cx, cz) : mode === 'football' ? generateFootballChunk(cx, cz) : mode === 'maze' ? generateMazeChunk(cx, cz) : battle ? generateBattleChunk(cx, cz) : template === 'custom' ? generateCustomChunk(cx, cz, state.seed, customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, state.seed)) : template === 'city-ancient' || template === 'city-modern' ? generateCityChunk(cx, cz, state.seed, template === 'city-modern') : generateChunk(cx, cz, state.seed));
+  if (!cached && !isMinigameMode(mode) && !isCityMode(mode) && template !== 'custom') generated.blocks.push(...generateVillageBlocks(cx, cz, state.seed));
   const blockMap = new Map(generated.blocks.map((block) => [voxelKey(block.x, block.y, block.z), block]));
   const edits = state.edits.get(key);
   if (edits) {
@@ -400,6 +405,8 @@ function unloadChunk(world: World, entity: Entity) {
   data.fish = [];
   data.bombs = [];
   data.saplings = [];
+  state.chunkCache.set(chunkKey(chunk.x, chunk.z), { blocks: data.blocks, water: data.water });
+  if (state.chunkCache.size > 48) state.chunkCache.delete(state.chunkCache.keys().next().value!);
   state.chunks.delete(chunkKey(chunk.x, chunk.z));
   entity.destroy();
   touchNeighbors(state, chunk.x, chunk.z);
@@ -411,30 +418,37 @@ export function streamChunks(world: World, x: number, z: number) {
   const centerZ = chunkCoordinate(z);
   const center = chunkKey(centerX, centerZ);
   const chunkCount = (VIEW_DISTANCE * 2 + 1) ** 2;
-  if (state.streamCenter === center && state.chunks.size === chunkCount) return;
+  if (state.streamCenter === center && state.chunks.size === chunkCount && state.unloadOrder.length === 0) return;
 
-  if (state.streamCenter !== center) {
-    state.streamCenter = center;
-    state.streamOrder = [];
-    for (let dx = -VIEW_DISTANCE; dx <= VIEW_DISTANCE; dx += 1) {
-      for (let dz = -VIEW_DISTANCE; dz <= VIEW_DISTANCE; dz += 1) {
-        state.streamOrder.push({ x: centerX + dx, z: centerZ + dz });
+  batchVoxelEdits(world, () => {
+    if (state.streamCenter !== center) {
+      state.streamCenter = center;
+      state.streamOrder = [];
+      for (let dx = -VIEW_DISTANCE; dx <= VIEW_DISTANCE; dx += 1) {
+        for (let dz = -VIEW_DISTANCE; dz <= VIEW_DISTANCE; dz += 1) {
+          state.streamOrder.push({ x: centerX + dx, z: centerZ + dz });
+        }
       }
+      state.streamOrder.sort((a, b) =>
+        (a.x - centerX) ** 2 + (a.z - centerZ) ** 2 - (b.x - centerX) ** 2 - (b.z - centerZ) ** 2,
+      );
+      state.unloadOrder = [...world.query(Chunk)].filter((entity) => {
+        const chunk = entity.get(Chunk)!;
+        return Math.abs(chunk.x - centerX) > VIEW_DISTANCE || Math.abs(chunk.z - centerZ) > VIEW_DISTANCE;
+      });
     }
-    state.streamOrder.sort((a, b) =>
-      (a.x - centerX) ** 2 + (a.z - centerZ) ** 2 - (b.x - centerX) ** 2 - (b.z - centerZ) ** 2,
-    );
-    for (const entity of [...world.query(Chunk)]) {
-      const chunk = entity.get(Chunk)!;
-      if (Math.abs(chunk.x - centerX) > VIEW_DISTANCE || Math.abs(chunk.z - centerZ) > VIEW_DISTANCE) unloadChunk(world, entity);
-    }
-  }
 
-  for (const chunk of state.streamOrder) {
-    if (state.chunks.has(chunkKey(chunk.x, chunk.z))) continue;
-    loadChunk(world, chunk.x, chunk.z);
-    break;
-  }
+    if (state.chunks.size >= chunkCount && state.unloadOrder.length > 0) {
+      const entity = state.unloadOrder.shift()!;
+      if (entity.isAlive()) unloadChunk(world, entity);
+      return;
+    }
+    for (const chunk of state.streamOrder) {
+      if (state.chunks.has(chunkKey(chunk.x, chunk.z))) continue;
+      loadChunk(world, chunk.x, chunk.z);
+      break;
+    }
+  });
 }
 
 export function getBlockIndex(world: World) {
@@ -735,6 +749,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     world,
     seed,
     chunks: new Map(),
+    chunkCache: new Map(),
     blocks: new Map(),
     water: new Map(),
     tops: new Map(),
@@ -744,6 +759,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     streamCenter: null,
     cameraChunk: null,
     streamOrder: [],
+    unloadOrder: [],
     batchDepth: 0,
     pendingRevisions: new Set(),
   });

@@ -107,6 +107,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 const facings = new Set(['north', 'south', 'east', 'west']);
+const maxBlockKind = Math.max(...Object.values(BlockKind));
 const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'corsair', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
 const profileAvatars = new Set(['pixel', 'girl', 'girl-dark', 'girl-brown', 'girl-red', 'girl-black', 'boy', 'boy-dark', 'boy-brown', 'boy-red', 'boy-black', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
@@ -178,7 +179,7 @@ function parseState(value: unknown): PlayerState | null {
     emote: state.emote === 'sit' || state.emote === 'lie' || state.emote === 'wave' ? state.emote : null,
     selected: typeof state.selected === 'string' && state.selected.length > 0 && state.selected.length <= 96
       ? state.selected
-      : typeof state.selected === 'number' && Number.isInteger(state.selected) && state.selected >= 0 && state.selected <= 200 ? state.selected : undefined,
+      : typeof state.selected === 'number' && Number.isInteger(state.selected) && state.selected >= 0 && state.selected <= maxBlockKind ? state.selected : undefined,
     effects: Array.isArray(state.effects) ? state.effects.filter((effect): effect is string => typeof effect === 'string' && potionEffects.has(effect)).slice(0, potionEffects.size) : undefined,
   };
 }
@@ -197,19 +198,19 @@ function parseEdits(value: unknown): EditEntry[] | null {
       continue;
     }
     if (typeof edit === 'number') {
-      if (!Number.isInteger(edit) || edit < 0 || edit > 200) return null;
+      if (!Number.isInteger(edit) || edit < 0 || edit > maxBlockKind) return null;
       edits.push([key, edit]);
       continue;
     }
     if (!edit || typeof edit !== 'object') return null;
     const data = edit as Record<string, unknown>;
-    if (typeof data.kind !== 'number' || !Number.isInteger(data.kind) || data.kind < 0 || data.kind > 200) return null;
+    if (typeof data.kind !== 'number' || !Number.isInteger(data.kind) || data.kind < 0 || data.kind > maxBlockKind) return null;
     const result: Exclude<VoxelEdit, number | null> = { kind: data.kind };
     if (typeof data.open === 'boolean') result.open = data.open;
     if (typeof data.growth === 'number' && Number.isInteger(data.growth) && data.growth >= 0 && data.growth <= 16) result.growth = data.growth;
     if (typeof data.facing === 'string' && facings.has(data.facing)) result.facing = data.facing;
     if (typeof data.text === 'string') result.text = data.text.replace(/\r/g, '').slice(0, 120);
-    if (typeof data.textSize === 'number' && [15, 20, 30].includes(data.textSize)) result.textSize = data.textSize;
+    if (typeof data.textSize === 'number' && [15, 20, 30, 60].includes(data.textSize)) result.textSize = data.textSize;
     if (typeof data.food === 'string' && data.food.length > 0 && data.food.length <= 96) result.food = data.food;
     if (typeof data.meat === 'string' && ['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'zombie'].includes(data.meat)) result.meat = data.meat;
     if (data.protected === true) result.protected = true;

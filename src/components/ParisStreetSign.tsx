@@ -26,9 +26,9 @@ function parisSignTexture(text: string, textSize: number) {
   context.fillStyle = '#f4f7ef';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.font = `bold ${15 * scale}px monospace`;
+  context.font = `bold ${Math.min(23, 15 * scale)}px monospace`;
   context.fillText(district, 128, 22, 230);
-  let size = 27 * scale;
+  let size = Math.min(72, 27 * scale);
   context.font = `bold ${size}px monospace`;
   while (context.measureText(street).width > 232 && size > 11 * scale) {
     size -= 1;
