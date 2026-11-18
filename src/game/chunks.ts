@@ -675,8 +675,8 @@ export function applyVoxelEdit(world: World, position: string, edit: ChunkEdit, 
   }
   const data = typeof edit === 'number' ? { kind: edit } : edit;
   const existing = state.blocks.get(position);
-  if (existing && isWaterBlock(data.kind) && !isWaterBlock(existing.kind)) {
-    if (!hasWaterOpening(existing)) return;
+  if (existing && isWaterBlock(data.kind) && isTrapdoor(existing.kind) && existing.open !== true) return;
+  if (existing && isWaterBlock(data.kind) && hasWaterOpening(existing)) {
     setVoxelWaterlogged(world, existing, true, authoritative);
     setVoxelFloodSource(world, existing, data.floodSource === true, authoritative);
     clearPaintSplashAt(world, x, y, z);
