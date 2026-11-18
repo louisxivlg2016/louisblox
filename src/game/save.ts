@@ -133,7 +133,7 @@ export function initPersistence(world: World) {
     flushPlaytime();
   };
   const schedule = () => {
-    if (saveTimer !== undefined) window.clearTimeout(saveTimer);
+    if (saveTimer !== undefined) return;
     saveTimer = window.setTimeout(() => {
       saveTimer = undefined;
       saveWorld(world);
