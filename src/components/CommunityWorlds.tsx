@@ -103,7 +103,7 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
         <button className="multiplayer-join community-random" onClick={() => void joinBusiest(selectedMode)} disabled={pending || status === 'connecting'}>{translate('Rejoindre', 'Join')}</button>
         {onCreate && <button className="secondary-button community-create" onClick={onCreate} disabled={full || pending || status === 'connecting' || !enabled && isMultiplayerOnlyMode(selectedMode)}>{!enabled && isMultiplayerOnlyMode(selectedMode) ? translate('Multijoueur requis', 'Multiplayer required') : translate('Créer ici', 'Create here')}</button>}
       </div>
-      <p className="community-random-hint">{translate('Rejoins le monde {GAMEPLAY_MODE_LABELS()[selectedMode]} avec le plus de joueurs en ligne.', 'Join the {GAMEPLAY_MODE_LABELS()[selectedMode]} world with the most players online.')}</p>
+      <p className="community-random-hint">{translate(`Rejoins le monde ${GAMEPLAY_MODE_LABELS()[selectedMode]} avec le plus de joueurs. Si personne n’est en ligne, un nouveau monde est créé pour toi.`, `Join the ${GAMEPLAY_MODE_LABELS()[selectedMode]} world with the most players. If nobody is online, a new world is created for you.`)}</p>
       {full && <p className="multiplayer-error" role="alert">{translate('Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un pour en créer un autre.', 'You reached {MAX_WORLDS} worlds. Delete one to create another.')}</p>}
       {error && <p className="multiplayer-error" role="alert">{error}</p>}
       {deleteError && <p className="multiplayer-error" role="alert">{deleteError}</p>}

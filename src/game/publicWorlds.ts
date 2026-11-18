@@ -75,7 +75,7 @@ export async function listModePlayers(mode: GameplayMode): Promise<ModePlayer[]>
 
 export function busiestPublicWorld(worlds: PublicWorld[], mode: GameplayMode) {
   return worlds
-    .filter((world) => world.gameplayMode === mode && world.players > 0)
+    .filter((world) => world.gameplayMode === mode)
     .sort((a, b) => b.players - a.players || b.updatedAt - a.updatedAt)[0] ?? null;
 }
 

@@ -46,11 +46,18 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
     try {
       const candidates = (await listPublicWorlds()).filter((world) => world.id !== room);
       const world = busiestPublicWorld(candidates, mode);
-      if (!world) {
-        setError(translate(`Aucun joueur en ligne en ${GAMEPLAY_MODE_LABELS()[mode]} pour le moment. Choisis un monde dans la liste ou crée le tien.`, `No players online in ${GAMEPLAY_MODE_LABELS()[mode]} right now. Choose a world from the list or create your own.`));
-        return false;
+      if (world) {
+        join(world);
+        return true;
       }
-      join(world);
+      const id = `salon-${crypto.randomUUID().slice(0, 8)}`;
+      const template = mode === 'city-ancient' || mode === 'city-modern' ? mode : 'nature';
+      const name = translate(`Monde ${GAMEPLAY_MODE_LABELS()[mode]}`, `${GAMEPLAY_MODE_LABELS()[mode]} world`);
+      requestRoomMode(mode);
+      useGameStore.getState().regenerate(mode, id, template, name);
+      setEnabled(true);
+      setPendingRoom(id);
+      configure({ playerName, room: id, server });
       return true;
     } catch {
       setError(translate('Impossible de récupérer les mondes en ligne. Réessaie dans un instant.', 'Unable to fetch online worlds. Try again in a moment.'));
@@ -58,7 +65,7 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
     } finally {
       setLoading(false);
     }
-  }, [join, room]);
+  }, [configure, join, playerName, room, server, setEnabled]);
 
   return { join, joinBusiest, pending: pendingRoom !== null || loading || status === 'connecting', error };
 }
