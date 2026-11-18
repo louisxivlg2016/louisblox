@@ -291,15 +291,13 @@ function moveRiddenAnimal(world: World, position: Vector3, yaw: number, speed: n
     z: -Math.cos(yaw) * speed * dt,
   }, rider.grounded, undefined, kind === 'camel' ? 3.25 : 2.85);
   const ground = groundAt(world, next.x, next.z, next.y + 0.05);
-  const water = getBlockIndex(world).get(voxelKey(Math.round(next.x), SEA_LEVEL, Math.round(next.z)));
-  const swimming = ground < SEA_LEVEL && isWaterBlock(water?.kind);
-  if (swimming) {
-    next.y = Math.max(next.y, SEA_LEVEL + 0.35);
-    rider.velocityY = 0;
-  }
+  const blocks = getBlockIndex(world);
+  const seaWater = blocks.get(voxelKey(Math.round(next.x), SEA_LEVEL, Math.round(next.z)));
+  const feetWater = blocks.get(voxelKey(Math.round(next.x), Math.round(next.y), Math.round(next.z)));
+  if (ground < SEA_LEVEL && next.y < SEA_LEVEL + 0.35 && isWaterBlock(seaWater?.kind) || isWaterBlock(feetWater?.kind) || feetWater?.waterlogged) return false;
   const moved = Math.hypot(next.x - position.x, next.z - position.z) > 0.000001;
   position.copy(next);
-  rider.grounded = swimming || movement.grounded;
+  rider.grounded = movement.grounded;
   if (movement.grounded && rider.velocityY < 0) rider.velocityY = -0.1;
   if (movement.hitCeiling) rider.velocityY = Math.min(0, rider.velocityY);
   return moved;

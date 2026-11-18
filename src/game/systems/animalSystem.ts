@@ -2,7 +2,7 @@ import type { Entity, World } from 'koota';
 import { Mesh, Vector3 } from 'three';
 import { getBlockIndex, getWorldSeed, isChunkLoaded } from '../chunks';
 import { isCrop } from '../extraBlocks';
-import { heightAt, MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
+import { heightAt, MIN_WORLD_Y } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { isWaterBlock, voxelKey } from '../voxel';
@@ -58,7 +58,8 @@ const MAX_CLIMB_RISE = 4;
 const MAX_WALK_DOWN = 4.05;
 
 function walkableGround(world: World, x: number, z: number, ground: number) {
-  return ground > MIN_WORLD_Y + 0.5 && !isWaterBlock(blockAt(world, x, ground + 1, z)?.kind);
+  const block = blockAt(world, x, ground, z);
+  return ground > MIN_WORLD_Y + 0.5 && !isWaterBlock(block?.kind) && block?.waterlogged !== true;
 }
 
 const safePositions = new WeakMap<World, Map<Entity, Vector3>>();
@@ -130,33 +131,16 @@ function moveInDirection(world: World, kind: AnimalKind, position: Vector3, moti
   const x = position.x + Math.sin(yaw) * speed * dt;
   const z = position.z + Math.cos(yaw) * speed * dt;
   if (!isLoaded(world, x, z)) return false;
-  if (kind === 'duck' && !isTamedAnimal(entity)) {
-    const ground = groundAt(world, x, z, MAX_BUILD_Y);
-    if (ground >= SEA_LEVEL + 0.5 || !isWaterBlock(blockAt(world, x, SEA_LEVEL, z)?.kind)) return false;
-    position.set(x, SEA_LEVEL + 0.35 + Math.sin(motion.phase) * 0.05, z);
-    motion.velocityY = 0;
-    motion.grounded = true;
-  } else {
-    const ground = groundAt(world, x, z, position.y + MAX_CLIMB_RISE + 0.05);
-    if (kind === 'zombie' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) return false;
-    const water = blockAt(world, x, SEA_LEVEL, z);
-    if (ground < SEA_LEVEL && isWaterBlock(water?.kind) && bodyClear(world, x, z, SEA_LEVEL + 0.35)) {
-      position.set(x, SEA_LEVEL + 0.35, z);
-      motion.velocityY = 0;
-      motion.grounded = true;
-      motion.yaw = yaw;
-      rememberSafePosition(world, entity, position);
-      return true;
-    }
-    if (!walkableGround(world, x, z, ground) || ground > position.y + MAX_CLIMB_RISE || (position.y - ground > MAX_WALK_DOWN && motion.grounded) || !bodyClear(world, x, z, ground)) return false;
-    position.x = x;
-    position.z = z;
-    if (motion.grounded && ground > position.y) {
-      if (ground - position.y > 1.05) return false;
-      position.y = ground;
-    }
-    if (!updateAnimalVertical(world, position, motion, dt, entity)) return false;
+  const ground = groundAt(world, x, z, position.y + MAX_CLIMB_RISE + 0.05);
+  if (kind === 'zombie' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) return false;
+  if (!walkableGround(world, x, z, ground) || ground > position.y + MAX_CLIMB_RISE || (position.y - ground > MAX_WALK_DOWN && motion.grounded) || !bodyClear(world, x, z, ground)) return false;
+  position.x = x;
+  position.z = z;
+  if (motion.grounded && ground > position.y) {
+    if (ground - position.y > 1.05) return false;
+    position.y = ground;
   }
+  if (!updateAnimalVertical(world, position, motion, dt, entity)) return false;
   motion.yaw = yaw;
   rememberSafePosition(world, entity, position);
   return true;

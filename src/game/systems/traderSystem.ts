@@ -32,10 +32,7 @@ function walkableGround(world: World, x: number, z: number, currentY: number, ri
     const doorway = blocks.get(voxelKey(Math.round(x), Math.round(currentY + 0.5), Math.round(z)));
     if (doorway && isDoor(doorway.kind) && doorway.open) ground = groundAt(world, x, z, currentY + 0.51);
   }
-  if (ground < SEA_LEVEL + 0.5) {
-    const water = blocks.get(voxelKey(Math.round(x), SEA_LEVEL, Math.round(z)));
-    return isWaterBlock(water?.kind) ? SEA_LEVEL + 0.05 : null;
-  }
+  if (ground < SEA_LEVEL + 0.5) return null;
   if (ground - currentY > rise || currentY - ground > 8.05) return null;
   const groundBlock = blocks.get(voxelKey(Math.round(x), Math.floor(ground), Math.round(z)));
   if (groundBlock && foliage.has(groundBlock.kind)) return null;
