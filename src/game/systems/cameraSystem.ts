@@ -11,7 +11,8 @@ import { useMazeStore } from '../mazeClient';
 import { canWalkInVehicle, isAnimalMount, vehicleViewDistance } from '../vehicleTypes';
 import { VehiclePosition } from '../traits';
 import { groundAt } from '../vehicles';
-import { chunkCoordinate, getBlockIndex, loadChunk, loadChunkForCamera, releaseCameraChunk } from '../chunks';
+import { chunkCoordinate, getBlockIndex, getColumnTop, loadChunk, loadChunkForCamera, releaseCameraChunk } from '../chunks';
+import { isCollidable } from './collisionSystem';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
 
@@ -19,6 +20,20 @@ const sleepBlends = new WeakMap<World, number>();
 const flightBlends = new WeakMap<World, number>();
 const sleepCameraPosition = new Vector3();
 const cameraTarget = new Vector3();
+
+function moveCameraOutOfSolidBlocks(world: World, camera: Camera) {
+  const blocks = getBlockIndex(world);
+  const x = Math.floor(camera.position.x + 0.5);
+  const y = Math.floor(camera.position.y + 0.5);
+  const z = Math.floor(camera.position.z + 0.5);
+  if (!isCollidable(blocks.get(voxelKey(x, y, z)))) return;
+  const top = Math.max(y, getColumnTop(world, x, z) ?? y);
+  for (let freeY = y + 1; freeY <= top + 1; freeY += 1) {
+    if (isCollidable(blocks.get(voxelKey(x, freeY, z)))) continue;
+    camera.position.y = freeY - 0.3;
+    return;
+  }
+}
 
 export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const entity = world.queryFirst(Player);
@@ -104,6 +119,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
     } else if (mount?.kind === 'plane') camera.position.y += 1;
     else camera.position.y += mount?.vehicle && !isAnimalMount(mount.kind) ? mount.kind === 'car' ? 0.65 : 0.55 : 1.62;
     if (mounted && !walkingCabin) camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z) + 0.2);
+    moveCameraOutOfSolidBlocks(world, camera);
     rotation.set(state.pitch, state.yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(rotation);
   }
