@@ -48,7 +48,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
   connectionId: 0,
   playerName: initialPlayerName(),
   room: query.get('room') || 'main-room',
-  server: query.get('server') || '',
+  server: query.get('server') || 'ws://192.168.0.7:8788',
   status: 'offline',
   worldReady: false,
   error: '',

@@ -42,7 +42,7 @@ export function MultiplayerLobby({ onPlay, onCreateRoom, createLabel = translate
   const [playerName, setPlayerName] = useState(savedName);
   const [room, setRoom] = useState(savedRoom);
   const [server, setServer] = useState(savedServer);
-  const [showServer, setShowServer] = useState(() => new URLSearchParams(window.location.search).has('server'));
+  const [showServer, setShowServer] = useState(true);
   const [joinMode, setJoinMode] = useState<GameplayMode | 'room'>(modeFromUrl);
   const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(null);
   const currentMode = useGameStore((state) => state.gameplayMode);
@@ -178,7 +178,7 @@ export function MultiplayerLobby({ onPlay, onCreateRoom, createLabel = translate
               <label htmlFor={fieldId('server')}>{translate('Serveur personnalisé', 'Custom server', 'Servidor personalizado')} <span>{translate('(optionnel)', '(optional)')}</span>
                 <input id={fieldId('server')} value={server} onChange={(event) => setServer(event.target.value)} placeholder="wss://…workers.dev/ws" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
               </label>
-              <p className="multiplayer-hint">{translate('Laisse le serveur vide pour utiliser la connexion automatique. En local, il utilise le port 8787 de cet appareil.', 'Leave the server empty to use automatic connection. Locally, it uses port 8787 on this device.')}</p>
+              <p className="multiplayer-hint">{translate('Serveur par défaut : ws://192.168.0.7:8788 · /ws est ajouté automatiquement. Vide ce champ pour la connexion automatique.', 'Default server: ws://192.168.0.7:8788 · /ws is added automatically. Clear this field for automatic connection.', 'Servidor predeterminado: ws://192.168.0.7:8788 · /ws se añade automáticamente. Vacía este campo para la conexión automática.')}</p>
             </>
           )}
           <div className="multiplayer-mode">
