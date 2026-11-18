@@ -351,7 +351,7 @@ export function animalSystem(world: World, dt: number) {
     }
     if (mesh.value) {
       mesh.value.position.copy(position);
-      motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, stepDt * 6);
+      motion.displayYaw = motion.yaw;
       mesh.value.rotation.y = motion.displayYaw;
       if (animal.kind === 'zombie') mesh.value.rotation.z = Math.sin(motion.phase) * 0.035;
     }

@@ -417,7 +417,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
     const jump = spaceDown && !mountSpaceWasDown.get(world);
     mountSpaceWasDown.set(world, spaceDown);
     if (!moveRiddenAnimal(world, position, motion.yaw, rider.speed, dt, rider, animal.kind, jump)) rider.speed = 0;
-    motion.displayYaw = turnToward(motion.displayYaw, motion.yaw + Math.PI, dt * 7);
+    motion.displayYaw = motion.yaw;
     if (mesh.value) {
       mesh.value.position.copy(position);
       mesh.value.rotation.y = motion.displayYaw;

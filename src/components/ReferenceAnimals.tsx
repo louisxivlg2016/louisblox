@@ -32,7 +32,6 @@ for (const model of [...Object.values(hunyuanAnimals), traderUrl]) useGLTF.prelo
 function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x' | 'z' = 'x') {
   const renderPosition = useRef<Vector3 | null>(null);
   const previousPosition = useRef<Vector3 | null>(null);
-  const renderYaw = useRef<number | null>(null);
   const phase = useRef(0);
   const moving = useRef(false);
   useFrame((_, delta) => {
@@ -49,13 +48,7 @@ function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x'
       renderPosition.current.lerp(position, smoothing);
       mesh.position.copy(renderPosition.current);
       mesh.userData.actualSpeed = delta > 0 ? moved / delta : 0;
-      if (motion) {
-        const currentYaw = renderYaw.current ?? motion.displayYaw;
-        const targetYaw = motion.displayYaw + yawOffset;
-        const angle = Math.atan2(Math.sin(targetYaw - currentYaw), Math.cos(targetYaw - currentYaw));
-        renderYaw.current = currentYaw + angle * smoothing;
-        mesh.rotation.y = renderYaw.current;
-      }
+      if (motion) mesh.rotation.y = motion.displayYaw + yawOffset;
     }
     if (moving.current) phase.current += delta * (bird ? 10 : 8) * (motion?.running ? 1.5 : 1);
     const swing = moving.current ? Math.sin(phase.current) * (bird ? 0.42 : motion?.running ? 0.75 : 0.56) : 0;

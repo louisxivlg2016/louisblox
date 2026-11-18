@@ -30,11 +30,11 @@ export function syncRemoteMounts(world: World, players: Record<string, PlayerSna
     }
     const position = entity.get(AnimalPosition)!;
     position.set(snapshot.x, snapshot.y, snapshot.z);
-    entity.set(AnimalMotion, { yaw: snapshot.yaw, displayYaw: snapshot.yaw + Math.PI });
+    entity.set(AnimalMotion, { yaw: snapshot.yaw, displayYaw: snapshot.yaw });
     const mesh = entity.get(AnimalMesh)?.value;
     if (mesh) {
       mesh.position.copy(position);
-      mesh.rotation.y = snapshot.yaw + Math.PI;
+      mesh.rotation.y = snapshot.yaw;
     }
   }
   for (const entity of previous) {
