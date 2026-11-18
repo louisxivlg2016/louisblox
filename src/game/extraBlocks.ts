@@ -216,7 +216,7 @@ export const PARIS_STREET_SIGN_TEXT = '4th arrondissement\nPeace Street';
 export type ExtraBlockKind = (typeof EXTRA_BLOCKS)[keyof typeof EXTRA_BLOCKS];
 export const EXTRA_BLOCK_ORDER = Object.values(EXTRA_BLOCKS)
   .filter((kind) => kind !== EXTRA_BLOCKS.Watermelon && (kind < EXTRA_BLOCKS.TrapdoorIron || kind > EXTRA_BLOCKS.TrapdoorCopperSmall))
-  .flatMap((kind) => kind === EXTRA_BLOCKS.TrapdoorBlack ? [kind, EXTRA_BLOCKS.TrapdoorIron, EXTRA_BLOCKS.TrapdoorGold, EXTRA_BLOCKS.TrapdoorCopper, EXTRA_BLOCKS.TrapdoorOakSmall, EXTRA_BLOCKS.TrapdoorIronSmall, EXTRA_BLOCKS.TrapdoorGoldSmall, EXTRA_BLOCKS.TrapdoorCopperSmall] : [kind]) as ExtraBlockKind[];
+  .flatMap((kind) => kind === EXTRA_BLOCKS.TrapdoorBlack ? [kind, EXTRA_BLOCKS.TrapdoorIron, EXTRA_BLOCKS.TrapdoorGold, EXTRA_BLOCKS.TrapdoorCopper] : [kind]) as ExtraBlockKind[];
 export const SAPLING_KINDS = [EXTRA_BLOCKS.OakSapling, EXTRA_BLOCKS.PineSapling, EXTRA_BLOCKS.AutumnSapling] as const;
 export const isSapling = (kind: number) => (SAPLING_KINDS as readonly number[]).includes(kind);
 export const isGlass = (kind: number) => kind === EXTRA_BLOCKS.Glass || kind >= EXTRA_BLOCKS.GlassWhite && kind <= EXTRA_BLOCKS.GlassBlack;

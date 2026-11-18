@@ -77,29 +77,44 @@ export function biomeAt(x: number, z: number, seed: number): Biome {
 }
 
 const terrainHeights = new Map<string, number>();
+const MOUNTAIN_CELL_SIZE = 160;
+
+function winterHeightAt(x: number, z: number, seed: number) {
+  let height = 4 + Math.floor(noise(x / 64, z / 64, seed + 41) * 3);
+  const cellX = Math.floor(x / MOUNTAIN_CELL_SIZE);
+  const cellZ = Math.floor(z / MOUNTAIN_CELL_SIZE);
+  for (let dx = -1; dx <= 1; dx += 1) {
+    for (let dz = -1; dz <= 1; dz += 1) {
+      const peakCellX = cellX + dx;
+      const peakCellZ = cellZ + dz;
+      const peakX = (peakCellX + 0.5) * MOUNTAIN_CELL_SIZE + (hash(peakCellX, peakCellZ, seed + 43) - 0.5) * 64;
+      const peakZ = (peakCellZ + 0.5) * MOUNTAIN_CELL_SIZE + (hash(peakCellX, peakCellZ, seed + 47) - 0.5) * 64;
+      const summit = 24 + Math.floor(hash(peakCellX, peakCellZ, seed + 53) * 18);
+      const distance = Math.max(Math.abs(x - peakX), Math.abs(z - peakZ));
+      height = Math.max(height, summit - Math.floor(distance / 2));
+    }
+  }
+  return height;
+}
 
 export function heightAt(x: number, z: number, seed: number) {
   const key = `${seed}:${x}:${z}`;
   const cached = terrainHeights.get(key);
   if (cached !== undefined) return cached;
   const biome = biomeAt(x, z, seed);
-  const winterWeight = biome === 'winter' ? 1 : 0;
-  const terrainX = winterWeight ? Math.floor(x / 2) * 2 : x;
-  const terrainZ = winterWeight ? Math.floor(z / 2) * 2 : z;
-  const broad = noise(terrainX / 34, terrainZ / 34, seed) * 0.66;
-  const detail = noise(terrainX / 11, terrainZ / 11, seed + 19) * 0.34;
-  const ridge = 1 - Math.abs(noise(terrainX / 260, terrainZ / 260, seed + 71) * 2 - 1);
-  const broadBase = Math.pow(ridge, 2) * 22;
-  const sharpPeak = Math.pow(ridge, 6) * 14;
-  const crags = noise(terrainX / 18, terrainZ / 18, seed + 73) * 1.2 * Math.min(1, sharpPeak / 10);
-  const mountain = (broadBase + sharpPeak + crags) * winterWeight;
-  const jungleRoll = biome === 'jungle' ? noise(x / 23, z / 23, seed + 107) * 3 : 0;
-  let height = Math.floor(3.5 + (broad + detail) * 7 + mountain + jungleRoll);
-
-  const riverDistance = Math.abs(noise(x / 110, z / 110, seed + 501) - 0.5);
-  if (riverDistance < 0.012) {
-    const carve = 1 - riverDistance / 0.012;
-    height = Math.max(1, Math.floor(height - carve * 4));
+  let height: number;
+  if (biome === 'winter') {
+    height = winterHeightAt(x, z, seed);
+  } else {
+    const broad = noise(x / 34, z / 34, seed) * 0.66;
+    const detail = noise(x / 11, z / 11, seed + 19) * 0.34;
+    const jungleRoll = biome === 'jungle' ? noise(x / 23, z / 23, seed + 107) * 3 : 0;
+    height = Math.floor(3.5 + (broad + detail) * 7 + jungleRoll);
+    const riverDistance = Math.abs(noise(x / 110, z / 110, seed + 501) - 0.5);
+    if (riverDistance < 0.012) {
+      const carve = 1 - riverDistance / 0.012;
+      height = Math.max(1, Math.floor(height - carve * 4));
+    }
   }
 
   const result = Math.max(1, height);

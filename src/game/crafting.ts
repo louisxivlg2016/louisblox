@@ -2,7 +2,7 @@ import { BlockKind } from './voxel';
 import { getItemMeta, selectionInfo } from './items';
 import type { SelectedKind } from './items';
 import { GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
-import { isGlass, isMetalTrapdoor, isSlab, isSmallTrapdoor, isStair, slabSource, stairSource } from './extraBlocks';
+import { isGlass, isSlab, isStair, slabSource, stairSource } from './extraBlocks';
 import { changeInventory, inventoryCount } from './inventory';
 import { useGameStore } from './store';
 import { translate } from './language';
@@ -34,11 +34,10 @@ function blockRecipe(kind: BlockKind): Recipe | null {
   if (kind === BlockKind.OakPlanks || kind === BlockKind.PinePlanks || kind === BlockKind.AutumnPlanks) return recipe(kind, 4, [[BlockKind.Wood, 1]]);
   if (kind >= BlockKind.DoorWhite && kind <= BlockKind.DoorBlack) return recipe(kind, 1, [[BlockKind.OakPlanks, 3]]);
   if (kind >= BlockKind.TrapdoorWhite && kind <= BlockKind.TrapdoorBlack) return recipe(kind, 1, [[BlockKind.OakPlanks, 2]]);
-  if (isMetalTrapdoor(kind)) {
-    const material = kind === BlockKind.TrapdoorGold || kind === BlockKind.TrapdoorGoldSmall ? BlockKind.GoldOre : kind === BlockKind.TrapdoorCopper || kind === BlockKind.TrapdoorCopperSmall ? BlockKind.IronOre : BlockKind.IronOre;
-    return recipe(kind, 1, [[material, isSmallTrapdoor(kind) ? 1 : 2]]);
+  if (kind >= BlockKind.TrapdoorIron && kind <= BlockKind.TrapdoorCopper) {
+    const material = kind === BlockKind.TrapdoorGold ? BlockKind.GoldOre : BlockKind.IronOre;
+    return recipe(kind, 1, [[material, 2]]);
   }
-  if (kind === BlockKind.TrapdoorOakSmall) return recipe(kind, 1, [[BlockKind.OakPlanks, 1]]);
   if (kind >= BlockKind.Bed && kind <= BlockKind.BedBlack) return recipe(kind, 1, [[BlockKind.OakPlanks, 3], [BlockKind.Leaves, 2]]);
   if (kind >= BlockKind.BeigeBrick && kind <= BlockKind.GrayBrick) return recipe(kind, 1, [[BlockKind.Stone, 3]]);
   if (kind >= BlockKind.ConcreteWhite && kind <= BlockKind.ConcreteBlack) return recipe(kind, 1, [[BlockKind.Stone, 2], [BlockKind.Sand, 1]]);
