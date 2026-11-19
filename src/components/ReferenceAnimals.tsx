@@ -29,7 +29,7 @@ import traderUrl from '../../assets/models/full-trader.glb';
 const hunyuanAnimals = { cow: cowUrl, chicken: chickenUrl, sheep: sheepUrl, pig: pigUrl, horse: horseUrl, camel: camelUrl, duck: duckUrl, wolf: wolfUrl, snowWolf: snowWolfUrl, bear: bearUrl, snowBear: snowBearUrl, deer: deerUrl, snowDeer: snowDeerUrl, monkey: singeUrl, ocelot: ocelotUrl, giraffe: girafeUrl, elephant: elephantUrl };
 for (const model of [...Object.values(hunyuanAnimals), traderUrl]) useGLTF.preload(model);
 
-function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x' | 'z' = 'x') {
+function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x' | 'z' = 'x', amplitude = 1) {
   const renderPosition = useRef<Vector3 | null>(null);
   const previousPosition = useRef<Vector3 | null>(null);
   const phase = useRef(0);
@@ -51,7 +51,7 @@ function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x'
       if (motion) mesh.rotation.y = motion.displayYaw + yawOffset;
     }
     if (moving.current) phase.current += delta * (bird ? 10 : 8) * (motion?.running ? 1.5 : 1);
-    const swing = moving.current ? Math.sin(phase.current) * (bird ? 0.42 : motion?.running ? 0.75 : 0.56) : 0;
+    const swing = moving.current ? Math.sin(phase.current) * (bird ? 0.42 : motion?.running ? 0.75 : 0.56) * amplitude : 0;
     for (let index = 0; index < 4; index += 1) {
       const leg = mesh?.getObjectByName(`animal-leg-${index}`);
       if (!leg) continue;
@@ -89,7 +89,7 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
     if (kind === 'camel') clone.position.y += 0.72;
     return clone;
   }, [scene, kind]);
-  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck', 0, kind === 'giraffe' ? 'z' : 'x');
+  useAnimalLegs(entity, kind === 'chicken' || kind === 'duck', 0, kind === 'giraffe' ? 'z' : 'x', kind === 'ocelot' ? 1.5 : 1);
   return <group name={`reference-${kind}`} userData={{ source: 'Hunyuan' }}><primitive object={model} /></group>;
 }
 
