@@ -11,7 +11,7 @@ import { useMazeStore } from '../mazeClient';
 import { canWalkInVehicle, isAnimalMount, vehicleViewDistance } from '../vehicleTypes';
 import { VehiclePosition } from '../traits';
 import { groundAt } from '../vehicles';
-import { chunkCoordinate, getBlockIndex, getColumnTop, loadChunk, loadChunkForCamera, releaseCameraChunk } from '../chunks';
+import { chunkCoordinate, getBlockIndex, getColumnTop, loadChunkForCamera, releaseCameraChunk, streamChunks } from '../chunks';
 import { isCollidable } from './collisionSystem';
 
 const rotation = new Euler(0, 0, 0, 'YXZ');
@@ -88,7 +88,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const distance = mount?.kind && !isAnimalMount(mount.kind) ? vehicleViewDistance(mount.kind) : 3;
   const exteriorPlane = mount?.kind === 'plane' && cameraMode !== 'first';
   const height = exteriorPlane ? 12 : Math.max(0.8, Math.min(6, (cameraMode === 'third' ? 2.35 : 2.05) - Math.sin(state.pitch) * 1.5));
-  const targetHeight = exteriorPlane ? 7 : cameraMode === 'third' ? 0.95 : 0.9;
+  const targetHeight = exteriorPlane ? -8 : cameraMode === 'third' ? 0.95 : 0.9;
   if (camera instanceof PerspectiveCamera && camera.far !== (exteriorPlane ? 500 : 130)) {
     camera.far = exteriorPlane ? 500 : 130;
     if ('updateProjectionMatrix' in camera) camera.updateProjectionMatrix();
@@ -100,11 +100,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
       const chunkX = chunkCoordinate(camera.position.x);
       const chunkZ = chunkCoordinate(camera.position.z);
       loadChunkForCamera(world, chunkX, chunkZ);
-      if (exteriorPlane) {
-        const planeChunkX = chunkCoordinate(center.x);
-        const planeChunkZ = chunkCoordinate(center.z);
-        for (let dx = -1; dx <= 1; dx += 1) for (let dz = -1; dz <= 1; dz += 1) loadChunk(world, planeChunkX + dx, planeChunkZ + dz);
-      }
+      if (exteriorPlane) streamChunks(world, center.x, center.z, 2);
     }
     camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z, center.y + 0.2) + 0.35);
     cameraTarget.set(center.x, center.y + targetHeight, center.z);

@@ -52,7 +52,7 @@ export function drainConnectedWater(world: World, hit: VoxelHit) {
       if (block.waterlogged) {
         setVoxelWaterlogged(world, block, false);
         if (!block.waterlogged) drained += 1;
-      } else {
+      } else if (isWaterBlock(block.kind)) {
         removeVoxel(world, { block, x: block.x, y: block.y, z: block.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 });
         if (!blocks.has(key)) drained += 1;
       }
@@ -95,6 +95,7 @@ export function waterSystem(world: World, dt: number) {
       if (moved >= 48) break;
       const { source, x, y, z, lateral } = candidate;
       if (blocks.get(voxelKey(source.x, source.y, source.z)) !== source || !canEnter(world, blocks, x, y, z)) continue;
+      if (!source.floodSource && !source.waterlogged && !isWaterBlock(source.kind)) continue;
       const energy = flowEnergy.get(source) ?? 0;
       const existing = blocks.get(voxelKey(x, y, z));
       const target = existing ? setVoxelWaterlogged(world, existing, true, true) : addVoxel(world, x, y, z, BlockKind.Water);

@@ -1,9 +1,8 @@
 import { create } from 'zustand';
-import { streamChunks } from './chunks';
+import { teleportToHome } from './teleport';
 import { requestPlay } from './input';
 import { useGameStore } from './store';
-import { Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from './traits';
-import { dismount } from './vehicles';
+import { Player, PlayerBody, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
 import { world } from './world';
 import { useHomeStore } from './homes';
 import { translate } from './language';
@@ -119,12 +118,7 @@ export function receiveTeleportResponse(data: TeleportMessage) {
 
   clearOutgoing();
   useTeleportRequestStore.setState({ notice: '' });
-  if (entity.get(PlayerMount)?.vehicle) dismount(world);
-  const sleeping = world.queryFirst(Sleep);
-  if (sleeping) sleeping.destroy();
-  useGameStore.getState().setSleepProgress(null);
-  streamChunks(world, destination.x, destination.z);
-  playerPosition.set(destination.x, destination.y, destination.z);
+  teleportToHome(world, { ...destination, yaw: 0, pitch: 0 });
   entity.get(PlayerBody)?.value?.setTranslation(destination, true);
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false });

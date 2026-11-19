@@ -21,6 +21,7 @@ export function Minimap() {
   const [mapOpen, setMapOpen] = useState(false);
   const [viewCenter, setViewCenter] = useState<{ x: number; z: number } | null>(null);
   const drag = useRef<{ pointerId: number; clientX: number; clientY: number; x: number; z: number } | null>(null);
+  const largeCache = useRef(new Map<string, string>());
   const gameplayMode = useGameStore((state) => state.gameplayMode);
 
   useEffect(() => {
@@ -41,15 +42,21 @@ export function Minimap() {
         for (let dx = -radius; dx <= radius; dx += 1) {
           const x = centerX + dx;
           const z = centerZ + dz;
-          const top = getColumnTop(world, x, z);
-          let block = top === undefined ? undefined : blocks.get(voxelKey(x, top, z));
-          if (top !== undefined) {
-            for (let y = top + 1; y <= top + 5; y += 1) {
-              const above = blocks.get(voxelKey(x, y, z));
-              if (above && (isWaterBlock(above.kind) || above.waterlogged)) block = above;
+          const key = `${x},${z}`;
+          let color = large ? largeCache.current.get(key) : undefined;
+          if (!color) {
+            const top = getColumnTop(world, x, z);
+            let block = top === undefined ? undefined : blocks.get(voxelKey(x, top, z));
+            if (top !== undefined) {
+              for (let y = top + 1; y <= top + 2; y += 1) {
+                const above = blocks.get(voxelKey(x, y, z));
+                if (above && (isWaterBlock(above.kind) || above.waterlogged)) block = above;
+              }
             }
+            color = block ? block.waterlogged ? BLOCK_INFO[BlockKind.Water].color : BLOCK_INFO[block.kind]?.color ?? '#657064' : '#17231c';
+            if (large) largeCache.current.set(key, color);
           }
-          context.fillStyle = block ? block.waterlogged ? BLOCK_INFO[BlockKind.Water].color : BLOCK_INFO[block.kind]?.color ?? '#657064' : '#17231c';
+          context.fillStyle = color;
           context.fillRect((dx + radius) * CELL, (dz + radius) * CELL, CELL, CELL);
         }
       }
@@ -86,18 +93,14 @@ export function Minimap() {
       if (canvas.current) draw(canvas.current, MINI_RADIUS, coordinates.current);
       if (mapOpen && largeCanvas.current) draw(largeCanvas.current, MAP_RADIUS, largeCoordinates.current, true);
     };
-    const unsubscribe = onVoxelEdit(world, () => { dirty = true; });
-    const timer = window.setInterval(() => { dirty = true; update(); }, 500);
+    const unsubscribe = onVoxelEdit(world, () => { dirty = true; largeCache.current.clear(); });
+    const timer = window.setInterval(() => { dirty = true; update(); }, mapOpen ? 1000 : 500);
     update();
     return () => {
       unsubscribe();
       window.clearInterval(timer);
     };
   }, [gameplayMode, mapOpen, viewCenter]);
-
-  useEffect(() => {
-    if (mapOpen && viewCenter) streamChunks(world, viewCenter.x, viewCenter.z);
-  }, [mapOpen, viewCenter]);
 
   useEffect(() => {
     const toggleMap = (event: KeyboardEvent) => {
@@ -157,6 +160,7 @@ export function Minimap() {
   const endMapDrag = (event: React.PointerEvent<HTMLCanvasElement>) => {
     if (drag.current?.pointerId !== event.pointerId) return;
     drag.current = null;
+    if (viewCenter) streamChunks(world, viewCenter.x, viewCenter.z);
     event.currentTarget.style.cursor = 'grab';
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
@@ -176,7 +180,7 @@ export function Minimap() {
               <button type="button" className="secondary-button" onClick={closeMap}>{translate('Fermer', 'Close')}</button>
             </div>
             <canvas ref={largeCanvas} className="world-map-canvas" width={(MAP_RADIUS * 2 + 1) * CELL} height={(MAP_RADIUS * 2 + 1) * CELL} role="img" onPointerDown={startMapDrag} onPointerMove={moveMapDrag} onPointerUp={endMapDrag} onPointerCancel={endMapDrag} aria-label={translate('Grande carte pixelisée du terrain', 'Large pixelated terrain map')} />
-            <small ref={largeCoordinates} />
+            <small ref={largeCoordinates}>{viewCenter ? `${Math.round(viewCenter.x)} · ${Math.round(viewCenter.z)}` : undefined}</small>
           </section>
         </div>
       )}

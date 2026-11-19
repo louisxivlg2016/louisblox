@@ -93,7 +93,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
   if (typeof selected === 'number') return false;
   const meta = getItemMeta(selected);
   const actions = pendingActions ?? consumeActions();
-  const interact = actions.place + actions.harvest;
+  const interact = actions.place + actions.harvest + actions.tap;
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return false;
   origin.copy(player);
@@ -107,7 +107,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     store.setNotice(removed > 0 ? translate(`Tous les dessins ont été effacés (${removed} traits).`, `All drawings were erased (${removed} strokes).`) : translate('Il n’y a aucun dessin à effacer.', 'There are no drawings to erase.'));
     return true;
   }
-  if (selected === 'empty_bucket' && interact > 0) return useBucket(world, true, origin, direction, true, actions.harvest > 0 && actions.place === 0);
+  if (selected === 'empty_bucket' && interact > 0) return useBucket(world, true, origin, direction, true, actions.harvest > 0 || actions.tap > 0);
   if ((selected === 'bucket' || selected === 'water_bucket') && interact > 0) return useBucket(world, selected === 'water_bucket', origin, direction);
   if (selected === 'extinguisher' && (interact > 0 || isMouseButtonDown(0) || isDown('KeyE')) && cooldown <= 0) {
     useFireExtinguisher(world, origin, direction);

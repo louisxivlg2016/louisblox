@@ -412,20 +412,20 @@ function unloadChunk(world: World, entity: Entity) {
   touchNeighbors(state, chunk.x, chunk.z);
 }
 
-export function streamChunks(world: World, x: number, z: number) {
+export function streamChunks(world: World, x: number, z: number, radius = VIEW_DISTANCE) {
   const state = stateFor(world);
   const centerX = chunkCoordinate(x);
   const centerZ = chunkCoordinate(z);
-  const center = chunkKey(centerX, centerZ);
-  const chunkCount = (VIEW_DISTANCE * 2 + 1) ** 2;
+  const center = `${centerX},${centerZ}:${radius}`;
+  const chunkCount = (radius * 2 + 1) ** 2;
   if (state.streamCenter === center && state.chunks.size === chunkCount && state.unloadOrder.length === 0) return;
 
   batchVoxelEdits(world, () => {
     if (state.streamCenter !== center) {
       state.streamCenter = center;
       state.streamOrder = [];
-      for (let dx = -VIEW_DISTANCE; dx <= VIEW_DISTANCE; dx += 1) {
-        for (let dz = -VIEW_DISTANCE; dz <= VIEW_DISTANCE; dz += 1) {
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        for (let dz = -radius; dz <= radius; dz += 1) {
           state.streamOrder.push({ x: centerX + dx, z: centerZ + dz });
         }
       }
@@ -434,7 +434,7 @@ export function streamChunks(world: World, x: number, z: number) {
       );
       state.unloadOrder = [...world.query(Chunk)].filter((entity) => {
         const chunk = entity.get(Chunk)!;
-        return Math.abs(chunk.x - centerX) > VIEW_DISTANCE || Math.abs(chunk.z - centerZ) > VIEW_DISTANCE;
+        return Math.abs(chunk.x - centerX) > radius || Math.abs(chunk.z - centerZ) > radius;
       });
     }
 

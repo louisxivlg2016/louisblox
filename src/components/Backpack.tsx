@@ -9,7 +9,7 @@ import { useGameStore } from '../game/store';
 import { eatItem, eatMeat } from '../game/systems/itemSystem';
 import { placeMeat } from '../game/foods';
 import { isPaintballGun, WHITE_PAINTBALL_GUN_ID } from '../game/paintball';
-import { HOTBAR_BLOCKS } from '../game/voxel';
+import { BlockKind, HOTBAR_BLOCKS } from '../game/voxel';
 import { world } from '../game/world';
 import { ItemIcon } from './ItemIcon';
 import { CROP_KINDS, isCrop } from '../game/extraBlocks';
@@ -58,6 +58,7 @@ export function Backpack() {
   const resources = (Object.entries(meat) as Array<[AnimalKind, number]>).filter(([, count]) => count > 0);
   const query = normalizeSearch(gallerySearch);
   const matchesSearch = (kind: SelectedKind) => normalizeSearch(selectionInfo(kind).name).includes(query)
+    || (kind === BlockKind.Radio && ['radio', 'redio', 'musique', 'music'].includes(query))
     || (kind === 'gallery_tools_weapons_book' && translate('livre', 'book').includes(query));
   const visibleGalleryItems = GALLERY_ITEMS.filter((item) =>
     (query !== '' || galleryCategory === 'all' || item.category === galleryCategory) && matchesSearch(item.id)

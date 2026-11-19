@@ -84,7 +84,7 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
       }
     });
     clone.quaternion.identity();
-    const yawOffset = kind === 'giraffe' ? -Math.PI / 2 : kind === 'monkey' || kind === 'ocelot' || kind === 'bear' || kind === 'snowBear' || kind === 'wolf' || kind === 'snowWolf' ? Math.PI : 0;
+    const yawOffset = kind === 'giraffe' ? Math.PI / 2 : kind === 'monkey' || kind === 'ocelot' || kind === 'bear' || kind === 'snowBear' || kind === 'wolf' || kind === 'snowWolf' ? Math.PI : 0;
     clone.rotation.y = yawOffset;
     if (kind === 'camel') clone.position.y += 0.72;
     return clone;

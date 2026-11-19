@@ -62,7 +62,7 @@ export function teleportToBiome(world: World, biome: Biome) {
   const destination = best ?? fallback;
   if (!destination) return null;
 
-  streamChunks(world, destination.x, destination.z);
+  for (let index = 0; index < 9; index += 1) streamChunks(world, destination.x, destination.z);
   const safe = safeDestination(world, destination.x, destination.y, destination.z);
   streamChunks(world, safe.x, safe.z);
   position.set(safe.x, safe.y, safe.z);
@@ -78,7 +78,7 @@ export function teleportToRuin(world: World, type: RuinType) {
   if (!entity || !position) return null;
   const site = nearestRuinOfType(position.x, position.z, getWorldSeed(world), type);
   const destination = { x: site.x, y: site.baseY + 1.01, z: site.z };
-  streamChunks(world, destination.x, destination.z);
+  for (let index = 0; index < 9; index += 1) streamChunks(world, destination.x, destination.z);
   const safe = safeDestination(world, destination.x, destination.y, destination.z);
   streamChunks(world, safe.x, safe.z);
   position.set(safe.x, safe.y, safe.z);
@@ -96,7 +96,7 @@ export function teleportToHome(world: World, destination: Pick<Home, 'x' | 'y' |
   const sleeping = world.queryFirst(Sleep);
   if (sleeping) sleeping.destroy();
   useGameStore.getState().setSleepProgress(null);
-  streamChunks(world, destination.x, destination.z);
+  for (let index = 0; index < 9; index += 1) streamChunks(world, destination.x, destination.z);
   const safe = safeDestination(world, destination.x, destination.y, destination.z);
   streamChunks(world, safe.x, safe.z);
   position.set(safe.x, safe.y, safe.z);

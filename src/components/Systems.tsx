@@ -26,7 +26,7 @@ import { fishSystem } from '../game/fish';
 import { sleepSystem } from '../game/systems/sleepSystem';
 import { vehicleInteractionSystem, vehicleMovementSystem } from '../game/vehicles';
 import { vehicleCombatSystem } from '../game/systems/vehicleCombatSystem';
-import { BlockTarget, Player, PlayerPosition, Sleep, TargetMesh } from '../game/traits';
+import { BlockTarget, Player, PlayerMount, PlayerPosition, Sleep, TargetMesh, VehiclePosition } from '../game/traits';
 import { footballControlSystem } from '../game/footballClient';
 import { mazeControlSystem } from '../game/mazeClient';
 import { traderSystem } from '../game/systems/traderSystem';
@@ -81,8 +81,10 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       if (store.miningProgress !== 0) store.setMiningProgress(0);
     }
     updateAmbientSounds(world, useGameStore.getState().mode === 'play');
-    const player = world.queryFirst(Player)?.get(PlayerPosition);
-    if (player) streamChunks(world, player.x, player.z);
+    const playerEntity = world.queryFirst(Player);
+    const player = playerEntity?.get(PlayerPosition);
+    const vehiclePosition = playerEntity?.get(PlayerMount)?.vehicle?.get(VehiclePosition);
+    if (player) streamChunks(world, vehiclePosition?.x ?? player.x, vehiclePosition?.z ?? player.z, playerEntity?.get(PlayerMount)?.kind === 'plane' ? 2 : 1);
     environmentSystem(world, delta, camera);
     saveSystem(world, delta);
   });

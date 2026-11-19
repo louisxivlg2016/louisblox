@@ -356,7 +356,10 @@ export function initInput() {
     touchPointers.delete(event.pointerId);
     touchPoints.delete(event.pointerId);
     if (touchPointers.size === 0) {
-      if (event.type === 'pointerup' && !touchGestureMoved && (twoFingerGesture || !touchDidMine)) queuePlacement();
+      if (event.type === 'pointerup' && !touchGestureMoved && (twoFingerGesture || !touchDidMine)) {
+        queueHarvest();
+        queuePlacement();
+      }
       touchLookPointer = null;
       touchGestureMoved = false;
       twoFingerGesture = false;
