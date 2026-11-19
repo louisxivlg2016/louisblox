@@ -828,6 +828,6 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     );
   }
   if (gameplayMode === 'pirates') spawnPirateCannons(world);
-  streamChunks(world, spawn.x, spawn.z);
+  for (let index = 0; index < 9; index += 1) streamChunks(world, spawn.x, spawn.z);
   return { spawn };
 }

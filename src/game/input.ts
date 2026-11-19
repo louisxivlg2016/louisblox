@@ -8,7 +8,7 @@ import { useTradeStore } from './trading';
 import { useHomeStore } from './homes';
 import { useMultiplayerStore } from './multiplayerStore';
 import { isMultiplayerOnlyMode } from './worldMode';
-import { toggleSiren } from './vehicleControls';
+import { honk, toggleHeadlights, toggleSiren } from './vehicleControls';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -252,6 +252,12 @@ export function initInput() {
       event.preventDefault();
     }
     if (event.code === 'KeyL' && !event.repeat && useGameStore.getState().mode === 'play') {
+      if (useGameStore.getState().riding) toggleHeadlights();
+    }
+    if (event.code === 'KeyO' && !event.repeat && useGameStore.getState().mode === 'play') {
+      if (useGameStore.getState().riding) honk();
+    }
+    if (event.code === 'KeyJ' && !event.repeat && useGameStore.getState().mode === 'play') {
       const riding = useGameStore.getState().riding;
       if (riding === 'firetruck' || riding === 'police') toggleSiren(riding);
     }

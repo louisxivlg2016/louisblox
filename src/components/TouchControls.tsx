@@ -5,6 +5,7 @@ import { useGameStore } from '../game/store';
 import { landPlane } from '../game/vehicles';
 import { world } from '../game/world';
 import { translate } from '../game/language';
+import { honk, toggleHeadlights, useVehicleControls } from '../game/vehicleControls';
 
 function HoldButton({ code, label, onDoubleTap, ariaLabel }: { code: string; label: string; onDoubleTap?: () => void; ariaLabel?: string }) {
   const lastTap = useRef(0);
@@ -66,6 +67,7 @@ export function TouchControls() {
   const pilot = useGameStore((state) => state.ridingRole === 'driver');
   const cannon = riding === 'cannon' && pilot;
   const flying = useGameStore((state) => state.flying);
+  const headlights = useVehicleControls((state) => state.headlights);
 
   const moveJoystick = (event: ReactPointerEvent<HTMLDivElement>) => {
     const rect = joystick.current!.getBoundingClientRect();
@@ -150,7 +152,11 @@ export function TouchControls() {
           </button>
         </>}
         {plane && <HoldButton code="KeyE" label={pilot ? translate('Sortir', 'Exit') : translate('Quitter l’avion', 'Leave airplane')} />}
-        {!plane && riding && <HoldButton code="KeyE" label={riding === 'horse' || riding === 'camel' ? translate('Descendre de l’animal', 'Dismount animal') : translate('Sortir du véhicule', 'Exit vehicle')} />}
+        {!plane && riding && <>
+          <button className={`touch-button${headlights ? ' touch-flight' : ''}`} aria-label={translate('Activer ou couper les phares', 'Toggle headlights')} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); toggleHeadlights(); }}>Phares</button>
+          <button className="touch-button" aria-label={translate('Klaxonner', 'Honk horn')} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); honk(); }}>Klaxon</button>
+          <HoldButton code="KeyE" label={riding === 'horse' || riding === 'camel' ? translate('Descendre de l’animal', 'Dismount animal') : translate('Sortir du véhicule', 'Exit vehicle')} />
+        </>}
         <button
           className="touch-button"
           onPointerDown={(event) => {

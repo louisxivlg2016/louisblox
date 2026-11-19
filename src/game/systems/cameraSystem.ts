@@ -114,14 +114,13 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
     camera.lookAt(cameraTarget);
   } else {
     releaseCameraChunk(world);
-    camera.position.copy(position);
-    if (walkingCabin) camera.position.y += 1.62;
-    else if (mount?.kind === 'car' && mount.role === 'passenger') {
-      camera.position.y += 1.2;
-      camera.position.x -= Math.sin(state.yaw) * 0.65;
-      camera.position.z -= Math.cos(state.yaw) * 0.65;
-    } else if (mount?.kind === 'plane') camera.position.y += 1;
-    else camera.position.y += mount?.vehicle && !isAnimalMount(mount.kind) ? mount.kind === 'car' ? 0.65 : 0.55 : 1.62;
+    if (mount?.kind === 'car') camera.position.set(center.x, center.y + 0.65, center.z);
+    else {
+      camera.position.copy(position);
+      if (walkingCabin) camera.position.y += 1.62;
+      else if (mount?.kind === 'plane') camera.position.y += 1;
+      else camera.position.y += mount?.vehicle && !isAnimalMount(mount.kind) ? 0.55 : 1.62;
+    }
     if (mounted && !walkingCabin) camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z, center.y + 0.2) + 0.2);
     moveCameraOutOfSolidBlocks(world, camera);
     rotation.set(state.pitch, state.yaw, 0, 'YXZ');

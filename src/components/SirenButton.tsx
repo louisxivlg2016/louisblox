@@ -14,7 +14,7 @@ export function SirenButton() {
       className={`siren-toggle${enabled ? ' active' : ''}`}
       aria-label={enabled ? translate('Couper la sirène', 'Stop siren') : translate('Activer la sirène', 'Activate siren')}
       aria-pressed={enabled}
-      title={translate('Sirène · raccourci L', 'Siren · L shortcut')}
+      title={translate('Sirène · raccourci J', 'Siren · J shortcut')}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => {
         event.stopPropagation();

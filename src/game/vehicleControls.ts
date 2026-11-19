@@ -1,9 +1,20 @@
 import { create } from 'zustand';
-import { setLoopSound } from './audio';
+import { playCarHorn, setLoopSound } from './audio';
 
 type SirenKind = 'firetruck' | 'police';
+type VehicleControlState = Record<SirenKind | 'headlights', boolean>;
 
-export const useVehicleControls = create<Record<SirenKind, boolean>>(() => ({ firetruck: false, police: false }));
+export const useVehicleControls = create<VehicleControlState>(() => ({ firetruck: false, police: false, headlights: false }));
+
+export function toggleHeadlights() {
+  const enabled = !useVehicleControls.getState().headlights;
+  useVehicleControls.setState({ headlights: enabled });
+  return enabled;
+}
+
+export function honk() {
+  playCarHorn();
+}
 
 export function toggleSiren(kind: SirenKind) {
   const enabled = !useVehicleControls.getState()[kind];

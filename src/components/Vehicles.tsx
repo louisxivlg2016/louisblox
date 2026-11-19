@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { Object3D } from 'three';
 import { useQuery, useQueryFirst, useTrait } from 'koota/react';
 import type { Entity } from 'koota';
 import { Player, PlayerMount, Vehicle, VehicleMesh, VehicleMotion, VehiclePosition } from '../game/traits';
@@ -5,6 +7,23 @@ import { useGameStore } from '../game/store';
 import { VehicleGlb } from './VehicleGlb';
 import { VehicleInterior } from './TransportInterior';
 import { useRemotePlayerStore } from '../game/multiplayerStore';
+import { useVehicleControls } from '../game/vehicleControls';
+import { PixelPart } from './ItemModel';
+
+function VehicleHeadlights({ kind }: { kind: import('../game/vehicleTypes').VehicleKind }) {
+  const enabled = useVehicleControls((state) => state.headlights);
+  const target = useMemo(() => new Object3D(), []);
+  if (!enabled || !['car', 'police', 'jeep', 'firetruck'].includes(kind)) return null;
+  return (
+    <group name="vehicle-headlights">
+      <primitive object={target} position={[0, 0.5, -12]} />
+      {[-0.55, 0.55].map((x) => <group key={x}>
+        <PixelPart position={[x, 0.65, -2.05]} size={[0.28, 0.18, 0.05]} color="#fff5bd" />
+        <spotLight position={[x, 0.7, -1.85]} target={target} color="#fff2bd" intensity={24} distance={24} angle={0.34} penumbra={0.55} decay={1.4} />
+      </group>)}
+    </group>
+  );
+}
 
 function VehicleView({ entity }: { entity: Entity }) {
   const vehicle = useTrait(entity, Vehicle);
@@ -28,6 +47,7 @@ function VehicleView({ entity }: { entity: Entity }) {
       position={[position.x, position.y, position.z]}
     >
       {vehicle && <VehicleGlb entity={entity} kind={kind} color={vehicle.color} interior={showInterior}  />}
+      <VehicleHeadlights kind={kind} />
       {showInterior && <VehicleInterior
         kind={kind}
         driverPresent={!localDriver && !remoteDriver}

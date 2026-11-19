@@ -253,6 +253,29 @@ export function playSound(name: SoundEffect, volume = 0.5) {
   return element;
 }
 
+let hornContext: AudioContext | null = null;
+
+export function playCarHorn() {
+  if (!useAudioSettings.getState().sounds || typeof window === 'undefined') return;
+  hornContext ??= new AudioContext();
+  const context = hornContext;
+  void context.resume();
+  const start = context.currentTime;
+  for (const frequency of [390, 490]) {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.12, start + 0.025);
+    gain.gain.setValueAtTime(0.12, start + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.42);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.44);
+  }
+}
+
 export function animalSoundEffect(kind: AnimalKind) {
   return animalEffects[kind];
 }
