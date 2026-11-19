@@ -78,6 +78,7 @@ export const HOTBAR_BLOCKS = [
   BlockKind.IronOre,
   BlockKind.GoldOre,
   BlockKind.DiamondOre,
+  BlockKind.Bedrock,
   BlockKind.Tnt,
   BlockKind.Candle,
   ...EXTRA_BLOCK_ORDER,

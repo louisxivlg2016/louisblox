@@ -4,10 +4,20 @@ import { BlockKind, isWaterBlock } from './voxel';
 import { EXTRA_BLOCK_META, isGlass, isSapling } from './extraBlocks';
 import { getVitrailTexture } from './vitrailDesigns';
 import type { ExtraBlockKind } from './extraBlocks';
+import { useSeasonStore } from './seasons';
 
 function random(x: number, y: number, seed: number) {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
   return value - Math.floor(value);
+}
+
+function seasonalPalette(original: string[]) {
+  const season = useSeasonStore.getState().season;
+  if (season === 'auto') return original;
+  if (season === 'spring') return ['#4b983e', '#65b94d', '#78c95b', '#3f8637', '#91d66b'];
+  if (season === 'summer') return ['#397636', '#438541', '#4b9046', '#326a30', '#559a4d'];
+  if (season === 'autumn') return ['#bd5729', '#d8752f', '#e68c36', '#a84824', '#ef9f45'];
+  return ['#d8e5e8', '#edf4f5', '#c4d5da', '#f7fbfc', '#b6cbd2'];
 }
 
 export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
@@ -50,7 +60,7 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   const grassy = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass || kind === BlockKind.JungleGrass;
   const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves || kind === BlockKind.JungleVine;
   const sapling = isSapling(kind);
-  let palette = palettes[kind];
+  let palette = foliage || sapling ? seasonalPalette(palettes[kind]) : palettes[kind];
   if (grassy && face !== 'top') palette = palettes[BlockKind.Dirt];
 
   for (let x = 0; x < 16; x += 1) {
@@ -371,5 +381,20 @@ export const blockMaterials = {
   ...baseBlockMaterials,
   ...Object.fromEntries(Object.keys(EXTRA_BLOCK_META).map((kind) => [kind, repeated(material(Number(kind) as BlockKind, 'side'))])),
 } as unknown as Record<BlockKind, Material[]>;
+
+function refreshSeasonMaterials() {
+  for (const [key, materials] of Object.entries(blockMaterials)) {
+    const kind = Number(key) as BlockKind;
+    if (kind !== BlockKind.Leaves && kind !== BlockKind.PineLeaves && kind !== BlockKind.AutumnLeaves && kind !== BlockKind.JungleLeaves && kind !== BlockKind.JungleVine && !isSapling(kind)) continue;
+    for (const material of materials) {
+      if (!(material instanceof MeshLambertMaterial)) continue;
+      material.map?.dispose();
+      material.map = texture(kind, 'side');
+      material.needsUpdate = true;
+    }
+  }
+}
+
+useSeasonStore.subscribe(refreshSeasonMaterials);
 
 export const blockGeometry = new BoxGeometry(1, 1, 1);

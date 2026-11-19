@@ -123,7 +123,11 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       if (kind === BlockKind.Food) pickUpFood(world, hit);
       else {
         removeVoxel(world, hit);
-        if (store.gameplayMode === 'survival') dropBlock(world, hit.block);
+        if (store.gameplayMode === 'survival') {
+          dropBlock(world, hit.block);
+          const sapling = kind === BlockKind.Leaves || kind === BlockKind.JungleLeaves ? BlockKind.OakSapling : kind === BlockKind.PineLeaves ? BlockKind.PineSapling : kind === BlockKind.AutumnLeaves ? BlockKind.AutumnSapling : null;
+          if (sapling) changeInventory(sapling, 1 + Math.floor(Math.random() * 2));
+        }
       }
       playSound(hit.block.kind === BlockKind.Dirt || hit.block.kind === BlockKind.Sand ? 'breakDirt' : isGlass(hit.block.kind) ? 'breakGlass' : isWoodBlock(hit.block.kind) ? 'breakWood' : 'breakBlock', 0.5);
       target.visible = false;

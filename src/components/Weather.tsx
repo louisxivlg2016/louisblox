@@ -6,18 +6,23 @@ import { Environment, RainMaterial, SnowMaterial } from '../game/traits';
 const rainVertex = `
   uniform float uTime;
   uniform vec3 uCamera;
+  uniform float uRoofY;
+  varying float vCovered;
   attribute float aSpeed;
   void main() {
     vec3 p = position;
     p.y = mod(p.y - uTime * 15.0 * aSpeed + 15.0, 30.0) - 15.0;
     p += uCamera;
+    vCovered = p.y < uRoofY ? 1.0 : 0.0;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   }
 `;
 
 const rainFragment = `
   uniform float uOpacity;
+  varying float vCovered;
   void main() {
+    if (vCovered > 0.5) discard;
     gl_FragColor = vec4(0.65, 0.8, 1.0, uOpacity * 0.58);
   }
 `;
@@ -25,6 +30,8 @@ const rainFragment = `
 const snowVertex = `
   uniform float uTime;
   uniform vec3 uCamera;
+  uniform float uRoofY;
+  varying float vCovered;
   attribute float aSpeed;
   void main() {
     vec3 p = position;
@@ -32,6 +39,7 @@ const snowVertex = `
     p.x += sin(uTime * 0.8 + position.z) * 1.1;
     p.z += cos(uTime * 0.65 + position.x) * 0.8;
     p += uCamera;
+    vCovered = p.y < uRoofY ? 1.0 : 0.0;
     vec4 view = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * view;
     gl_PointSize = clamp(4.2 * aSpeed * (65.0 / -view.z), 1.5, 7.0);
@@ -40,8 +48,9 @@ const snowVertex = `
 
 const snowFragment = `
   uniform float uOpacity;
+  varying float vCovered;
   void main() {
-    if (distance(gl_PointCoord, vec2(0.5)) > 0.5) discard;
+    if (vCovered > 0.5 || distance(gl_PointCoord, vec2(0.5)) > 0.5) discard;
     gl_FragColor = vec4(1.0, 1.0, 1.0, uOpacity * 0.9);
   }
 `;
@@ -85,11 +94,13 @@ export function Weather() {
   const rainUniforms = useMemo(() => ({
     uTime: { value: 0 },
     uCamera: { value: new Vector3() },
+    uRoofY: { value: 100000 },
     uOpacity: { value: 0 },
   }), []);
   const snowUniforms = useMemo(() => ({
     uTime: { value: 0 },
     uCamera: { value: new Vector3() },
+    uRoofY: { value: 100000 },
     uOpacity: { value: 0 },
   }), []);
 

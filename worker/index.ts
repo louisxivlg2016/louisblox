@@ -264,6 +264,7 @@ function parseProjectile(value: unknown) {
     life: data.life,
     damage: data.damage,
     color: typeof data.color === 'string' && /^#[0-9a-f]{6}$/i.test(data.color) ? data.color : undefined,
+    effect: data.effect === 'smoke' || data.effect === 'firework' ? data.effect : undefined,
   };
 }
 
@@ -272,7 +273,7 @@ function parseExplosion(value: unknown) {
   if (!value || typeof value !== 'object') return null;
   const position = value as Record<string, unknown>;
   if (!['x', 'y', 'z'].every((key) => typeof position[key] === 'number' && Number.isFinite(position[key]) && Math.abs(position[key] as number) <= 10000000)) return null;
-  return { x: position.x as number, y: position.y as number, z: position.z as number };
+  return { x: position.x as number, y: position.y as number, z: position.z as number, effect: position.effect === 'smoke' || position.effect === 'firework' ? position.effect : undefined, color: typeof position.color === 'string' && /^#[0-9a-f]{6}$/i.test(position.color) ? position.color : undefined };
 }
 
 function parsePaint(value: unknown) {
@@ -1011,6 +1012,10 @@ export class GameRoom extends DurableObject<Env> {
         this.pirates.damageObjective(attacker, 'cannon', explosion);
       }
       this.broadcast({ type, projectileId, explosion, paint }, ws);
+      return;
+    }
+    if (type === 'vehicles-request') {
+      ws.send(JSON.stringify({ type: 'vehicles', vehicles: [...this.vehicles.values()] }));
       return;
     }
     if (type === 'vehicle-spawn') {

@@ -5,6 +5,7 @@ import { Mesh, NearestFilter, Vector3 } from 'three';
 import type { Entity } from 'koota';
 import type { Group } from 'three';
 import { AnimalMesh, AnimalMotion, AnimalPosition, Trader } from '../game/traits';
+import { turnToward } from '../game/rotation';
 import { createCharacterRig } from '../game/characterRig';
 import type { AnimalKind } from '../game/animals';
 import cowUrl from '../../assets/models/reference-cow.glb';
@@ -41,6 +42,10 @@ function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x'
     if (position && mesh) {
       const moved = previousPosition.current ? Math.hypot(position.x - previousPosition.current.x, position.z - previousPosition.current.z) : 0;
       moving.current = moved > 0.0005;
+      if (moving.current && previousPosition.current && motion) {
+        const movementYaw = Math.atan2(position.x - previousPosition.current.x, position.z - previousPosition.current.z);
+        motion.displayYaw = turnToward(motion.displayYaw, movementYaw, Math.min(1, delta * 10));
+      }
       if (!previousPosition.current) previousPosition.current = position.clone();
       else previousPosition.current.copy(position);
       const smoothing = 1 - Math.exp(-delta * 30);

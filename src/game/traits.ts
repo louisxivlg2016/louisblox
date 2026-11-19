@@ -37,7 +37,7 @@ export const Fire = trait({ kind: 105 as 105 | 106, age: 0, spreadIn: 2, generat
 export const FirePosition = trait(() => new Vector3());
 export const Sapling = trait({ kind: 0 as import('./voxel').BlockKind, age: 0 });
 export const SaplingPosition = trait(() => new Vector3());
-export const Explosion = trait(() => ({ time: 0.45, maxTime: 0.45 } as { time: number; maxTime: number; paintColor?: string; paintNormal?: Vector3; paintFrom?: Vector3; paintTo?: Vector3; paintWidth?: number }));
+export const Explosion = trait(() => ({ time: 0.45, maxTime: 0.45 } as { time: number; maxTime: number; paintColor?: string; paintNormal?: Vector3; paintFrom?: Vector3; paintTo?: Vector3; paintWidth?: number; effect?: 'smoke' | 'firework'; color?: string }));
 export const ExplosionPosition = trait(() => new Vector3());
 export const ExplosionMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 export const ExplosionMaterial = trait(() => ({ value: null as import('three').MeshBasicMaterial | null }));
@@ -76,7 +76,7 @@ export const VehicleMotion = trait({ speed: 0, yaw: 0, mounted: false, routeTime
 export const VehicleMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 export const VehicleHealth = trait({ value: 3, max: 3 });
 export const HorseRider = trait({ saddled: false, mounted: false, passenger: false, speed: 0, velocityY: 0, grounded: true });
-export const Projectile = trait({ id: '', kind: 'arrow' as 'arrow' | 'bullet' | 'bomb', life: 8, damage: 1, remote: false, color: undefined as string | undefined });
+export const Projectile = trait({ id: '', kind: 'arrow' as 'arrow' | 'bullet' | 'bomb', life: 8, damage: 1, remote: false, color: undefined as string | undefined, effect: undefined as 'smoke' | 'firework' | undefined });
 export const ProjectilePosition = trait(() => new Vector3());
 export const ProjectileVelocity = trait(() => new Vector3());
 export const ProjectileMesh = trait(() => ({ value: null as import('three').Object3D | null }));

@@ -33,9 +33,13 @@ export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y
     const block = blocks.get(voxelKey(bx, y, bz));
     return block && !isGrassPlate(block) && !isWaterBlock(block.kind) && !isVehicleFoliage(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind) && !(block.open && block.kind >= 48 && block.kind <= 79);
   };
-  if (top !== undefined && top + 0.5 <= fromY && isGround(top)) return top + 0.5;
+  const surface = (y: number) => {
+    const block = blocks.get(voxelKey(bx, y, bz));
+    return block && isSlab(block.kind) && block.growth === 0 ? y - 0.32 : y + 0.5;
+  };
+  if (top !== undefined && surface(top) <= fromY && isGround(top)) return surface(top);
   for (let y = Math.min(top ?? 80, Math.floor(fromY + 0.5)); y >= MIN_WORLD_Y; y -= 1) {
-    if (isGround(y)) return y + 0.5;
+    if (isGround(y)) return surface(y);
   }
   return MIN_WORLD_Y + 0.5;
 }
@@ -84,7 +88,7 @@ export function spawnCar(world: World, x: number, y: number, z: number, color = 
 }
 
 export function seatOffset(kind: VehicleKind, role: SeatRole, seat = 0): [number, number, number] {
-  if (kind === 'boat') return role === 'driver' ? [0, 0.56, -0.72] : [0, 0.56, 0.72];
+  if (kind === 'boat') return role === 'driver' ? [-0.42, 0.58, -0.3] : [0.38, 0.58, -0.3];
   if (kind === 'cannon') return [0, 0.7, 1.7];
   if (kind === 'carriage') return role === 'driver' ? [0, 1.1, -2] : [0.5, 1.04, 0.5];
   if (kind !== 'car' && kind !== 'jeep' && kind !== 'police' && kind !== 'firetruck') {
@@ -288,7 +292,11 @@ function hitsVehicleWall(world: World, x: number, y: number, z: number, yaw: num
       const pointX = x + localX * cosine + localZ * sine;
       const pointZ = z - localX * sine + localZ * cosine;
       const block = blocks.get(voxelKey(Math.round(pointX), Math.round(y + height), Math.round(pointZ)));
-      if (block && isCollidable(block) && !isRail(block.kind) && !isStair(block.kind) && !isSlab(block.kind) && !isVehicleFoliage(block.kind)) return true;
+      if (block && isCollidable(block) && !isRail(block.kind) && !isStair(block.kind) && !isSlab(block.kind) && !isVehicleFoliage(block.kind)) {
+        const stepGround = groundAt(world, pointX, pointZ, y + 1.01);
+        if (height <= 0.65 && stepGround <= y + 1.01 && stepGround >= y - 0.2) continue;
+        return true;
+      }
     }
   }
   return false;
@@ -383,7 +391,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
     }
     const active = driving && state && vehicle.kind !== 'cannon';
     const landing = Boolean(active && vehicle.kind === 'plane' && mount.landing);
-    const maximum = vehicle.kind === 'car' ? 14 : vehicle.kind === 'plane' ? 18 : vehicle.kind === 'boat' ? 6 : vehicle.kind === 'carriage' ? 7 : vehicle.kind === 'cannon' ? 0 : 12;
+    const maximum = vehicle.kind === 'car' ? 14 : vehicle.kind === 'plane' ? 18 : vehicle.kind === 'boat' ? 18 : vehicle.kind === 'carriage' ? 7 : vehicle.kind === 'cannon' ? 0 : 12;
     const target = landing ? 0 : active ? input.forward * (input.forward < 0 ? 2.5 : maximum) : 0;
     motion.speed += Math.max(-20 * dt, Math.min(20 * dt, target - motion.speed));
     if (Math.abs(motion.speed) < 0.03) motion.speed = 0;

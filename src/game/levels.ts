@@ -111,8 +111,8 @@ export function heightAt(x: number, z: number, seed: number) {
     const jungleRoll = biome === 'jungle' ? noise(x / 23, z / 23, seed + 107) * 3 : 0;
     height = Math.floor(3.5 + (broad + detail) * 7 + jungleRoll);
     const riverDistance = Math.abs(noise(x / 110, z / 110, seed + 501) - 0.5);
-    if (riverDistance < 0.012) {
-      const carve = 1 - riverDistance / 0.012;
+    if (riverDistance < 0.025) {
+      const carve = 1 - riverDistance / 0.025;
       height = Math.max(1, Math.floor(height - carve * 4));
     }
   }

@@ -177,7 +177,7 @@ export function interpolateAnimalMovement(world: World, dt: number) {
       const position = entity.get(AnimalPosition)!;
       interpolatePosition(position, interpolation);
       const motion = entity.get(AnimalMotion);
-      if (motion) motion.displayYaw = interpolation.yawTo;
+      if (motion) motion.displayYaw = turnToward(motion.displayYaw, interpolation.yawTo, dt * 10);
       const mesh = entity.get(AnimalMesh)?.value;
       if (mesh) {
         mesh.position.copy(position);

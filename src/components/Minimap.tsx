@@ -22,6 +22,7 @@ export function Minimap() {
   const [viewCenter, setViewCenter] = useState<{ x: number; z: number } | null>(null);
   const drag = useRef<{ pointerId: number; clientX: number; clientY: number; x: number; z: number } | null>(null);
   const largeCache = useRef(new Map<string, string>());
+  const lastStream = useRef(0);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
 
   useEffect(() => {
@@ -155,12 +156,18 @@ export function Minimap() {
   const moveMapDrag = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const current = drag.current;
     if (!current || current.pointerId !== event.pointerId) return;
-    setViewCenter({ x: current.x + (current.clientX - event.clientX) / CELL, z: current.z + (current.clientY - event.clientY) / CELL });
+    const next = { x: current.x + (current.clientX - event.clientX) / CELL, z: current.z + (current.clientY - event.clientY) / CELL };
+    setViewCenter(next);
+    const now = performance.now();
+    if (now - lastStream.current >= 250) {
+      lastStream.current = now;
+      for (let index = 0; index < 9; index += 1) streamChunks(world, next.x, next.z);
+    }
   };
   const endMapDrag = (event: React.PointerEvent<HTMLCanvasElement>) => {
     if (drag.current?.pointerId !== event.pointerId) return;
     drag.current = null;
-    if (viewCenter) streamChunks(world, viewCenter.x, viewCenter.z);
+    if (viewCenter) for (let index = 0; index < 9; index += 1) streamChunks(world, viewCenter.x, viewCenter.z);
     event.currentTarget.style.cursor = 'grab';
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };

@@ -6,7 +6,7 @@ import { findAnimalTarget, removeAnimal } from './combat';
 import { addVoxel, batchVoxelEdits, chunkCoordinate, getBlockIndex, growSapling, removeVoxel, replaceVoxel, setVoxelText } from './chunks';
 import { cropDefinition } from './crops';
 import { isCrop, isSapling, signFacing } from './extraBlocks';
-import { GALLERY_ITEMS } from './galleryCatalog';
+import { GALLERY_ITEMS, GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
 import { getItemMeta, isAnimalPoison } from './items';
 import type { GalleryItemId } from './items';
 import { SEA_LEVEL } from './levels';
@@ -235,8 +235,9 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     store.setNotice(result.message);
     return true;
   }
-  if (shape === 'firecracker' || shape === 'bomb') {
-    fireProjectile(world, origin, direction, 'bomb', 1, paintballColor(selected));
+  if (shape === 'firecracker' || shape === 'bomb' || shape === 'pebble' && isGalleryItem(selected) && GALLERY_ITEM_MAP[selected].category === 'Firecrackers & Firecracker Pebbles') {
+    const firework = shape === 'firecracker' || shape === 'pebble';
+    fireProjectile(world, origin, direction, 'bomb', 0, firework ? meta.color : undefined, firework ? 'firework' : 'smoke');
     return true;
   }
   if (shape === 'arrow' || shape === 'ball' || shape === 'pebble') {

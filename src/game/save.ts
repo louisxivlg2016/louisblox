@@ -8,6 +8,7 @@ import { Environment, Player, PlayerHealth, PlayerPosition, PlayerState } from '
 import { sanitizeCustomWorld } from './worldCode';
 import { translate } from './language';
 import { snapshotPaintStrokes } from './paintball';
+import { useSeasonStore } from './seasons';
 
 const LEGACY_SAVE_KEY = 'louisblox-save-v1';
 const WORLDS_KEY = 'louisblox-worlds-v1';
@@ -114,6 +115,7 @@ export function createWorldSave(world: World): WorldSave | null {
     edits: snapshotWorldEdits(world),
     protection: useProtectionStore.getState().protection ?? undefined,
     paint: snapshotPaintStrokes(world),
+    season: useSeasonStore.getState().season,
   };
 }
 

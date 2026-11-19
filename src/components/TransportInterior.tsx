@@ -152,7 +152,7 @@ export function VehicleInterior({ kind, driverPresent, passengerSeat, rightHandD
   if (kind === 'train' || kind === 'metro') return <TrainInterior kind={kind} driverPresent={driverPresent} passengerSeat={passengerSeat} />;
   if (kind === 'carriage') return <><CabinShell cabin={CABINS.carriage!} /><Seat position={[-0.5, 1.04, 0.5]} /><Seat position={[0.5, 1.04, 0.5]} /></>;
   if (kind === 'boat') {
-    return <><Seat position={[0, 0.45, -0.72]} /><Seat position={[0, 0.45, 0.72]} /><PixelPart position={[-0.9, 0.45, 0.4]} size={[0.1, 0.1, 2.4]} color="#9a7042" rotation={[0, -0.35, 0]} /></>;
+    return <><Seat position={[-0.42, 0.58, -0.3]} /><Seat position={[0.38, 0.58, -0.3]} /><SteeringWheel position={[-0.42, 0.94, -0.73]} /></>;
   }
   if (kind === 'cannon') return null;
   return <RoadInterior kind={kind} rightHandDrive={rightHandDrive} />;

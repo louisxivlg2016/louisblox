@@ -45,13 +45,22 @@ export function App() {
                 const [traits, chunks, vehicles, ruins, collision, effects, football, vehicleTypes, vehicleWeapon, vehicleControls, animalSync, fish, animalMovement] = await Promise.all([import('../game/traits'), import('../game/chunks'), import('../game/vehicles'), import('../game/ruins'), import('../game/systems/collisionSystem'), import('../game/effects'), import('../game/footballClient'), import('../game/vehicleTypes'), import('../game/systems/vehicleWeaponSystem'), import('../game/vehicleControls'), import('../game/animalSync'), import('../game/fish'), import('../game/systems/animalSystem')]);
                 const maze = await import('../game/mazeClient');
                 const taming = await import('../game/taming');
+                const combat = await import('../game/combat');
+                const gallery = await import('../game/galleryActions');
+                const projectiles = await import('../game/systems/projectileSystem');
+                const water = await import('../game/systems/waterSystem');
+                const persistence = await import('../game/save');
+                const seasons = await import('../game/seasons');
+                const environment = await import('../game/systems/environmentSystem');
+                const blockControls = await import('../game/systems/blockSystem');
+                const textures = await import('../game/textures');
                 const tribes = await import('../game/tribes');
                 const animals = await import('../game/animals');
                 const pirates = await import('../game/piratesClient');
                 const targeting = await import('../game/interactionTargets');
                 const Three = await import('three');
                 const voxels = await import('../game/voxel');
-                return { pirates: pirates.usePirateStore, tribe: tribes.useTribeStore, teleportToPendingTribeHome: tribes.teleportToPendingTribeHome, spawnAnimal: animals.spawnAnimal, choosePirateKit: pirates.choosePirateKit, maze: maze.useMazeStore, audio, biomeAt, BlockKind, voxelKey, world, gl, camera, r3f, Three, character: useCharacterStore, store: useGameStore, multiplayer: useMultiplayerStore, remote: useRemotePlayerStore, battle: useBattleStore, protection: useProtectionStore, updateProtection, football: football.useFootballStore, effects: effects.useEffectStore, effectSystem: effects.effectSystem, hasActiveEffects: effects.hasActiveEffects, sirens: vehicleControls.useVehicleControls, isDown, mining: () => isMouseDown(0), ...animalSync, ...fish, ...animalMovement, ...taming, ...traits, ...chunks, ...vehicles, ...ruins, ...collision, ...vehicleTypes, ...vehicleWeapon, ...targeting, raycastVoxel: voxels.raycastVoxel, buildChunkGeometry, droppedItemSystem, teleportToHome };
+                return { pirates: pirates.usePirateStore, tribe: tribes.useTribeStore, teleportToPendingTribeHome: tribes.teleportToPendingTribeHome, spawnAnimal: animals.spawnAnimal, choosePirateKit: pirates.choosePirateKit, maze: maze.useMazeStore, audio, biomeAt, BlockKind, voxelKey, world, gl, camera, r3f, Three, character: useCharacterStore, store: useGameStore, multiplayer: useMultiplayerStore, remote: useRemotePlayerStore, battle: useBattleStore, protection: useProtectionStore, updateProtection, football: football.useFootballStore, effects: effects.useEffectStore, effectSystem: effects.effectSystem, hasActiveEffects: effects.hasActiveEffects, sirens: vehicleControls.useVehicleControls, isDown, mining: () => isMouseDown(0), ...animalSync, ...fish, ...animalMovement, ...taming, ...combat, ...gallery, ...projectiles, ...water, ...persistence, ...seasons, environmentSystem: environment.environmentSystem, blockSystem: blockControls.blockSystem, blockMaterials: textures.blockMaterials, ...traits, ...chunks, ...vehicles, ...ruins, ...collision, ...vehicleTypes, ...vehicleWeapon, ...targeting, HOTBAR_BLOCKS: voxels.HOTBAR_BLOCKS, raycastVoxel: voxels.raycastVoxel, buildChunkGeometry, droppedItemSystem, teleportToHome };
               },
             });
           }}

@@ -5,6 +5,7 @@ import { findAnimalTarget } from '../combat';
 import { animalFoodNotice, canFeedAnimal, feedAnimal } from '../taming';
 import { reportAnimalTame } from '../animalSync';
 import { useGameStore } from '../store';
+import { getItemMeta } from '../items';
 import { Player, PlayerPosition } from '../traits';
 
 const origin = new Vector3();
@@ -15,6 +16,7 @@ export function animalInteractionSystem(world: World, camera: Camera, interact: 
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   const selected = useGameStore.getState().selected;
   if (!player || touchTaps <= 0 && (selected === 'hand' || typeof selected === 'number' || selected === 'saddle')) return false;
+  if (typeof selected === 'string' && ['sword', 'bow', 'gun'].includes(getItemMeta(selected).category)) return false;
   origin.copy(player);
   origin.y += 1.62;
   camera.getWorldDirection(direction);

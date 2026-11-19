@@ -15,9 +15,10 @@ export type ProjectileSnapshot = {
   life: number;
   damage: number;
   color?: string;
+  effect?: 'smoke' | 'firework';
 };
 
-export type ExplosionSnapshot = { x: number; y: number; z: number };
+export type ExplosionSnapshot = { x: number; y: number; z: number; effect?: 'smoke' | 'firework'; color?: string };
 export type PaintSplashSnapshot = { x: number; y: number; z: number; nx: number; ny: number; nz: number; color: string; x2?: number; y2?: number; z2?: number };
 export type ProjectileSyncMessage =
   | { type: 'projectile-spawn' | 'projectile-state'; projectile: ProjectileSnapshot }
@@ -31,7 +32,8 @@ export function isProjectileSnapshot(value: unknown): value is ProjectileSnapsho
     && ['x', 'y', 'z', 'vx', 'vy', 'vz', 'life', 'damage'].every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]))
     && (data.life as number) >= 0 && (data.life as number) <= 30
     && (data.damage as number) >= 0 && (data.damage as number) <= 100
-    && (data.color === undefined || typeof data.color === 'string' && /^#[0-9a-f]{6}$/i.test(data.color));
+    && (data.color === undefined || typeof data.color === 'string' && /^#[0-9a-f]{6}$/i.test(data.color))
+    && (data.effect === undefined || data.effect === 'smoke' || data.effect === 'firework');
 }
 
 export function isExplosionSnapshot(value: unknown): value is ExplosionSnapshot | undefined {
@@ -85,6 +87,7 @@ function snapshotFromEntity(entity: Entity): ProjectileSnapshot | null {
     life: Math.max(0, projectile.life),
     damage: projectile.damage,
     color: projectile.color,
+    effect: projectile.effect,
   };
 }
 
@@ -109,7 +112,7 @@ export function syncProjectileRemoval(world: World, entity: Entity, exploded: bo
   emit(world, {
     type: 'projectile-remove',
     projectileId: projectile.id,
-    explosion: exploded ? { x: position.x, y: position.y, z: position.z } : undefined,
+    explosion: exploded ? { x: position.x, y: position.y, z: position.z, effect: projectile.effect, color: projectile.color } : undefined,
     paint: paint && projectile.color ? { x: paint.position.x, y: paint.position.y, z: paint.position.z, nx: paint.normal.x, ny: paint.normal.y, nz: paint.normal.z, color: projectile.color } : undefined,
   });
 }
@@ -120,12 +123,12 @@ export function applyProjectileSnapshot(world: World, snapshot: ProjectileSnapsh
   applying.set(world, true);
   try {
     if (existing) {
-      existing.set(Projectile, { life: snapshot.life, damage: snapshot.damage, color: snapshot.color });
+      existing.set(Projectile, { life: snapshot.life, damage: snapshot.damage, color: snapshot.color, effect: snapshot.effect });
       existing.get(ProjectilePosition)?.set(snapshot.x, snapshot.y, snapshot.z);
       existing.get(ProjectileVelocity)?.set(snapshot.vx, snapshot.vy, snapshot.vz);
     } else {
       world.spawn(
-        Projectile({ id: snapshot.id, kind: snapshot.kind, life: snapshot.life, damage: snapshot.damage, remote: true, color: snapshot.color }),
+        Projectile({ id: snapshot.id, kind: snapshot.kind, life: snapshot.life, damage: snapshot.damage, remote: true, color: snapshot.color, effect: snapshot.effect }),
         ProjectilePosition(new Vector3(snapshot.x, snapshot.y, snapshot.z)),
         ProjectileVelocity(new Vector3(snapshot.vx, snapshot.vy, snapshot.vz)),
         ProjectileMesh(),
@@ -152,8 +155,9 @@ export function applyProjectileRemoval(world: World, projectileId: string, explo
       if (projectile?.remote && projectile.id === projectileId) entity.destroy();
     }
     if (explosion) {
+      const duration = explosion.effect === 'smoke' ? 5 : explosion.effect === 'firework' ? 1.8 : 0.45;
       world.spawn(
-        Explosion({ time: 0.45, maxTime: 0.45 }),
+        Explosion({ time: duration, maxTime: duration, effect: explosion.effect, color: explosion.color }),
         ExplosionPosition(new Vector3(explosion.x, explosion.y, explosion.z)),
         ExplosionMesh(),
         ExplosionMaterial(),

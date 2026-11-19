@@ -1,6 +1,8 @@
 import type { World } from 'koota';
 import type { Camera } from 'three';
-import { getWorldSeed } from '../chunks';
+import { getBlockIndex, getWorldSeed } from '../chunks';
+import { isWaterBlock, voxelKey } from '../voxel';
+import { useSeasonStore } from '../seasons';
 import { biomeAt } from '../levels';
 import type { Biome } from '../levels';
 import { useGameStore } from '../store';
@@ -16,7 +18,7 @@ export function environmentAt(elapsed: number, biome: Biome) {
   const precipitating = phase >= WEATHER_DURATION - PRECIPITATION_DURATION;
   return {
     dayProgress,
-    weather: precipitating ? (biome === 'winter' ? 'snow' : 'rain') : 'clear',
+    weather: precipitating ? (biome === 'winter' || useSeasonStore.getState().season === 'winter' ? 'snow' : 'rain') : 'clear',
   } as const;
 }
 
@@ -34,6 +36,17 @@ export function environmentSystem(world: World, delta: number, camera: Camera) {
   environment.dayProgress = useGameStore.getState().gameplayMode === 'battle' ? 0.38 : next.dayProgress;
   environment.weather = next.weather;
 
+  const blocks = getBlockIndex(world);
+  let roofY = 100000;
+  const roofX = Math.round(camera.position.x);
+  const roofZ = Math.round(camera.position.z);
+  for (let y = Math.ceil(camera.position.y); y <= Math.ceil(camera.position.y) + 30; y += 1) {
+    const block = blocks.get(voxelKey(roofX, y, roofZ));
+    if (!block || isWaterBlock(block.kind)) continue;
+    roofY = y + 0.5;
+    break;
+  }
+
   const rain = entity.get(RainMaterial)?.value;
   const snow = entity.get(SnowMaterial)?.value;
   if (rain) {
@@ -41,12 +54,14 @@ export function environmentSystem(world: World, delta: number, camera: Camera) {
     rain.uniforms.uTime.value = environment.elapsed;
     rain.uniforms.uOpacity.value = environment.weather === 'rain' ? 1 : 0;
     rain.uniforms.uCamera.value.copy(camera.position);
+    rain.uniforms.uRoofY.value = roofY;
   }
   if (snow) {
     snow.visible = environment.weather === 'snow';
     snow.uniforms.uTime.value = environment.elapsed;
     snow.uniforms.uOpacity.value = environment.weather === 'snow' ? 1 : 0;
     snow.uniforms.uCamera.value.copy(camera.position);
+    snow.uniforms.uRoofY.value = roofY;
   }
 
   if (environment.uiTimer >= 0.5 || changed) {

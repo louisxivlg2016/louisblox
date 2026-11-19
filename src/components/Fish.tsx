@@ -31,7 +31,7 @@ function FishGlb({ kind }: { kind: FishKind }) {
         material.map.needsUpdate = true;
       }
     });
-    clone.rotation.y = -Math.PI / 2;
+    clone.rotation.y = Math.PI;
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());

@@ -9,6 +9,7 @@ import { getBlockIndex } from './chunks';
 import { moveVoxelCharacter } from './systems/collisionSystem';
 import { applyAnimalDeath, reportAnimalDeath } from './deathSync';
 import { alertAnimalSound } from './systems/animalSoundSystem';
+import { reportAnimalSpawn } from './animalSync';
 
 export function damagePlayer(world: World, amount: number, kind: 'physical' | 'fire' = 'physical') {
   const player = world.queryFirst(Player);
@@ -68,6 +69,7 @@ export function damageAnimal(world: World, target: Entity, amount: number, attac
   if (remaining > 0) {
     target.set(AnimalHealth, { value: remaining });
     target.set(AnimalHit, { time: 0.24, panic: 2.4, flashed: false });
+    reportAnimalSpawn(target);
     if (attacker) {
       const yaw = Math.atan2(position.x - attacker.x, position.z - attacker.z);
       target.set(AnimalMotion, { yaw });

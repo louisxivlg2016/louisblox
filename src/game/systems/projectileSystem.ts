@@ -23,12 +23,12 @@ function paintImpact(world: World, color: string | undefined, position: Vector3,
   return { position: position.clone(), normal: normal.clone() };
 }
 
-export function fireProjectile(world: World, origin: Vector3, direction: Vector3, kind: 'arrow' | 'bullet' | 'bomb', damage = 1, color?: string | null) {
+export function fireProjectile(world: World, origin: Vector3, direction: Vector3, kind: 'arrow' | 'bullet' | 'bomb', damage = 1, color?: string | null, effect?: 'smoke' | 'firework') {
   if (kind !== 'arrow' && !color) playSound('gunshot', 0.45);
   const velocity = direction.clone().normalize().multiplyScalar(kind === 'bullet' ? 48 : kind === 'bomb' ? 18 : 30);
   const position = origin.clone().addScaledVector(direction, 0.8);
   const entity = world.spawn(
-    Projectile({ id: crypto.randomUUID(), kind, life: kind === 'bullet' ? 1.5 : 8, damage, color: color ?? undefined }),
+    Projectile({ id: crypto.randomUUID(), kind, life: effect === 'firework' ? 1.35 : effect === 'smoke' ? 2.5 : kind === 'bullet' ? 1.5 : 8, damage, color: color ?? undefined, effect }),
     ProjectilePosition(position),
     ProjectileVelocity(velocity),
     ProjectileMesh(),
@@ -51,6 +51,21 @@ export function detonateProjectile(world: World, position: Vector3, damagePlayer
   );
 }
 
+function detonateProjectileEffect(world: World, position: Vector3, projectile: { effect?: 'smoke' | 'firework'; color?: string }, damagePlayers = true) {
+  if (!projectile.effect) {
+    detonateProjectile(world, position, damagePlayers);
+    return;
+  }
+  playSound('explosion', projectile.effect === 'firework' ? 0.35 : 0.15);
+  const duration = projectile.effect === 'smoke' ? 5 : 1.8;
+  world.spawn(
+    Explosion({ time: duration, maxTime: duration, effect: projectile.effect, color: projectile.color }),
+    ExplosionPosition(position.clone()),
+    ExplosionMesh(),
+    ExplosionMaterial(),
+  );
+}
+
 export function projectileSystem(world: World, dt: number) {
   const blocks = getBlockIndex(world);
   world.query(Projectile, ProjectilePosition, ProjectileVelocity).updateEach(([projectile, position, velocity], entity) => {
@@ -67,7 +82,7 @@ export function projectileSystem(world: World, dt: number) {
         const hit = raycastVoxel(blocks, position, step.normalize(), distance);
         if (hit) {
           position.set(hit.x + hit.normal.x * 0.6, hit.y + hit.normal.y * 0.6, hit.z + hit.normal.z * 0.6);
-          detonateProjectile(world, position, false);
+          detonateProjectileEffect(world, position, projectile, false);
           syncProjectileRemoval(world, entity, true);
           entity.destroy();
           return;
@@ -79,16 +94,16 @@ export function projectileSystem(world: World, dt: number) {
       const distance = step.length();
       next.copy(position).add(step);
       const direction = step.normalize();
-      const hit = projectile.color ? raycastPaintSurface(blocks, position, direction, distance) : raycastVoxel(blocks, position, direction, distance);
+      const hit = projectile.color && !projectile.effect ? raycastPaintSurface(blocks, position, direction, distance) : raycastVoxel(blocks, position, direction, distance);
       const playerTarget = findBattleTarget(world, position, direction, distance + 1.2);
       if (playerTarget && (!hit || playerTarget.distance < hit.distance)) {
         if (projectile.kind === 'bomb') {
           position.copy(playerTarget.position);
-          detonateProjectile(world, position);
+          detonateProjectileEffect(world, position, projectile);
         } else {
           requestBattleHit(playerTarget.playerId, projectile.kind === 'bullet' && projectile.damage > 1 ? 'rifle' : projectile.kind);
         }
-        const paint = paintImpact(world, projectile.color, playerTarget.position, direction.clone().negate());
+        const paint = paintImpact(world, projectile.effect ? undefined : projectile.color, playerTarget.position, direction.clone().negate());
         syncProjectileRemoval(world, entity, projectile.kind === 'bomb', paint);
         entity.destroy();
         return;
@@ -98,11 +113,11 @@ export function projectileSystem(world: World, dt: number) {
         const animalPosition = target.entity.get(AnimalPosition)!;
         if (projectile.kind === 'bomb') {
           position.copy(animalPosition);
-          detonateProjectile(world, position);
+          detonateProjectileEffect(world, position, projectile);
         } else {
           damageAnimal(world, target.entity, projectile.damage, position);
         }
-        const paint = paintImpact(world, projectile.color, animalPosition, direction.clone().negate());
+        const paint = paintImpact(world, projectile.effect ? undefined : projectile.color, animalPosition, direction.clone().negate());
         syncProjectileRemoval(world, entity, projectile.kind === 'bomb', paint);
         entity.destroy();
         return;
@@ -111,9 +126,9 @@ export function projectileSystem(world: World, dt: number) {
         if (projectile.kind === 'bomb') {
           if (hit) next.set(hit.x + hit.normal.x * 0.6, hit.y + hit.normal.y * 0.6, hit.z + hit.normal.z * 0.6);
           position.copy(next);
-          detonateProjectile(world, position);
+          detonateProjectileEffect(world, position, projectile);
         }
-        const paint = hit ? paintImpact(world, projectile.color, position.clone().addScaledVector(direction, hit.distance), new Vector3(hit.normal.x, hit.normal.y, hit.normal.z)) : undefined;
+        const paint = hit ? paintImpact(world, projectile.effect ? undefined : projectile.color, position.clone().addScaledVector(direction, hit.distance), new Vector3(hit.normal.x, hit.normal.y, hit.normal.z)) : undefined;
         syncProjectileRemoval(world, entity, projectile.kind === 'bomb', paint);
         entity.destroy();
         return;

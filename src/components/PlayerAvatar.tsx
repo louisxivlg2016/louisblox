@@ -97,9 +97,6 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   const limbs = armor ?? (outfit === 'default' ? body : skin);
   const legs = armor ?? appearance.clothingColor ?? (outfit === 'default' ? '#38363b' : OUTFITS()[outfit].legs);
   const hasWig = selectedWig(outfit, wig) !== null;
-  const classicDetails = outfit === 'default' && !armor && !girl && (
-    <PixelPart position={[0, 1.15, -0.205]} size={[0.1, 0.66, 0.035]} color="#76553b" rotation={[0, 0, -0.42]} />
-  );
   const headContent = (
     <>
       <PixelPart position={[0, 1.7, 0]} size={[0.48, 0.48, 0.48]} color={skin} />
@@ -139,17 +136,16 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
   return (
     <group
       ref={bodyMesh}
-      visible={preview || !riding && (cameraMode !== 'first' || sleeping) || ridingRole === 'passenger' && cameraMode !== 'first'}
+      visible={preview || cameraMode !== 'first' || !riding && sleeping}
     >
       {(!hasFullCharacter(outfit, wig) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit character={character} outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding) && (!walkingCabin || !walking)} head={headContent} headRef={headRef} appearance={appearance} avatar={avatar} />
-      {classicDetails}
       <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
       </group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
-        <group name="held-item" visible={!eating && !preview && !sleeping && !steering && held !== 'parachute'} position={heldItemPosition(held, hasFullCharacter(outfit, wig))} scale={typeof held === 'number' ? 0.5 : typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
+        <group name="held-item" visible={!eating && !preview && !sleeping && held !== 'parachute'} position={heldItemPosition(held, hasFullCharacter(outfit, wig))} scale={typeof held === 'number' ? 0.5 : typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof held === 'number'
             ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : isStair(held) ? <StairModel kind={held} followPlayer /> : isSlab(held) ? <SlabModel kind={held} followPlayer /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
             : <ItemModel kind={held} flipWeapons={hasFullCharacter(outfit, wig)} />}

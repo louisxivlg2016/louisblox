@@ -146,13 +146,13 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
     const amount = 1 - Math.exp(-delta * 14);
     const seatedHeight = state.mounted && !isAnimalMount(state.vehicleKind) ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
     const lyingHeight = !state.mounted && state.emote === 'lie' ? 0.18 : 0;
-    target.set(state.x, state.y + (state.flying ? 1 : 0) + lyingHeight - seatedHeight, state.z);
+    target.set(state.x, state.y + (state.flying && !state.mounted ? 1 : 0) + lyingHeight - seatedHeight, state.z);
     group.current.position.lerp(target, amount);
     group.current.rotation.order = 'YXZ';
     const bodyYaw = state.bodyYaw ?? (state.mounted || state.moving ? state.yaw : group.current.rotation.y);
     const angle = Math.atan2(Math.sin(bodyYaw - group.current.rotation.y), Math.cos(bodyYaw - group.current.rotation.y));
     group.current.rotation.y += angle * amount;
-    const flightRotation = !state.mounted && state.emote === 'lie' || state.parachuting ? -Math.PI / 2 : state.flying ? -Math.PI / 2 : 0;
+    const flightRotation = !state.mounted && (state.emote === 'lie' || state.parachuting || state.flying) ? -Math.PI / 2 : 0;
     group.current.rotation.x += (flightRotation - group.current.rotation.x) * amount;
     const waving = state.emote === 'wave';
     if (waving) phase.current += delta * 10;
@@ -213,7 +213,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
       <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}><PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={skin} /></group>
       <group name="right-arm" ref={rightArm} position={[0.39, 1.4, 0]}>
         {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={skin} />}
-        {state.selected !== undefined && state.selected !== 'parachute' && !(state.mounted && state.mountRole === 'driver') && (
+        {state.selected !== undefined && state.selected !== 'parachute' && (
           <group
             name="remote-held-item"
             position={heldItemPosition(state.selected, hasFullCharacter(outfit, wig))}
@@ -328,6 +328,7 @@ export function MultiplayerConnection() {
     let disposed = false;
     let reconnectTimer: number | undefined;
     let lastPresence = 0;
+    let lastVehicleRequest = 0;
     const leaveDeletedRoom = (closing: WebSocket) => {
       if (socket.current === closing) socket.current = null;
       closing.onclose = null;
@@ -804,6 +805,10 @@ export function MultiplayerConnection() {
       if (current?.readyState === WebSocket.OPEN && Date.now() - lastPresence > 60000) {
         lastPresence = Date.now();
         current.send(JSON.stringify({ type: 'presence' }));
+      }
+      if (current?.readyState === WebSocket.OPEN && store.worldReady && Date.now() - lastVehicleRequest > 3000) {
+        lastVehicleRequest = Date.now();
+        current.send(JSON.stringify({ type: 'vehicles-request' }));
       }
       if (!current || current.readyState !== WebSocket.OPEN || useGameStore.getState().mode !== 'play') return;
       const entity = world.queryFirst(Player);

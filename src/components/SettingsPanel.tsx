@@ -7,9 +7,13 @@ import { playerIdentity } from '../game/playerIdentity';
 import { translate } from '../game/language';
 import { LanguagePanel } from './LanguagePanel';
 import { setAudioPreference, useAudioSettings } from '../game/audio';
+import { useSeasonStore } from '../game/seasons';
+import type { Season } from '../game/seasons';
 
 export function SettingsPanel() {
   const audioSettings = useAudioSettings();
+  const season = useSeasonStore((state) => state.season);
+  const setSeason = useSeasonStore((state) => state.setSeason);
   const [name, setName] = useState(translate('Ma tribu', 'My Tribe'));
   const online = useMultiplayerStore((state) => state.status === 'online');
   const tribes = useTribeStore((state) => state.tribes);
@@ -27,6 +31,19 @@ export function SettingsPanel() {
         <p>{translate('Retrouve ici les informations du monde et les touches de jeu.', 'Find world information and game controls here.')}</p>
       </div>
       <WorldStats />
+      <section className="settings-tribe" aria-label={translate('Saison', 'Season', 'Estación')}>
+        <h3>{translate('Saison du monde', 'World season', 'Estación del mundo')}</h3>
+        <label className="book-field">
+          {translate('Arbres et précipitations', 'Trees and precipitation', 'Árboles y precipitaciones')}
+          <select aria-label={translate('Saison du monde', 'World season', 'Estación del mundo')} value={season} onChange={(event) => setSeason(event.target.value as Season)}>
+            <option value="auto">{translate('Automatique selon le biome', 'Automatic by biome', 'Automática según el bioma')}</option>
+            <option value="spring">{translate('Printemps', 'Spring', 'Primavera')}</option>
+            <option value="summer">{translate('Été', 'Summer', 'Verano')}</option>
+            <option value="autumn">{translate('Automne', 'Autumn', 'Otoño')}</option>
+            <option value="winter">{translate('Hiver', 'Winter', 'Invierno')}</option>
+          </select>
+        </label>
+      </section>
       <section className="settings-tribe" aria-label={translate('Audio', 'Audio', 'Audio')}>
         <h3>{translate('Audio', 'Audio', 'Audio')}</h3>
         <label className="protection-option"><input type="checkbox" checked={audioSettings.music} onChange={(event) => setAudioPreference('music', event.target.checked)} /> {translate('Musique et radio', 'Music and radio', 'Música y radio')}</label>

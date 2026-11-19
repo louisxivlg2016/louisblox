@@ -59,7 +59,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   const height = bounds.max.y - bounds.min.y;
   const floor = bounds.min.y;
   const pieces: Array<ReturnType<typeof splitGeometry>> = [];
-  const colorAppearance = outfit === 'corsair' ? undefined : appearance;
+  const colorAppearance = outfit === 'corsair' || outfit === 'military' ? undefined : appearance;
   scene.traverse((object) => {
     if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, outfit !== 'princess', bounds, colorAppearance, outfit === 'louis15', outfit === 'princess' || outfit === 'classic-girl', outfit));
   });

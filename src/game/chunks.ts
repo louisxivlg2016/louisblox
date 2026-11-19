@@ -41,6 +41,7 @@ import { customWorldSpawn, generateCustomChunk } from './customWorld';
 import { createCustomWorld, DEFAULT_WORLD_SOURCE, sanitizeCustomWorld } from './worldCode';
 import { initTaming } from './taming';
 import { translate } from './language';
+import { isSeason, useSeasonStore } from './seasons';
 
 export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; textSize?: number; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean; waterlogged?: boolean; floodSource?: boolean } | null;
 export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: VehicleKind };
@@ -67,6 +68,7 @@ export type WorldSave = {
   edits: Array<[string, Array<[string, ChunkEdit]>]>;
   protection?: WorldProtection;
   paint?: import('./paintball').SavedPaintStroke[];
+  season?: import('./seasons').Season;
 };
 
 type SavedTrader = { data: { homeX: number; homeZ: number; targetX: number; targetZ: number; phase: number; walking: boolean; health: number; panic: number; fireIn: number }; position: Vector3; yaw: number };
@@ -739,6 +741,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
 
   const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3 || saved.version === 4 || saved.version === 5) ? saved : null;
   useEffectStore.getState().reset();
+  useSeasonStore.getState().setSeason(isSeason(restore?.season) ? restore.season : 'auto');
   const worldTemplate = restore?.template ?? (restore ? restore.gameplayMode === 'city-ancient' || restore.gameplayMode === 'city-modern' ? restore.gameplayMode : 'nature' : useGameStore.getState().worldTemplate);
   const customWorld = worldTemplate === 'custom' ? (restore ? sanitizeCustomWorld(restore.customWorld) : sanitizeCustomWorld(useGameStore.getState().customWorld)) ?? createCustomWorld(DEFAULT_WORLD_SOURCE, restore?.seed ?? 73421) : null;
   Object.assign(useGameStore.getState(), { worldTemplate, customWorld });

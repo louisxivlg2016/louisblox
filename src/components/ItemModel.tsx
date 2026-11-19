@@ -292,7 +292,57 @@ function TransportItemModel({ kind, color }: { kind: 'plane' | 'train'; color: s
   );
 }
 
+export function HovercraftModel({ color }: { color: string }) {
+  const propeller = useRef<Group>(null);
+  useFrame((_, delta) => {
+    if (propeller.current) propeller.current.rotation.z -= delta * 18;
+  });
+  return (
+    <group name="hovercraft">
+      <PixelPart position={[0, 0.06, 0]} size={[1.55, 0.22, 2.75]} color="#242b31" />
+      <PixelPart position={[0, 0.17, -0.08]} size={[1.4, 0.16, 2.5]} color="#3c474f" />
+      <PixelPart position={[0, 0.32, -0.12]} size={[1.28, 0.18, 2.25]} color={color} />
+      <PixelPart position={[0, 0.46, -1.12]} size={[1.12, 0.18, 0.38]} color={color} />
+      <PixelPart position={[0, 0.52, -0.93]} size={[1.05, 0.22, 0.45]} color="#33414c" />
+      <PixelPart position={[-0.42, 0.58, -0.3]} size={[0.42, 0.18, 0.48]} color="#354859" />
+      <PixelPart position={[-0.42, 0.85, -0.08]} size={[0.42, 0.5, 0.12]} color="#415b70" />
+      <PixelPart position={[0.38, 0.58, -0.3]} size={[0.42, 0.18, 0.48]} color="#354859" />
+      <PixelPart position={[0.38, 0.85, -0.08]} size={[0.42, 0.5, 0.12]} color="#415b70" />
+      <SteeringWheel position={[-0.42, 0.94, -0.73]} />
+      <PixelPart position={[0, 0.62, 0.72]} size={[0.8, 0.55, 0.55]} color="#586771" />
+      <PixelPart position={[0, 0.93, 0.72]} size={[0.65, 0.1, 0.48]} color="#303a42" />
+      {[-0.22, 0, 0.22].map((x) => <PixelPart key={x} position={[x, 0.68, 1.01]} size={[0.1, 0.28, 0.04]} color="#20282e" />)}
+      <group position={[0, 1.25, 1.22]}>
+        <mesh name="hovercraft-fan-guard">
+          <torusGeometry args={[0.69, 0.055, 6, 24]} />
+          <meshLambertMaterial color="#b8c2c8" />
+        </mesh>
+        <mesh name="hovercraft-fan-inner-guard">
+          <torusGeometry args={[0.5, 0.025, 5, 20]} />
+          <meshLambertMaterial color="#6f7c84" />
+        </mesh>
+        {[0, Math.PI / 2].map((angle) => <PixelPart key={angle} position={[0, 0, 0.03]} size={[1.35, 0.035, 0.035]} color="#87959d" rotation={[0, 0, angle]} />)}
+        <group ref={propeller} name="hovercraft-propeller">
+          {[0, Math.PI * 2 / 3, Math.PI * 4 / 3].map((angle) => (
+            <group key={angle} rotation={[0, 0, angle]}>
+              <PixelPart position={[0.1, 0.3, 0]} size={[0.18, 0.58, 0.08]} color="#d2d7d9" rotation={[0, 0, -0.2]} />
+            </group>
+          ))}
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.13, 0.13, 0.2, 12]} />
+            <meshLambertMaterial color="#303940" />
+          </mesh>
+        </group>
+      </group>
+      {[-0.57, 0.57].map((x) => <PixelPart key={x} position={[x, 0.75, 1.05]} size={[0.09, 1.15, 0.09]} color="#7f8d95" />)}
+      <PixelPart position={[-0.4, 0.48, -1.32]} size={[0.28, 0.13, 0.05]} color="#fff0b3" />
+      <PixelPart position={[0.4, 0.48, -1.32]} size={[0.28, 0.13, 0.05]} color="#fff0b3" />
+    </group>
+  );
+}
+
 export function BoatModel({ color, hovercraft = false }: { color: string; hovercraft?: boolean }) {
+  if (hovercraft) return <HovercraftModel color={color} />;
   return (
     <group>
       <PixelPart position={[0, 0.18, 0]} size={[1.3, 0.22, 2.4]} color={color} />
@@ -302,8 +352,6 @@ export function BoatModel({ color, hovercraft = false }: { color: string; hoverc
       <PixelPart position={[0, 0.36, 1.05]} size={[1.05, 0.28, 0.3]} color={color} />
       <PixelPart position={[0, 0.43, -0.65]} size={[0.9, 0.14, 0.42]} color="#6a4932" />
       <PixelPart position={[0, 0.43, 0.65]} size={[0.9, 0.14, 0.42]} color="#6a4932" />
-      {hovercraft && <PixelPart position={[-0.63, 0.1, 0.55]} size={[0.28, 0.16, 0.5]} color="#39434d" />}
-      {hovercraft && <PixelPart position={[0.63, 0.1, 0.55]} size={[0.28, 0.16, 0.5]} color="#39434d" />}
     </group>
   );
 }
@@ -423,6 +471,17 @@ function GalleryGenericModel({ shape, color }: { shape: string; color: string })
       {shape === 'arrow_potion' && <PixelPart position={[0.35, 0, 0]} size={[0.55, 0.06, 0.06]} color="#d4d5c7" />}
     </group>
   );
+  if (shape === 'bomb') return (
+    <group name="smoke-grenade-item">
+      <mesh rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.2, 0.2, 0.5, 12]} />
+        <meshLambertMaterial color="#43564b" />
+      </mesh>
+      <PixelPart position={[0, 0.29, 0]} size={[0.15, 0.12, 0.15]} color="#bcc6ca" />
+      <PixelPart position={[0.1, 0.37, 0]} size={[0.27, 0.06, 0.1]} color="#e0e5e7" />
+      <PixelPart position={[0, -0.04, -0.2]} size={[0.4, 0.09, 0.045]} color="#d7c34b" />
+    </group>
+  );
   if (shape === 'firecracker' || shape === 'pebble') return (
     <group>
       <PixelPart position={[0, -0.1, 0]} size={[0.28, 0.58, 0.28]} color={color} />
@@ -515,7 +574,7 @@ export function isWeaponItem(kind: ItemKind | GalleryItemId | number) {
 export function heldItemPosition(kind: ItemKind | GalleryItemId | number, fullCharacter: boolean): [number, number, number] {
   if (isWeaponItem(kind)) {
     const offset = typeof kind === 'number' ? 0 : itemGripOffset(kind) * 0.72;
-    return fullCharacter ? [0, -offset, 0] : [0.05, -0.58 - offset, -0.12];
+    return fullCharacter ? [0, -offset - 0.24, 0] : [0.05, -0.82 - offset, -0.12];
   }
   return fullCharacter ? [0.1, -0.1, 0.5] : [0.15, -0.68, -0.42];
 }

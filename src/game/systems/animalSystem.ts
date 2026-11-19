@@ -207,6 +207,17 @@ export function animalSystem(world: World, dt: number) {
   clocks.set(world, 0);
   dt = elapsed;
   if (!isAnimalAuthority()) {
+    world.query(Animal, AnimalHit, AnimalMesh).updateEach(([, hit, mesh]) => {
+      hit.time = Math.max(0, hit.time - dt);
+      if (!mesh.value) return;
+      if (hit.time > 0 && !hit.flashed) {
+        tint(mesh.value, '#ff3028');
+        hit.flashed = true;
+      } else if (hit.time === 0 && hit.flashed) {
+        tint(mesh.value, '#ffffff');
+        hit.flashed = false;
+      }
+    });
     syncAnimalState(world, dt);
     interpolateAnimalMovement(world, dt);
     return;
@@ -335,7 +346,7 @@ export function animalSystem(world: World, dt: number) {
     }
     if (mesh.value) {
       mesh.value.position.copy(position);
-      motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, stepDt * 6);
+      motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, stepDt * 10);
       mesh.value.rotation.y = motion.displayYaw;
       if (animal.kind === 'zombie') mesh.value.rotation.z = Math.sin(motion.phase) * 0.035;
     }

@@ -56,7 +56,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   sleepBlends.set(world, blend);
   const amount = blend * blend * (3 - 2 * blend);
   const previousFlight = flightBlends.get(world) ?? 0;
-  const flightBlend = state.flying && !sleep ? Math.min(1, previousFlight + dt * 5) : Math.max(0, previousFlight - dt * 5);
+  const flightBlend = state.flying && !sleep && !mounted ? Math.min(1, previousFlight + dt * 5) : Math.max(0, previousFlight - dt * 5);
   flightBlends.set(world, flightBlend);
   const flightAmount = flightBlend * flightBlend * (3 - 2 * flightBlend);
   const mountKind = entity.get(PlayerMount)?.kind;

@@ -1,8 +1,8 @@
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useQuery } from 'koota/react';
 import type { Entity } from 'koota';
-import { BoxGeometry, CanvasTexture, Color, InstancedMesh, LinearFilter, LinearMipmapLinearFilter, Matrix4, MeshBasicMaterial, Quaternion, SRGBColorSpace, Vector3 } from 'three';
+import { BoxGeometry, CanvasTexture, Color, InstancedMesh, LinearFilter, LinearMipmapLinearFilter, Matrix4, MeshBasicMaterial, Quaternion, SphereGeometry, SRGBColorSpace, Vector3 } from 'three';
 import { Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition } from '../game/traits';
 
 function createBrushTexture() {
@@ -86,6 +86,48 @@ function PaintStrokes({ entities }: { entities: readonly Entity[] }) {
   return <instancedMesh key={capacity} name="paint-strokes" ref={stroke} args={[paintGeometry, paintMaterial, capacity]} count={0} frustumCulled={false} renderOrder={20} dispose={null} />;
 }
 
+const effectGeometry = new SphereGeometry(1, 8, 6);
+
+function EffectView({ entity }: { entity: Entity }) {
+  const explosion = entity.get(Explosion)!;
+  const position = entity.get(ExplosionPosition)!;
+  const group = useRef<import('three').Group>(null);
+  const material = useMemo(() => new MeshBasicMaterial({ color: explosion.effect === 'smoke' ? '#7b838a' : explosion.color ?? '#ffffff', transparent: true, opacity: 1, depthWrite: false, toneMapped: false }), [explosion.effect, explosion.color]);
+  const count = explosion.effect === 'smoke' ? 32 : 72;
+  const directions = useMemo(() => Array.from({ length: count }, (_, index) => {
+    const y = 1 - 2 * (index + 0.5) / count;
+    const radius = Math.sqrt(Math.max(0, 1 - y * y));
+    const angle = index * 2.399963;
+    return new Vector3(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+  }), [count]);
+  useFrame(({ clock }) => {
+    if (group.current) {
+      const holder = entity.get(ExplosionMesh);
+      if (holder) holder.value = group.current;
+    }
+    const materialHolder = entity.get(ExplosionMaterial);
+    if (materialHolder) materialHolder.value = material;
+    const progress = Math.min(1, Math.max(0, 1 - explosion.time / explosion.maxTime));
+    material.opacity = explosion.effect === 'smoke' ? (1 - progress) * 0.38 : 1 - progress;
+    if (explosion.effect === 'firework' && explosion.color === '#b578d5') material.color.setHSL((clock.elapsedTime * 0.7) % 1, 0.82, 0.62);
+    group.current?.children.forEach((child, index) => {
+      const direction = directions[index];
+      if (!direction) return;
+      const distance = explosion.effect === 'smoke' ? 2.6 : 6;
+      child.position.copy(direction).multiplyScalar(progress * distance);
+      if (explosion.effect === 'smoke') child.position.y += progress * 1.1;
+      else child.position.y -= progress * progress * 2;
+      child.scale.setScalar(explosion.effect === 'smoke' ? 0.35 + progress * 2.2 : Math.max(0.025, 0.15 * (1 - progress * 0.65)));
+    });
+  });
+  return (
+    <group ref={group} name={explosion.effect === 'smoke' ? 'smoke-grenade-cloud' : 'firework-burst'} position={[position.x, position.y, position.z]}>
+      {directions.map((_, index) => <mesh key={index} geometry={effectGeometry} material={material} />)}
+      {explosion.effect === 'firework' && <pointLight color={explosion.color ?? '#ffffff'} intensity={4} distance={12} decay={2} />}
+    </group>
+  );
+}
+
 function ExplosionView({ entity }: { entity: Entity }) {
   const position = entity.get(ExplosionPosition)!;
   return (
@@ -119,7 +161,7 @@ export function Explosions() {
   return (
     <>
       <PaintStrokes entities={explosions.filter((entity) => entity.get(Explosion)?.paintColor)} />
-      {explosions.filter((entity) => !entity.get(Explosion)?.paintColor).map((entity) => <ExplosionView key={entity} entity={entity} />)}
+      {explosions.filter((entity) => !entity.get(Explosion)?.paintColor).map((entity) => entity.get(Explosion)?.effect ? <EffectView key={entity} entity={entity} /> : <ExplosionView key={entity} entity={entity} />)}
     </>
   );
 }
