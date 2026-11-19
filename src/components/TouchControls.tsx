@@ -6,12 +6,13 @@ import { landPlane } from '../game/vehicles';
 import { world } from '../game/world';
 import { translate } from '../game/language';
 
-function HoldButton({ code, label, onDoubleTap }: { code: string; label: string; onDoubleTap?: () => void }) {
+function HoldButton({ code, label, onDoubleTap, ariaLabel }: { code: string; label: string; onDoubleTap?: () => void; ariaLabel?: string }) {
   const lastTap = useRef(0);
   const release = () => setTouchKey(code, false);
   return (
     <button
       className="touch-button"
+      aria-label={ariaLabel ?? label}
       onPointerDown={(event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -107,6 +108,12 @@ export function TouchControls() {
       >
         <div ref={knob} className="touch-knob" />
       </div>
+      {riding && pilot && !plane && !cannon && <div className="vehicle-touch-actions" aria-label={translate('Boutons de conduite', 'Driving controls')}>
+        <HoldButton code="KeyW" label="Avancer" />
+        <HoldButton code="KeyS" label="Reculer" />
+        <HoldButton code="KeyA" label="Gauche" />
+        <HoldButton code="KeyD" label="Droite" />
+      </div>}
       {football && <div className="football-touch-actions" aria-label="Actions de football">
         <HoldButton code="KeyE" label={translate('Tir puissant', 'Power shot')} />
         <HoldButton code="KeyT" label={translate('Tacler', 'Tackle')} />

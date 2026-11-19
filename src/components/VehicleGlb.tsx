@@ -90,21 +90,19 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'm
       clone.add(rear);
     }
     const uniformScale = modelKind === 'metro' || modelKind === 'train';
+    const quarterTurn = modelKind === 'raceCar' || modelKind === 'airplane';
     const targetLength = modelKind === 'train' ? TRAIN_LENGTH : METRO_LENGTH;
-    if (modelKind === 'raceCar') clone.rotation.y = Math.PI / 2;
-    if (modelKind === 'blueCar') clone.rotation.y = Math.PI;
-    if (modelKind === 'airplane') clone.rotation.y = Math.PI / 2;
     const box = new Box3().setFromObject(clone);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
     const [width, height, length] = dimensions[modelKind];
     const [localWidth, localLength] = uniformScale ? [length, width] : [width, length];
-    clone.scale.set(uniformScale ? targetLength / Math.max(size.x, size.y, size.z, 0.001) : localWidth / Math.max(size.x, 0.001), uniformScale ? targetLength / Math.max(size.x, size.y, size.z, 0.001) : height / Math.max(size.y, 0.001), uniformScale ? targetLength / Math.max(size.x, size.y, size.z, 0.001) : localLength / Math.max(size.z, 0.001));
-    center.multiply(clone.scale);
-    if (uniformScale) {
-      center.applyAxisAngle(new Vector3(0, 1, 0), Math.PI);
-      clone.rotation.y = Math.PI;
-    }
+    clone.scale.set(uniformScale ? targetLength / Math.max(size.x, size.y, size.z, 0.001) : quarterTurn ? localLength / Math.max(size.x, 0.001) : localWidth / Math.max(size.x, 0.001), uniformScale ? targetLength / Math.max(size.x, size.y, size.z, 0.001) : height / Math.max(size.y, 0.001), uniformScale ? targetLength / Math.max(size.x, size.y, size.z, 0.001) : quarterTurn ? localWidth / Math.max(size.z, 0.001) : localLength / Math.max(size.z, 0.001));
+    if (modelKind === 'raceCar') clone.rotation.y = Math.PI / 2;
+    if (modelKind === 'blueCar') clone.rotation.y = Math.PI;
+    if (modelKind === 'airplane') clone.rotation.y = Math.PI / 2;
+    center.multiply(clone.scale).applyAxisAngle(new Vector3(0, 1, 0), uniformScale ? Math.PI : clone.rotation.y);
+    if (uniformScale) clone.rotation.y = Math.PI;
     clone.position.set(-center.x, -box.min.y * clone.scale.y, -center.z);
     return clone;
   }, [scene, modelKind, interior, kind]);

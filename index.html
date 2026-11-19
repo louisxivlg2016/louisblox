@@ -276,6 +276,8 @@
       .world-map-canvas { display: block; align-self: center; width: min(88vw, 76vh); height: auto; aspect-ratio: 1; image-rendering: pixelated; cursor: grab; touch-action: none; }
       .world-map-panel > small { padding-top: 8px; color: #d8e5ca; }
       @media (pointer: coarse) { .minimap { top: 82px; left: 8px; padding: 3px 3px 2px; border-width: 2px; } .minimap canvas { width: 108px; height: 108px; } .minimap small { font-size: 8px; } .world-map-canvas { width: min(82vw, 65vh); } }
+      .vehicle-touch-actions { position: absolute; left: 50%; bottom: 96px; z-index: 24; display: grid; grid-template-columns: repeat(2, minmax(76px, auto)); gap: 6px; transform: translateX(-50%); pointer-events: auto; }
+      .vehicle-touch-actions .touch-button { min-width: 76px; }
       .touch-flight { background: rgba(66, 125, 159, 0.82); }
       .touch-attack { background: rgba(143, 76, 62, 0.82); }
       .backpack-toggle { position: absolute; top: 18px; left: 50%; z-index: 12; width: 140px; padding: 0; transform: translateX(-50%); pointer-events: auto; background: transparent; border: 0; cursor: pointer; }
@@ -602,6 +604,8 @@
         .block-swatch { width: 24px; height: 24px; }
         .touch-joystick { left: 14px; bottom: 138px; width: 108px; height: 108px; }
         .touch-actions { right: 12px; bottom: 134px; grid-template-columns: repeat(2, minmax(68px, 1fr)); gap: 7px; }
+        .vehicle-touch-actions { bottom: 92px; grid-template-columns: repeat(2, minmax(62px, auto)); }
+        .vehicle-touch-actions .touch-button { min-width: 62px; }
         .touch-button { min-height: 45px; padding: 6px 8px; font-size: 10px; }
         .world-stats { top: 10px; right: 10px; min-width: 160px; }
       }

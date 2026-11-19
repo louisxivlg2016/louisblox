@@ -279,9 +279,9 @@ function vehicleHalfExtents(kind: VehicleKind): [number, number] {
 
 function hitsVehicleWall(world: World, x: number, y: number, z: number, yaw: number, clearance: number, kind: VehicleKind, speed: number) {
   const blocks = getBlockIndex(world);
-  const [halfWidth, halfLength] = vehicleHalfExtents(kind);
+  const [, halfLength] = vehicleHalfExtents(kind);
   const leading = speed >= 0 ? -halfLength : halfLength;
-  const points: Array<[number, number]> = [[0, leading], [-halfWidth, leading], [halfWidth, leading], [-halfWidth, 0], [halfWidth, 0]];
+  const points: Array<[number, number]> = [[0, leading], [0, 0]];
   const heights = [0.65];
   for (let height = 1.5; height < clearance; height += 0.85) heights.push(height);
   heights.push(clearance);
@@ -398,7 +398,6 @@ export function vehicleMovementSystem(world: World, dt: number) {
     if (driving && state) {
       const previousYaw = motion.yaw;
       if (active && input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(motion.speed || 1);
-      else if (active && input.forward !== 0 && Math.abs(motion.speed) > 0.05) motion.yaw = turnToward(motion.yaw, state.yaw, dt * 1.4 * Math.sign(motion.speed || 1));
       const delta = Math.atan2(Math.sin(motion.yaw - previousYaw), Math.cos(motion.yaw - previousYaw));
       const steering = useVehicleSteeringStore.getState();
       const target = Math.max(-1, Math.min(1, delta * 45)) * Math.PI * 0.65;
