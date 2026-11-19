@@ -57,7 +57,7 @@ function detonateProjectileEffect(world: World, position: Vector3, projectile: {
     return;
   }
   playSound('explosion', projectile.effect === 'firework' ? 0.35 : 0.15);
-  const duration = projectile.effect === 'smoke' ? 5 : 1.8;
+  const duration = projectile.effect === 'smoke' ? 12 : 1.8;
   world.spawn(
     Explosion({ time: duration, maxTime: duration, effect: projectile.effect, color: projectile.color }),
     ExplosionPosition(position.clone()),

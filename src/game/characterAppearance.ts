@@ -128,9 +128,16 @@ export function removeClassicBoyBand(source: Material & { map?: import('three').
   let removed = 0;
   for (let index = 0; index < pixels.data.length; index += 4) {
     if (mask[index + 3] === 0) continue;
-    pixels.data[index] = shirt.r * 255;
-    pixels.data[index + 1] = shirt.g * 255;
-    pixels.data[index + 2] = shirt.b * 255;
+    const red = pixels.data[index];
+    const green = pixels.data[index + 1];
+    const blue = pixels.data[index + 2];
+    const band = hairPixel(red, green, blue, false) || red < 150 && green < 130 && blue < 100 && red > blue * 1.1;
+    if (!band) continue;
+    const brightness = (red * 0.2126 + green * 0.7152 + blue * 0.0722) / 255;
+    const factor = 0.8 + brightness * 0.45;
+    pixels.data[index] = Math.min(255, shirt.r * 255 * factor);
+    pixels.data[index + 1] = Math.min(255, shirt.g * 255 * factor);
+    pixels.data[index + 2] = Math.min(255, shirt.b * 255 * factor);
     removed += 1;
   }
   context.putImageData(pixels, 0, 0);
@@ -184,7 +191,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   const hair = appearance.originalHairColor || outfit === 'knight' || outfit === 'trader' || outfit === 'firefighter' ? null : new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const eyes = outfit === 'louis15' || outfit === 'princess' ? null : new Color(appearance.eyeColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const eyebrows = outfit === 'knight' || outfit === 'firefighter' || outfit === 'trader' || outfit === 'princess' ? null : new Color(appearance.eyebrowColor ?? appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const uniformColor = outfit === 'military' ? null : appearance.clothingColor ?? (outfit === 'pirate' ? '#b6373b' : outfit === 'footballer' ? '#2868b3' : null);
+  const uniformColor = null;
   const uniform = uniformColor ? new Color(uniformColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace) : null;
   const uniformMask = uniform
     ? maskCanvas(geometry, bounds, 'uniform', canvas.width, canvas.height, material.map.flipY, false, frontSign).getImageData(0, 0, canvas.width, canvas.height).data
