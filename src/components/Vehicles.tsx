@@ -18,7 +18,7 @@ function VehicleView({ entity }: { entity: Entity }) {
   const remoteOccupants = Object.values(remotePlayers).filter((remote) => remote.mounted && remote.vehicleId === vehicle?.id);
   const remoteDriver = remoteOccupants.some((remote) => remote.mountRole === 'driver');
   const localDriver = mount?.vehicle === entity && mount.role === 'driver' && ridingRole === 'driver';
-  const showInterior = mount?.vehicle === entity && cameraMode === 'first' || remoteOccupants.length > 0;
+  const showInterior = mount?.vehicle === entity && cameraMode === 'first';
   return (
     <group
       ref={(group) => {

@@ -20,6 +20,14 @@ function seasonalPalette(original: string[]) {
   return ['#d8e5e8', '#edf4f5', '#c4d5da', '#f7fbfc', '#b6cbd2'];
 }
 
+function seasonalGroundPalette(original: string[]) {
+  const season = useSeasonStore.getState().season;
+  if (season === 'winter') return ['#e5eef2', '#f3f7f8', '#ffffff', '#d9e5eb', '#edf3f5'];
+  if (season === 'autumn') return ['#a59b48', '#b3a653', '#c0b45f', '#9b9142', '#cbc06b'];
+  if (season === 'spring') return ['#69a947', '#76b653', '#83b95b', '#69b34d', '#8ac563'];
+  return original;
+}
+
 export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   const canvas = document.createElement('canvas');
   canvas.width = 16;
@@ -60,7 +68,7 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   const grassy = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass || kind === BlockKind.JungleGrass;
   const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves || kind === BlockKind.JungleVine;
   const sapling = isSapling(kind);
-  let palette = foliage || sapling ? seasonalPalette(palettes[kind]) : palettes[kind];
+  let palette = grassy && face === 'top' ? seasonalGroundPalette(palettes[kind]) : foliage || sapling ? seasonalPalette(palettes[kind]) : palettes[kind];
   if (grassy && face !== 'top') palette = palettes[BlockKind.Dirt];
 
   for (let x = 0; x < 16; x += 1) {
@@ -385,11 +393,13 @@ export const blockMaterials = {
 function refreshSeasonMaterials() {
   for (const [key, materials] of Object.entries(blockMaterials)) {
     const kind = Number(key) as BlockKind;
-    if (kind !== BlockKind.Leaves && kind !== BlockKind.PineLeaves && kind !== BlockKind.AutumnLeaves && kind !== BlockKind.JungleLeaves && kind !== BlockKind.JungleVine && !isSapling(kind)) continue;
-    for (const material of materials) {
+    const grass = kind === BlockKind.Grass || kind === BlockKind.AutumnGrass || kind === BlockKind.ForestGrass || kind === BlockKind.JungleGrass;
+    const foliage = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves || kind === BlockKind.JungleVine || isSapling(kind);
+    if (!grass && !foliage) continue;
+    for (const [index, material] of materials.entries()) {
       if (!(material instanceof MeshLambertMaterial)) continue;
       material.map?.dispose();
-      material.map = texture(kind, 'side');
+      material.map = texture(kind, grass && index === 2 ? 'top' : grass && index === 3 ? 'bottom' : 'side');
       material.needsUpdate = true;
     }
   }

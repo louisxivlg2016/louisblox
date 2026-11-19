@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { requestPlay } from '../game/input';
 import { getItemMeta, ITEM_ORDER, selectionInfo } from '../game/items';
-import { GALLERY_CATEGORIES, GALLERY_ITEMS } from '../game/galleryCatalog';
+import { GALLERY_CATEGORIES, GALLERY_ITEMS, GALLERY_ITEM_MAP } from '../game/galleryCatalog';
 import type { SelectedKind } from '../game/items';
 import { MEAT_NAMES } from '../game/meats';
 import type { AnimalKind } from '../game/animals';
@@ -57,9 +57,13 @@ export function Backpack() {
   };
   const resources = (Object.entries(meat) as Array<[AnimalKind, number]>).filter(([, count]) => count > 0);
   const query = normalizeSearch(gallerySearch);
-  const matchesSearch = (kind: SelectedKind) => normalizeSearch(selectionInfo(kind).name).includes(query)
-    || (kind === BlockKind.Radio && ['radio', 'redio', 'musique', 'music'].includes(query))
-    || (kind === 'gallery_tools_weapons_book' && translate('livre', 'book').includes(query));
+  const matchesSearch = (kind: SelectedKind) => {
+    const firework = GALLERY_ITEM_MAP[kind as string]?.category === 'Firecrackers & Firecracker Pebbles';
+    return normalizeSearch(selectionInfo(kind).name).includes(query)
+      || (kind === BlockKind.Radio && ['radio', 'redio', 'musique', 'music'].includes(query))
+      || (kind === 'gallery_tools_weapons_book' && translate('livre', 'book').includes(query))
+      || (firework && ['feu', 'feux', 'feu d artifice', 'feux d artifice', 'feu d atifice', 'feux d atifice', 'firecracker'].includes(query));
+  };
   const visibleGalleryItems = GALLERY_ITEMS.filter((item) =>
     (query !== '' || galleryCategory === 'all' || item.category === galleryCategory) && matchesSearch(item.id)
     && (!isPaintballGun(item.id) || item.id === WHITE_PAINTBALL_GUN_ID)

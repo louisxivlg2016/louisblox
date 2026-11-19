@@ -574,7 +574,8 @@ export function isWeaponItem(kind: ItemKind | GalleryItemId | number) {
 export function heldItemPosition(kind: ItemKind | GalleryItemId | number, fullCharacter: boolean): [number, number, number] {
   if (isWeaponItem(kind)) {
     const offset = typeof kind === 'number' ? 0 : itemGripOffset(kind) * 0.72;
-    return fullCharacter ? [0, -offset - 0.24, 0] : [0.05, -0.82 - offset, -0.12];
+    const raised = typeof kind === 'string' && getItemMeta(kind).category === 'sword' ? 0.08 : -0.24;
+    return fullCharacter ? [0, -offset + raised, 0] : [0.05, -0.82 - offset, -0.12];
   }
   return fullCharacter ? [0.1, -0.1, 0.5] : [0.15, -0.68, -0.42];
 }
