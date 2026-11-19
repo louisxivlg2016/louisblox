@@ -213,6 +213,7 @@ export const EXTRA_BLOCKS = {
   Lantern: 238,
   ModernCeilingLight: 239,
   RedBrick: 240,
+  Radio: 241,
 } as const;
 
 export const PARIS_STREET_SIGN_TEXT = '4th arrondissement\nPeace Street';
@@ -295,7 +296,8 @@ export const isRail = (kind: number) => kind === EXTRA_BLOCKS.Rail;
 export const isSign = (kind: number) => kind === EXTRA_BLOCKS.Sign || kind === EXTRA_BLOCKS.ParisStreetSign;
 export const isTrafficSign = (kind: number) => kind >= EXTRA_BLOCKS.StopSign && kind <= EXTRA_BLOCKS.PrioritySign || kind === EXTRA_BLOCKS.ParisStreetSign;
 export const isCeilingLight = (kind: number) => kind === EXTRA_BLOCKS.Lantern || kind === EXTRA_BLOCKS.ModernCeilingLight;
-export const isUtilityBlock = (kind: number) => isFurnace(kind) || isChest(kind) || isLadder(kind) || isBed(kind) || isRail(kind) || kind === EXTRA_BLOCKS.TrafficLight || kind === EXTRA_BLOCKS.StreetLamp || kind === EXTRA_BLOCKS.ParisStreetLamp || isCeilingLight(kind) || isTrafficSign(kind);
+export const isRadio = (kind: number) => kind === EXTRA_BLOCKS.Radio;
+export const isUtilityBlock = (kind: number) => isFurnace(kind) || isChest(kind) || isLadder(kind) || isBed(kind) || isRail(kind) || isRadio(kind) || kind === EXTRA_BLOCKS.TrafficLight || kind === EXTRA_BLOCKS.StreetLamp || kind === EXTRA_BLOCKS.ParisStreetLamp || isCeilingLight(kind) || isTrafficSign(kind);
 
 function shade(hex: string, amount: number) {
   const value = Number.parseInt(hex.slice(1), 16);
@@ -429,6 +431,7 @@ const BASE_EXTRA_BLOCK_META: Record<number, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.ParisStreetLamp]: block('Lampadaire parisien', '#294e3b', 1),
   [EXTRA_BLOCKS.Lantern]: block('Lanterne de plafond', '#e3aa4d', 0.8),
   [EXTRA_BLOCKS.ModernCeilingLight]: block('Lumière moderne de plafond', '#dff5ff', 0.8),
+  [EXTRA_BLOCKS.Radio]: block('Radio musicale', '#d6a84d', 0.8),
   [EXTRA_BLOCKS.StopSign]: block('Panneau STOP', '#c93d35', 0.35),
   [EXTRA_BLOCKS.YieldSign]: block('Cédez le passage', '#e8e0d5', 0.35),
   [EXTRA_BLOCKS.NoEntrySign]: block('Sens interdit', '#c93d35', 0.35),

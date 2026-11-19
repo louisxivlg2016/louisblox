@@ -24,6 +24,7 @@ import trainIconUrl from '../../assets/icons/vehicle-train.png';
 import fireTruckIconUrl from '../../assets/icons/vehicle-fire-truck.png';
 import policeCarIconUrl from '../../assets/icons/vehicle-police-car.png';
 import { translate } from '../game/language';
+import { ITEM_ICON_ASSETS, RADIO_ICON_URL } from '../game/itemIconAssets';
 
 const photoIcons: Partial<Record<ItemKind, string>> = {
   plane: airplaneIconUrl,
@@ -78,6 +79,7 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
   if (kind === BlockKind.ParisStreetLamp) return <img className="tnt-icon paris-street-lamp-icon" src={parisStreetLampUrl} alt="" />;
   if (kind === BlockKind.Lantern) return <span className="item-icon item-ceiling-lantern" aria-hidden="true"><i /><b /><em /></span>;
   if (kind === BlockKind.ModernCeilingLight) return <span className="item-icon item-modern-ceiling-light" aria-hidden="true"><i /><b /><em /></span>;
+  if (kind === BlockKind.Radio) return <img className="item-model-icon item-photo-icon" src={RADIO_ICON_URL} alt={info.name} />;
   if (kind === BlockKind.ParisStreetSign) return <span className="paris-street-sign-icon" aria-hidden="true"><small>4e</small><strong>RUE</strong></span>;
   if (typeof kind === 'number' && isTrafficSign(kind)) {
     const sign = trafficSignLabels[kind];
@@ -102,6 +104,8 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
   const photoIcon = photoIcons[kind as ItemKind];
   if (photoIcon) return <img className="item-model-icon item-photo-icon" src={photoIcon} alt={info.name} />;
   if (kind === 'extinguisher') return <img className="item-model-icon" style={{ imageRendering: 'pixelated' }} src={extinguisherUrl} alt={info.name} />;
+  const modelIcon = ITEM_ICON_ASSETS[kind as ItemKind];
+  if (modelIcon) return <img className="item-model-icon item-photo-icon" src={modelIcon} alt={info.name} />;
   if (meta.shape === 'shears') return <span className="item-icon item-shears" style={{ '--item-color': info.color } as React.CSSProperties} aria-hidden="true"><i /><b /><em /></span>;
   if (meta.shape === 'cake') return <span className="item-icon item-cake" style={{ '--item-color': info.color } as React.CSSProperties} aria-hidden="true"><i /><b /><em /></span>;
   if (meta.shape === 'bucket' || meta.shape === 'water_bucket' || meta.shape === 'paint_cleaning_bucket') return <span className={`item-icon item-bucket ${meta.shape === 'water_bucket' ? 'full' : meta.shape === 'paint_cleaning_bucket' ? 'paint-cleaner' : 'empty'}`} aria-hidden="true"><i /><b /><em /></span>;

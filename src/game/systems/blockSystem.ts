@@ -4,7 +4,7 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel, setVoxelFloodSource } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isBed, isCeilingLight, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, signFacing, slabSource } from '../extraBlocks';
+import { isBed, isCeilingLight, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isRadio, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, signFacing, slabSource } from '../extraBlocks';
 import { useSignStore } from '../signs';
 import { startSleep } from './sleepSystem';
 import { openChest, openFurnace } from '../containers';
@@ -25,6 +25,7 @@ import { requestPirateObjectiveHit } from '../piratesClient';
 import { playSound } from '../audio';
 import { dropBlock } from '../droppedItems';
 import { translate } from '../language';
+import { toggleVehicleRadio } from '../radio';
 
 const direction = new Vector3();
 const origin = new Vector3();
@@ -144,6 +145,10 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   if ((actions.place > 0 || actions.harvest > 0) && isSign(hit.block.kind)) {
     useSignStore.getState().openSign(hit, hit.block.text ?? '', hit.block.kind, hit.block.textSize);
     if (document.pointerLockElement) document.exitPointerLock();
+    return;
+  }
+  if ((actions.place > 0 || actions.harvest > 0) && isRadio(hit.block.kind)) {
+    toggleVehicleRadio(true);
     return;
   }
 

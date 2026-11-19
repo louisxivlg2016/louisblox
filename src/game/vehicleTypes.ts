@@ -39,7 +39,7 @@ export function canWalkInVehicle(kind: MountKind | null, role: SeatRole) {
 }
 
 export function vehicleViewDistance(kind: VehicleKind) {
-  if (kind === 'plane') return 100;
+  if (kind === 'plane') return 45;
   if (kind === 'train') return 20;
   if (kind === 'metro') return 18;
   if (kind === 'carriage') return 10;

@@ -17,8 +17,7 @@ function currentTrack() {
 function syncRadioMotion() {
   const mounted = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
   const state = useRadioStore.getState();
-  if (!mounted) return;
-  mounted.set(VehicleMotion, { radioEnabled: state.enabled, radioTrack: state.trackIndex });
+  if (mounted) mounted.set(VehicleMotion, { radioEnabled: state.enabled, radioTrack: state.trackIndex });
   window.dispatchEvent(new Event('louisblox:radio-sync'));
 }
 
@@ -30,6 +29,20 @@ export function syncVehicleRadioPlayback(enabled: boolean, trackIndex: number) {
     setMusicSuppressed(true);
     playTrack();
   } else if (current.enabled && !current.outside) {
+    useRadioStore.setState({ enabled: false, outside: false });
+    audio?.pause();
+    setMusicSuppressed(false);
+  }
+}
+
+export function syncSharedRadioPlayback(enabled: boolean, trackIndex: number) {
+  const current = useRadioStore.getState();
+  if (enabled) {
+    if (current.enabled && current.trackIndex === trackIndex) return;
+    useRadioStore.setState({ enabled: true, trackIndex, outside: true });
+    setMusicSuppressed(true);
+    playTrack();
+  } else if (current.enabled) {
     useRadioStore.setState({ enabled: false, outside: false });
     audio?.pause();
     setMusicSuppressed(false);
@@ -68,11 +81,11 @@ export function previousRadioTrack() {
   selectRadioTrack((useRadioStore.getState().trackIndex - 1 + RADIO_TRACKS.length) % RADIO_TRACKS.length);
 }
 
-export function selectRadioTrack(index: number) {
+export function selectRadioTrack(index: number, outsideVehicle = false) {
   const trackIndex = Math.max(0, Math.min(RADIO_TRACKS.length - 1, Math.floor(index)));
   useRadioStore.setState({ trackIndex });
   if (useRadioStore.getState().enabled) playTrack();
-  else toggleVehicleRadio();
+  else toggleVehicleRadio(outsideVehicle);
   syncRadioMotion();
 }
 

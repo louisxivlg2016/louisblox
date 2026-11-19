@@ -58,7 +58,7 @@ const MAX_CLIMB_RISE = 4;
 const MAX_WALK_DOWN = 4.05;
 
 function walkableGround(world: World, x: number, z: number, ground: number) {
-  const block = blockAt(world, x, ground, z);
+  const block = blockAt(world, x, ground - 0.5, z);
   return ground > MIN_WORLD_Y + 0.5 && !isWaterBlock(block?.kind) && block?.waterlogged !== true;
 }
 
@@ -335,7 +335,7 @@ export function animalSystem(world: World, dt: number) {
     }
     if (mesh.value) {
       mesh.value.position.copy(position);
-      motion.displayYaw = motion.yaw;
+      motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, stepDt * 6);
       mesh.value.rotation.y = motion.displayYaw;
       if (animal.kind === 'zombie') mesh.value.rotation.z = Math.sin(motion.phase) * 0.035;
     }

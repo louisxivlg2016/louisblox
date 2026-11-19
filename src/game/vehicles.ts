@@ -6,7 +6,7 @@ import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from './levels';
 import { useGameStore } from './store';
 import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, HorseRider, Player, PlayerBody, PlayerCollider, PlayerMount, PlayerPosition, PlayerState, Trader, TraderPosition, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
-import { EXTRA_BLOCKS, isCrop, isGrassPlate, isRail } from './extraBlocks';
+import { EXTRA_BLOCKS, isCrop, isGrassPlate, isRail, isSlab, isStair } from './extraBlocks';
 import { turnToward } from './rotation';
 import { isCollidable, moveVoxelCharacter } from './systems/collisionSystem';
 import { syncVehicleMotion, syncVehicleSpawn } from './vehicleSync';
@@ -273,22 +273,22 @@ function vehicleHalfExtents(kind: VehicleKind): [number, number] {
   return [0.9, 1.7];
 }
 
-function hitsVehicleWall(world: World, x: number, y: number, z: number, yaw: number, clearance: number, kind: VehicleKind) {
+function hitsVehicleWall(world: World, x: number, y: number, z: number, yaw: number, clearance: number, kind: VehicleKind, speed: number) {
   const blocks = getBlockIndex(world);
   const [halfWidth, halfLength] = vehicleHalfExtents(kind);
+  const leading = speed >= 0 ? -halfLength : halfLength;
+  const points: Array<[number, number]> = [[0, leading], [-halfWidth, leading], [halfWidth, leading], [-halfWidth, 0], [halfWidth, 0]];
   const heights = [0.65];
   for (let height = 1.5; height < clearance; height += 0.85) heights.push(height);
   heights.push(clearance);
   const cosine = Math.cos(yaw);
   const sine = Math.sin(yaw);
   for (const height of heights) {
-    for (const localX of [0, -halfWidth, halfWidth]) {
-      for (const localZ of [0, -halfLength, halfLength]) {
-        const pointX = x + localX * cosine + localZ * sine;
-        const pointZ = z - localX * sine + localZ * cosine;
-        const block = blocks.get(voxelKey(Math.round(pointX), Math.round(y + height), Math.round(pointZ)));
-        if (block && isCollidable(block) && !isRail(block.kind) && !isVehicleFoliage(block.kind)) return true;
-      }
+    for (const [localX, localZ] of points) {
+      const pointX = x + localX * cosine + localZ * sine;
+      const pointZ = z - localX * sine + localZ * cosine;
+      const block = blocks.get(voxelKey(Math.round(pointX), Math.round(y + height), Math.round(pointZ)));
+      if (block && isCollidable(block) && !isRail(block.kind) && !isStair(block.kind) && !isSlab(block.kind) && !isVehicleFoliage(block.kind)) return true;
     }
   }
   return false;
@@ -297,11 +297,15 @@ function hitsVehicleWall(world: World, x: number, y: number, z: number, yaw: num
 function moveMount(world: World, position: Vector3, yaw: number, speed: number, dt: number, clearance = 1.55, motion?: { velocityY: number }, kind: VehicleKind = 'car') {
   const x = position.x - Math.sin(yaw) * speed * dt;
   const z = position.z - Math.cos(yaw) * speed * dt;
-  const ground = groundAt(world, x, z, position.y + 0.05);
+  const [, halfLength] = vehicleHalfExtents(kind);
+  const leading = speed >= 0 ? halfLength : -halfLength;
+  const frontX = x - Math.sin(yaw) * leading;
+  const frontZ = z - Math.cos(yaw) * leading;
+  const ground = Math.max(groundAt(world, x, z, position.y + 0.05), groundAt(world, frontX, frontZ, position.y + 0.05));
   if (ground > position.y + 1.01) return false;
   const velocityY = motion ? Math.max(-30, motion.velocityY - 24 * dt) : 0;
   const y = ground < position.y ? Math.max(ground, position.y + velocityY * dt) : ground;
-  if (hitsVehicleWall(world, x, y, z, yaw, clearance, kind)) return false;
+  if (hitsVehicleWall(world, x, y, z, yaw, clearance, kind, speed)) return false;
   position.set(x, y, z);
   if (motion) motion.velocityY = y === ground ? 0 : velocityY;
   return true;
@@ -370,6 +374,13 @@ export function vehicleMovementSystem(world: World, dt: number) {
   const input = drivingInput();
   world.query(Vehicle, VehiclePosition, VehicleMotion, VehicleMesh).updateEach(([vehicle, position, motion, mesh], entity) => {
     const driving = mount?.vehicle === entity && mount.kind === vehicle.kind && mount.role === 'driver';
+    if (motion.remote && !driving) {
+      const amount = 1 - Math.exp(-dt * 14);
+      position.x += (motion.remoteX - position.x) * amount;
+      position.y += (motion.remoteY - position.y) * amount;
+      position.z += (motion.remoteZ - position.z) * amount;
+      motion.yaw = turnToward(motion.yaw, motion.remoteYaw, dt * 10);
+    }
     const active = driving && state && vehicle.kind !== 'cannon';
     const landing = Boolean(active && vehicle.kind === 'plane' && mount.landing);
     const maximum = vehicle.kind === 'car' ? 14 : vehicle.kind === 'plane' ? 18 : vehicle.kind === 'boat' ? 6 : vehicle.kind === 'carriage' ? 7 : vehicle.kind === 'cannon' ? 0 : 12;

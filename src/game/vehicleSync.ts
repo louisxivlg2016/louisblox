@@ -110,14 +110,14 @@ export function applyVehicleSnapshot(world: World, snapshot: VehicleSnapshot) {
       entity = world.spawn(
         Vehicle({ id: snapshot.id, kind: snapshot.kind, color: snapshot.color }),
         VehiclePosition(new Vector3(snapshot.x, snapshot.y, snapshot.z)),
-        VehicleMotion({ yaw: snapshot.yaw, mounted: snapshot.driver === true, homeX: snapshot.x, homeY: snapshot.y, homeZ: snapshot.z, homeYaw: snapshot.yaw, radioEnabled: snapshot.radioEnabled === true, radioTrack: snapshot.radioTrack ?? 0 }),
+        VehicleMotion({ yaw: snapshot.yaw, mounted: snapshot.driver === true, homeX: snapshot.x, homeY: snapshot.y, homeZ: snapshot.z, homeYaw: snapshot.yaw, radioEnabled: snapshot.radioEnabled === true, radioTrack: snapshot.radioTrack ?? 0, remote: true, remoteX: snapshot.x, remoteY: snapshot.y, remoteZ: snapshot.z, remoteYaw: snapshot.yaw }),
         VehicleMesh(),
         VehicleHealth(),
       );
     } else {
       entity.set(Vehicle, { kind: snapshot.kind, color: snapshot.color });
       entity.get(VehiclePosition)?.set(snapshot.x, snapshot.y, snapshot.z);
-      entity.set(VehicleMotion, { yaw: snapshot.yaw, mounted: mounted === entity && mount?.role === 'driver' ? true : snapshot.driver === true, radioEnabled: snapshot.radioEnabled === true, radioTrack: snapshot.radioTrack ?? 0 });
+      entity.set(VehicleMotion, { mounted: mounted === entity && mount?.role === 'driver' ? true : snapshot.driver === true, radioEnabled: snapshot.radioEnabled === true, radioTrack: snapshot.radioTrack ?? 0, remote: mounted === entity && mount?.role === 'driver' ? false : true, remoteX: snapshot.x, remoteY: snapshot.y, remoteZ: snapshot.z, remoteYaw: snapshot.yaw });
     }
     stateFor(world).last.set(snapshot.id, motionKey(snapshot));
     if (mounted === entity) syncVehicleRadioPlayback(snapshot.radioEnabled === true, snapshot.radioTrack ?? 0);

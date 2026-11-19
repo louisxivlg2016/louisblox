@@ -19,13 +19,15 @@ function safeDestination(world: World, x: number, y: number, z: number) {
         if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
         const nextX = Math.round(x + dx);
         const nextZ = Math.round(z + dz);
-        const ground = groundAt(world, nextX, nextZ, y + 12);
-        const feet = Math.floor(ground + 0.5);
+        const ground = groundAt(world, nextX, nextZ);
+        const feet = Math.ceil(ground + 0.5);
         if (!isCollidable(blocks.get(`${nextX},${feet},${nextZ}`)) && !isCollidable(blocks.get(`${nextX},${feet + 1},${nextZ}`))) return { x: nextX, y: ground + 0.02, z: nextZ };
       }
     }
   }
-  return { x, y, z };
+  const nextX = Math.round(x);
+  const nextZ = Math.round(z);
+  return { x: nextX, y: groundAt(world, nextX, nextZ) + 0.02, z: nextZ };
 }
 
 export function teleportToBiome(world: World, biome: Biome) {
@@ -60,6 +62,7 @@ export function teleportToBiome(world: World, biome: Biome) {
   const destination = best ?? fallback;
   if (!destination) return null;
 
+  streamChunks(world, destination.x, destination.z);
   const safe = safeDestination(world, destination.x, destination.y, destination.z);
   streamChunks(world, safe.x, safe.z);
   position.set(safe.x, safe.y, safe.z);
@@ -75,6 +78,7 @@ export function teleportToRuin(world: World, type: RuinType) {
   if (!entity || !position) return null;
   const site = nearestRuinOfType(position.x, position.z, getWorldSeed(world), type);
   const destination = { x: site.x, y: site.baseY + 1.01, z: site.z };
+  streamChunks(world, destination.x, destination.z);
   const safe = safeDestination(world, destination.x, destination.y, destination.z);
   streamChunks(world, safe.x, safe.z);
   position.set(safe.x, safe.y, safe.z);
@@ -92,6 +96,7 @@ export function teleportToHome(world: World, destination: Pick<Home, 'x' | 'y' |
   const sleeping = world.queryFirst(Sleep);
   if (sleeping) sleeping.destroy();
   useGameStore.getState().setSleepProgress(null);
+  streamChunks(world, destination.x, destination.z);
   const safe = safeDestination(world, destination.x, destination.y, destination.z);
   streamChunks(world, safe.x, safe.z);
   position.set(safe.x, safe.y, safe.z);

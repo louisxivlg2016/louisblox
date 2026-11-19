@@ -4,6 +4,7 @@ import { Player, PlayerMount, Vehicle, VehicleMesh, VehicleMotion, VehiclePositi
 import { useGameStore } from '../game/store';
 import { VehicleGlb } from './VehicleGlb';
 import { VehicleInterior } from './TransportInterior';
+import { useRemotePlayerStore } from '../game/multiplayerStore';
 
 function VehicleView({ entity }: { entity: Entity }) {
   const vehicle = useTrait(entity, Vehicle);
@@ -13,7 +14,11 @@ function VehicleView({ entity }: { entity: Entity }) {
   const position = entity.get(VehiclePosition)!;
   const mount = player?.get(PlayerMount);
   const kind = vehicle?.kind ?? 'car';
-  const showInterior = mount?.vehicle === entity && cameraMode === 'first';
+  const remotePlayers = useRemotePlayerStore((state) => state.players);
+  const remoteOccupants = Object.values(remotePlayers).filter((remote) => remote.mounted && remote.vehicleId === vehicle?.id);
+  const remoteDriver = remoteOccupants.some((remote) => remote.mountRole === 'driver');
+  const localDriver = mount?.vehicle === entity && mount.role === 'driver' && ridingRole === 'driver';
+  const showInterior = mount?.vehicle === entity && cameraMode === 'first' || remoteOccupants.length > 0;
   return (
     <group
       ref={(group) => {
@@ -22,10 +27,10 @@ function VehicleView({ entity }: { entity: Entity }) {
       }}
       position={[position.x, position.y, position.z]}
     >
-      {vehicle && <VehicleGlb entity={entity} kind={kind} color={vehicle.color} interior={mount?.vehicle === entity && cameraMode === 'first'}  />}
+      {vehicle && <VehicleGlb entity={entity} kind={kind} color={vehicle.color} interior={showInterior}  />}
       {showInterior && <VehicleInterior
         kind={kind}
-        driverPresent={!(mount?.vehicle === entity && mount.role === 'driver' && ridingRole === 'driver')}
+        driverPresent={!localDriver && !remoteDriver}
         passengerSeat={mount?.vehicle === entity && mount.role === 'passenger' ? mount.seat : null}
         rightHandDrive={kind === 'car' && vehicle?.color.toLowerCase() === '#347cd0'}
       />}

@@ -120,9 +120,9 @@ export function Hud() {
           <RadioControls />
           <VehiclePassengers />
           <TouchControls />
-          <Minimap />
         </>
       )}
+      <Minimap />
 
       <TeleportPanel />
       <ChatPanel />

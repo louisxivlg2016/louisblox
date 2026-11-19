@@ -12,6 +12,7 @@ import { ParisStreetSignModel } from './ParisStreetSign';
 const fire = new MeshBasicMaterial({ color: '#ff9a32' });
 const lanternGlow = new MeshBasicMaterial({ color: '#ffd47a' });
 const modernLightGlow = new MeshBasicMaterial({ color: '#e6f8ff' });
+const radioScreenGlow = new MeshBasicMaterial({ color: '#66e6dc' });
 
 export function FurnaceModel() {
   return (
@@ -140,16 +141,41 @@ export function ModernCeilingLightModel({ withLight = true }: { withLight?: bool
   );
 }
 
+export function RadioModel({ withLight = true }: { withLight?: boolean }) {
+  return (
+    <group name="radio-block">
+      <PixelPart position={[0, 0.32, 0]} size={[0.94, 0.58, 0.54]} color="#70452e" />
+      <PixelPart position={[0, 0.63, 0]} size={[0.98, 0.08, 0.58]} color="#d2a04e" />
+      <PixelPart position={[0, 0.08, 0]} size={[0.98, 0.08, 0.58]} color="#3d2c28" />
+      {[-0.29, 0.29].map((x) => (
+        <group key={x} name="radio-speaker" position={[x, 0.3, -0.285]}>
+          <PixelPart position={[0, 0, 0]} size={[0.3, 0.36, 0.055]} color="#25272c" />
+          <PixelPart position={[0, 0, -0.032]} size={[0.21, 0.25, 0.035]} color="#59636b" />
+          <PixelPart position={[0, 0, -0.055]} size={[0.1, 0.12, 0.025]} color="#171c22" />
+        </group>
+      ))}
+      <PixelPart position={[0, 0.44, -0.29]} size={[0.25, 0.17, 0.045]} color="#17282d" />
+      <mesh name="radio-screen" position={[0, 0.44, -0.318]} material={radioScreenGlow}><boxGeometry args={[0.2, 0.11, 0.018]} /></mesh>
+      <PixelPart position={[0, 0.2, -0.3]} size={[0.22, 0.055, 0.04]} color="#d9b65c" />
+      {[-0.07, 0, 0.07].map((x) => <PixelPart key={x} position={[x, 0.13, -0.305]} size={[0.035, 0.045, 0.035]} color={x === 0 ? '#d85a45' : '#d8d2b8'} />)}
+      <PixelPart position={[0.34, 0.89, 0.05]} size={[0.045, 0.55, 0.045]} color="#c5ccd0" rotation={[0, 0, -0.28]} />
+      <PixelPart position={[0.43, 1.15, 0.05]} size={[0.07, 0.07, 0.07]} color="#e4bd58" />
+      {withLight && <pointLight name="radio-screen-light" position={[0, 0.44, -0.42]} color="#66e6dc" intensity={0.45} distance={2.5} decay={2} />}
+    </group>
+  );
+}
+
 export function UtilityBlockModel({ kind, withLight = true, held = false, wallMounted = false }: { kind: BlockKind; withLight?: boolean; held?: boolean; wallMounted?: boolean }) {
-  return kind === BlockKind.Lantern ? <LanternModel withLight={withLight} /> : kind === BlockKind.ModernCeilingLight ? <ModernCeilingLightModel withLight={withLight} /> : kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel held={held} /> : isTrafficSign(kind) ? <Suspense fallback={null}><TrafficSignModel kind={kind} held={held} wallMounted={wallMounted} /></Suspense> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
+  return kind === BlockKind.Radio ? <RadioModel withLight={withLight} /> : kind === BlockKind.Lantern ? <LanternModel withLight={withLight} /> : kind === BlockKind.ModernCeilingLight ? <ModernCeilingLightModel withLight={withLight} /> : kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel held={held} /> : isTrafficSign(kind) ? <Suspense fallback={null}><TrafficSignModel kind={kind} held={held} wallMounted={wallMounted} /></Suspense> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
 }
 
 export function UtilityBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIndex: ReadonlyMap<string, Voxel> }) {
   return blocks.map((block) => {
     const rail = isRail(block.kind);
-    const oriented = block.kind === BlockKind.Ladder || block.kind === BlockKind.TrafficLight || isTrafficSign(block.kind) || isBed(block.kind) || rail;
+    const oriented = block.kind === BlockKind.Ladder || block.kind === BlockKind.Radio || block.kind === BlockKind.TrafficLight || isTrafficSign(block.kind) || isBed(block.kind) || rail;
     const rotation = rail
       ? block.facing === 'east' || block.facing === 'west' ? Math.PI / 2 : 0
+      : block.kind === BlockKind.Radio ? facingYaw(block.facing) + Math.PI
       : oriented ? facingYaw(block.facing) : 0;
     const mount = isTrafficSign(block.kind) ? wallMount(blockIndex, block, rotation) : { rotation, offset: 0, mounted: false };
     return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y - 0.5, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} scale={isTrafficSign(block.kind) ? 0.6 : 1} userData={{ wallMounted: mount.mounted }}><UtilityBlockModel kind={block.kind} wallMounted={mount.mounted} /></group>;

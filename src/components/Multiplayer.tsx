@@ -59,6 +59,7 @@ import { clearTribes, receiveTribeMessage, setTribeSocket, teleportToPendingTrib
 import { applyAnimalDeath, applyDeathSnapshot, applyTraderDeath, isDeathId, setDeathSocket } from '../game/deathSync';
 import { onDroppedItemSync, receiveDroppedItem, setDroppedItemSocket } from '../game/droppedItemSync';
 import { translate } from '../game/language';
+import { syncSharedRadioPlayback, useRadioStore } from '../game/radio';
 
 type ServerMessage = {
   type?: unknown;
@@ -74,6 +75,8 @@ type ServerMessage = {
   position?: unknown;
   vehicle?: unknown;
   vehicles?: unknown;
+  enabled?: unknown;
+  trackIndex?: unknown;
   vehicleId?: unknown;
   projectile?: unknown;
   projectileId?: unknown;
@@ -501,6 +504,9 @@ export function MultiplayerConnection() {
     const syncRadio = () => {
       const mounted = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
       if (mounted) syncVehicleMotion(world, mounted, true);
+      const current = socket.current;
+      const radio = useRadioStore.getState();
+      if (current?.readyState === WebSocket.OPEN) current.send(JSON.stringify({ type: 'radio', enabled: radio.enabled, trackIndex: radio.trackIndex }));
     };
     window.addEventListener('louisblox:radio-sync', syncRadio);
     const unsubscribeProjectiles = onProjectileSync(world, (message) => {
@@ -619,6 +625,10 @@ export function MultiplayerConnection() {
         if (data.type === 'vehicles' && Array.isArray(data.vehicles)) {
           pendingVehicles.current = new Map(data.vehicles.filter(isVehicleSnapshot).map((vehicle) => [vehicle.id, vehicle]));
           applyPendingVehicles();
+          return;
+        }
+        if (data.type === 'radio' && typeof data.enabled === 'boolean' && typeof data.trackIndex === 'number' && Number.isInteger(data.trackIndex)) {
+          syncSharedRadioPlayback(data.enabled, Math.max(0, Math.min(54, data.trackIndex)));
           return;
         }
         if ((data.type === 'vehicle-spawn' || data.type === 'vehicle-state') && isVehicleSnapshot(data.vehicle)) {

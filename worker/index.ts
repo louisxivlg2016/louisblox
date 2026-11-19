@@ -321,6 +321,8 @@ export class GameRoom extends DurableObject<Env> {
   private protection?: WorldProtection;
   private worldEdits = new Map<string, VoxelEdit>();
   private vehicles = new Map<string, SharedVehicle>();
+  private radioEnabled = false;
+  private radioTrack = 0;
   private gameplayMode: GameplayMode = 'creative';
   private worldTemplate: WorldTemplate = 'nature';
   private customWorld?: CustomWorldDefinition;
@@ -579,6 +581,7 @@ export class GameRoom extends DurableObject<Env> {
     server.send(JSON.stringify({ type: 'join', playerId, name, character, outfit, wig, avatar, appearance, players: this.players(playerId) }));
     server.send(JSON.stringify(this.worldSnapshot()));
     server.send(JSON.stringify({ type: 'vehicles', vehicles: [...this.vehicles.values()] }));
+    server.send(JSON.stringify({ type: 'radio', enabled: this.radioEnabled, trackIndex: this.radioTrack }));
     server.send(JSON.stringify(this.battleSnapshot()));
     server.send(JSON.stringify(this.tribeSnapshot()));
     const tribe = this.tribeWithPlayer(playerId);
@@ -814,6 +817,15 @@ export class GameRoom extends DurableObject<Env> {
         this.publishWorld();
         this.broadcast({ type: 'leave', playerId: attachment.playerId }, ws);
       }
+      return;
+    }
+    if (type === 'radio') {
+      const enabled = (data as { enabled?: unknown }).enabled;
+      const trackIndex = (data as { trackIndex?: unknown }).trackIndex;
+      if (!this.attachment(ws) || typeof enabled !== 'boolean' || typeof trackIndex !== 'number' || !Number.isInteger(trackIndex) || trackIndex < 0 || trackIndex > 54) return;
+      this.radioEnabled = enabled;
+      this.radioTrack = trackIndex;
+      this.broadcast({ type: 'radio', enabled, trackIndex }, ws);
       return;
     }
     if (type === 'presence') {
@@ -1108,6 +1120,8 @@ export class GameRoom extends DurableObject<Env> {
         this.worldName = typeof worldName === 'string' && worldName.trim() ? worldName.trim().slice(0, 48) : this.worldId ?? attachment.room;
         this.worldSeed = seed;
         this.worldEdits = new Map(edits);
+        this.radioEnabled = false;
+        this.radioTrack = 0;
         const mode = (data as { gameplayMode?: unknown }).gameplayMode;
         this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' || mode === 'pirates' || mode === 'football' || mode === 'maze' ? mode : 'creative';
         const template = (data as { template?: unknown }).template;
