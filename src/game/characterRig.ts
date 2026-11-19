@@ -119,9 +119,9 @@ export function animateCharacterRig(root: Object3D, time: number, walking: boole
   const moving = walking && !jumping && !seated;
   const swing = moving ? Math.sin(time * 8) * 0.42 : 0;
   const bite = eating ? Math.sin(Math.min(1, (performance.now() - eating.startedAt) / 850) * Math.PI) : 0;
-  turn(rig.leftArm, seated ? 1.05 : swing, delta);
+  turn(rig.leftArm, seated ? -1.05 : swing, delta);
   if (rig.rightArm && eating) rig.rightArm.rotation.x = 1.25 + bite * 0.65;
-  else turn(rig.rightArm, seated ? 1.05 : -swing, delta);
+  else turn(rig.rightArm, seated ? -1.05 : -swing, delta);
   turn(rig.leftLeg, seated ? Math.PI / 2 : -swing * 0.85, delta);
   turn(rig.rightLeg, seated ? Math.PI / 2 : swing * 0.85, delta);
   turn(rig.leftLowerLeg, seated ? -Math.PI / 2 : 0, delta);

@@ -257,7 +257,7 @@ export function initInput() {
     if (event.code === 'KeyO' && !event.repeat && useGameStore.getState().mode === 'play') {
       if (useGameStore.getState().riding) honk();
     }
-    if (event.code === 'KeyJ' && !event.repeat && useGameStore.getState().mode === 'play') {
+    if (event.code === 'KeyV' && !event.repeat && useGameStore.getState().mode === 'play') {
       const riding = useGameStore.getState().riding;
       if (riding === 'firetruck' || riding === 'police') toggleSiren(riding);
     }

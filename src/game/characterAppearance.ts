@@ -23,8 +23,7 @@ function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, 
     const vertical = (y - bounds.min.y) / size.y;
     const horizontal = Math.abs(x) < size.x * 0.4;
     const head = horizontal && vertical > 0.68;
-    const arm = Math.abs(x) > size.x * 0.25 && vertical > 0.28 && vertical < 0.82;
-    const leg = horizontal && vertical < 0.48;
+    const arm = Math.abs(x) > size.x * 0.25 && vertical > 0.48 && vertical < 0.82;
     const eyes = z * frontSign > 0 && Math.abs(x) > size.x * 0.035 && Math.abs(x) < size.x * 0.14 && vertical > eyeBottom && vertical < eyeTop;
     const eyebrows = z * frontSign > 0 && Math.abs(x) > size.x * 0.025 && Math.abs(x) < size.x * 0.25 && vertical > 0.68 && vertical < 0.735;
     const lowerStrand = princessHair && z * frontSign > 0 && Math.abs(x) > size.x * 0.13 && Math.abs(x) < size.x * 0.33 && vertical > 0.38 && vertical < 0.7;
@@ -43,8 +42,8 @@ function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, 
         : region === 'hair'
           ? horizontal && (vertical > 0.67 || lowerStrand) && !eyes
           : region === 'skin-soft'
-            ? (head && vertical < 0.82 && !lowerStrand) || arm || leg
-          : head || arm || leg;
+            ? (head && vertical < 0.82 && !lowerStrand) || arm
+          : head || arm;
     if (!visible) continue;
     context.beginPath();
     indices.forEach((index, corner) => {
