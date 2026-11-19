@@ -466,7 +466,6 @@ export function vehicleMovementSystem(world: World, dt: number) {
     motion.displayYaw = motion.yaw;
     if (mesh.value) {
       mesh.value.position.copy(position);
-      mesh.value.rotation.y = motion.displayYaw;
     }
     const player = playerEntity?.get(PlayerPosition);
     if (player) {

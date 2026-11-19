@@ -41,7 +41,7 @@ function reportAnimal(entity: Entity, type: 'animal-spawn' | 'animal-tame') {
   const health = entity.get(AnimalHealth)?.value;
   if (!socket || socket.readyState !== WebSocket.OPEN || !entity.isAlive() || !id || !kind || !position || !motion || health === undefined || health <= 0 || isAnimalDead(id)) return false;
   const tame = entity.get(AnimalTame);
-  const animal: AnimalSnapshot = { id, kind, x: position.x, y: position.y, z: position.z, yaw: motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt };
+  const animal: AnimalSnapshot = { id, kind, x: position.x, y: position.y, z: position.z, yaw: entity.get(AnimalMesh)?.value?.rotation.y ?? motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt };
   socket.send(JSON.stringify({ type, animal }));
   return true;
 }
@@ -119,7 +119,7 @@ export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[], 
       else entity.add(HorseRider({ saddled: true }));
     }
     interpolations.set(entity, { from: position.clone(), to: new Vector3(snapshot.x, snapshot.y, snapshot.z), step: new Vector3(snapshot.x - position.x, snapshot.y - position.y, snapshot.z - position.z), yawTo: snapshot.yaw, elapsed: 0 });
-    entity.set(AnimalMotion, { yaw: snapshot.yaw, speed: snapshot.speed, running: snapshot.running ?? false });
+    entity.set(AnimalMotion, { yaw: snapshot.yaw, displayYaw: snapshot.yaw, speed: snapshot.speed, running: snapshot.running ?? false });
     if (entity.get(AnimalHealth)?.value !== snapshot.health) entity.set(AnimalHealth, { value: snapshot.health });
     const mesh = entity.get(AnimalMesh)?.value;
     if (mesh) mesh.visible = !player || position.distanceToSquared(player) < 40 * 40;
@@ -181,7 +181,6 @@ export function interpolateAnimalMovement(world: World, dt: number) {
       const mesh = entity.get(AnimalMesh)?.value;
       if (mesh) {
         mesh.position.copy(position);
-        mesh.rotation.y = motion?.displayYaw ?? interpolation.yawTo;
         mesh.visible = !player || position.distanceToSquared(player) < 40 * 40;
       }
       if (interpolation.elapsed >= 0.3) animals.delete(entity);
@@ -224,7 +223,7 @@ export function syncAnimalState(world: World, dt: number) {
     const position = entity.get(AnimalPosition)!;
     const motion = entity.get(AnimalMotion)!;
     const tame = entity.get(AnimalTame);
-    return [{ id, kind: entity.get(Animal)!.kind, x: position.x, y: position.y, z: position.z, yaw: motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: entity.get(Animal)!.kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt }];
+    return [{ id, kind: entity.get(Animal)!.kind, x: position.x, y: position.y, z: position.z, yaw: entity.get(AnimalMesh)?.value?.rotation.y ?? motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: entity.get(Animal)!.kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt }];
   });
   const fish = world.query(Fish, FishId, FishPosition, FishMotion).map((entity) => {
     const position = entity.get(FishPosition)!;

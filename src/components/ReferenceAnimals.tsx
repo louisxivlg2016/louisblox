@@ -5,7 +5,6 @@ import { Mesh, NearestFilter, Vector3 } from 'three';
 import type { Entity } from 'koota';
 import type { Group } from 'three';
 import { AnimalMesh, AnimalMotion, AnimalPosition, Trader } from '../game/traits';
-import { turnToward } from '../game/rotation';
 import { createCharacterRig } from '../game/characterRig';
 import type { AnimalKind } from '../game/animals';
 import cowUrl from '../../assets/models/reference-cow.glb';
@@ -33,6 +32,7 @@ for (const model of [...Object.values(hunyuanAnimals), traderUrl]) useGLTF.prelo
 function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x' | 'z' = 'x', amplitude = 1) {
   const renderPosition = useRef<Vector3 | null>(null);
   const previousPosition = useRef<Vector3 | null>(null);
+  const renderYaw = useRef<number | null>(null);
   const phase = useRef(0);
   const moving = useRef(false);
   useFrame((_, delta) => {
@@ -42,9 +42,11 @@ function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x'
     if (position && mesh) {
       const moved = previousPosition.current ? Math.hypot(position.x - previousPosition.current.x, position.z - previousPosition.current.z) : 0;
       moving.current = moved > 0.0005;
-      if (moving.current && previousPosition.current && motion) {
+      if (renderYaw.current === null) renderYaw.current = motion?.displayYaw ?? 0;
+      if (moving.current && previousPosition.current) {
         const movementYaw = Math.atan2(position.x - previousPosition.current.x, position.z - previousPosition.current.z);
-        motion.displayYaw = turnToward(motion.displayYaw, movementYaw, Math.min(1, delta * 10));
+        renderYaw.current = movementYaw;
+        if (motion) motion.displayYaw = movementYaw;
       }
       if (!previousPosition.current) previousPosition.current = position.clone();
       else previousPosition.current.copy(position);
@@ -53,7 +55,7 @@ function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x'
       renderPosition.current.lerp(position, smoothing);
       mesh.position.copy(renderPosition.current);
       mesh.userData.actualSpeed = delta > 0 ? moved / delta : 0;
-      if (motion) mesh.rotation.y = motion.displayYaw + yawOffset;
+      mesh.rotation.y = (renderYaw.current ?? 0) + yawOffset;
     }
     if (moving.current) phase.current += delta * (bird ? 10 : 8) * (motion?.running ? 1.5 : 1);
     const swing = moving.current ? Math.sin(phase.current) * (bird ? 0.42 : motion?.running ? 0.75 : 0.56) * amplitude : 0;
