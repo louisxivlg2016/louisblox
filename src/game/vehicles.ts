@@ -88,15 +88,15 @@ export function spawnCar(world: World, x: number, y: number, z: number, color = 
 }
 
 export function seatOffset(kind: VehicleKind, role: SeatRole, seat = 0): [number, number, number] {
-  if (kind === 'boat') return role === 'driver' ? [-0.42, 0.58, -0.3] : [0.38, 0.58, -0.3];
-  if (kind === 'cannon') return [0, 0.7, 1.7];
-  if (kind === 'carriage') return role === 'driver' ? [0, 1.1, -2] : [0.5, 1.04, 0.5];
+  if (kind === 'boat') return role === 'driver' ? [-0.42, 0.78, -0.3] : [0.38, 0.78, -0.3];
+  if (kind === 'cannon') return [0, 0.9, 1.7];
+  if (kind === 'carriage') return role === 'driver' ? [0, 1.3, -2] : [0.5, 1.24, 0.5];
   if (kind !== 'car' && kind !== 'jeep' && kind !== 'police' && kind !== 'firetruck') {
     const cabin = CABINS[kind]!;
-    return role === 'driver' ? [-0.65, cabin.floor + 0.68, cabin.front + 1.1] : [0, cabin.floor + 0.55, cabin.rear - 1.2 - seat * 2];
+    return role === 'driver' ? [-0.65, cabin.floor + 0.88, cabin.front + 1.1] : [0, cabin.floor + 0.75, cabin.rear - 1.2 - seat * 2];
   }
-  if (kind === 'jeep') return role === 'driver' ? [-0.58, 1.05, -0.02] : [0.58, 1.05, -0.02];
-  return role === 'driver' ? [-0.58, 0.8, -0.35] : [0.58, 1.05, -0.02];
+  if (kind === 'jeep') return role === 'driver' ? [-0.58, 1.25, -0.02] : [0.58, 1.25, -0.02];
+  return role === 'driver' ? [-0.58, 1, -0.35] : [0.58, 1.25, -0.02];
 }
 
 export function vehicleLocalPosition(vehicle: Entity, local: Vector3) {
