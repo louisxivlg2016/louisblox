@@ -104,7 +104,7 @@ export function MultiplayerLobby({ onPlay, onCreateRoom, createLabel = translate
     setResolving(true);
     try {
       if (await findAndJoin(room)) return;
-      connect(room, joinMode === 'room' ? null : joinMode, true);
+      connect(room, joinMode === 'room' ? null : joinMode, false);
     } catch {
       useMultiplayerStore.getState().setStatus('error', translate('Impossible de vérifier le nom du salon. Réessaie dans un instant.', 'Unable to verify the room name. Try again in a moment.'));
     } finally {
@@ -178,7 +178,7 @@ export function MultiplayerLobby({ onPlay, onCreateRoom, createLabel = translate
               <label htmlFor={fieldId('server')}>{translate('Serveur personnalisé', 'Custom server', 'Servidor personalizado')} <span>{translate('(optionnel)', '(optional)')}</span>
                 <input id={fieldId('server')} value={server} onChange={(event) => setServer(event.target.value)} placeholder="wss://…workers.dev/ws" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
               </label>
-              <p className="multiplayer-hint">{translate('Serveur par défaut : ws://192.168.0.7:8788 · /ws est ajouté automatiquement. Vide ce champ pour la connexion automatique.', 'Default server: ws://192.168.0.7:8788 · /ws is added automatically. Clear this field for automatic connection.', 'Servidor predeterminado: ws://192.168.0.7:8788 · /ws se añade automáticamente. Vacía este campo para la conexión automática.')}</p>
+              <p className="multiplayer-hint">{translate('Le serveur en ligne est utilisé par défaut. Tu peux indiquer un autre serveur ou vider ce champ pour la connexion automatique.', 'The online server is used by default. Enter another server or clear this field for automatic connection.', 'El servidor en línea se usa de forma predeterminada. Introduce otro servidor o vacía este campo para la conexión automática.')}</p>
             </>
           )}
           <div className="multiplayer-mode">

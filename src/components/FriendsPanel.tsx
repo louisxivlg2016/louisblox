@@ -126,7 +126,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
     requestRoomMode(null);
     setPendingJoin(player.room);
     setMessage(translate(`Connexion au monde de ${player.name}…`, `Connecting to ${player.name}’s world…`));
-    configure({ playerName, room: player.room, server }, true);
+    configure({ playerName, room: player.room, server }, false);
     const url = new URL(window.location.href);
     url.searchParams.set('room', player.room);
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
@@ -156,11 +156,27 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
         {editing ? (
           <form className="profile-name-form" onSubmit={(event) => {
             event.preventDefault();
-            void validatePlayerName(name).then(() => {
-              setPlayerName(name);
-              setEditing(false);
-              setMessage(translate(`Ton pseudo est maintenant ${name.trim()}.`, `Your username is now ${name.trim()}.`));
-            }).catch((error) => setMessage(error instanceof Error ? error.message : translate('Ce pseudo est indisponible.', 'This username is unavailable.')));
+            const nextName = name.trim().slice(0, 24);
+            if (!nextName) {
+              setMessage(translate('Choisis un pseudo avant de valider.', 'Choose a username before confirming.'));
+              return;
+            }
+            const previousName = playerName;
+            setPlayerName(nextName);
+            setEditing(false);
+            setMessage(translate(`Ton pseudo est maintenant ${nextName}.`, `Your username is now ${nextName}.`));
+            void Promise.race([
+              validatePlayerName(nextName),
+              new Promise<void>((_, reject) => window.setTimeout(() => reject(new Error('Validation indisponible')), 2500)),
+            ]).catch((error) => {
+              if (error instanceof Error && /already in use|déjà utilisé/i.test(error.message)) {
+                setPlayerName(previousName);
+                setEditing(true);
+                setMessage(error.message);
+                return;
+              }
+              setMessage(translate(`Ton pseudo est maintenant ${nextName}. Validation en ligne indisponible pour le moment.`, `Your username is now ${nextName}. Online validation is temporarily unavailable.`));
+            });
           }}>
             <input aria-label={translate('Mon pseudo', 'My username')} value={name} maxLength={24} onChange={(event) => setName(event.target.value)} autoFocus />
             <button type="submit">OK</button>

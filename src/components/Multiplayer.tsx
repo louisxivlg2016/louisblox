@@ -144,7 +144,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
     if (!group.current) return;
     group.current.visible = !state.effects?.includes('invisibility');
     const amount = 1 - Math.exp(-delta * 14);
-    const seatedHeight = state.mounted && !isAnimalMount(state.vehicleKind) ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
+    const seatedHeight = state.mounted && !isAnimalMount(state.vehicleKind) ? state.vehicleKind === 'car' ? 0.55 : 0.7 : 0;
     const lyingHeight = !state.mounted && state.emote === 'lie' ? 0.18 : 0;
     target.set(state.x, state.y + (state.flying && !state.mounted ? 1 : 0) + lyingHeight - seatedHeight, state.z);
     group.current.position.lerp(target, amount);

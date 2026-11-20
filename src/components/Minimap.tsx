@@ -186,7 +186,7 @@ export function Minimap() {
               <strong>{translate('Carte du monde', 'World map')}</strong>
               <button type="button" className="secondary-button" onClick={closeMap}>{translate('Fermer', 'Close')}</button>
             </div>
-            <canvas ref={largeCanvas} className="world-map-canvas" width={(MAP_RADIUS * 2 + 1) * CELL} height={(MAP_RADIUS * 2 + 1) * CELL} role="img" onPointerDown={startMapDrag} onPointerMove={moveMapDrag} onPointerUp={endMapDrag} onPointerCancel={endMapDrag} aria-label={translate('Grande carte pixelisée du terrain', 'Large pixelated terrain map')} />
+            <canvas ref={largeCanvas} className="world-map-canvas" width={(MAP_RADIUS * 2 + 1) * CELL} height={(MAP_RADIUS * 2 + 1) * CELL} role="img" onPointerDown={startMapDrag} onPointerMove={moveMapDrag} onPointerUp={endMapDrag} onPointerCancel={endMapDrag} onLostPointerCapture={endMapDrag} aria-label={translate('Grande carte pixelisée du terrain à faire glisser pour explorer tout le monde', 'Large pixelated terrain map to drag and explore the whole world')} />
             <small ref={largeCoordinates}>{viewCenter ? `${Math.round(viewCenter.x)} · ${Math.round(viewCenter.z)}` : undefined}</small>
           </section>
         </div>

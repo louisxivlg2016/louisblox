@@ -96,7 +96,7 @@ export function seatOffset(kind: VehicleKind, role: SeatRole, seat = 0): [number
     return role === 'driver' ? [-0.65, cabin.floor + 0.68, cabin.front + 1.1] : [0, cabin.floor + 0.55, cabin.rear - 1.2 - seat * 2];
   }
   if (kind === 'jeep') return role === 'driver' ? [-0.58, 1.05, -0.02] : [0.58, 1.05, -0.02];
-  return role === 'driver' ? [-0.58, 0.65, -0.02] : [0.58, 1.05, -0.02];
+  return role === 'driver' ? [-0.58, 0.8, -0.35] : [0.58, 1.05, -0.02];
 }
 
 export function vehicleLocalPosition(vehicle: Entity, local: Vector3) {

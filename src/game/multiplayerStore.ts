@@ -34,11 +34,20 @@ const query = typeof window === 'undefined' ? new URLSearchParams() : new URLSea
 const autoJoin = query.has('server') || query.has('room');
 setJoinOnlyRoom(autoJoin ? query.get('room') || 'main-room' : null);
 
+function guestName() {
+  const value = Number.parseInt(crypto.randomUUID().replaceAll('-', '').slice(0, 8), 16) % 100000000;
+  return `guest${value.toString().padStart(8, '0')}`;
+}
+
 function initialPlayerName() {
   try {
-    return localStorage.getItem('louisblox-player-name')?.trim().slice(0, 24) || translate('Joueur', 'Player');
+    const saved = localStorage.getItem('louisblox-player-name')?.trim().slice(0, 24);
+    if (saved) return saved;
+    const name = guestName();
+    localStorage.setItem('louisblox-player-name', name);
+    return name;
   } catch {
-    return translate('Joueur', 'Player');
+    return guestName();
   }
 }
 
@@ -48,7 +57,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
   connectionId: 0,
   playerName: initialPlayerName(),
   room: query.get('room') || 'main-room',
-  server: query.get('server') || 'ws://192.168.0.7:8788',
+  server: query.get('server') || 'wss://louisblox.louisblox.workers.dev/ws',
   status: 'offline',
   worldReady: false,
   error: '',
@@ -61,7 +70,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
     set((state) => ({ enabled, joined: enabled && state.joined, status: enabled && state.joined ? 'connecting' : 'offline', worldReady: false, error: '', players: [] }));
   },
   configure: (settings, joinOnly = false) => {
-    const playerName = settings.playerName.trim().slice(0, 24) || translate('Joueur', 'Player');
+    const playerName = settings.playerName.trim().slice(0, 24) || guestName();
     const room = normalizeRoomId(settings.room);
     const server = settings.server.trim();
     try {
@@ -76,7 +85,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set) => ({
   setStatus: (status, error = '') => set({ status, error: translateServerMessage(error), ...(status === 'online' ? {} : { worldReady: false }) }),
   setPlayers: (players) => set({ players }),
   setPlayerName: (name) => {
-    const playerName = name.trim().slice(0, 24) || translate('Joueur', 'Player');
+    const playerName = name.trim().slice(0, 24) || guestName();
     try {
       localStorage.setItem('louisblox-player-name', playerName);
     } catch {

@@ -61,7 +61,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const flightAmount = flightBlend * flightBlend * (3 - 2 * flightBlend);
   const mountKind = entity.get(PlayerMount)?.kind;
   const emote = useEmoteStore.getState().current;
-  const seatedHeight = mounted && !isAnimalMount(mountKind) ? mountKind === 'car' ? -0.9 : -0.7 : 0;
+  const seatedHeight = mounted && !isAnimalMount(mountKind) ? mountKind === 'car' ? -0.55 : -0.7 : 0;
   const lyingHeight = !mounted && !sleep && emote === 'lie' ? 0.18 : 0;
   if (avatar) {
     avatar.rotation.x = sleep ? amount * Math.PI / 2 : !mounted && (emote === 'lie' || state.parachuting) ? -Math.PI / 2 : -flightAmount * Math.PI / 2;

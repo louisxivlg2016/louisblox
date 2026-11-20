@@ -8,7 +8,6 @@ import { VehicleGlb } from './VehicleGlb';
 import { VehicleInterior } from './TransportInterior';
 import { useRemotePlayerStore } from '../game/multiplayerStore';
 import { useVehicleControls } from '../game/vehicleControls';
-import { PixelPart } from './ItemModel';
 
 function VehicleHeadlights({ kind }: { kind: import('../game/vehicleTypes').VehicleKind }) {
   const enabled = useVehicleControls((state) => state.headlights);
@@ -18,8 +17,12 @@ function VehicleHeadlights({ kind }: { kind: import('../game/vehicleTypes').Vehi
     <group name="vehicle-headlights">
       <primitive object={target} position={[0, 0.5, -12]} />
       {[-0.55, 0.55].map((x) => <group key={x}>
-        <PixelPart position={[x, 0.65, -2.05]} size={[0.28, 0.18, 0.05]} color="#fff5bd" />
-        <spotLight position={[x, 0.7, -1.85]} target={target} color="#fff2bd" intensity={24} distance={24} angle={0.34} penumbra={0.55} decay={1.4} />
+        <mesh position={[x, 0.65, -2.05]}>
+          <boxGeometry args={[0.28, 0.18, 0.05]} />
+          <meshBasicMaterial color="#fff5bd" toneMapped={false} />
+        </mesh>
+        <spotLight position={[x, 0.7, -1.85]} target={target} color="#fff2bd" intensity={180} distance={40} angle={0.45} penumbra={0.55} decay={1} />
+        <pointLight position={[x, 0.75, -2.1]} color="#fff2bd" intensity={8} distance={7} decay={1} />
       </group>)}
     </group>
   );

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { requestPlay } from '../game/input';
 import { BIOME_NAMES } from '../game/levels';
 import type { Biome } from '../game/levels';
@@ -11,6 +12,8 @@ import { MAX_HOMES, NO_HOMES, useHomeStore } from '../game/homes';
 import type { Home } from '../game/homes';
 import { teleportToHome } from '../game/teleport';
 import { translate } from '../game/language';
+import { sendFriendRequest, useFriendStore } from '../game/friends';
+import { useCharacterStore } from '../game/characterStore';
 
 const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'jungle', 'prairie', 'desert'];
 const RUINS: Array<{ type: RuinType; name: string }> = [
@@ -39,6 +42,8 @@ export function TeleportPanel() {
   const players = useMultiplayerStore((state) => state.players);
   const outgoing = useTeleportRequestStore((state) => state.outgoing);
   const notice = useTeleportRequestStore((state) => state.notice);
+  const onlinePlayers = useFriendStore((state) => state.onlinePlayers);
+  const [inviteNotice, setInviteNotice] = useState('');
   const worldId = useGameStore((state) => state.worldId);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   const homes = useHomeStore((state) => state.homes[worldId] ?? NO_HOMES);
@@ -70,6 +75,23 @@ export function TeleportPanel() {
     setOpen(false);
     setHomeOpen(true);
   };
+  const invite = async (playerId: string, name: string) => {
+    const profile = onlinePlayers.find((player) => player.playerId === playerId) ?? {
+      playerId,
+      name,
+      room: useMultiplayerStore.getState().room,
+      character: 'boy' as const,
+      outfit: 'default' as const,
+      wig: 'auto' as const,
+      appearance: useCharacterStore.getState().appearance,
+    };
+    try {
+      const delivered = await sendFriendRequest(profile);
+      setInviteNotice(delivered ? translate(`Invitation envoyée à ${name}.`, `Invitation sent to ${name}.`) : translate(`Invitation enregistrée pour ${name}.`, `Invitation saved for ${name}.`));
+    } catch {
+      setInviteNotice(translate('Invitation impossible pour le moment.', 'Unable to send the invitation right now.'));
+    }
+  };
   const close = () => {
     setOpen(false);
     void requestPlay();
@@ -87,15 +109,18 @@ export function TeleportPanel() {
           {players.filter((player) => !player.self).length === 0 ? (
             <span className="teleport-empty">{translate('Aucun autre joueur dans ce salon.', 'No other players in this room.')}</span>
           ) : players.filter((player) => !player.self).map((player) => (
-            <button
-              key={player.playerId}
-              className="player-teleport-button"
-              disabled={Boolean(outgoing)}
-              onClick={() => requestPlayerTeleport(player.playerId, player.name)}
-            >
-              {outgoing?.playerId === player.playerId ? translate('Demande envoyée…', 'Request sent…') : `Join ${player.name}`}
-            </button>
+            <span key={player.playerId} className="player-teleport-actions">
+              <button
+                className="player-teleport-button"
+                disabled={Boolean(outgoing)}
+                onClick={() => requestPlayerTeleport(player.playerId, player.name)}
+              >
+                {outgoing?.playerId === player.playerId ? translate('Demande envoyée…', 'Request sent…') : `Join ${player.name}`}
+              </button>
+              <button type="button" className="friend-add" onClick={() => void invite(player.playerId, player.name)}>{translate('Inviter', 'Invite')}</button>
+            </span>
           ))}
+          {inviteNotice && <span className="teleport-request-status" role="status">{inviteNotice}</span>}
           {notice && <span className="teleport-request-status" role="status">{notice}</span>}
         </div>
       )}

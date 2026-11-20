@@ -30,7 +30,7 @@ function battleTargetPosition(playerId: string, state: PlayerSnapshot) {
   const rendered = renderedTargets.get(playerId);
   const position = rendered?.position.clone() ?? new Vector3();
   if (!rendered) {
-    const seatedHeight = state.mounted && state.vehicleKind !== 'horse' ? state.vehicleKind === 'car' ? 0.9 : 0.7 : 0;
+    const seatedHeight = state.mounted && state.vehicleKind !== 'horse' ? state.vehicleKind === 'car' ? 0.55 : 0.7 : 0;
     const lyingHeight = !state.mounted && state.emote === 'lie' ? 0.18 : 0;
     position.set(state.x, state.y + (state.flying ? 1 : 0) + lyingHeight - seatedHeight, state.z);
   }

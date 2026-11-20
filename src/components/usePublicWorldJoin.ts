@@ -37,7 +37,7 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
     useGameStore.setState({ worldTemplate: world.template ?? 'nature' });
     setEnabled(true);
     setPendingRoom(world.id);
-    configure({ playerName, room: world.id, server }, true);
+    configure({ playerName, room: world.id, server }, false);
   }, [playerName, server, configure, setEnabled]);
 
   const joinBusiest = useCallback(async (mode: GameplayMode) => {
