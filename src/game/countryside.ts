@@ -25,6 +25,11 @@ function highwayBlock(offset: number, along: number) {
   return lane === 2 ? BlockKind.ConcreteBlack : BlockKind.ConcreteGray;
 }
 
+function distanceToHighway(coordinate: number) {
+  const offset = ((coordinate % 48) + 48) % 48;
+  return Math.min(offset, 48 - offset);
+}
+
 function siteAt(cellX: number, cellZ: number, seed: number): VillageSite {
   const x = cellX * SPACING + 1000;
   const z = cellZ * SPACING + 32;
@@ -58,7 +63,8 @@ export function generateCountrysideChunk(cx: number, cz: number, seed: number): 
       const forest = hash(Math.floor(x / 64), Math.floor(z / 64), seed + 11) > 0.55;
       for (let y = 0; y <= GROUND; y += 1) put(x, y, z, y === 0 ? BlockKind.Bedrock : y === GROUND ? forest ? BlockKind.ForestGrass : BlockKind.Grass : y >= GROUND - 1 ? BlockKind.Dirt : BlockKind.Stone);
       const nearVillage = sites.some((site) => Math.hypot(site.x - x, site.z - z) < site.radius + 12);
-      if (forest && !nearVillage && Math.abs(z) > 3 && hash(x, z, seed + 21) > 0.88) {
+      const nearHighway = distanceToHighway(x) <= 6 || distanceToHighway(z) <= 6;
+      if (forest && !nearVillage && !nearHighway && hash(x, z, seed + 21) > 0.88) {
         for (let y = GROUND + 1; y <= GROUND + 4; y += 1) put(x, y, z, BlockKind.Wood);
         for (let dx = -2; dx <= 2; dx += 1) for (let dz = -2; dz <= 2; dz += 1) for (let dy = 0; dy <= 1; dy += 1) {
           if (Math.abs(dx) + Math.abs(dz) + dy <= 3) put(x + dx, GROUND + 5 + dy, z + dz, BlockKind.Leaves);
