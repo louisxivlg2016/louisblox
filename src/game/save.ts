@@ -17,22 +17,30 @@ const DEFAULT_WORLD_ID = 'main-room';
 export type WorldMeta = { id: string; name: string; gameplayMode: WorldSave['gameplayMode']; updatedAt: number };
 export const MAX_WORLDS = 20;
 
-export function canCreateWorld(worldId?: string) {
-  const worlds = listWorlds();
-  return worlds.length < MAX_WORLDS || worldId !== undefined && worlds.some((world) => world.id === worldId);
+export function canCreateWorld(_worldId?: string) {
+  return true;
 }
 
 function worldKey(worldId: string) {
   return `louisblox-world-${worldId}`;
 }
 
-export function readWorldSave(worldId = DEFAULT_WORLD_ID): WorldSave | null {
+export function readWorldSave(worldId = DEFAULT_WORLD_ID, forLoad = false): WorldSave | null {
   try {
     const raw = localStorage.getItem(worldKey(worldId)) ?? (worldId === DEFAULT_WORLD_ID ? localStorage.getItem(LEGACY_SAVE_KEY) : null);
-    if (!raw) return null;
+    if (!raw) {
+      if (forLoad) worldRevisions.set(worldId, 0);
+      return null;
+    }
     const save = JSON.parse(raw) as WorldSave;
-    return save.version === 1 || save.version === 2 || save.version === 3 || save.version === 4 || save.version === 5 ? { ...save, worldId: save.worldId ?? worldId, customWorld: sanitizeCustomWorld(save.customWorld) ?? undefined } : null;
+    const result = save.version === 1 || save.version === 2 || save.version === 3 || save.version === 4 || save.version === 5 ? { ...save, worldId: save.worldId ?? worldId, customWorld: sanitizeCustomWorld(save.customWorld) ?? undefined, revision: revisionOf(save.revision), savedAt: typeof save.savedAt === 'number' ? save.savedAt : 0 } : null;
+    if (forLoad) {
+      worldRevisions.set(worldId, result?.revision ?? 0);
+      revisionWarningShown = false;
+    }
+    return result;
   } catch {
+    if (forLoad) worldRevisions.set(worldId, 0);
     return null;
   }
 }
@@ -51,19 +59,47 @@ export function listWorlds(): WorldMeta[] {
 }
 
 let storageWarningShown = false;
+let revisionWarningShown = false;
+const worldRevisions = new Map<string, number>();
+
+function revisionOf(value: unknown) {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+}
+
+function readStoredRevision(worldId: string) {
+  try {
+    const raw = localStorage.getItem(worldKey(worldId)) ?? (worldId === DEFAULT_WORLD_ID ? localStorage.getItem(LEGACY_SAVE_KEY) : null);
+    return raw ? revisionOf((JSON.parse(raw) as WorldSave).revision) : 0;
+  } catch {
+    return 0;
+  }
+}
 
 export function writeWorldSave(worldId: string, save: WorldSave, name = worldId): WorldMeta | null {
   if (!canCreateWorld(worldId)) {
     useGameStore.getState().setNotice(translate('Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes pour libérer une place.', 'You already have 20 worlds. Delete one in My Worlds to free a slot.'));
     return null;
   }
-  const metadata: WorldMeta = { id: worldId, name: name.trim().slice(0, 80) || worldId, gameplayMode: save.gameplayMode, updatedAt: Date.now() };
+  const storedRevision = readStoredRevision(worldId);
+  const localRevision = worldRevisions.get(worldId) ?? storedRevision;
+  if (storedRevision > localRevision) {
+    if (!revisionWarningShown) {
+      revisionWarningShown = true;
+      useGameStore.getState().setNotice(translate('Ce monde a une version plus récente dans un autre onglet. Rouvre-le pour la charger avant de continuer.', 'A newer version of this world exists in another tab. Reopen it before continuing.', 'Existe una versión más reciente de este mundo en otra pestaña. Vuelve a abrirlo antes de continuar.'));
+    }
+    return null;
+  }
+  const revision = localRevision + 1;
+  const savedAt = Date.now();
+  const metadata: WorldMeta = { id: worldId, name: name.trim().slice(0, 80) || worldId, gameplayMode: save.gameplayMode, updatedAt: savedAt };
   try {
-    localStorage.setItem(worldKey(worldId), JSON.stringify({ ...save, worldId }));
+    localStorage.setItem(worldKey(worldId), JSON.stringify({ ...save, worldId, revision, savedAt }));
+    worldRevisions.set(worldId, revision);
     const worlds = listWorlds().filter((world) => world.id !== worldId);
     worlds.unshift(metadata);
     localStorage.setItem(WORLDS_KEY, JSON.stringify(worlds));
     storageWarningShown = false;
+    revisionWarningShown = false;
     return metadata;
   } catch {
     if (!storageWarningShown) {
@@ -77,6 +113,7 @@ export function writeWorldSave(worldId: string, save: WorldSave, name = worldId)
 export function deleteWorldSave(worldId: string) {
   try {
     localStorage.removeItem(worldKey(worldId));
+    worldRevisions.delete(worldId);
     if (worldId === DEFAULT_WORLD_ID) localStorage.removeItem(LEGACY_SAVE_KEY);
     localStorage.setItem(WORLDS_KEY, JSON.stringify(listWorlds().filter((world) => world.id !== worldId)));
     return true;
@@ -85,14 +122,15 @@ export function deleteWorldSave(worldId: string) {
   }
 }
 
-export function createWorldSave(world: World): WorldSave | null {
+type GameSnapshot = ReturnType<typeof useGameStore.getState>;
+
+export function createWorldSave(world: World, store: GameSnapshot = useGameStore.getState()): WorldSave | null {
   const playerEntity = world.queryFirst(Player);
   const environment = world.queryFirst(Environment)?.get(Environment);
   const position = playerEntity?.get(PlayerPosition);
   const state = playerEntity?.get(PlayerState);
   const health = playerEntity?.get(PlayerHealth);
   if (!position || !state || !environment) return null;
-  const store = useGameStore.getState();
   return {
     version: 5,
     worldId: store.worldId,
@@ -110,18 +148,20 @@ export function createWorldSave(world: World): WorldSave | null {
     vehicles: snapshotVehicles(world),
     saddledHorses: snapshotSaddledHorses(world),
     apples: store.apples,
+    coins: store.coins,
     meat: store.meat,
     elapsed: environment.elapsed,
     edits: snapshotWorldEdits(world),
     protection: useProtectionStore.getState().protection ?? undefined,
     paint: snapshotPaintStrokes(world),
     season: useSeasonStore.getState().season,
+    mixedSeasons: useSeasonStore.getState().mixedSeasons,
+    checkpoint: store.checkpoint ?? undefined,
   };
 }
 
-export function saveWorld(world: World) {
-  const store = useGameStore.getState();
-  const save = createWorldSave(world);
+export function saveWorld(world: World, store: GameSnapshot = useGameStore.getState()) {
+  const save = createWorldSave(world, store);
   if (!save) return false;
   return writeWorldSave(store.worldId, save, store.worldName || store.worldId) !== null;
 }
@@ -139,14 +179,24 @@ export function initPersistence(world: World) {
     saveTimer = window.setTimeout(() => {
       saveTimer = undefined;
       saveWorld(world);
-    }, 100);
+    }, 0);
   };
   useGameStore.subscribe((state, previous) => {
+    if (state.generation !== previous.generation) {
+      saveWorld(world, previous);
+      return;
+    }
+    if (state.mode !== previous.mode && previous.mode === 'play') {
+      saveWorld(world);
+      return;
+    }
     if (state.selected === previous.selected && state.hotbarSlots === previous.hotbarSlots && state.itemCounts === previous.itemCounts
-      && state.equippedArmor === previous.equippedArmor && state.apples === previous.apples && state.meat === previous.meat) return;
+      && state.equippedArmor === previous.equippedArmor && state.apples === previous.apples && state.coins === previous.coins && state.meat === previous.meat && state.checkpoint === previous.checkpoint) return;
     schedule();
   });
   onVoxelEdit(world, schedule);
+  useProtectionStore.subscribe(schedule);
+  useSeasonStore.subscribe(schedule);
   window.addEventListener('pagehide', flush);
   window.addEventListener('beforeunload', flush);
   document.addEventListener('visibilitychange', () => {

@@ -54,6 +54,7 @@ export const PHOTO_AVATARS = () => ({
   corsair: { name: 'Bandana Pirate', url: corsairUrl },
   footballer: { name: translate('Joueur de foot', 'Footballer'), url: footballerUrl },
   firefighter: { name: 'Firefighter', url: firefighterUrl },
+  worker: { name: 'Construction Worker', url: firefighterUrl },
   police: { name: 'Police Officer', url: policeUrl },
 });
 const photoKinds = Object.keys(PHOTO_AVATARS()) as Array<keyof ReturnType<typeof PHOTO_AVATARS>>;

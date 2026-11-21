@@ -42,6 +42,7 @@ type GameStore = {
   worldTemplate: import('./worldMode').WorldTemplate;
   customWorld: import('./worldCode').CustomWorldDefinition | null;
   blockCount: number;
+  coins: number;
   apples: number;
   meat: Record<AnimalKind, number>;
   miningProgress: number;
@@ -57,6 +58,8 @@ type GameStore = {
   setBookOpen: (open: boolean) => void;
   coordinates: Coordinates;
   environment: EnvironmentSnapshot;
+  checkpoint: Coordinates | null;
+  setCheckpoint: (checkpoint: Coordinates | null) => void;
   setMode: (mode: GameMode) => void;
   selectBlock: (kind: SelectedKind, slot?: number) => void;
   setHotbarSlot: (index: number, kind: SelectedKind | null) => void;
@@ -67,6 +70,8 @@ type GameStore = {
   setNotice: (notice: string) => void;
   setTeleportOpen: (open: boolean) => void;
   setBlockCount: (count: number) => void;
+  addCoins: (amount: number) => void;
+  spendCoins: (amount: number) => boolean;
   setCoordinates: (coordinates: Coordinates) => void;
   setEnvironment: (environment: EnvironmentSnapshot) => void;
   setMiningProgress: (progress: number) => void;
@@ -132,6 +137,7 @@ export const useGameStore = create<GameStore>((set) => ({
   chestItems: [],
   generation: 0,
   blockCount: 0,
+  coins: 0,
   apples: 0,
   meat: createMeatInventory(),
   miningProgress: 0,
@@ -145,6 +151,8 @@ export const useGameStore = create<GameStore>((set) => ({
   bookOpen: false,
   coordinates: { x: 0, y: 8, z: 0 },
   environment: { dayProgress: 0.38, biome: 'prairie', weather: 'clear' },
+  checkpoint: null,
+  setCheckpoint: (checkpoint) => set({ checkpoint }),
   setMode: (mode) => set({ mode }),
   setShopOpen: (shopOpen) => set({ shopOpen }),
   setBookOpen: (bookOpen) => set({ bookOpen, backpackItem: null }),
@@ -187,6 +195,18 @@ export const useGameStore = create<GameStore>((set) => ({
   openContainer: (type, position, items = []) => set({ container: { type, ...position }, chestItems: items, mode: 'pause', backpackOpen: false, teleportOpen: false, backpackItem: null }),
   closeContainer: () => set({ container: null, chestItems: [] }),
   setBlockCount: (blockCount) => set({ blockCount }),
+  addCoins: (amount) => {
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    set((state) => ({ coins: state.coins + Math.floor(amount) }));
+  },
+  spendCoins: (amount) => {
+    if (!Number.isFinite(amount) || amount <= 0) return false;
+    const cost = Math.floor(amount);
+    const current = useGameStore.getState().coins;
+    if (current < cost) return false;
+    set({ coins: current - cost });
+    return true;
+  },
   setCoordinates: (coordinates) => set({ coordinates }),
   setEnvironment: (environment) => set({ environment }),
   setMiningProgress: (miningProgress) => set({ miningProgress }),

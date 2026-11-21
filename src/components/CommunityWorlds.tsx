@@ -4,7 +4,7 @@ import type { ModePlayer, PublicWorld } from '../game/publicWorlds';
 import { GAMEPLAY_MODE_LABELS, isMultiplayerOnlyMode } from '../game/worldMode';
 import type { GameplayMode } from '../game/worldMode';
 import { playerIdentity } from '../game/playerIdentity';
-import { canCreateWorld, listWorlds, MAX_WORLDS } from '../game/save';
+import { listWorlds } from '../game/save';
 import type { WorldMeta } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
@@ -12,11 +12,10 @@ import { usePublicWorldJoin } from './usePublicWorldJoin';
 import { removeWorld } from '../game/deleteWorld';
 import { translate } from '../game/language';
 
-export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
+export function CommunityWorlds({ onPlay, mode, onModeChange }: {
   onPlay: () => void | Promise<void>;
   mode?: GameplayMode;
   onModeChange?: (mode: GameplayMode) => void;
-  onCreate?: () => void;
 }) {
   const [worlds, setWorlds] = useState<PublicWorld[]>([]);
   const [localWorlds, setLocalWorlds] = useState<WorldMeta[]>([]);
@@ -35,7 +34,6 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
   const localIds = new Set(localWorlds.map((world) => world.id));
   const ownPublic = worlds.filter((world) => world.ownerId === selfId && world.gameplayMode === selectedMode && !localIds.has(world.id));
   const ownLocal = localWorlds.filter((world) => (world.gameplayMode ?? 'creative') === selectedMode);
-  const full = !canCreateWorld();
 
   useEffect(() => {
     let active = true;
@@ -101,10 +99,8 @@ export function CommunityWorlds({ onPlay, mode, onModeChange, onCreate }: {
       </div>
       <div className="community-actions">
         <button className="multiplayer-join community-random" onClick={() => void joinBusiest(selectedMode)} disabled={pending || status === 'connecting'}>{translate('Rejoindre', 'Join')}</button>
-        {onCreate && <button className="secondary-button community-create" onClick={onCreate} disabled={full || pending || status === 'connecting' || !enabled && isMultiplayerOnlyMode(selectedMode)}>{!enabled && isMultiplayerOnlyMode(selectedMode) ? translate('Multijoueur requis', 'Multiplayer required') : translate('Créer ici', 'Create here')}</button>}
       </div>
-      <p className="community-random-hint">{translate(`Rejoins le monde ${GAMEPLAY_MODE_LABELS()[selectedMode]} avec le plus de joueurs. Si personne n’est en ligne, un nouveau monde est créé pour toi.`, `Join the ${GAMEPLAY_MODE_LABELS()[selectedMode]} world with the most players. If nobody is online, a new world is created for you.`)}</p>
-      {full && <p className="multiplayer-error" role="alert">{translate('Tu as atteint {MAX_WORLDS} mondes. Supprimes-en un pour en créer un autre.', 'You reached {MAX_WORLDS} worlds. Delete one to create another.')}</p>}
+      <p className="community-random-hint">{translate(`Rejoins le monde ${GAMEPLAY_MODE_LABELS()[selectedMode]} avec le plus de joueurs. Si aucun monde n’est disponible, un nouveau monde s’ouvre pour toi.`, `Join the ${GAMEPLAY_MODE_LABELS()[selectedMode]} world with the most players. If no world is available, a new world opens for you.`)}</p>
       {error && <p className="multiplayer-error" role="alert">{error}</p>}
       {deleteError && <p className="multiplayer-error" role="alert">{deleteError}</p>}
       <section className="community-section mode-players-section">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { chooseBattleTeam, useBattleStore } from '../game/battle';
 import { isFootballFrozen, useFootballStore } from '../game/footballClient';
-import { clearInput, requestPlay } from '../game/input';
+import { clearInput, releasePointerForOverlay, requestPlay } from '../game/input';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
 import { MatchResultActions } from './MatchResultActions';
@@ -34,6 +34,9 @@ export function FootballHud() {
     const timer = window.setInterval(() => refresh((value) => value + 1), 250);
     return () => window.clearInterval(timer);
   }, [gameplayMode]);
+  useEffect(() => {
+    if (gameplayMode === 'football' && winner) releasePointerForOverlay();
+  }, [gameplayMode, winner]);
   if (gameplayMode !== 'football' || !enabled) return null;
   const selectTeam = (next: 'red' | 'blue' | 'auto') => {
     if (chooseBattleTeam(next)) void requestPlay();

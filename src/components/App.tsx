@@ -1,4 +1,5 @@
-import { Canvas } from '@react-three/fiber';
+import { useEffect } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import { WorldProvider } from 'koota/react';
 import { useGameStore } from '../game/store';
 import { world } from '../game/world';
@@ -19,26 +20,63 @@ import { droppedItemSystem } from '../game/droppedItems';
 import { useLanguageStore } from '../game/language';
 import { updateProtection } from '../game/protection';
 import { teleportToHome } from '../game/teleport';
+import { useMazeStore } from '../game/mazeClient';
+import { useFootballStore } from '../game/footballClient';
+
+function RendererRecovery() {
+  const gl = useThree((state) => state.gl);
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const contextLoss = gl.getContext().getExtension('WEBGL_lose_context');
+    let timer: number | undefined;
+    const restore = () => {
+      if (!gl.getContext().isContextLost()) {
+        timer = undefined;
+        return;
+      }
+      contextLoss?.restoreContext();
+      timer = window.setTimeout(restore, 1500);
+    };
+    const lost = (event: Event) => {
+      event.preventDefault();
+      if (timer !== undefined) window.clearTimeout(timer);
+      timer = window.setTimeout(restore, 250);
+    };
+    const restored = () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      timer = undefined;
+    };
+    canvas.addEventListener('webglcontextlost', lost);
+    canvas.addEventListener('webglcontextrestored', restored);
+    return () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      canvas.removeEventListener('webglcontextlost', lost);
+      canvas.removeEventListener('webglcontextrestored', restored);
+    };
+  }, [gl]);
+  return null;
+}
 
 export function App() {
   useLanguageStore((state) => state.language);
   const mode = useGameStore((state) => state.mode);
   const pirateWinner = usePirateStore((state) => state.winner);
+  const mazeFinished = useMazeStore((state) => state.phase === 'finished');
+  const footballWinner = useFootballStore((state) => state.winner);
+  const mazeResultOpen = mazeFinished && mode !== 'play';
+  const matchFinished = Boolean(pirateWinner || mazeResultOpen || footballWinner);
   return (
-    <main className={`game-shell ${mode === 'play' && !pirateWinner ? 'playing' : ''}`}>
+    <main className={`game-shell ${mode === 'play' && !matchFinished ? 'playing' : ''}`}>
       <WorldProvider world={world}>
         <MultiplayerConnection />
         <Canvas
           id="game-canvas"
           frameloop={mode === 'play' ? 'always' : 'demand'}
           dpr={1}
-          camera={{ fov: 72, near: 0.05, far: 130, position: [0, 10, 0] }}
+          camera={{ fov: 72, near: 0.05, far: 280, position: [0, 10, 0] }}
           gl={{ antialias: false, powerPreference: 'high-performance' }}
           onCreated={(r3f) => {
             const { gl, camera } = r3f;
-            gl.domElement.addEventListener('webglcontextlost', (event) => {
-              event.preventDefault();
-            });
             if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') Object.assign(window, {
               louisbloxRenderer: gl,
               louisbloxDebug: async () => {
@@ -66,6 +104,7 @@ export function App() {
             });
           }}
         >
+          <RendererRecovery />
           <Game />
         </Canvas>
         <Hud />

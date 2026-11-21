@@ -97,6 +97,7 @@ function isBattleOnline() {
 }
 
 function setHealth(world: World, value: number) {
+  if (useGameStore.getState().gameplayMode === 'creative') return false;
   const player = world.queryFirst(Player);
   const health = player?.get(PlayerHealth);
   if (!player || !health) return false;
@@ -117,6 +118,7 @@ export function healPlayer(world: World, amount: number) {
 }
 
 function harmPlayer(world: World, amount: number) {
+  if (useGameStore.getState().gameplayMode === 'creative') return;
   if (isBattleOnline()) {
     void import('./battle').then(({ requestBattleHeal }) => requestBattleHeal(-amount));
     return;

@@ -1,4 +1,5 @@
 import { heightAt, SEA_LEVEL } from './levels';
+import { writeVillageChurch } from './constructionTemplates';
 import { BlockKind, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
 import type { SelectedKind } from './items';
@@ -29,47 +30,8 @@ function builder(blocks: Map<string, Voxel>) {
 export function smallChurchBlocks(site: Site, seed: number): Voxel[] {
   const centerX = site.x;
   const centerZ = site.z - 21;
-  const floorY = floorAt(centerX, centerZ, seed);
   const blocks = new Map<string, Voxel>();
-  const put = builder(blocks);
-  for (let dx = -3; dx <= 3; dx++) {
-    for (let dz = -4; dz <= 4; dz++) {
-      put(centerX + dx, floorY, centerZ + dz, BlockKind.OakPlanks);
-      for (let y = floorY + 1; y <= floorY + 3; y++) {
-        if (dx !== -3 && dx !== 3 && dz !== -4 && dz !== 4) continue;
-        const doorway = dz === 4 && dx === 0 && y <= floorY + 2;
-        if (!doorway) put(centerX + dx, y, centerZ + dz, y === floorY + 3 ? BlockKind.WhiteBrick : BlockKind.BeigeBrick);
-      }
-    }
-  }
-  put(centerX, floorY + 1, centerZ + 4, BlockKind.DoorBrown, { facing: 'north' });
-  put(centerX, floorY + 2, centerZ + 4, BlockKind.BeigeBrick);
-  for (const dz of [-2, 1]) {
-    put(centerX - 3, floorY + 2, centerZ + dz, BlockKind.GlassBlue);
-    put(centerX + 3, floorY + 2, centerZ + dz, BlockKind.GlassYellow);
-  }
-  put(centerX, floorY + 2, centerZ - 4, BlockKind.GlassRed);
-  for (const x of [-1, 1]) {
-    for (const z of [-1, 1]) put(centerX + x, floorY + 1, centerZ + z, BlockKind.PinePlanks);
-  }
-  put(centerX, floorY + 1, centerZ - 3, BlockKind.WhiteBrick);
-  put(centerX, floorY + 2, centerZ - 3, BlockKind.Candle);
-  for (let layer = 0; layer <= 3; layer++) {
-    for (let dx = -4 + layer; dx <= 4 - layer; dx++) {
-      for (let dz = -5; dz <= 5; dz++) put(centerX + dx, floorY + 4 + layer, centerZ + dz, BlockKind.PinePlanks);
-    }
-  }
-  for (let y = floorY + 7; y <= floorY + 9; y++) put(centerX, y, centerZ + 3, BlockKind.WhiteBrick);
-  put(centerX, floorY + 7, centerZ + 2, BlockKind.GoldOre);
-  put(centerX, floorY + 10, centerZ + 3, BlockKind.PinePlanks);
-  put(centerX, floorY + 11, centerZ + 3, BlockKind.Wood);
-  put(centerX - 1, floorY + 10, centerZ + 3, BlockKind.Wood);
-  put(centerX + 1, floorY + 10, centerZ + 3, BlockKind.Wood);
-  for (const side of [-1, 1]) {
-    for (let y = floorY + 1; y <= floorY + 7; y++) put(centerX + side * 3, y, centerZ + 3, BlockKind.WhiteBrick);
-    put(centerX + side * 3, floorY + 8, centerZ + 3, BlockKind.PinePlanks);
-    put(centerX + side * 3, floorY + 9, centerZ + 3, BlockKind.Wood);
-  }
+  writeVillageChurch(builder(blocks), centerX, floorAt(centerX, centerZ, seed) - 1, centerZ);
   return [...blocks.values()];
 }
 

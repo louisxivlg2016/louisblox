@@ -26,6 +26,7 @@ import { playSound } from '../audio';
 import { dropBlock } from '../droppedItems';
 import { translate } from '../language';
 import { toggleVehicleRadio } from '../radio';
+import { useShopBlock } from '../shops';
 
 const direction = new Vector3();
 const origin = new Vector3();
@@ -129,7 +130,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
           if (sapling) changeInventory(sapling, 1 + Math.floor(Math.random() * 2));
         }
       }
-      playSound(hit.block.kind === BlockKind.Dirt || hit.block.kind === BlockKind.Sand ? 'breakDirt' : isGlass(hit.block.kind) ? 'breakGlass' : isWoodBlock(hit.block.kind) ? 'breakWood' : 'breakBlock', 0.5);
+      const dirtBlock = hit.block.kind === BlockKind.Dirt || hit.block.kind === BlockKind.Sand || hit.block.kind === BlockKind.Grass || hit.block.kind === BlockKind.ForestGrass || hit.block.kind === BlockKind.AutumnGrass || hit.block.kind === BlockKind.JungleGrass;
+      playSound(dirtBlock ? 'breakDirt' : isGlass(hit.block.kind) ? 'breakGlass' : isWoodBlock(hit.block.kind) ? 'breakWood' : 'breakBlock', 0.5);
       target.visible = false;
       target.miningKey = '';
       target.miningProgress = 0;
@@ -146,6 +148,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
 
   const actions = pendingActions ?? consumeActions();
   if (useGameStore.getState().mode !== 'play' || !hit) return;
+  if ((actions.place > 0 || actions.harvest > 0 || (actions.interact ?? 0) > 0) && hit.block.shop && useShopBlock(world, hit.block)) return;
   if ((actions.place > 0 || actions.harvest > 0) && isSign(hit.block.kind)) {
     useSignStore.getState().openSign(hit, hit.block.text ?? '', hit.block.kind, hit.block.textSize);
     if (document.pointerLockElement) document.exitPointerLock();

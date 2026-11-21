@@ -124,9 +124,9 @@ if (typeof window !== 'undefined') {
       previousRadioTrack();
     }
   });
-  useGameStore.subscribe((state) => {
+  useGameStore.subscribe((state, previous) => {
     const radio = useRadioStore.getState();
-    if (radio.enabled && (state.mode !== 'play' || !radio.outside && (!state.riding || isAnimalMount(state.riding)))) stopVehicleRadio();
+    if (radio.enabled && (state.mode !== 'play' && state.mode !== previous.mode && !state.backpackOpen && !previous.backpackOpen || !radio.outside && (!state.riding || isAnimalMount(state.riding)))) stopVehicleRadio();
   });
   useAudioSettings.subscribe((state) => {
     if (!state.music) stopVehicleRadio();

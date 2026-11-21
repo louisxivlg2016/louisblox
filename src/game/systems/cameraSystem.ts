@@ -9,7 +9,7 @@ import { turnToward } from '../rotation';
 import { Player, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 import { useMazeStore } from '../mazeClient';
 import { canWalkInVehicle, isAnimalMount, vehicleViewDistance } from '../vehicleTypes';
-import { VehiclePosition } from '../traits';
+import { Vehicle, VehiclePosition } from '../traits';
 import { groundAt } from '../vehicles';
 import { chunkCoordinate, getBlockIndex, getColumnTop, loadChunkForCamera, releaseCameraChunk, streamChunks } from '../chunks';
 import { isCollidable } from './collisionSystem';
@@ -76,6 +76,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
     return;
   }
   const mount = entity.get(PlayerMount);
+  const blueCar = mount?.kind === 'car' && mount.vehicle?.get(Vehicle)?.color.toLowerCase() === '#347cd0';
   if (useGameStore.getState().gameplayMode === 'maze' && useMazeStore.getState().overview) {
     camera.position.set(position.x, position.y + 12, position.z + 5);
     camera.lookAt(position.x, position.y - 7.5, position.z - 24);
@@ -89,8 +90,8 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
   const exteriorPlane = mount?.kind === 'plane' && cameraMode !== 'first';
   const height = exteriorPlane ? 12 : Math.max(0.8, Math.min(6, (cameraMode === 'third' ? 2.35 : 2.05) - Math.sin(state.pitch) * 1.5));
   const targetHeight = exteriorPlane ? -8 : cameraMode === 'third' ? 0.95 : 0.9;
-  if (camera instanceof PerspectiveCamera && camera.far !== (exteriorPlane ? 500 : 130)) {
-    camera.far = exteriorPlane ? 500 : 130;
+  if (camera instanceof PerspectiveCamera && camera.far !== (exteriorPlane ? 700 : 280)) {
+    camera.far = exteriorPlane ? 700 : 280;
     if ('updateProjectionMatrix' in camera) camera.updateProjectionMatrix();
   }
   if (cameraMode === 'front' || cameraMode === 'third') {
@@ -100,7 +101,7 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
       const chunkX = chunkCoordinate(camera.position.x);
       const chunkZ = chunkCoordinate(camera.position.z);
       loadChunkForCamera(world, chunkX, chunkZ);
-      if (exteriorPlane) streamChunks(world, center.x, center.z, 2);
+      if (exteriorPlane) streamChunks(world, center.x, center.z);
     }
     camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z, center.y + 0.2) + 0.35);
     cameraTarget.set(center.x, center.y + targetHeight, center.z);
@@ -114,15 +115,13 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
     camera.lookAt(cameraTarget);
   } else {
     releaseCameraChunk(world);
-    if (mount?.kind === 'car') camera.position.set(center.x, center.y + 0.65, center.z);
-    else {
-      camera.position.copy(position);
-      if (walkingCabin) camera.position.y += 1.62;
-      else if (mount?.kind === 'plane') camera.position.y += 1;
-      else camera.position.y += mount?.vehicle && !isAnimalMount(mount.kind) ? 0.55 : 1.62;
-    }
-    if (mounted && !walkingCabin) camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z, center.y + 0.2) + 0.2);
-    moveCameraOutOfSolidBlocks(world, camera);
+    camera.position.copy(position);
+    if (walkingCabin) camera.position.y += 1.62;
+    else if (mount?.kind === 'plane') camera.position.y += 1;
+    else if (mount?.vehicle && !isAnimalMount(mount.kind)) camera.position.y += blueCar ? 0.45 : 0.55;
+    else camera.position.y += 1.62;
+    if (mounted && !walkingCabin && !blueCar) camera.position.y = Math.max(camera.position.y, groundAt(world, camera.position.x, camera.position.z, center.y + 0.2) + 0.2);
+    if (!blueCar) moveCameraOutOfSolidBlocks(world, camera);
     rotation.set(state.pitch, state.yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(rotation);
   }

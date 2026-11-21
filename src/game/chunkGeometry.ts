@@ -6,6 +6,8 @@ import { getVitrailDesign, getVitrailTexture } from './vitrailDesigns';
 import type { ExtraBlockKind } from './extraBlocks';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
+import { useSeasonStore } from './seasons';
+import type { Season } from './seasons';
 
 const TILE_SIZE = 16;
 const ATLAS_COLUMNS = 16;
@@ -102,6 +104,13 @@ function groupFor(kind: BlockKind) {
   if (kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves) return 'foliage';
   if (isBrick(kind)) return `brick:${kind}`;
   return 'opaque';
+}
+
+export function refreshSeasonTextures() {
+  atlas = null;
+  materials = null;
+  tileIndices.clear();
+  for (const cache of tileCoordinates) cache.clear();
 }
 
 const separateModelKinds = new Map<number, boolean>();
@@ -258,6 +267,12 @@ function brickMaterial(kind: BlockKind) {
 }
 
 const concreteColors = new Map<BlockKind, Color>();
+const seasonColors = new Map<Exclude<Season, 'auto'>, Color>([
+  ['spring', new Color('#a8ff9a')],
+  ['summer', new Color('#70c96a')],
+  ['autumn', new Color('#ff9b55')],
+  ['winter', new Color('#dceeff')],
+]);
 
 export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxel>, lookup = createChunkLookup(blocks, blockIndex)) {
   createAtlas();
@@ -271,6 +286,10 @@ export function buildChunkGeometry(blocks: Voxel[], blockIndex: Map<string, Voxe
       color = concreteColors.get(block.kind) ?? new Color(EXTRA_BLOCK_META[block.kind as ExtraBlockKind].color);
       concreteColors.set(block.kind, color);
     }
+    const mixedSeasons = useSeasonStore.getState().mixedSeasons;
+    const season = block.season ?? (mixedSeasons.length > 0 ? mixedSeasons[Math.abs(Math.floor((block.x + block.z) / 16)) % mixedSeasons.length] : undefined);
+    const seasonalFoliage = block.kind === BlockKind.Grass || block.kind === BlockKind.ForestGrass || block.kind === BlockKind.AutumnGrass || block.kind === BlockKind.JungleGrass || block.kind === BlockKind.Leaves || block.kind === BlockKind.PineLeaves || block.kind === BlockKind.AutumnLeaves || block.kind === BlockKind.JungleLeaves || block.kind === BlockKind.JungleVine;
+    if (!concrete && season && season !== 'auto' && seasonalFoliage) color = seasonColors.get(season) ?? null;
     for (const face of faces) {
       const [dx, dy, dz] = face.direction;
       const neighbor = lookup(block.x + dx, block.y + dy, block.z + dz);

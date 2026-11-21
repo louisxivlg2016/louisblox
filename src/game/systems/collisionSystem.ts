@@ -14,6 +14,7 @@ const overlaps = (minA: number, maxA: number, minB: number, maxB: number) => min
 
 export function isCollidable(block: Voxel | undefined) {
   if (!block || isGrassPlate(block) || isWaterBlock(block.kind) || block.kind === BlockKind.Food || block.kind === BlockKind.JungleVine || isCrop(block.kind) || isLadder(block.kind) || isRail(block.kind)) return false;
+  if (block.kind === BlockKind.Wood || block.kind === BlockKind.Leaves || block.kind === BlockKind.PineLeaves || block.kind === BlockKind.AutumnLeaves || block.kind === BlockKind.JungleLeaves || block.kind === BlockKind.OakSapling || block.kind === BlockKind.PineSapling || block.kind === BlockKind.AutumnSapling) return false;
   return !(isDoor(block.kind) || isTrapdoor(block.kind)) || !block.open;
 }
 

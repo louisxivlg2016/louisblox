@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useCharacterStore } from '../game/characterStore';
 import { useMultiplayerStore } from '../game/multiplayerStore';
-import { acceptFriendRequest, fetchFriendRequests, giveApple, listOnlinePlayers, registerSelfProfile, searchPlayers, sendFriendRequest, useFriendStore, validatePlayerName } from '../game/friends';
+import { acceptFriendRequest, fetchFriendRequests, listOnlinePlayers, registerSelfProfile, searchPlayers, sendFriendRequest, useFriendStore, validatePlayerName } from '../game/friends';
 import { playerIdentity } from '../game/playerIdentity';
 import { useAvatarStore } from '../game/avatar';
 import type { FriendPlayer, FriendRequest } from '../game/friends';
 import { ProfileAvatar, ProfilePhotoPicker } from './ProfileAvatar';
-import { useGameStore } from '../game/store';
 import { requestRoomMode } from './Multiplayer';
 import { translate } from '../game/language';
 
@@ -38,6 +37,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
   const requests = useFriendStore((state) => state.requests);
   const setOnlinePlayers = useFriendStore((state) => state.setOnlinePlayers);
   const addFriend = useFriendStore((state) => state.addFriend);
+  const removeFriend = useFriendStore((state) => state.removeFriend);
   const removeRequest = useFriendStore((state) => state.removeRequest);
   const [editing, setEditing] = useState(false);
   const [choosingPhoto, setChoosingPhoto] = useState(false);
@@ -47,8 +47,6 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
   const [message, setMessage] = useState('');
   const [pending, setPending] = useState<string[]>([]);
   const [pendingJoin, setPendingJoin] = useState<string | null>(null);
-  const [giving, setGiving] = useState<string[]>([]);
-  const apples = useGameStore((state) => state.apples);
   const selfId = playerIdentity();
 
   useEffect(() => setName(playerName), [playerName]);
@@ -131,16 +129,9 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
     url.searchParams.set('room', player.room);
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   };
-  const offerApple = async (player: FriendPlayer) => {
-    setGiving((current) => [...current, player.playerId]);
-    try {
-      await giveApple(player);
-      setMessage(translate(`Une pomme a été offerte à ${player.name}.`, `An apple was given to ${player.name}.`));
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : translate('Don impossible pour le moment.', 'Unable to send a gift right now.'));
-    } finally {
-      setGiving((current) => current.filter((id) => id !== player.playerId));
-    }
+  const remove = (player: FriendPlayer) => {
+    removeFriend(player.playerId);
+    setMessage(translate(`${player.name} a été retiré de tes amis.`, `${player.name} was removed from your friends.`, `${player.name} fue eliminado de tus amigos.`));
   };
   const online = new Map(onlinePlayers.map((player) => [player.playerId, player]));
   const savedFriends = friends.map((friend) => online.get(friend.playerId) ? { player: online.get(friend.playerId)!, online: true } : { player: friend, online: false });
@@ -201,7 +192,7 @@ export function FriendsPanel({ onPlay }: { onPlay: () => void | Promise<void> })
 
       <div className="friends-heading"><h3>{translate('Amis', 'Friends', 'Amigos')} <span>{friends.length}</span></h3><span className="online-dot" /></div>
       <div className="friends-list">
-        {savedFriends.map(({ player, online: isOnline }) => <PlayerRow key={player.playerId} player={player} online={isOnline} action={<span className="friend-actions"><button className="friend-add" disabled={!isOnline} aria-label={translate(`Rejoindre ${player.name}`, `Join ${player.name}`, `Unirse a ${player.name}`)} onClick={() => joinFriend(player)}>{isOnline ? translate('Rejoindre', 'Join') : translate('Hors ligne', 'Offline')}</button><button className="friend-add friend-gift" disabled={!isOnline || apples < 1 || giving.includes(player.playerId)} aria-label={translate(`Donner une pomme à ${player.name}`, `Give an apple to ${player.name}`, `Dar una manzana a ${player.name}`)} onClick={() => offerApple(player)}>{giving.includes(player.playerId) ? translate('Envoi…', 'Sending…') : translate('Pomme', 'Apple', 'Manzana') + ` ×${apples}`}</button></span>} />)}
+        {savedFriends.map(({ player, online: isOnline }) => <PlayerRow key={player.playerId} player={player} online={isOnline} action={<span className="friend-actions"><button className="friend-add" disabled={!isOnline} aria-label={translate(`Rejoindre ${player.name}`, `Join ${player.name}`, `Unirse a ${player.name}`)} onClick={() => joinFriend(player)}>{isOnline ? translate('Rejoindre', 'Join') : translate('Hors ligne', 'Offline')}</button><button className="friend-add friend-gift" aria-label={translate(`Retirer ${player.name}`, `Remove ${player.name}`, `Eliminar a ${player.name}`)} onClick={() => remove(player)}>{translate('Retirer', 'Remove', 'Eliminar')}</button></span>} />)}
         {savedFriends.length === 0 && <p className="friends-empty">{translate('Propose des amis parmi les joueurs en ligne.', 'Add friends from the online players.')}</p>}
       </div>
       <div className="friends-heading"><h3>{translate('Tous les joueurs', 'All players')} <span>{filteredPlayers.length}</span></h3></div>

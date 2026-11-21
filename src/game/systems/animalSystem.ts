@@ -1,16 +1,19 @@
 import type { Entity, World } from 'koota';
 import { Mesh, Vector3 } from 'three';
-import { getBlockIndex, getWorldSeed, isChunkLoaded } from '../chunks';
+import { chunkCoordinate, getBlockIndex, getWorldSeed, isChunkLoaded } from '../chunks';
 import { isCrop } from '../extraBlocks';
 import { heightAt, MIN_WORLD_Y } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { isWaterBlock, voxelKey } from '../voxel';
 import type { AnimalKind } from '../animals';
-import { Animal, AnimalHit, AnimalHome, AnimalLove, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
-import { damageAnimal, damagePlayer } from '../combat';
+import { spawnChunkZombies } from '../animals';
+import { Animal, AnimalHealth, AnimalHit, AnimalHome, AnimalLove, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Chunk, HorseRider, Player, PlayerHealth, PlayerPosition } from '../traits';
+import { damageAnimal, damagePlayer, killAnimal, removeAnimal } from '../combat';
+import { isNight } from '../dayNight';
+import { useGameStore } from '../store';
 import { findDefenseTarget, isTamedAnimal, tamingSystem, WILD_ANIMALS } from '../taming';
-import { canSeePlayer } from '../hostility';
+import { canSeePlayer, canZombieAttackPlayer } from '../hostility';
 import { hasEffect } from '../effects';
 import { getFireSources, nearestFire } from '../hazards';
 import { interpolateAnimalMovement, isAnimalAuthority, syncAnimalState } from '../animalSync';
@@ -161,11 +164,26 @@ function moveAroundObstacle(world: World, kind: AnimalKind, position: Vector3, m
   return false;
 }
 
+function keepZombieOnNaturalGround(world: World, kind: AnimalKind, position: Vector3, motion: Motion) {
+  if (kind !== 'zombie') return;
+  const naturalGround = heightAt(Math.round(position.x), Math.round(position.z), getWorldSeed(world)) + 0.5;
+  const ground = groundAt(world, position.x, position.z, position.y + MAX_CLIMB_RISE + 0.05);
+  if (ground <= naturalGround + 1.05) return;
+  motion.climbTarget = null;
+  if (position.y > naturalGround + 1.05) {
+    position.y = naturalGround;
+    motion.velocityY = 0;
+    motion.grounded = true;
+  }
+}
+
 function moveAnimalStep(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0, speedOverride?: number) {
+  keepZombieOnNaturalGround(world, kind, position, motion);
+  const naturalGround = kind === 'zombie' ? heightAt(Math.round(position.x), Math.round(position.z), getWorldSeed(world)) + 0.5 : null;
   if (!isLoaded(world, position.x, position.z) && !recoverSafePosition(world, kind, position, entity) && !rescueAnimal(world, kind, position, entity)) return true;
   if (motion.climbTarget === null && !bodyClear(world, position.x, position.z, position.y)) {
     const ground = groundAt(world, position.x, position.z, position.y + MAX_CLIMB_RISE + 0.05);
-    if (ground > position.y && ground <= position.y + MAX_CLIMB_RISE && walkableGround(world, position.x, position.z, ground) && bodyClear(world, position.x, position.z, ground)) {
+    if (ground > position.y && ground <= position.y + MAX_CLIMB_RISE && (naturalGround === null || ground <= naturalGround + 1.05) && walkableGround(world, position.x, position.z, ground) && bodyClear(world, position.x, position.z, ground)) {
       motion.climbTarget = ground;
       motion.velocityY = 0;
       motion.grounded = false;
@@ -192,8 +210,31 @@ export function moveAnimal(world: World, kind: AnimalKind, position: Vector3, mo
   return true;
 }
 
+function separateZombieFromPlayer(world: World, position: Vector3, motion: Motion, player: Vector3, entity: Entity) {
+  const dx = position.x - player.x;
+  const dz = position.z - player.z;
+  if (dx * dx + dz * dz >= 1.35 * 1.35) return;
+  const away = Math.hypot(dx, dz) > 0.001 ? Math.atan2(dx, dz) : entity * 2.39;
+  for (let index = 0; index < 8; index += 1) {
+    const angle = away + index * Math.PI / 4;
+    const x = player.x + Math.sin(angle) * 1.55;
+    const z = player.z + Math.cos(angle) * 1.55;
+    if (!isLoaded(world, x, z)) continue;
+    const ground = groundAt(world, x, z, player.y + MAX_CLIMB_RISE);
+    if (ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) continue;
+    if (!walkableGround(world, x, z, ground) || !bodyClear(world, x, z, ground)) continue;
+    position.set(x, ground, z);
+    motion.velocityY = 0;
+    motion.grounded = true;
+    motion.climbTarget = null;
+    rememberSafePosition(world, entity, position);
+    return;
+  }
+}
+
 const clocks = new WeakMap<World, number>();
 const wallClocks = new WeakMap<World, number>();
+const zombieNights = new WeakMap<World, boolean>();
 
 export function animalSystem(world: World, dt: number) {
   const now = performance.now() / 1000;
@@ -226,12 +267,57 @@ export function animalSystem(world: World, dt: number) {
   const playerEntity = world.queryFirst(Player);
   const player = playerEntity?.get(PlayerPosition);
   const health = playerEntity?.get(PlayerHealth);
+  const survival = useGameStore.getState().gameplayMode === 'survival';
+  const night = isNight(world);
+  if (survival && night && !zombieNights.get(world) && player) {
+    const centerX = chunkCoordinate(player.x);
+    const centerZ = chunkCoordinate(player.z);
+    const seed = getWorldSeed(world);
+    for (const entity of world.query(Chunk)) {
+      const chunk = entity.get(Chunk)!;
+      if (Math.abs(chunk.x - centerX) <= 2 && Math.abs(chunk.z - centerZ) <= 2) spawnChunkZombies(world, chunk.x, chunk.z, seed);
+    }
+  }
+  zombieNights.set(world, survival && night);
   const fires = getFireSources(world);
   const neighbors = world.query(Animal, AnimalPosition).map((entity) => ({ entity, position: entity.get(AnimalPosition)!, stationary: Boolean(entity.get(CamelLeash) || entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) }));
 
-  world.query(Animal, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, hit, position, motion, mesh], entity) => {
+  world.query(Animal, AnimalHealth, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, animalHealth, hit, position, motion, mesh], entity) => {
+    keepZombieOnNaturalGround(world, animal.kind, position, motion);
     const distanceSquared = player ? position.distanceToSquared(player) : Infinity;
-    if (mesh.value) mesh.value.visible = distanceSquared < (animal.kind === 'zombie' ? 32 * 32 : 40 * 40);
+    if (distanceSquared > 48 * 48) {
+      if (mesh.value) mesh.value.visible = false;
+      motion.running = false;
+      motion.speed = 0;
+      return;
+    }
+    if (mesh.value) mesh.value.visible = true;
+    if (animal.kind === 'zombie' && survival && !night && animalHealth.value > 0) {
+      killAnimal(world, entity, false);
+      animalHealth.value = 0;
+      hit.time = 0.45;
+      hit.deathIn = 0.45;
+      hit.panic = 0;
+      hit.attackIn = 0;
+      hit.flashed = true;
+      if (mesh.value) tint(mesh.value, '#ff3028');
+      return;
+    }
+    if (animal.kind === 'zombie' && animalHealth.value <= 0) {
+      hit.deathIn = Math.max(0, hit.deathIn - dt);
+      motion.hunting = false;
+      motion.running = false;
+      if (mesh.value) {
+        if (!hit.flashed) {
+          tint(mesh.value, '#ff3028');
+          hit.flashed = true;
+        }
+        mesh.value.position.copy(position);
+        mesh.value.rotation.z = (1 - hit.deathIn / 0.45) * Math.PI / 2;
+      }
+      if (hit.deathIn <= 0) removeAnimal(world, entity);
+      return;
+    }
     const fire = nearestFire(fires, position);
     const leash = entity.get(CamelLeash);
     if (leash && !fire) return;
@@ -247,7 +333,7 @@ export function animalSystem(world: World, dt: number) {
     hit.attackIn = Math.max(0, hit.attackIn - stepDt);
     const love = entity.get(AnimalLove);
     if (love) love.time = Math.max(0, love.time - stepDt);
-    const aggressive = animal.kind === 'zombie' || animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf';
+    const aggressive = (animal.kind === 'zombie' || animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf') && (useGameStore.getState().gameplayMode !== 'creative' || hit.panic > 0);
     const tamed = isTamedAnimal(entity);
     const defenseTarget = tamed && player && WILD_ANIMALS.has(animal.kind) ? findDefenseTarget(world, entity, player) : null;
     const targetPosition = defenseTarget?.get(AnimalPosition);
@@ -259,8 +345,9 @@ export function animalSystem(world: World, dt: number) {
       motion.turnIn = Math.max(motion.turnIn, 0.5);
       hit.panic = Math.max(hit.panic, 0.2);
     } else {
-      if (aggressive && !tamed && player && !hasEffect('invisibility') && motion.sightIn <= 0) {
-        motion.hunting = canSeePlayer(world, position, player);
+      if (aggressive && distanceSquared > 6 * 6) motion.hunting = false;
+      else if (aggressive && !tamed && player && !hasEffect('invisibility') && motion.sightIn <= 0) {
+        motion.hunting = canSeePlayer(world, position, player, 6);
         motion.sightIn = 0.35;
       }
       if (!aggressive || tamed || !player || hasEffect('invisibility')) motion.hunting = false;
@@ -281,7 +368,8 @@ export function animalSystem(world: World, dt: number) {
       damageAnimal(world, defenseTarget, 1, player);
       hit.attackIn = 1.2;
     }
-    if (!fire && aggressive && !tamed && playerEntity && player && health && !hasEffect('invisibility') && hit.attackIn <= 0 && distanceSquared < 2.2 * 2.2) {
+    const canAttack = animal.kind !== 'zombie' || motion.hunting && canZombieAttackPlayer(world, position, player!, motion.displayYaw);
+    if (!fire && aggressive && !tamed && playerEntity && player && health && !hasEffect('invisibility') && hit.attackIn <= 0 && distanceSquared < 2.2 * 2.2 && canAttack) {
       hit.attackIn = 1.2;
       damagePlayer(world, 1);
     }
@@ -321,9 +409,14 @@ export function animalSystem(world: World, dt: number) {
       }
     }
 
-    const stayClose = !fire && tamed && (defenseTarget ? targetDistanceSquared < 2.2 * 2.2 : distanceSquared < 2.8 * 2.8);
+    const zombieNearPlayer = !fire && animal.kind === 'zombie' && !tamed && distanceSquared < 1.8 * 1.8;
+    const zombieTooClose = zombieNearPlayer && distanceSquared < 1.35 * 1.35;
+    const stayClose = !fire && (tamed && (defenseTarget ? targetDistanceSquared < 2.2 * 2.2 : distanceSquared < 2.8 * 2.8) || zombieNearPlayer);
     const home = entity.get(AnimalHome);
-    if (home && !tamed) {
+    if (zombieTooClose && player) {
+      motion.yaw = Math.atan2(position.x - player.x, position.z - player.z);
+      moveAnimal(world, animal.kind, position, motion, stepDt, entity, 0, 2.4);
+    } else if (home && !tamed) {
       const angle = entity * 0.73 + motion.phase * 0.3;
       const radius = Math.min(0.75, home.radius);
       const dx = home.x + Math.sin(angle) * radius - position.x;
@@ -344,6 +437,7 @@ export function animalSystem(world: World, dt: number) {
       moveInDirection(world, animal.kind, position, motion, away, 4, stepDt, entity);
       break;
     }
+    if (animal.kind === 'zombie' && !tamed && player) separateZombieFromPlayer(world, position, motion, player, entity);
     if (mesh.value) {
       mesh.value.position.copy(position);
       motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, stepDt * 10);

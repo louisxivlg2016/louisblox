@@ -4,6 +4,7 @@ import { AnimalPosition } from './traits';
 import { BlockKind, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
 import type { GeneratedChunk } from './levels';
+import { writeFarm, writeVillageChurch } from './constructionTemplates';
 
 const GROUND = 5;
 const SPACING = 384;
@@ -36,6 +37,34 @@ function siteAt(cellX: number, cellZ: number, seed: number): VillageSite {
   const distance = Math.hypot(x, z);
   const houses = distance < 1400 ? 10 : distance < 2400 ? 6 : 4;
   return { x, z, houses, radius: houses === 10 ? 62 : 48, name: `${NAMES[Math.floor(hash(cellX, cellZ, seed + 70) * NAMES.length)]}${distance < 1400 ? ' · Grand village' : distance < 2400 ? ' · Village' : ' · Hameau'}` };
+}
+
+function nearestSite(x: number, z: number, seed: number, accepts: (site: VillageSite) => boolean) {
+  const centerX = Math.round((x - 1000) / SPACING);
+  const centerZ = Math.round((z - 32) / SPACING);
+  let nearest: VillageSite | null = null;
+  let distance = Infinity;
+  for (let radius = 0; radius <= 12 && !nearest; radius += 1) {
+    for (let dx = -radius; dx <= radius; dx += 1) for (let dz = -radius; dz <= radius; dz += 1) {
+      if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
+      const site = siteAt(centerX + dx, centerZ + dz, seed);
+      if (!accepts(site)) continue;
+      const nextDistance = Math.hypot(site.x - x, site.z - z);
+      if (nextDistance < distance) {
+        nearest = site;
+        distance = nextDistance;
+      }
+    }
+  }
+  return nearest;
+}
+
+export function nearestHamlet(x: number, z: number, seed: number) {
+  return nearestSite(x, z, seed, (site) => site.houses === 4);
+}
+
+export function nearestFarmstead(x: number, z: number, seed: number) {
+  return nearestSite(x, z, seed, (site) => Math.max(Math.abs(site.x - 43), Math.abs(site.z + 23)) > 900);
 }
 
 function sitesNear(cx: number, cz: number, seed: number) {
@@ -129,19 +158,11 @@ export function generateCountrysideChunk(cx: number, cz: number, seed: number): 
       put(site.x + offset, GROUND + 1, site.z - 4, BlockKind.StreetLamp);
     }
 
+    writeVillageChurch((x, y, z, kind, options) => put(x, y, z, kind, options), site.x, GROUND, site.z - 29);
+
     const barnX = site.x - 43;
     const barnZ = site.z + 23;
-    for (let dx = -4; dx <= 4; dx += 1) for (let dz = -3; dz <= 3; dz += 1) {
-      put(barnX + dx, GROUND + 1, barnZ + dz, BlockKind.OakPlanks);
-      for (let y = GROUND + 2; y <= GROUND + 5; y += 1) {
-        const edge = dx === -4 || dx === 4 || dz === -3 || dz === 3;
-        const doorway = dz === 3 && Math.abs(dx) <= 1 && y <= GROUND + 4;
-        if (edge && !doorway) put(barnX + dx, y, barnZ + dz, BlockKind.ConcreteRed);
-      }
-      for (let layer = 0; layer < 3; layer += 1) if (Math.abs(dx) <= 4 - layer) put(barnX + dx, GROUND + 6 + layer, barnZ + dz, BlockKind.PinePlanks);
-    }
-    for (const dx of [-1, 0, 1]) put(barnX + dx, GROUND + 2, barnZ + 3, BlockKind.DoorBrown, { facing: 'north' });
-    for (const side of [-1, 1]) put(barnX + side * 4, GROUND + 4, barnZ, BlockKind.Glass);
+    writeFarm(put, barnX, GROUND, barnZ);
 
     const fields = [
       { x: site.x + 41, z: site.z - 18 },
@@ -150,16 +171,17 @@ export function generateCountrysideChunk(cx: number, cz: number, seed: number): 
     for (const field of fields) {
       const fieldX = field.x;
       const fieldZ = field.z;
-      for (let dx = -10; dx <= 10; dx += 1) for (let dz = -8; dz <= 8; dz += 1) {
-      const border = Math.abs(dx) === 10 || Math.abs(dz) === 8;
+      const crops = [BlockKind.Wheat, BlockKind.Corn, BlockKind.Tomato, BlockKind.Carrot] as const;
+      for (let dx = -13; dx <= 13; dx += 1) for (let dz = -10; dz <= 10; dz += 1) {
+      const border = Math.abs(dx) === 13 || Math.abs(dz) === 10;
       if (border) {
         if ((dx + dz) % 2 === 0) put(fieldX + dx, GROUND + 1, fieldZ + dz, BlockKind.OakPlanks);
         continue;
       }
-      if (dx % 5 === 0) put(fieldX + dx, GROUND, fieldZ + dz, BlockKind.CalmWater);
+      if (dx % 6 === 0) put(fieldX + dx, GROUND, fieldZ + dz, BlockKind.CalmWater);
       else {
         put(fieldX + dx, GROUND, fieldZ + dz, BlockKind.Dirt);
-        if (dz % 2 === 0) put(fieldX + dx, GROUND + 1, fieldZ + dz, BlockKind.Wheat, { growth: 3 });
+        if (dz % 2 === 0) put(fieldX + dx, GROUND + 1, fieldZ + dz, crops[Math.floor((dx + 13) / 6) % crops.length], { growth: 3 });
       }
     }
     }

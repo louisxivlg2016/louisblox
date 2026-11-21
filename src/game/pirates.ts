@@ -41,7 +41,7 @@ export function generatePirateChunk(cx: number, cz: number): GeneratedChunk {
   for (let x = cx * CHUNK_SIZE; x < (cx + 1) * CHUNK_SIZE; x += 1) {
     for (let z = cz * CHUNK_SIZE; z < (cz + 1) * CHUNK_SIZE; z += 1) {
       if (Math.abs(x) > 48 || Math.abs(z) > 48) continue;
-      blocks.push({ x, y: 2, z, kind: BlockKind.Sand });
+      blocks.push({ x, y: 2, z, kind: BlockKind.Sand, protected: true });
       blocks.push({ x, y: 4, z, kind: BlockKind.Water });
     }
   }

@@ -10,6 +10,7 @@ export const fullCharacterHeights: Record<string, number> = {
   "corsair": 1.9000003337860107,
   "footballer": 1.9000003337860107,
   "firefighter": 1.9000003337860107,
+  "worker": 1.044682502746582,
   "police": 1.9000003337860107,
   "soldier": 1.9000003337860107,
   "classic-girl": 1.9000003337860107,

@@ -54,6 +54,8 @@ export type Voxel = {
   protected?: boolean;
   waterlogged?: boolean;
   floodSource?: boolean;
+  shop?: { action: 'buy' | 'sell' | 'earn' | 'gift' | 'heal' | 'teleport' | 'effect' | 'checkpoint' | 'message' | 'trap'; item?: import('./items').SelectedKind; count?: number; price?: number; destination?: { x: number; y: number; z: number }; effect?: 'speed' | 'jump' | 'invisibility' };
+  season?: import('./seasons').Season;
 };
 
 export type VoxelHit = {

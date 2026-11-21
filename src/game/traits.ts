@@ -45,7 +45,7 @@ export const ExplosionMaterial = trait(() => ({ value: null as import('three').M
 export const Animal = trait({ kind: '' as import('./animals').AnimalKind });
 export const AnimalId = trait(() => '');
 export const AnimalHealth = trait({ value: 3 });
-export const AnimalHit = trait({ time: 0, panic: 0, flashed: false, attackIn: 0, fireIn: 0 });
+export const AnimalHit = trait({ time: 0, panic: 0, flashed: false, attackIn: 0, fireIn: 0, deathIn: 0 });
 export const AnimalPosition = trait(() => new Vector3());
 export const AnimalMotion = trait({ yaw: 0, displayYaw: 0, turnIn: 0, phase: 0, running: false, speed: 0.5, idle: 0, velocityY: 0, grounded: true, avoid: 0, climbTarget: null as number | null, hunting: false, sightIn: 0 });
 export const AnimalMesh = trait(() => ({ value: null as import('three').Object3D | null }));

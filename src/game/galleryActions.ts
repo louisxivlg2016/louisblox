@@ -257,7 +257,7 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     const flying = !playerEntity.get(PlayerState)!.flying;
     playerEntity.set(PlayerState, { flying });
     store.setFlying(flying);
-    store.setNotice(flying ? translate(`${meta.name} : vol activé. Espace/C pour monter et descendre.`, `${meta.name}: flight enabled. Space/C to ascend and descend.`) : translate(`${meta.name} rangé : vol désactivé.`, `${meta.name} stored: flight disabled.`));
+    store.setNotice(flying ? translate(`${meta.name} : vol activé. Espace/N pour monter et descendre.`, `${meta.name}: flight enabled. Space/N to ascend and descend.`) : translate(`${meta.name} rangé : vol désactivé.`, `${meta.name} stored: flight disabled.`));
     return true;
   }
   if (shape === 'ice_bridge') {

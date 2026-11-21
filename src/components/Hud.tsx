@@ -49,6 +49,9 @@ import { TribePanel } from './TribePanel';
 import { useTribeStore } from '../game/tribes';
 import { useLanguageStore } from '../game/language';
 import { translate } from '../game/language';
+import { useConstructionStore } from '../game/constructions';
+import { ConstructionPanel } from './ConstructionPanel';
+import { BlueprintControls } from './BlueprintControls';
 
 export function Hud() {
   const language = useLanguageStore((state) => state.language);
@@ -62,6 +65,7 @@ export function Hud() {
   const notice = useGameStore((state) => state.notice);
   const backpackOpen = useGameStore((state) => state.backpackOpen);
   const shopOpen = useGameStore((state) => state.shopOpen);
+  const constructionOpen = useConstructionStore((state) => state.open);
   const teleportOpen = useGameStore((state) => state.teleportOpen);
   const containerOpen = useGameStore((state) => state.container !== null);
   const bookOpen = useGameStore((state) => state.bookOpen);
@@ -99,6 +103,11 @@ export function Hud() {
     useGameStore.getState().setMode('pause');
     if (document.pointerLockElement) document.exitPointerLock();
   };
+  const openConstruction = () => {
+    useConstructionStore.getState().setOpen(true);
+    useGameStore.getState().setMode('pause');
+    if (document.pointerLockElement) document.exitPointerLock();
+  };
   const openTribe = () => {
     releasePointerForOverlay();
     useTribeStore.getState().setPanelOpen(true);
@@ -112,6 +121,7 @@ export function Hud() {
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
           {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label={translate('Sac à dos', 'Backpack')}><img src={translate(backpackButtonFrUrl, backpackButtonEnUrl, backpackButtonEsUrl)} alt="" /></button>}
           {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label={translate('Boutique', 'Shop')}><img src={translate(shopButtonFrUrl, shopButtonEnUrl, shopButtonEsUrl)} alt="" /></button>}
+          {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="construction-toggle" onClick={openConstruction} aria-label={translate('Construction · C', 'Construction · C')}>{translate('Construction', 'Construction')}</button>}
           {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label={translate('Téléportation · T', 'Teleportation · T')}>{language === 'es' ? <span className="localized-button-text">TELETRANSPORTE · T</span> : <img src={teleportButtonUrl} alt={translate('Téléportation · T', 'Teleportation · T')} />}</button>}
           {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label={translate('Ouvrir ma tribu', 'Open my tribe')}>{language === 'es' ? <span className="localized-button-text">TRIBU</span> : <img src={tribeButtonUrl} alt="TRIBU" />}{tribeInvitations > 0 && <span className="tribe-invitation-count">{tribeInvitations}</span>}</button>}
           {notice && <div className="game-notice">{notice}</div>}
@@ -136,7 +146,7 @@ export function Hud() {
       <PlaneTitleEditor />
       <PoliceTitleEditor />
 
-      {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && !tradeOpen && !homeOpen && !tribeOpen && (
+      {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !constructionOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && !tradeOpen && !homeOpen && !tribeOpen && (
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />
       )}
 
@@ -168,6 +178,8 @@ export function Hud() {
       )}
       <Backpack />
       <BoutiquePanel />
+      <ConstructionPanel />
+      <BlueprintControls />
       <ContainerPanel />
       <BookPanel />
       <SignPanel />

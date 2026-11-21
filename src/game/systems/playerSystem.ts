@@ -36,6 +36,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const velocity = entity.get(PlayerVelocity);
   const state = entity.get(PlayerState);
   const health = entity.get(PlayerHealth);
+  if (useGameStore.getState().gameplayMode === 'creative' && health && health.value <= 0) entity.set(PlayerHealth, { value: health.max });
   if (!body || !collider || !position || !velocity || !state) return;
 
   const sleep = world.queryFirst(Sleep)?.get(Sleep);
@@ -148,10 +149,10 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const spacePressed = spaceDown && !spaceWasDown.get(world);
   spaceWasDown.set(world, spaceDown);
   if (state.grounded) airJumps.set(world, 0);
-  if (flying) velocity.y = (Number(spaceDown) - Number(isDown('KeyC'))) * FLY_SPEED;
+  if (flying) velocity.y = (Number(spaceDown) - Number(isDown('KeyN'))) * FLY_SPEED;
   else if (parachuting) velocity.y = -4.5;
-  else if (onLadder) velocity.y = spaceDown ? 3.8 : isDown('KeyC') ? -2.8 : Math.max(velocity.y, -0.8);
-  else if (inWater) velocity.y = swimVerticalVelocity(swimming, velocity.y, isDown('KeyC'), spaceDown, position.y);
+  else if (onLadder) velocity.y = spaceDown ? 3.8 : isDown('KeyN') ? -2.8 : Math.max(velocity.y, -0.8);
+  else if (inWater) velocity.y = swimVerticalVelocity(swimming, velocity.y, isDown('KeyN'), spaceDown, position.y);
   else if (state.grounded && spaceDown) velocity.y = JUMP_SPEED * jumpMultiplier();
   else if (spacePressed && hasEffect('doubleJump') && (airJumps.get(world) ?? 0) < 1) {
     velocity.y = JUMP_SPEED * jumpMultiplier();
@@ -165,7 +166,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     z: velocity.z * dt,
   }, state.grounded && !flying && !inWater && !onLadder);
   const grounded = movement.grounded;
-  const nextFlying = flying && grounded && isDown('KeyC') ? false : flying;
+  const nextFlying = flying && grounded && isDown('KeyN') ? false : flying;
   if (movement.stepped) velocity.y = 0;
   else {
     if (grounded && velocity.y < 0) velocity.y = -0.1;
@@ -191,16 +192,17 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     next.x = Math.max(-CITY_LIMIT + 0.5, Math.min(CITY_LIMIT - 0.5, next.x));
     next.z = Math.max(-CITY_LIMIT + 0.5, Math.min(CITY_LIMIT - 0.5, next.z));
   }
+  const respawn = useGameStore.getState().checkpoint ?? spawn;
   const invalidPosition = next.y < MIN_WORLD_Y - 12 || !Number.isFinite(next.x + next.y + next.z);
   if (invalidPosition) {
-    next.x = spawn.x;
-    next.y = spawn.y;
-    next.z = spawn.z;
+    next.x = respawn.x;
+    next.y = respawn.y;
+    next.z = respawn.z;
   }
   if (health && health.value <= 0) {
-    next.x = spawn.x;
-    next.y = spawn.y;
-    next.z = spawn.z;
+    next.x = respawn.x;
+    next.y = respawn.y;
+    next.z = respawn.z;
     velocity.set(0, 0, 0);
     entity.set(PlayerHealth, { value: health.max, absorbed: 0 });
   } else if (invalidPosition) {

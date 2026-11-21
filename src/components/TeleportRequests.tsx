@@ -10,7 +10,7 @@ import { requestPlayerTeleport, respondToTeleportRequest, useTeleportRequestStor
 import { world } from '../game/world';
 import { MAX_HOMES, NO_HOMES, useHomeStore } from '../game/homes';
 import type { Home } from '../game/homes';
-import { teleportToHome } from '../game/teleport';
+import { teleportToFarm, teleportToHome, teleportToVillage } from '../game/teleport';
 import { translate } from '../game/language';
 import { sendFriendRequest, useFriendStore } from '../game/friends';
 import { useCharacterStore } from '../game/characterStore';
@@ -46,6 +46,7 @@ export function TeleportPanel() {
   const [inviteNotice, setInviteNotice] = useState('');
   const worldId = useGameStore((state) => state.worldId);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
+  const worldTemplate = useGameStore((state) => state.worldTemplate);
   const homes = useHomeStore((state) => state.homes[worldId] ?? NO_HOMES);
   const setHomeOpen = useHomeStore((state) => state.setOpen);
   if (!open) return null;
@@ -68,6 +69,16 @@ export function TeleportPanel() {
   };
   const travelHome = (home: Home) => {
     teleportToHome(world, home);
+    setOpen(false);
+    void requestPlay();
+  };
+  const travelToVillage = () => {
+    if (!teleportToVillage(world)) return;
+    setOpen(false);
+    void requestPlay();
+  };
+  const travelToFarm = () => {
+    if (!teleportToFarm(world)) return;
     setOpen(false);
     void requestPlay();
   };
@@ -124,6 +135,8 @@ export function TeleportPanel() {
           {notice && <span className="teleport-request-status" role="status">{notice}</span>}
         </div>
       )}
+      {(gameplayMode === 'city-ancient' || worldTemplate === 'nature') && <button type="button" data-teleport-village onClick={travelToVillage}>{translate('Petit village', 'Small village')}</button>}
+      {(gameplayMode === 'city-ancient' || worldTemplate === 'nature') && <button type="button" data-teleport-farm onClick={travelToFarm}>{translate('Ferme', 'Farm')}</button>}
       {cityDestinations ? cityDestinations.map((destination) => (
         <button key={destination.name} onClick={() => travelToCity(destination)}>{destination.name}</button>
       )) : <>

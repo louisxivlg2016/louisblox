@@ -7,18 +7,21 @@ import { biomeAt } from '../levels';
 import type { Biome } from '../levels';
 import { useGameStore } from '../store';
 import { Environment, RainMaterial, SnowMaterial } from '../traits';
+import { dayProgressAt } from '../dayNight';
 
-export const DAY_DURATION = 20 * 60;
+export { DAY_DURATION } from '../dayNight';
 export const WEATHER_DURATION = 30 * 60;
 export const PRECIPITATION_DURATION = 5 * 60;
+export const SNOW_DURATION = 15 * 60;
 
 export function environmentAt(elapsed: number, biome: Biome) {
-  const dayProgress = (0.38 + elapsed / DAY_DURATION) % 1;
+  const dayProgress = dayProgressAt(elapsed);
   const phase = elapsed % WEATHER_DURATION;
-  const precipitating = phase >= WEATHER_DURATION - PRECIPITATION_DURATION;
+  const snowing = biome === 'winter' || useSeasonStore.getState().season === 'winter' || useSeasonStore.getState().mixedSeasons.includes('winter');
+  const precipitating = phase >= WEATHER_DURATION - (snowing ? SNOW_DURATION : PRECIPITATION_DURATION);
   return {
     dayProgress,
-    weather: precipitating ? (biome === 'winter' || useSeasonStore.getState().season === 'winter' ? 'snow' : 'rain') : 'clear',
+    weather: precipitating ? (snowing ? 'snow' : 'rain') : 'clear',
   } as const;
 }
 
@@ -30,7 +33,9 @@ export function environmentSystem(world: World, delta: number, camera: Camera) {
   environment.elapsed += delta;
   environment.uiTimer += delta;
   const biome = biomeAt(Math.floor(camera.position.x), Math.floor(camera.position.z), getWorldSeed(world));
-  const next = environmentAt(environment.elapsed, biome);
+  const next = { ...environmentAt(environment.elapsed, biome) };
+  const customWeather = useGameStore.getState().customWorld?.environment?.weather;
+  if (customWeather) next.weather = customWeather;
   const changed = environment.biome !== biome || environment.weather !== next.weather;
   environment.biome = biome;
   environment.dayProgress = useGameStore.getState().gameplayMode === 'battle' ? 0.38 : next.dayProgress;

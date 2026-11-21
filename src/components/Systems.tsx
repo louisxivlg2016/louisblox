@@ -33,6 +33,7 @@ import { traderSystem } from '../game/systems/traderSystem';
 import { tradeInteractionSystem } from '../game/trading';
 import { updateAmbientSounds } from '../game/audio';
 import { vehicleWeaponSystem } from '../game/systems/vehicleWeaponSystem';
+import { updateSirenAudibility } from '../game/vehicleControls';
 
 export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } }) {
   const world = useWorld();
@@ -81,10 +82,11 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       if (store.miningProgress !== 0) store.setMiningProgress(0);
     }
     updateAmbientSounds(world, useGameStore.getState().mode === 'play');
+    updateSirenAudibility(world);
     const playerEntity = world.queryFirst(Player);
     const player = playerEntity?.get(PlayerPosition);
     const vehiclePosition = playerEntity?.get(PlayerMount)?.vehicle?.get(VehiclePosition);
-    if (player) streamChunks(world, vehiclePosition?.x ?? player.x, vehiclePosition?.z ?? player.z, playerEntity?.get(PlayerMount)?.kind === 'plane' ? 2 : 1);
+    if (player) streamChunks(world, vehiclePosition?.x ?? player.x, vehiclePosition?.z ?? player.z);
     environmentSystem(world, delta, camera);
     saveSystem(world, delta);
   });

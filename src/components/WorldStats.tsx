@@ -37,6 +37,7 @@ function EnvironmentInfo() {
 
 export function WorldStats() {
   const blockCount = useGameStore((state) => state.blockCount);
+  const coins = useGameStore((state) => state.coins);
   const apples = useGameStore((state) => state.apples);
   const meat = useGameStore((state) => state.meat);
   const flying = useGameStore((state) => state.flying);
@@ -59,6 +60,7 @@ export function WorldStats() {
       <Coordinates />
       <EnvironmentInfo />
       {multiplayerEnabled && <span className={`weather-info multiplayer-hud ${multiplayerStatus}`}>{multiplayerStatus === 'online' ? `${translate('En ligne', 'Online')} · ${multiplayerRoom} · ${multiplayerPlayerCount} ${translate('joueur', 'player')}${multiplayerPlayerCount > 1 ? 's' : ''}` : multiplayerStatus === 'connecting' ? `${translate('Connexion', 'Connecting')} · ${multiplayerRoom}` : `${translate('Hors ligne', 'Offline')} · ${multiplayerRoom}`}</span>}
+      <span className="weather-info coin-count">{translate('Monnaie :', 'Coins:')} {coins}</span>
       <span className="weather-info apple-count">{translate('Pommes :', 'Apples:')} {apples}</span>
       <span className="weather-info meat-count">{translate('Viandes :', 'Meats:')} {meatSummary || translate('aucune', 'none')}</span>
       <span className="weather-info lives-count">{translate('Vies :', 'Lives:')} {lives}/10</span>

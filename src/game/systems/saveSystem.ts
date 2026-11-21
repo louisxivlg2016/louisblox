@@ -7,7 +7,7 @@ export function saveSystem(world: World, delta: number) {
   if (!environment) return;
 
   environment.saveTimer += delta;
-  if (environment.saveTimer >= 5) {
+  if (environment.saveTimer >= 1) {
     environment.saveTimer = 0;
     saveWorld(world);
   }

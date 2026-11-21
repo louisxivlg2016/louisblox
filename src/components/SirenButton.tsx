@@ -4,7 +4,10 @@ import { translate } from '../game/language';
 
 export function SirenButton() {
   const riding = useGameStore((state) => state.riding);
-  const kind = riding === 'firetruck' || riding === 'police' ? riding : null;
+  const firetruckEnabled = useVehicleControls((state) => state.firetruck);
+  const policeEnabled = useVehicleControls((state) => state.police);
+  const activeKind = firetruckEnabled ? 'firetruck' : policeEnabled ? 'police' : null;
+  const kind = riding === 'firetruck' || riding === 'police' ? riding : activeKind;
   const enabled = useVehicleControls((state) => kind ? state[kind] : false);
   if (!kind) return null;
 

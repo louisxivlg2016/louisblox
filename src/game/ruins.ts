@@ -1,10 +1,10 @@
 import { BlockKind } from './voxel';
-import { churchBlocks } from './churches';
+import { writeRuinedChurch } from './constructionTemplates';
 import { heightAt, SEA_LEVEL } from './levels';
 
 export type RuinType = 'church' | 'palace' | 'fort';
 export type RuinSite = { type: RuinType; x: number; z: number; baseY: number; seed: number };
-type Put = (x: number, y: number, z: number, kind: BlockKind, overwrite?: boolean) => void;
+type Put = (x: number, y: number, z: number, kind: BlockKind, overwrite?: boolean, growth?: number) => void;
 type Remove = (x: number, y: number, z: number) => void;
 
 const layouts = {
@@ -147,7 +147,7 @@ function rubble(site: RuinSite, put: Put) {
 
 function buildChurch(site: RuinSite, put: Put, remove: Remove) {
   foundation(site, put, remove, BlockKind.GrayBrick);
-  for (const block of churchBlocks(site.x, site.z, site.baseY + 1, true)) put(block.x, block.y, block.z, block.kind);
+  writeRuinedChurch((x, y, z, kind, options) => put(x, y, z, kind, true, options?.growth), site.x, site.baseY, site.z);
 }
 
 function buildPalace(site: RuinSite, put: Put, remove: Remove) {

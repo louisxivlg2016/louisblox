@@ -111,10 +111,10 @@ export function TouchControls() {
         <div ref={knob} className="touch-knob" />
       </div>
       {riding && pilot && !plane && !cannon && <div className="vehicle-touch-actions" aria-label={translate('Boutons de conduite', 'Driving controls')}>
-        <HoldButton code="KeyW" label="Avancer" />
-        <HoldButton code="KeyS" label="Reculer" />
-        <HoldButton code="KeyA" label="Gauche" />
-        <HoldButton code="KeyD" label="Droite" />
+        <HoldButton code="KeyW" label="↑" ariaLabel={translate('Avancer', 'Forward')} />
+        <HoldButton code="KeyS" label="↓" ariaLabel={translate('Reculer', 'Reverse')} />
+        <HoldButton code="KeyA" label="←" ariaLabel={translate('Tourner à gauche', 'Turn left')} />
+        <HoldButton code="KeyD" label="→" ariaLabel={translate('Tourner à droite', 'Turn right')} />
         <button className={`touch-button${headlights ? ' touch-flight' : ''}`} aria-label={translate('Activer ou couper les phares', 'Toggle headlights')} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); toggleHeadlights(); }}>Phares</button>
         <button className="touch-button" aria-label={translate('Klaxonner', 'Honk horn')} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); honk(); }}>Klaxon</button>
       </div>}
@@ -137,11 +137,11 @@ export function TouchControls() {
           >
             Flight: {flying ? 'ON' : 'OFF'}
           </button>
-          <HoldButton code="KeyC" label={translate('Bas', 'Down')} />
+          <HoldButton code="KeyN" label={translate('Bas', 'Down')} />
         </>}
         {plane && pilot && <>
           <HoldButton code="Space" label={translate('Décoller / Monter', 'Take off / Ascend')} />
-          <HoldButton code="KeyC" label={translate('Descendre', 'Descend')} />
+          <HoldButton code="KeyN" label={translate('Descendre', 'Descend')} />
           <button
             className="touch-button touch-flight"
             onPointerDown={(event) => {

@@ -23,7 +23,7 @@ const villageSites = new Map<string, { x: number; z: number } | null>();
 const villageBlockCache = new Map<string, Voxel[]>();
 
 function findVillageSite(cx: number, cz: number, seed: number) {
-  const first = cx >= 0 && cx <= 2 && cz >= -1 && cz <= 0;
+  const first = cx >= 0 && cx <= 2 && cz >= -2 && cz <= 0;
   const cellX = first ? 0 : Math.floor(cx / 12);
   const cellZ = first ? -1 : Math.floor(cz / 12);
   if (!first && hash(cellX, cellZ, seed + 1700) < 0.5) return null;
@@ -146,8 +146,8 @@ export function generateVillageBlocks(cx: number, cz: number, seed: number): Vox
       put(site.x + dx, y, site.z + dz, dx === 0 && dz === 0 ? BlockKind.Water : BlockKind.Stone);
     }
   }
+  for (const block of smallChurchBlocks(site, seed)) put(block.x, block.y, block.z, block.kind, block);
   if (city) {
-    for (const block of smallChurchBlocks(site, seed)) put(block.x, block.y, block.z, block.kind, block);
     for (const block of restaurantBlocks(site, seed)) put(block.x, block.y, block.z, block.kind, block);
     for (const block of fieldBlocks(site, seed)) put(block.x, block.y, block.z, block.kind, block);
   }

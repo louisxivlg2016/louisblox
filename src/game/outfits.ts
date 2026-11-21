@@ -1,6 +1,6 @@
 import { translate } from './language';
 
-export const OUTFIT_ORDER = ['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'corsair', 'footballer', 'firefighter', 'police', 'soldier', 'trader'] as const;
+export const OUTFIT_ORDER = ['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'corsair', 'footballer', 'firefighter', 'worker', 'police', 'soldier', 'trader'] as const;
 export type OutfitKind = (typeof OUTFIT_ORDER)[number];
 
 export const OUTFITS = (): Record<OutfitKind, { name: string; description: string; body: string; legs: string; color: string }> => ({
@@ -16,6 +16,7 @@ export const OUTFITS = (): Record<OutfitKind, { name: string; description: strin
   corsair: { name: translate('Pirate au bandeau', 'Bandana Pirate'), description: translate('Pirate avec bandeau rouge, cache-œil et chemise claire.', 'Pirate with red bandana, eye patch, and light shirt.'), body: '#3b2d27', legs: '#302935', color: '#8e303d' },
   footballer: { name: translate('Joueur de foot', 'Footballer'), description: translate('Maillot bleu numéro 10, short blanc, chaussettes bleues et cheveux blonds.', 'Blue number 10 jersey, white shorts, blue socks, and blond hair.'), body: '#2868b3', legs: '#f0f1eb', color: '#2868b3' },
   firefighter: { name: translate('Pompier', 'Firefighter'), description: translate('Casque jaune et uniforme avec bandes réfléchissantes.', 'Yellow helmet and uniform with reflective stripes.'), body: '#343d42', legs: '#293238', color: '#e4b93e' },
+  worker: { name: translate('Travailleur', 'Construction Worker'), description: translate('Gilet fluorescent, casque de chantier et lampe frontale.', 'High-visibility vest, hard hat, and working headlamp.'), body: '#454d50', legs: '#30383c', color: '#ed7d24' },
   police: { name: translate('Policier', 'Police Officer'), description: translate('Casquette, chemise bleue, ceinturon et uniforme.', 'Cap, blue shirt, belt, and uniform.'), body: '#4777a7', legs: '#283a53', color: '#4777a7' },
   soldier: { name: translate('Soldat', 'Soldier'), description: translate('Uniforme bleu, bandoulières blanches, bicorne et baïonnette.', 'Blue uniform, white crossbelts, bicorne, and bayonet.'), body: '#293e74', legs: '#e4e7e1', color: '#293e74' },
   trader: { name: translate('Marchand', 'Trader'), description: translate('Turban bleu, tunique et ceinture dorée du marchand voyageur.', 'Blue turban, tunic, and golden belt of the traveling trader.'), body: '#49668b', legs: '#43352e', color: '#49668b' },

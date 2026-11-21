@@ -17,6 +17,7 @@ import { SaddleGlb } from './SaddleGlb';
 import { ParachuteModel } from './ParachuteModel';
 import { heldWeaponYaw } from '../game/itemPresentation';
 import { VehicleAssetModel } from './VehicleAssetModel';
+import { AppleGlb } from './AppleGlb';
 import type { VehicleKind } from '../game/vehicleTypes';
 
 type ModelProps = { kind: ItemKind | GalleryItemId; held?: boolean; flipWeapons?: boolean };
@@ -128,6 +129,7 @@ export function GunModel({ color, bomb, rifle }: { color: string; bomb?: boolean
 }
 
 export function FoodModel({ kind }: { kind: ItemKind | GalleryItemId }) {
+  if (kind === 'apple') return <Suspense fallback={null}><AppleGlb /></Suspense>;
   const modelKind = kind;
   if (isReferenceFood(modelKind)) return <Suspense fallback={null}><ReferenceFoodModel kind={modelKind} /></Suspense>;
   const color = getItemMeta(kind).color;

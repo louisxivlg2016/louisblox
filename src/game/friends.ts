@@ -31,6 +31,7 @@ type FriendStore = {
   requests: FriendRequest[];
   setOnlinePlayers: (players: FriendPlayer[]) => void;
   addFriend: (friend: FriendPlayer) => void;
+  removeFriend: (playerId: string) => void;
   receiveRequest: (request: FriendRequest) => void;
   removeRequest: (requestId: string) => void;
 };
@@ -77,6 +78,11 @@ export const useFriendStore = create<FriendStore>((set) => ({
   setOnlinePlayers: (onlinePlayers) => set({ onlinePlayers }),
   addFriend: (friend) => set((state) => {
     const friends = [...state.friends.filter((item) => item.playerId !== friend.playerId), friend];
+    saveFriends(friends);
+    return { friends };
+  }),
+  removeFriend: (playerId) => set((state) => {
+    const friends = state.friends.filter((friend) => friend.playerId !== playerId);
     saveFriends(friends);
     return { friends };
   }),

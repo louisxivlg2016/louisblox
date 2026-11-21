@@ -35,5 +35,5 @@ export function MatchResultActions() {
     useMultiplayerStore.getState().setEnabled(false);
     useGameStore.getState().setMode('menu');
   };
-  return <div className="match-result-actions"><button type="button" className="primary-button" onClick={replay} disabled={full}>{translate('Rejouer', 'Replay')}</button><button type="button" className="secondary-button" onClick={quit}>{translate('Quitter', 'Quit')}</button></div>;
+  return <div className="match-result-actions" onPointerDown={(event) => event.stopPropagation()}><button type="button" className="primary-button" onClick={replay} disabled={full}>{translate('Rejouer', 'Replay')}</button><button type="button" className="secondary-button" onClick={quit}>{translate('Quitter', 'Quit')}</button></div>;
 }

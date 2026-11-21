@@ -26,6 +26,11 @@ function paintImpact(world: World, color: string | undefined, position: Vector3,
 export function fireProjectile(world: World, origin: Vector3, direction: Vector3, kind: 'arrow' | 'bullet' | 'bomb', damage = 1, color?: string | null, effect?: 'smoke' | 'firework') {
   if (kind !== 'arrow' && !color) playSound('gunshot', 0.45);
   const velocity = direction.clone().normalize().multiplyScalar(kind === 'bullet' ? 48 : kind === 'bomb' ? 18 : 30);
+  if (effect === 'firework') {
+    velocity.x *= 0.35;
+    velocity.z *= 0.35;
+    velocity.y = Math.max(14, velocity.y + 12);
+  }
   const position = origin.clone().addScaledVector(direction, 0.8);
   const entity = world.spawn(
     Projectile({ id: crypto.randomUUID(), kind, life: effect === 'firework' ? 1.35 : effect === 'smoke' ? 2.5 : kind === 'bullet' ? 1.5 : 8, damage, color: color ?? undefined, effect }),

@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useQuery } from 'koota/react';
 import type { Entity } from 'koota';
-import { BoxGeometry, CanvasTexture, Color, InstancedMesh, LinearFilter, LinearMipmapLinearFilter, Matrix4, MeshBasicMaterial, Quaternion, SphereGeometry, SRGBColorSpace, Vector3 } from 'three';
+import { AdditiveBlending, BoxGeometry, CanvasTexture, Color, InstancedMesh, LinearFilter, LinearMipmapLinearFilter, Matrix4, MeshBasicMaterial, Quaternion, SphereGeometry, SRGBColorSpace, Vector3 } from 'three';
 import { Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition } from '../game/traits';
 
 function createBrushTexture() {
@@ -87,19 +87,25 @@ function PaintStrokes({ entities }: { entities: readonly Entity[] }) {
 }
 
 const effectGeometry = new SphereGeometry(1, 8, 6);
+const effectUp = new Vector3(0, 1, 0);
 
 function EffectView({ entity }: { entity: Entity }) {
   const explosion = entity.get(Explosion)!;
   const position = entity.get(ExplosionPosition)!;
   const group = useRef<import('three').Group>(null);
-  const material = useMemo(() => new MeshBasicMaterial({ color: explosion.effect === 'smoke' ? '#7b838a' : explosion.color ?? '#ffffff', transparent: true, opacity: 1, depthWrite: false, toneMapped: false }), [explosion.effect, explosion.color]);
-  const count = explosion.effect === 'smoke' ? 32 : 72;
+  const material = useMemo(() => new MeshBasicMaterial({ color: explosion.effect === 'smoke' ? '#7b838a' : explosion.color ?? '#ffffff', transparent: true, opacity: 1, depthWrite: false, toneMapped: false, blending: explosion.effect === 'firework' ? AdditiveBlending : undefined }), [explosion.effect, explosion.color]);
+  const accentMaterial = useMemo(() => new MeshBasicMaterial({ color: '#fff2b3', transparent: true, opacity: 0.85, depthWrite: false, toneMapped: false, blending: AdditiveBlending }), []);
+  const count = explosion.effect === 'smoke' ? 32 : 120;
   const directions = useMemo(() => Array.from({ length: count }, (_, index) => {
+    if (explosion.effect === 'firework' && index % 4 === 0) {
+      const angle = index / 4 / Math.floor(count / 4) * Math.PI * 2;
+      return new Vector3(Math.cos(angle), Math.sin(angle * 3) * 0.12, Math.sin(angle)).normalize();
+    }
     const y = 1 - 2 * (index + 0.5) / count;
     const radius = Math.sqrt(Math.max(0, 1 - y * y));
     const angle = index * 2.399963;
     return new Vector3(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
-  }), [count]);
+  }), [count, explosion.effect]);
   useFrame(({ clock }) => {
     if (group.current) {
       const holder = entity.get(ExplosionMesh);
@@ -109,21 +115,32 @@ function EffectView({ entity }: { entity: Entity }) {
     if (materialHolder) materialHolder.value = material;
     const progress = Math.min(1, Math.max(0, 1 - explosion.time / explosion.maxTime));
     material.opacity = explosion.effect === 'smoke' ? (1 - progress) * 0.38 : 1 - progress;
-    if (explosion.effect === 'firework' && explosion.color === '#b578d5') material.color.setHSL((clock.elapsedTime * 0.7) % 1, 0.82, 0.62);
+    accentMaterial.opacity = (1 - progress) * 0.85;
+    if (explosion.effect === 'firework' && explosion.color === '#b578d5') {
+      const hue = (clock.elapsedTime * 0.7) % 1;
+      material.color.setHSL(hue, 0.82, 0.62);
+      accentMaterial.color.setHSL((hue + 0.45) % 1, 0.9, 0.72);
+    }
     group.current?.children.forEach((child, index) => {
       const direction = directions[index];
       if (!direction) return;
-      const distance = explosion.effect === 'smoke' ? 2.6 : 6;
+      const distance = explosion.effect === 'smoke' ? 2.6 : 10;
       child.position.copy(direction).multiplyScalar(progress * distance);
+      child.quaternion.setFromUnitVectors(effectUp, direction);
       if (explosion.effect === 'smoke') child.position.y += progress * 1.1;
-      else child.position.y -= progress * progress * 2;
-      child.scale.setScalar(explosion.effect === 'smoke' ? 0.35 + progress * 2.2 : Math.max(0.025, 0.15 * (1 - progress * 0.65)));
+      else child.position.y -= progress * progress * 3.2;
+      child.scale.setScalar(explosion.effect === 'smoke' ? 0.35 + progress * 2.2 : Math.max(0.035, 0.22 * (1 - progress * 0.55)));
     });
   });
   return (
     <group ref={group} name={explosion.effect === 'smoke' ? 'smoke-grenade-cloud' : 'firework-burst'} position={[position.x, position.y, position.z]}>
-      {directions.map((_, index) => <mesh key={index} geometry={effectGeometry} material={material} />)}
-      {explosion.effect === 'firework' && <pointLight color={explosion.color ?? '#ffffff'} intensity={4} distance={12} decay={2} />}
+      {directions.map((_, index) => (
+        <group key={index}>
+          <mesh geometry={effectGeometry} material={material} />
+          {explosion.effect === 'firework' && <mesh geometry={effectGeometry} material={accentMaterial} position={[0, -1.8, 0]} scale={[0.42, 3.4, 0.42]} />}
+        </group>
+      ))}
+      {explosion.effect === 'firework' && <pointLight color={explosion.color ?? '#ffffff'} intensity={12} distance={30} decay={2} />}
     </group>
   );
 }

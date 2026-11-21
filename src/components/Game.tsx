@@ -3,8 +3,10 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { useWorld } from 'koota/react';
 import { Color, FogExp2 } from 'three';
-import { getBlockIndex, loadLevel } from '../game/chunks';
-import { readWorldSave } from '../game/save';
+import { getBlockIndex, loadLevel, touchChunk } from '../game/chunks';
+import { refreshSeasonTextures } from '../game/chunkGeometry';
+import { useSeasonStore } from '../game/seasons';
+import { readWorldSave, saveWorld } from '../game/save';
 import { useGameStore } from '../game/store';
 import { BlockKind, isWaterBlock, voxelKey } from '../game/voxel';
 import { Animals } from './Animals';
@@ -31,6 +33,8 @@ import { FootballReferee } from './FootballReferee';
 import { PirateWorld } from './PirateWorld';
 import { ExtinguisherSprays } from './ExtinguisherSpray';
 import { PIRATE_LOADOUT } from '../game/pirates';
+import { Chunk } from '../game/traits';
+import { ConstructionGuide } from './ConstructionGuide';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -121,9 +125,14 @@ export function Game() {
   const setOutfit = useCharacterStore((state) => state.setOutfit);
   const [level, setLevel] = useState<import('../game/levels').LevelData | null>(null);
   useLayoutEffect(() => {
-    setLevel(loadLevel(world, generation, readWorldSave(worldId)));
+    setLevel(loadLevel(world, generation, readWorldSave(worldId, true)));
+    saveWorld(world);
   }, [world, generation, worldId]);
   useEffect(() => setMusicMode(gameplayMode), [gameplayMode]);
+  useEffect(() => useSeasonStore.subscribe(() => {
+    refreshSeasonTextures();
+    for (const entity of world.query(Chunk)) touchChunk(entity);
+  }), [world]);
   useEffect(() => {
     if (gameplayMode === 'pirates') useGameStore.setState({ hotbarSlots: [...PIRATE_LOADOUT], selected: PIRATE_LOADOUT[0], selectedSlot: 0 });
   }, [gameplayMode]);
@@ -139,6 +148,7 @@ export function Game() {
       <RenderQuality />
       <Atmosphere />
       <Weather key={`weather-${generation}`} />
+      <ConstructionGuide />
       <Animals key={`animals-${generation}`} />
       <Traders key={`traders-${generation}`} />
       <Fish key={`fish-${generation}`} />

@@ -14,6 +14,8 @@ export function SettingsPanel() {
   const audioSettings = useAudioSettings();
   const season = useSeasonStore((state) => state.season);
   const setSeason = useSeasonStore((state) => state.setSeason);
+  const mixedSeasons = useSeasonStore((state) => state.mixedSeasons);
+  const setMixedSeasons = useSeasonStore((state) => state.setMixedSeasons);
   const [name, setName] = useState(translate('Ma tribu', 'My Tribe'));
   const online = useMultiplayerStore((state) => state.status === 'online');
   const tribes = useTribeStore((state) => state.tribes);
@@ -43,6 +45,15 @@ export function SettingsPanel() {
             <option value="winter">{translate('Hiver', 'Winter', 'Invierno')}</option>
           </select>
         </label>
+        <fieldset>
+          <legend>{translate('Mélanger les saisons par zone', 'Mix seasons by area')}</legend>
+          {([
+            ['spring', translate('Printemps', 'Spring')],
+            ['summer', translate('Été', 'Summer')],
+            ['autumn', translate('Automne', 'Autumn')],
+            ['winter', translate('Hiver', 'Winter')],
+          ] as const).map(([value, label]) => <label className="protection-option" key={value}><input type="checkbox" checked={mixedSeasons.includes(value)} onChange={(event) => setMixedSeasons(event.target.checked ? [...mixedSeasons, value] : mixedSeasons.filter((season) => season !== value))} /> {label}</label>)}
+        </fieldset>
       </section>
       <section className="settings-tribe" aria-label={translate('Audio', 'Audio', 'Audio')}>
         <h3>{translate('Audio', 'Audio', 'Audio')}</h3>

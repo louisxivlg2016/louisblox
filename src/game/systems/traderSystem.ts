@@ -27,18 +27,25 @@ function walkableGround(world: World, x: number, z: number, currentY: number, ri
   let ground = groundAt(world, x, z, currentY + rise);
   const overhead = blocks.get(voxelKey(Math.round(x), Math.floor(ground), Math.round(z)));
   if (overhead && foliage.has(overhead.kind) && ground > currentY + 1.05) ground = groundAt(world, x, z, currentY + 1.05);
-  if (ground <= MIN_WORLD_Y + 0.5) return null;
   if (ground > currentY + 1.05) {
     const doorway = blocks.get(voxelKey(Math.round(x), Math.round(currentY + 0.5), Math.round(z)));
     if (doorway && isDoor(doorway.kind) && doorway.open) ground = groundAt(world, x, z, currentY + 0.51);
   }
-  if (ground < SEA_LEVEL + 0.5) return null;
+  let swimming = false;
+  for (let y = Math.max(Math.floor(ground), Math.floor(currentY - 8)); y <= Math.floor(currentY + rise); y += 1) {
+    const block = blocks.get(voxelKey(Math.round(x), y, Math.round(z)));
+    if (!isWaterBlock(block?.kind)) continue;
+    ground = y + 0.5;
+    swimming = true;
+  }
+  if (ground <= MIN_WORLD_Y + 0.5) return null;
+  if (!swimming && ground < SEA_LEVEL + 0.5) return null;
   if (ground - currentY > rise || currentY - ground > 8.05) return null;
   const groundBlock = blocks.get(voxelKey(Math.round(x), Math.floor(ground), Math.round(z)));
   if (groundBlock && foliage.has(groundBlock.kind)) return null;
   for (const height of [0.5, 1.75]) {
     const block = blocks.get(voxelKey(Math.round(x), Math.round(ground + height), Math.round(z)));
-    if (block && (isCollidable(block) || isWaterBlock(block.kind))) return null;
+    if (block && (isCollidable(block) || !swimming && isWaterBlock(block.kind))) return null;
   }
   return ground;
 }

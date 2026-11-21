@@ -1,13 +1,14 @@
 import type { PlayerAttachment } from './index';
+import { MAZE_PLAYGROUND_BOUNDS, mazePlaygroundSpawn } from '../src/game/mazePlayground';
 
-type Phase = 'waiting' | 'ready' | 'countdown' | 'running' | 'finished';
+type Phase = 'playground' | 'waiting' | 'ready' | 'countdown' | 'running' | 'finished';
 type PlayerSocket = { socket: WebSocket; attachment: PlayerAttachment };
 type MazeRoom = { mode: () => string; players: () => PlayerSocket[]; broadcast: (message: unknown) => void; owner: (playerId: string) => boolean; barriers: (open: boolean) => void; save: () => Promise<void> };
 const lanes = [-18, -14, -10, -6, -2, 2, 6, 10, 14, 18];
 
 export class MazeEngine {
   static barrierKeys = lanes.flatMap((x) => [`${x},9,21`, `${x},10,21`]);
-  private phase: Phase = 'waiting';
+  private phase: Phase = 'playground';
   private phaseUntil = 0;
   private startedAt = 0;
   private winner: string | null = null;
@@ -16,12 +17,13 @@ export class MazeEngine {
   private notice = 'The referee is preparing the start';
   private whistleToken = 0;
   private barriersOpen = false;
+  private course = 0;
   private lanes = new Map<string, number>();
 
   constructor(private room: MazeRoom) {}
 
   reset() {
-    this.phase = 'waiting';
+    this.phase = 'playground';
     this.phaseUntil = 0;
     this.startedAt = 0;
     this.winner = null;
@@ -29,6 +31,7 @@ export class MazeEngine {
     this.finishMs = 0;
     this.notice = 'The referee is preparing the start';
     this.barriersOpen = false;
+    this.course = 0;
     this.lanes.clear();
     if (this.room.mode() === 'maze') this.room.barriers(false);
     this.spawnAll();
@@ -38,7 +41,7 @@ export class MazeEngine {
   restore(value: unknown) {
     if (!value || typeof value !== 'object') return;
     const data = value as Partial<ReturnType<MazeEngine['snapshot']>>;
-    this.phase = data.phase ?? 'waiting';
+    this.phase = data.phase ?? 'playground';
     this.phaseUntil = data.phaseUntil ?? 0;
     this.startedAt = data.startedAt ?? 0;
     this.winner = data.winner ?? null;
@@ -47,11 +50,12 @@ export class MazeEngine {
     this.notice = data.notice ?? 'The referee is preparing the start';
     this.whistleToken = data.whistleToken ?? 0;
     this.barriersOpen = data.barriersOpen === true;
+    this.course = data.course ?? 0;
     this.lanes = new Map(Object.entries(data.lanes ?? {}));
   }
 
   snapshot() {
-    return { phase: this.phase, phaseUntil: this.phaseUntil, startedAt: this.startedAt, winner: this.winner, winnerName: this.winnerName, finishMs: this.finishMs, notice: this.notice, whistleToken: this.whistleToken, barriersOpen: this.barriersOpen, lanes: Object.fromEntries(this.lanes) };
+    return { phase: this.phase, phaseUntil: this.phaseUntil, startedAt: this.startedAt, winner: this.winner, winnerName: this.winnerName, finishMs: this.finishMs, notice: this.notice, whistleToken: this.whistleToken, barriersOpen: this.barriersOpen, course: this.course, lanes: Object.fromEntries(this.lanes) };
   }
 
   message() {
@@ -77,6 +81,7 @@ export class MazeEngine {
   }
 
   private position(index: number) {
+    if (this.phase === 'playground') return mazePlaygroundSpawn(index);
     return { x: lanes[Math.abs(index) % lanes.length], y: 8.51, z: 23, yaw: 0 };
   }
 
@@ -89,7 +94,15 @@ export class MazeEngine {
 
   join(player: PlayerAttachment) {
     if (this.room.mode() !== 'maze') return;
-    this.room.broadcast({ type: 'maze-spawn', positions: { [player.playerId]: this.position(this.laneFor(player.playerId)) } });
+    const position = this.phase === 'finished' ? mazePlaygroundSpawn(this.laneFor(player.playerId)) : this.position(this.laneFor(player.playerId));
+    this.room.broadcast({ type: 'maze-spawn', positions: { [player.playerId]: position } });
+  }
+
+  private spawnPlayground() {
+    if (this.room.mode() !== 'maze') return;
+    const positions: Record<string, { x: number; y: number; z: number; yaw: number }> = {};
+    for (const { attachment } of this.room.players()) positions[attachment.playerId] = mazePlaygroundSpawn(this.laneFor(attachment.playerId));
+    this.room.broadcast({ type: 'maze-spawn', positions });
   }
 
   private whistle() {
@@ -98,6 +111,11 @@ export class MazeEngine {
 
   constrainState(player: PlayerAttachment, state: NonNullable<PlayerAttachment['state']>) {
     state.flying = false;
+    if (this.phase === 'playground' || this.phase === 'finished') {
+      state.x = Math.max(MAZE_PLAYGROUND_BOUNDS.minX, Math.min(MAZE_PLAYGROUND_BOUNDS.maxX, state.x));
+      state.z = Math.max(MAZE_PLAYGROUND_BOUNDS.minZ, Math.min(MAZE_PLAYGROUND_BOUNDS.maxZ, state.z));
+      return;
+    }
     if (this.room.owner(player.playerId) && state.y > 15.5) {
       state.x = Math.max(-2, Math.min(2, state.x));
       state.z = Math.max(22, Math.min(26, state.z));
@@ -116,6 +134,15 @@ export class MazeEngine {
   tick(player: PlayerAttachment) {
     if (this.room.mode() !== 'maze') return;
     const now = Date.now();
+    if (this.phase === 'playground') {
+      if (!player.state || Math.abs(player.state.x - 128) > 4 || player.state.z < 90 || player.state.z > 99 || player.state.y >= 14) return;
+      this.phase = 'waiting';
+      this.notice = 'Maze unlocked! Take your places!';
+      this.spawnAll();
+      this.update();
+      void this.room.save();
+      return;
+    }
     if (this.phase === 'countdown' && now >= this.phaseUntil) {
       this.phase = 'running';
       this.startedAt = now;
@@ -133,8 +160,10 @@ export class MazeEngine {
     this.winner = player.playerId;
     this.winnerName = player.name;
     this.finishMs = Math.max(0, now - this.startedAt);
-    this.notice = `${player.name} found the exit!`;
+    this.notice = `${player.name} found the exit! Course ${this.course + 1}/100 unlocked!`;
+    this.course = (this.course + 1) % 100;
     this.whistle();
+    this.spawnPlayground();
     this.update();
     void this.room.save();
   }

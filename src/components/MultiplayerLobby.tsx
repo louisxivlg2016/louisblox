@@ -116,12 +116,12 @@ export function MultiplayerLobby({ onPlay, onCreateRoom, createLabel = translate
     if (resolving) return;
     setResolving(true);
     try {
-      if (await findAndJoin(room)) return;
       if (!canCreateWorld()) {
         useMultiplayerStore.getState().setStatus('error', translate('Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes avant de créer un salon.', 'You already have 20 worlds. Delete one in My Worlds before creating a room.'));
         return;
       }
       if (onCreateRoom) {
+        useMultiplayerStore.setState({ playerName, server: showServer ? server : '' });
         onCreateRoom(room.trim(), joinMode === 'room' ? null : joinMode);
         return;
       }
@@ -195,7 +195,7 @@ export function MultiplayerLobby({ onPlay, onCreateRoom, createLabel = translate
           </div>
           <div className="multiplayer-actions">
             <button type="submit" className="multiplayer-join" disabled={resolving}>{translate('Rejoindre', 'Join')}{joinTarget ? ` ${translate('en', 'in')} ${GAMEPLAY_MODE_LABELS()[joinTarget]}` : ''}</button>
-            <button type="button" className="multiplayer-new-room" onClick={() => void createRoom()} disabled={resolving || limitReached}>{createLabel}</button>
+            <button type="button" className="multiplayer-new-room" onClick={() => void createRoom()} disabled={resolving || limitReached || status === 'connecting'}>{createLabel}</button>
             <button type="button" className="multiplayer-delete-room" onClick={removeRoom}>{translate('Supprimer le salon', 'Delete room')}</button>
           </div>
           {limitReached && <p className="multiplayer-error" role="alert">{translate('Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes pour libérer une place.', 'You already have 20 worlds. Delete one in My Worlds to free a slot.')}</p>}

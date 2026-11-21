@@ -6,7 +6,7 @@ import type { AnimalKind } from '../game/animals';
 import type { Entity } from 'koota';
 import { PixelPart } from './ItemModel';
 import { ReferenceAnimal } from './ReferenceAnimals';
-import { AnimalMotion } from '../game/traits';
+import { AnimalMesh, AnimalMotion, AnimalPosition } from '../game/traits';
 import zombieUrl from '../../assets/models/zombie.glb';
 
 useGLTF.preload(zombieUrl);
@@ -14,6 +14,8 @@ useGLTF.preload(zombieUrl);
 function ZombieModel({ entity }: { entity: Entity }) {
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
+  const previousPosition = useRef<Vector3 | null>(null);
+  const renderYaw = useRef<number | null>(null);
   const { scene } = useGLTF(zombieUrl);
   const model = useMemo(() => {
     const clone = scene.clone(true);
@@ -38,7 +40,23 @@ function ZombieModel({ entity }: { entity: Entity }) {
   }, [scene]);
   useFrame(({ clock }, delta) => {
     const motion = entity.get(AnimalMotion);
-    const swing = motion?.running || (motion?.speed ?? 0) > 0.2 ? Math.sin(clock.elapsedTime * 8) * 0.5 : 0;
+    const position = entity.get(AnimalPosition);
+    const mesh = entity.get(AnimalMesh)?.value;
+    let moving = false;
+    if (position && mesh) {
+      const moved = previousPosition.current ? Math.hypot(position.x - previousPosition.current.x, position.z - previousPosition.current.z) : 0;
+      moving = moved > 0.0005;
+      if (renderYaw.current === null) renderYaw.current = motion?.displayYaw ?? 0;
+      if (moving && previousPosition.current) {
+        const movementYaw = Math.atan2(position.x - previousPosition.current.x, position.z - previousPosition.current.z);
+        renderYaw.current = movementYaw;
+        if (motion) motion.displayYaw = movementYaw;
+      }
+      if (!previousPosition.current) previousPosition.current = position.clone();
+      else previousPosition.current.copy(position);
+      mesh.rotation.y = renderYaw.current ?? 0;
+    }
+    const swing = moving ? Math.sin(clock.elapsedTime * 8) * 0.5 : 0;
     const amount = Math.min(1, delta * 12);
     if (leftLeg.current) leftLeg.current.rotation.x += (swing - leftLeg.current.rotation.x) * amount;
     if (rightLeg.current) rightLeg.current.rotation.x += (-swing - rightLeg.current.rotation.x) * amount;

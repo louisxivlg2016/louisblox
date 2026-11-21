@@ -2,7 +2,11 @@ import type { World } from 'koota';
 import { getBlockIndex, getWorldSeed, streamChunks } from './chunks';
 import { groundAt } from './vehicles';
 import { isCollidable } from './systems/collisionSystem';
-import { biomeAt, safeSpawnAt } from './levels';
+import { biomeAt, heightAt, safeSpawnAt } from './levels';
+import { tradeCityAt, villageAt } from './villages';
+import { nearestFarmstead, nearestHamlet } from './countryside';
+import { saveWorld } from './save';
+import { translate } from './language';
 import type { Biome } from './levels';
 import { nearestRuinOfType } from './ruins';
 import type { RuinType } from './ruins';
@@ -86,6 +90,80 @@ export function teleportToRuin(world: World, type: RuinType) {
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false });
   return safe;
+}
+
+function nearestNaturalVillage(x: number, z: number, seed: number) {
+  const centerX = Math.floor(x / 192);
+  const centerZ = Math.floor(z / 192);
+  const visited = new Set<string>();
+  for (let radius = 0; radius <= 12; radius += 1) {
+    let nearest: { x: number; z: number } | null = null;
+    let bestDistance = Infinity;
+    const consider = (site: { x: number; z: number } | null) => {
+      if (!site || visited.has(`${site.x},${site.z}`)) return;
+      visited.add(`${site.x},${site.z}`);
+      const distance = Math.hypot(site.x - x, site.z - z);
+      if (distance < bestDistance) {
+        nearest = site;
+        bestDistance = distance;
+      }
+    };
+    if (radius === 0) consider(villageAt(0, 0, seed));
+    for (let dx = -radius; dx <= radius; dx += 1) for (let dz = -radius; dz <= radius; dz += 1) {
+      if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
+      const candidateX = (centerX + dx) * 192 + 96;
+      const candidateZ = (centerZ + dz) * 192 + 96;
+      consider(villageAt(Math.floor(candidateX / 16), Math.floor(candidateZ / 16), seed));
+    }
+    if (nearest) return nearest;
+  }
+  return null;
+}
+
+export function teleportToVillage(world: World) {
+  const entity = world.queryFirst(Player);
+  const position = entity?.get(PlayerPosition);
+  if (!entity || !position) return null;
+  const game = useGameStore.getState();
+  const seed = getWorldSeed(world);
+  const ancient = game.gameplayMode === 'city-ancient';
+  const site = ancient ? nearestHamlet(position.x, position.z, seed) : game.worldTemplate === 'nature' ? nearestNaturalVillage(position.x, position.z, seed) : null;
+  if (!site) {
+    game.setNotice(translate('Aucun petit village trouvé dans ce monde.', 'No small village found in this world.'));
+    return null;
+  }
+  const z = site.z + 7;
+  const y = ancient ? 5.51 : heightAt(site.x, z, seed) + 0.51;
+  const destination = teleportToHome(world, { x: site.x, y, z, yaw: 0, pitch: 0 });
+  if (destination) {
+    saveWorld(world);
+    game.setNotice(translate('Téléportation au petit village réussie !', 'Teleported to the small village!'));
+  }
+  return destination;
+}
+
+export function teleportToFarm(world: World) {
+  const entity = world.queryFirst(Player);
+  const position = entity?.get(PlayerPosition);
+  if (!entity || !position) return null;
+  const game = useGameStore.getState();
+  const seed = getWorldSeed(world);
+  const ancient = game.gameplayMode === 'city-ancient';
+  const farmstead = ancient ? nearestFarmstead(position.x, position.z, seed) : null;
+  const site = ancient ? farmstead : game.worldTemplate === 'nature' ? tradeCityAt(seed) : null;
+  if (!site) {
+    game.setNotice(translate('Aucune ferme trouvée dans ce monde.', 'No farm found in this world.'));
+    return null;
+  }
+  const x = ancient ? site.x - 43 : site.x - 22;
+  const z = ancient ? site.z + 40 : site.z + 14;
+  const y = ancient ? 5.51 : heightAt(x, z, seed) + 0.51;
+  const destination = teleportToHome(world, { x, y, z, yaw: 0, pitch: 0 });
+  if (destination) {
+    saveWorld(world);
+    game.setNotice(translate('Téléportation à la ferme réussie !', 'Teleported to the farm!'));
+  }
+  return destination;
 }
 
 export function teleportToHome(world: World, destination: Pick<Home, 'x' | 'y' | 'z' | 'yaw' | 'pitch'>) {

@@ -44,6 +44,8 @@ type VoxelEdit = number | {
   food?: string;
   meat?: string;
   protected?: boolean;
+  shop?: { action: 'buy' | 'sell' | 'earn' | 'gift' | 'heal' | 'teleport' | 'effect' | 'checkpoint' | 'message' | 'trap'; item?: string | number; count?: number; price?: number; destination?: { x: number; y: number; z: number }; effect?: 'speed' | 'jump' | 'invisibility' };
+  season?: string;
 } | null;
 type EditEntry = [string, VoxelEdit];
 type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern' | 'pirates' | 'football' | 'maze';
@@ -217,6 +219,17 @@ function parseEdits(value: unknown): EditEntry[] | null {
     if (Array.isArray(data.items)) {
       result.items = data.items.slice(0, 64).filter((item): item is string | number => typeof item === 'string' && item.length <= 96 || typeof item === 'number' && Number.isFinite(item));
     }
+    if (data.shop && typeof data.shop === 'object') {
+      const shop = data.shop as Record<string, unknown>;
+      const actionValid = shop.action === 'buy' || shop.action === 'sell' || shop.action === 'earn' || shop.action === 'gift' || shop.action === 'heal' || shop.action === 'teleport' || shop.action === 'effect' || shop.action === 'checkpoint' || shop.action === 'message' || shop.action === 'trap';
+      const priceValid = shop.action === 'teleport' || shop.action === 'gift' || shop.action === 'checkpoint' || shop.action === 'message' || typeof shop.price === 'number' && Number.isInteger(shop.price) && shop.price >= 0 && shop.price <= 1000000;
+      const itemValid = shop.action === 'heal' || shop.action === 'teleport' || shop.action === 'earn' || shop.action === 'effect' || shop.action === 'checkpoint' || shop.action === 'message' || shop.action === 'trap' || (typeof shop.item === 'string' || typeof shop.item === 'number') && typeof shop.count === 'number' && Number.isInteger(shop.count) && shop.count >= 1 && shop.count <= 999;
+      const effectValid = shop.action !== 'effect' || shop.effect === 'speed' || shop.effect === 'jump' || shop.effect === 'invisibility';
+      const destination = shop.destination as { x: unknown; y: unknown; z: unknown } | undefined;
+      const destinationValid = shop.action !== 'teleport' || destination && [destination.x, destination.y, destination.z].every((value) => Number.isSafeInteger(value));
+      if (actionValid && priceValid && itemValid && effectValid && destinationValid) result.shop = shop as Exclude<VoxelEdit, number | null>['shop'];
+    }
+    if (typeof data.season === 'string' && ['spring', 'summer', 'autumn', 'winter'].includes(data.season)) result.season = data.season;
     edits.push([key, result]);
   }
   return edits;
@@ -421,7 +434,7 @@ export class GameRoom extends DurableObject<Env> {
     await directory.fetch('https://directory/world', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: this.worldId ?? attachment?.room ?? 'main-room', name: this.worldName ?? this.worldId ?? attachment?.room ?? 'main-room', ownerId, ownerName: this.publisherName ?? 'Creator', gameplayMode: this.gameplayMode, template: this.worldTemplate, players: this.ctx.getWebSockets().length }),
+      body: JSON.stringify({ id: this.worldId ?? attachment?.room ?? 'main-room', name: this.worldName ?? this.worldId ?? attachment?.room ?? 'main-room', ownerId, ownerName: this.publisherName ?? 'Creator', gameplayMode: this.gameplayMode, template: this.worldTemplate, players: this.ctx.getWebSockets().filter((socket) => socket.readyState === 1).length }),
     });
   }
 

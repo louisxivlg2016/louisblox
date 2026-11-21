@@ -11,6 +11,9 @@ import shopEnUrl from '../../assets/menu/english/shop.webp';
 import shopEsUrl from '../../assets/menu/spanish/tienda.webp';
 import settingsButtonUrl from '../../assets/ui/settings-button.webp';
 import { translate, useLanguageStore } from '../game/language';
+import { saveWorld } from '../game/save';
+import { world } from '../game/world';
+import { useMultiplayerStore } from '../game/multiplayerStore';
 
 const SKIN_COLORS = ['#f0c7a6', '#e7a0aa', '#c98962', '#966045', '#704735', '#493329'];
 const HAIR_COLORS = ['#49382f', '#25232a', '#8a5838', '#d6b46a', '#d7d0c3', '#a74a82', '#4e79a7', '#50844a'];
@@ -36,9 +39,16 @@ export function BoutiquePanel() {
     setOpen(false);
     void requestPlay();
   };
+  const quit = () => {
+    saveWorld(world);
+    setOpen(false);
+    useMultiplayerStore.getState().setEnabled(false);
+    useGameStore.getState().setMode('menu');
+  };
   return (
     <div className="menu-backdrop boutique-backdrop">
       <section className="menu-panel boutique-panel" role="dialog" aria-modal="true" aria-label={translate('Boutique et réglages', 'Shop and settings')} style={{ backgroundImage: `linear-gradient(rgba(20,34,24,.93), rgba(20,34,24,.97)), url(${translate(shopFrUrl, shopEnUrl, shopEsUrl)})`, backgroundSize: 'cover' }}>
+        <button type="button" className="secondary-button boutique-quit" onClick={quit}>{translate('Sauvegarder et quitter', 'Save and quit', 'Guardar y salir')}</button>
         <div className="boutique-layout">
           <nav className="boutique-tabs" role="tablist" aria-label={translate('Boutique et réglages', 'Shop and settings')}>
             <button className={`boutique-tab ${tab === 'shop' ? 'active' : ''}`} role="tab" aria-selected={tab === 'shop'} onClick={() => setTab('shop')}>{translate('Boutique', 'Shop')}</button>
@@ -68,14 +78,14 @@ export function BoutiquePanel() {
             <button className={appearance.originalSkinColor ? 'active' : ''} aria-pressed={appearance.originalSkinColor} onClick={() => setAppearance({ originalSkinColor: !appearance.originalSkinColor })}>{translate('Peau d’origine', 'Original skin')}</button>
             {SKIN_COLORS.map((color) => <button key={color} className={`color-swatch ${!appearance.originalSkinColor && appearance.skinColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ skinColor: color, originalSkinColor: false })} aria-label={`Skin ${color}`} />)}
           </div>
-          {outfit !== 'trader' && outfit !== 'firefighter' && <>
+          {outfit !== 'trader' && outfit !== 'firefighter' && outfit !== 'worker' && <>
             <h3>{translate('Couleur des cheveux', 'Hair color')}</h3>
             <div className="appearance-options">
               <button className={appearance.originalHairColor ? 'active' : ''} aria-pressed={appearance.originalHairColor} onClick={() => setAppearance({ originalHairColor: !appearance.originalHairColor })}>{translate('Cheveux d’origine', 'Original hair')}</button>
               {HAIR_COLORS.map((color) => <button key={color} className={`color-swatch ${!appearance.originalHairColor && appearance.hairColor === color ? 'active' : ''}`} style={{ backgroundColor: color }} onClick={() => setAppearance({ hairColor: color, originalHairColor: false })} aria-label={`Hair ${color}`} />)}
             </div>
           </>}
-          {outfit !== 'firefighter' && <>
+          {outfit !== 'firefighter' && outfit !== 'worker' && <>
             <h3>{translate('Couleur des sourcils', 'Eyebrow color')}</h3>
             <div className="appearance-options">
               <button className={appearance.eyebrowColor === null ? 'active' : ''} onClick={() => setAppearance({ eyebrowColor: null })} aria-label={translate('Sourcils comme les cheveux', 'Eyebrows matching hair')}>{translate('Comme les cheveux', 'Same as hair')}</button>

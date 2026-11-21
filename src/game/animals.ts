@@ -9,6 +9,7 @@ import { spawnVillageResidents, tradeCityAt } from './villages';
 import { isAnimalDead, isTraderDead } from './deathSync';
 import { applyTameState } from './taming';
 import { groundAt } from './vehicles';
+import { isNight, nightIndex } from './dayNight';
 
 function safeRoamSpawn(x: number, z: number, seed: number) {
   for (let radius = 0; radius <= 16; radius += 1) {
@@ -162,8 +163,24 @@ function spawnTradersAlongGrid(world: World, cx: number, cz: number, seed: numbe
       const x = cellX * 100 + 50;
       const z = cellZ * 100 + 50;
       if (x < cx * 16 || x >= (cx + 1) * 16 || z < cz * 16 || z >= (cz + 1) * 16) continue;
+      if (hash(cellX, cellZ, seed + 900) < 0.5) continue;
       entities.push(...spawnTrader(world, x, z, seed + cellX * 37 + cellZ * 61, seed));
     }
+  }
+  return entities;
+}
+
+export function spawnChunkZombies(world: World, cx: number, cz: number, seed: number) {
+  const entities: Entity[] = [];
+  if (biomeAt(cx * 16 + 8, cz * 16 + 8, seed) === 'jungle' || useGameStore.getState().gameplayMode !== 'survival' || !isNight(world)) return entities;
+  const count = hash(cx, cz, seed + 820) > 0.3 ? hash(cx, cz, seed + 821) > 0.7 ? 3 : 2 : 0;
+  for (let index = 0; index < count; index += 1) {
+    const x = cx * 16 + 2 + Math.floor(hash(cx + index, cz, seed + 822) * 12);
+    const z = cz * 16 + 2 + Math.floor(hash(cx, cz + index, seed + 823) * 12);
+    const height = heightAt(x, z, seed);
+    if (height <= SEA_LEVEL + 1 || height > 24) continue;
+    const entity = spawnAnimal(world, 'zombie', x, height + 0.5, z, seed + index, `zombie:${nightIndex(world)}:${x}:${z}`);
+    if (entity) entities.push(entity);
   }
   return entities;
 }
@@ -189,16 +206,7 @@ export function spawnChunkAnimals(world: World, cx: number, cz: number, water: W
     entities.push(...spawnTrader(world, 7, 4, seed));
   }
 
-  if (chunkBiome !== 'jungle' && useGameStore.getState().gameplayMode === 'survival' && hash(cx, cz, seed + 820) > 0.3) {
-    const count = hash(cx, cz, seed + 821) > 0.7 ? 3 : 2;
-    for (let index = 0; index < count; index += 1) {
-      const x = cx * 16 + 2 + Math.floor(hash(cx + index, cz, seed + 822) * 12);
-      const z = cz * 16 + 2 + Math.floor(hash(cx, cz + index, seed + 823) * 12);
-      const height = heightAt(x, z, seed);
-      if (height <= SEA_LEVEL + 1 || height > 24) continue;
-      spawn(world, 'zombie', x, height + 0.5, z, seed + index);
-    }
-  }
+  entities.push(...spawnChunkZombies(world, cx, cz, seed));
 
   if (hash(cx, cz, seed + 802) < 0.58) return entities;
   const biome = chunkBiome;

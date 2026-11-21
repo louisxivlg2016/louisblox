@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { acceptRestaurantInvitation, advanceTraderStory, canTrade, eatRestaurantMeal, merchantStories, openRestaurant, tradeWithMerchant, TRADE_OFFERS, useTradeStore } from '../game/trading';
+import { acceptRestaurantInvitation, advanceTraderStory, canTrade, eatRestaurantMeal, merchantStories, openRestaurant, tradeWithMerchant, TRADE_OFFERS, useTradeStore, viewTraderOffers } from '../game/trading';
 import { world } from '../game/world';
 import { requestPlay } from '../game/input';
 import { selectionInfo } from '../game/items';
@@ -79,7 +79,7 @@ export function TradingPanel() {
               {!following && step < lastStep && <button className="primary-button" aria-keyshortcuts="E" onClick={() => advanceTraderStory(traderId)}>{translate('Texte suivant (E)', 'Next text (E)')}</button>}
               {!following && step === lastStep && <button className="primary-button" onClick={accompany}>{translate('L’accompagner', 'Travel with him')}</button>}
               {following && <button className="primary-button" onClick={stopAccompanying}>{translate('Reprendre la route seul', 'Travel alone again')}</button>}
-              <button className="secondary-button" onClick={() => useTradeStore.getState().setView('offers')}>{translate('Voir les marchandises', 'View goods')}</button>
+              <button className="secondary-button" onClick={() => viewTraderOffers(world)}>{translate('Voir les marchandises', 'View goods')}</button>
               <button className="secondary-button" onClick={close}>{translate('Plus tard', 'Later')}</button>
             </div>
           </div>

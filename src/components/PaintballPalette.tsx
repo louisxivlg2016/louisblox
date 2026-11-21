@@ -12,7 +12,7 @@ export function PaintballPalette() {
   useEffect(() => {
     if (!isPaintballGun(selected) || mode !== 'play') return;
     const changeColor = (event: KeyboardEvent) => {
-      if (event.type !== 'keydown' || event.code !== 'KeyC' || event.repeat || useGameStore.getState().riding !== null) return;
+      if (event.type !== 'keydown' || event.code !== 'KeyX' || event.repeat || useGameStore.getState().riding !== null) return;
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return;
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -36,7 +36,7 @@ export function PaintballPalette() {
           style={{ backgroundColor: paint.value }}
           aria-label={`${translate('Peinture', 'Paint')} ${paint.name}`}
           aria-pressed={color === paint.value}
-          title={`${paint.name} · ${translate('C pour changer', 'C to change')}`}
+          title={`${paint.name} · ${translate('X pour changer', 'X to change')}`}
           onPointerDown={(event) => {
             event.preventDefault();
             event.stopPropagation();

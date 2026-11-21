@@ -2,6 +2,7 @@ import { CHUNK_SIZE } from './levels';
 import type { GeneratedChunk } from './levels';
 import { BlockKind } from './voxel';
 import type { Voxel } from './voxel';
+import { generateMazePlaygroundChunk, isMazePlaygroundChunk } from './mazePlayground';
 
 export const MAZE_LANES = [-18, -14, -10, -6, -2, 2, 6, 10, 14, 18] as const;
 export const MAZE_BARRIERS = MAZE_LANES.flatMap((x) => [{ x, y: 9, z: 21 }, { x, y: 10, z: 21 }]);
@@ -47,6 +48,7 @@ function mazeWalls() {
 }
 
 export function generateMazeChunk(cx: number, cz: number): GeneratedChunk {
+  if (isMazePlaygroundChunk(cx, cz)) return generateMazePlaygroundChunk(cx, cz);
   const blocks: Voxel[] = [];
   const walls = mazeWalls();
   for (let x = cx * CHUNK_SIZE; x < (cx + 1) * CHUNK_SIZE; x += 1) {

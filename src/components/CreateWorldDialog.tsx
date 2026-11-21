@@ -3,7 +3,7 @@ import { MenuDialog } from './MenuDialog';
 import { WorldEditor } from './WorldEditor';
 import { MultiplayerLobby } from './MultiplayerLobby';
 import { heightAt } from '../game/levels';
-import { normalizeRoomId } from '../game/multiplayerStore';
+import { normalizeRoomId, useMultiplayerStore } from '../game/multiplayerStore';
 import { readEditorDraft, writeEditorDraft } from '../game/editorDraft';
 import { BlockKind } from '../game/voxel';
 import { GAMEPLAY_MODE_LABELS } from '../game/worldMode';
@@ -45,6 +45,15 @@ export function createLobbyOptions(options: CreateWorldOptions, room: string, mo
 }
 
 const initialWorld = createCustomWorld(DEFAULT_WORLD_SOURCE, 73421);
+const WORLD_CODE_EXAMPLES = () => [
+  { label: translate('Boutique et monnaie', 'Shop and coins'), source: `terrain("plat");\nremplir(-4, 1, -3, 4, 1, 3, "planches_chene");\nboutique(-2, 2, 0, "acheter", "pomme", 1, 5);\nboutique(0, 2, 0, "vendre", "pomme", 1, 5);\nboutique(2, 2, 0, "gagner", 20);` },
+  { label: translate('Ferme et animaux', 'Farm and animals'), source: `terrain("plat");\nchamp(-5, 1, -4, 5, 4, "ble");\nanimal(-3, 2, 1, "vache");\nanimal(0, 2, 1, "cochon");\nanimal(3, 2, 1, "mouton");\ndonner(0, 2, -2, "pain", 3);` },
+  { label: translate('Nuit enneigée', 'Snowy night'), source: `terrain("plat");\nnuit();\nmeteo("neige");\nsaisons("hiver");\narbre(-3, 1, -2);\narbre(3, 1, 2);\nzombie(0, 2, 0);\nsoin(2, 2, -2, 4);` },
+  { label: translate('Téléporteurs', 'Teleporters'), source: `terrain("plat");\nremplir(-3, 1, -3, 3, 1, 3, "beton_bleu");\nremplir(17, 1, 17, 23, 1, 23, "beton_jaune");\nteleporter(0, 2, 0, 20, 2, 20);\nteleporter(20, 2, 20, 0, 2, 0);` },
+  { label: translate('Saisons mélangées', 'Mixed seasons'), source: `terrain("plat");\nsaisons("printemps", "ete", "automne", "hiver");\nremplir(-5, 1, -5, -1, 1, 5, "herbe");\nremplir(1, 1, -5, 5, 1, 5, "herbe");\nsaison(-5, -5, -1, 5, "automne");` },
+  { label: translate('Pièges et checkpoints', 'Traps and checkpoints'), source: `terrain("plat");\nremplir(-5, 1, -5, 5, 1, 5, "planches_chene");\ncheckpoint(0, 2, 4);\npiege(0, 2, 0, 2);\nmessage(2, 2, 2, "Attention aux pièges !");` },
+  { label: translate('Bonus et escalier', 'Boosts and stairs'), source: `terrain("plat");\nremplir(-4, 1, -4, 4, 1, 4, "beton_blanc");\nescalier(0, 2, 3, 6, "bois");\nvitesse(-2, 2, 0, 30);\nsaut(2, 2, 0, 30);\ninvisible(0, 2, -2, 20);` },
+];
 const CREATE_WORLD_TABS = () => [
   ['world', translate('Monde', 'World'), translate(worldTabFrUrl, worldTabUrl, worldTabEsUrl)],
   ['lobby', translate('Créer ton salon', 'Create your room'), translate(createLobbyTabFrUrl, createLobbyTabUrl, createLobbyTabEsUrl)],
@@ -58,13 +67,17 @@ function seedFromName(name: string) {
 
 export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () => void; onCreate: (options: CreateWorldOptions) => void; onPlay: () => void | Promise<void> }) {
   useLanguageStore((state) => state.language);
+  const connectionStatus = useMultiplayerStore((state) => state.status);
+  const connectionError = useMultiplayerStore((state) => state.error);
   const [draft] = useState(readEditorDraft);
-  const [options, setOptions] = useState<CreateWorldOptions>({ name: draft?.name ?? translate('Mon aventure', 'My Adventure'), mode: 'creative', template: draft ? 'custom' : 'nature', multiplayer: false, canBreak: true, canPlace: true, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true });
+  const [options, setOptions] = useState<CreateWorldOptions>({ name: draft?.name ?? translate('Mon aventure', 'My Adventure'), mode: 'creative', template: draft ? 'custom' : 'nature', multiplayer: useMultiplayerStore.getState().enabled, canBreak: true, canPlace: true, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true });
   const [tab, setTab] = useState<'world' | 'lobby' | 'code' | 'editor'>(draft ? 'editor' : 'world');
   const [source, setSource] = useState(draft?.world.source ?? DEFAULT_WORLD_SOURCE);
   const [terrain, setTerrain] = useState<CustomTerrain>(draft?.world.terrain ?? initialWorld.terrain);
   const [infiniteEditor, setInfiniteEditor] = useState(draft?.world.infinite === true);
   const [blocks, setBlocks] = useState(draft?.world.blocks ?? initialWorld.blocks);
+  const [environment, setEnvironment] = useState<CustomWorldDefinition['environment']>(draft?.world.environment);
+  const [spawns, setSpawns] = useState<NonNullable<CustomWorldDefinition['spawns']>>(draft?.world.spawns ?? []);
   const [sourceDirty, setSourceDirty] = useState(draft?.sourceDirty ?? false);
   const [message, setMessage] = useState(draft ? translate('Ton brouillon a été restauré.', 'Your draft has been restored.') : translate('Exécute le code pour voir le résultat dans l’éditeur.', 'Run the code to see the result in the editor.'));
   const [draftNotice, setDraftNotice] = useState(draft ? translate('Brouillon restauré', 'Draft restored') : '');
@@ -88,6 +101,8 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () =
       const result = createCustomWorld(source, seedFromName(options.name), (x, z) => heightAt(x, z, seedFromName(options.name)), infiniteEditor);
       setTerrain(result.terrain);
       setBlocks(result.blocks);
+      setEnvironment(result.environment);
+      setSpawns(result.spawns ?? []);
       setSourceDirty(false);
       setDraftNotice('');
       setMessage(translate(`Code exécuté : ${result.blocks.length} bloc${result.blocks.length > 1 ? 's' : ''}. Tu peux maintenant modifier la construction dans l’éditeur.`, `Code executed: ${result.blocks.length} block${result.blocks.length > 1 ? 's' : ''}. You can now edit the construction in the editor.`));
@@ -103,11 +118,20 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () =
     setSource('');
     setTerrain('flat');
     setBlocks([]);
+    setEnvironment(undefined);
+    setSpawns([]);
     setSourceDirty(false);
     setDraftNotice('');
     setMessage(translate('Zone vide : écris ton nouveau code depuis zéro, puis exécute-le.', 'Empty area: write your new code from scratch, then run it.'));
     setTab('code');
     window.requestAnimationFrame(() => document.getElementById('world-code')?.focus());
+  };
+  const loadExample = (example: string) => {
+    setSource(example);
+    setSourceDirty(true);
+    setDraftNotice('');
+    setMessage(translate('Exemple chargé. Exécute-le pour construire le monde, puis modifie-le à ta façon.', 'Example loaded. Run it to build the world, then customize it.'));
+    setTab('code');
   };
   const changeInfinite = (value: boolean) => {
     if (!value && blocks.some((block) => Math.abs(block.x) > 32 || Math.abs(block.z) > 32)) {
@@ -120,7 +144,7 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () =
     setMessage(value ? translate('Le terrain suit maintenant le joueur. Utilise Aller à X, Y, Z pour explorer le monde.', 'Terrain now follows the player. Use Go to X, Y, Z to explore the world.') : translate('Mode fini 65 × 65. Exécute le code pour vérifier les coordonnées.', 'Finite 65 × 65 mode. Run the code to check coordinates.'));
   };
   const saveDraft = () => {
-    const saved = writeEditorDraft(options.name, { version: 1, source, terrain, blocks, ...(infiniteEditor ? { infinite: true } : {}) }, sourceDirty);
+    const saved = writeEditorDraft(options.name, { version: 1, source, terrain, blocks, ...(infiniteEditor ? { infinite: true } : {}), ...(environment ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}) }, sourceDirty);
     setDraftNotice(saved ? translate('Brouillon sauvegardé', 'Draft saved') : translate('Sauvegarde impossible', 'Unable to save draft'));
     if (saved) setMessage(translate('Brouillon sauvegardé sur cet appareil. Tu peux fermer et reprendre plus tard.', 'Draft saved on this device. You can close it and resume later.'));
     return saved;
@@ -136,7 +160,7 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () =
       setMessage(translate('Donne un nom à ton monde avant de continuer.', 'Name your world before continuing.'));
       return;
     }
-    onCreate({ ...nextOptions, customWorld: nextOptions.template === 'custom' ? { version: 1, source, terrain, blocks, ...(infiniteEditor ? { infinite: true } : {}) } : undefined });
+    onCreate({ ...nextOptions, customWorld: nextOptions.template === 'custom' ? { version: 1, source, terrain, blocks, ...(infiniteEditor ? { infinite: true } : {}), ...(environment ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}) } : undefined });
   };
   const createLobbyRoom = (room: string, mode: GameplayMode | null) => submit(createLobbyOptions(options, room, mode));
   return (
@@ -185,14 +209,16 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () =
         </div>}
         {tab === 'code' && <div id="create-panel-code" role="tabpanel" aria-labelledby="create-tab-code" className="world-code-workspace">
           <div className="world-code-editor">
+            <fieldset className="world-code-sharing"><legend>{translate('Mode de jeu', 'Game mode')}</legend><label><input type="radio" name="world-code-sharing" checked={!options.multiplayer} onChange={() => change('multiplayer', false)} /> {translate('Solo', 'Solo', 'Un jugador')}</label><label><input type="radio" name="world-code-sharing" checked={options.multiplayer} onChange={() => change('multiplayer', true)} /> {translate('Multijoueur', 'Multiplayer', 'Multijugador')}</label></fieldset>
             <label htmlFor="world-code">{translate('JavaScript simplifié et sécurisé', 'Simplified and secure JavaScript')}</label>
             <textarea id="world-code" value={source} onChange={(event) => changeSource(event.target.value)} maxLength={CUSTOM_WORLD_MAX_SOURCE} spellCheck={false} autoCapitalize="off" autoCorrect="off" aria-describedby="world-code-message" placeholder={translate('Écris ton code ici depuis zéro…', 'Write your code here from scratch…')} />
-            <div className="world-code-actions"><button type="button" className="primary-button" onClick={runCode}>{translate('Exécuter le code', 'Run code')}</button><button type="button" className="secondary-button" onClick={resetCode}>{translate('Partir de zéro', 'Start over')}</button><button type="button" className="secondary-button" onClick={() => { changeSource(DEFAULT_WORLD_SOURCE); setMessage(translate('Exemple chargé. Exécute-le pour remplacer la construction.', 'Example loaded. Run it to replace the construction.')); }}>{translate('Exemple', 'Example')}</button><button type="button" className="secondary-button" onClick={() => { setSource(worldCodeFromBlocks({ terrain, blocks })); setSourceDirty(false); setDraftNotice(''); setMessage(translate('Le code correspond maintenant à la construction de l’éditeur.', 'The code now matches the editor construction.')); }}>{translate('Construction → code', 'Build → code')}</button></div>
+            <div className="world-code-actions"><button type="button" className="primary-button" onClick={runCode}>{translate('Exécuter le code', 'Run code')}</button><button type="button" className="secondary-button" onClick={resetCode}>{translate('Partir de zéro', 'Start over')}</button><button type="button" className="secondary-button" onClick={() => loadExample(DEFAULT_WORLD_SOURCE)}>{translate('Exemple', 'Example')}</button><button type="button" className="secondary-button" onClick={() => { setSource(worldCodeFromBlocks({ terrain, blocks, environment, spawns })); setSourceDirty(false); setDraftNotice(''); setMessage(translate('Le code correspond maintenant à la construction de l’éditeur.', 'The code now matches the editor construction.')); }}>{translate('Construction → code', 'Build → code')}</button></div>
+            <div className="world-code-examples"><span>{translate('Exemples complets à charger', 'Complete examples to load')}</span><div>{WORLD_CODE_EXAMPLES().map((example) => <button type="button" className="secondary-button" key={example.label} onClick={() => loadExample(example.source)}>{example.label}</button>)}</div></div>
             <p id="world-code-message" className={sourceDirty || message.startsWith('Line') ? 'world-code-message warning' : 'world-code-message'} role="status">{sourceDirty ? translate('Code modifié : exécute-le avant de créer le monde. ', 'Code changed: run it before creating the world. ') : ''}{message}</p>
           </div>
           <aside className="world-code-help">
             <h3>{translate('Commandes disponibles', 'Available commands')}</h3>
-            <dl><div><dt>terrain("plat")</dt><dd>{translate('Ou "nature" pour le paysage infini.', 'Or "nature" for an infinite landscape.')}</dd></div><div><dt>bloc(x, y, z, "pierre")</dt><dd>{translate('Pose un bloc. Ajoute ', 'Place a block. Add ')}<code>true</code>{translate(' en dernier argument pour le rendre incassable.', ' as the last argument to make it unbreakable.')}</dd></div><div><dt>remplir(x1, y1, z1, x2, y2, z2, "bois")</dt><dd>{translate('Remplit un volume. Le dernier ', 'Fill a volume. The optional last ')}<code>true</code>{translate(' facultatif protège aussi les blocs.', ' also protects blocks.')}</dd></div><div><dt>sphere(x, y, z, rayon, "verre")</dt><dd>{translate('Construit une sphère.', 'Build a sphere.')}</dd></div><div><dt>effacer(x, y, z)</dt><dd>{translate('Retire un bloc du code.', 'Remove a block from the code.')}</dd></div><div><dt>hauteur(x, z)</dt><dd>{translate('Hauteur du sol naturel.', 'Natural ground height.')}</dd></div><div><dt>aleatoire()</dt><dd>{translate('Nombre reproductible entre 0 et 1.', 'Repeatable number between 0 and 1.')}</dd></div><div><dt>ligne(x1, y1, z1, x2, y2, z2, "pierre")</dt><dd>{translate('Trace une ligne de blocs.', 'Draw a line of blocks.', 'Traza una línea de bloques.')}</dd></div><div><dt>mur(x1, y1, z1, x2, y2, z2, hauteur, "brique")</dt><dd>{translate('Construit un mur à la hauteur choisie.', 'Build a wall at the chosen height.', 'Construye un muro a la altura elegida.')}</dd></div><div><dt>cylindre(x, y, z, rayon, hauteur, "pierre")</dt><dd>{translate('Construit un cylindre plein.', 'Build a solid cylinder.', 'Construye un cilindro sólido.')}</dd></div><div><dt>pyramide(x, y, z, taille, "pierre")</dt><dd>{translate('Construit une pyramide pleine.', 'Build a solid pyramid.', 'Construye una pirámide sólida.')}</dd></div><div><dt>arbre(x, y, z)</dt><dd>{translate('Fait pousser un arbre avec tronc et feuilles.', 'Grow a tree with trunk and leaves.', 'Hace crecer un árbol con tronco y hojas.')}</dd></div><div><dt>maison(x, y, z, largeur, profondeur, hauteur, "mur", "toit")</dt><dd>{translate('Construit une maison avec porte, fenêtres, lit et coffre.', 'Build a house with door, windows, bed, and chest.', 'Construye una casa con puerta, ventanas, cama y cofre.')}</dd></div><div><dt>route(x1, y1, z1, x2, y2, z2, largeur, "beton_noir")</dt><dd>{translate('Crée une route à la largeur impaire choisie.', 'Build a road with the chosen odd width.', 'Crea una carretera con el ancho impar elegido.')}</dd></div><div><dt>champ(x, y, z, largeur, profondeur, "ble")</dt><dd>{translate('Plante des cultures alignées avec irrigation.', 'Plant aligned crops with irrigation.', 'Planta cultivos alineados con riego.')}</dd></div><div><dt>panneau(x, y, z, "Mon village")</dt><dd>{translate('Place un panneau avec ton texte.', 'Place a sign with your text.', 'Coloca un cartel con tu texto.')}</dd></div></dl>
+            <dl><div><dt>terrain("plat")</dt><dd>{translate('Ou "nature" pour le paysage infini.', 'Or "nature" for an infinite landscape.')}</dd></div><div><dt>bloc(x, y, z, "pierre")</dt><dd>{translate('Pose un bloc. Ajoute ', 'Place a block. Add ')}<code>true</code>{translate(' en dernier argument pour le rendre incassable.', ' as the last argument to make it unbreakable.')}</dd></div><div><dt>remplir(x1, y1, z1, x2, y2, z2, "bois")</dt><dd>{translate('Remplit un volume. Le dernier ', 'Fill a volume. The optional last ')}<code>true</code>{translate(' facultatif protège aussi les blocs.', ' also protects blocks.')}</dd></div><div><dt>sphere(x, y, z, rayon, "verre")</dt><dd>{translate('Construit une sphère.', 'Build a sphere.')}</dd></div><div><dt>effacer(x, y, z)</dt><dd>{translate('Retire un bloc du code.', 'Remove a block from the code.')}</dd></div><div><dt>hauteur(x, z)</dt><dd>{translate('Hauteur du sol naturel.', 'Natural ground height.')}</dd></div><div><dt>aleatoire()</dt><dd>{translate('Nombre reproductible entre 0 et 1.', 'Repeatable number between 0 and 1.')}</dd></div><div><dt>ligne(x1, y1, z1, x2, y2, z2, "pierre")</dt><dd>{translate('Trace une ligne de blocs.', 'Draw a line of blocks.', 'Traza una línea de bloques.')}</dd></div><div><dt>mur(x1, y1, z1, x2, y2, z2, hauteur, "brique")</dt><dd>{translate('Construit un mur à la hauteur choisie.', 'Build a wall at the chosen height.', 'Construye un muro a la altura elegida.')}</dd></div><div><dt>cylindre(x, y, z, rayon, hauteur, "pierre")</dt><dd>{translate('Construit un cylindre plein.', 'Build a solid cylinder.', 'Construye un cilindro sólido.')}</dd></div><div><dt>pyramide(x, y, z, taille, "pierre")</dt><dd>{translate('Construit une pyramide pleine.', 'Build a solid pyramid.', 'Construye una pirámide sólida.')}</dd></div><div><dt>arbre(x, y, z)</dt><dd>{translate('Fait pousser un arbre avec tronc et feuilles.', 'Grow a tree with trunk and leaves.', 'Hace crecer un árbol con tronco y hojas.')}</dd></div><div><dt>maison(x, y, z, largeur, profondeur, hauteur, "mur", "toit")</dt><dd>{translate('Construit une maison avec porte, fenêtres, lit et coffre.', 'Build a house with door, windows, bed, and chest.', 'Construye una casa con puerta, ventanas, cama y cofre.')}</dd></div><div><dt>route(x1, y1, z1, x2, y2, z2, largeur, "beton_noir")</dt><dd>{translate('Crée une route à la largeur impaire choisie.', 'Build a road with the chosen odd width.', 'Crea una carretera con el ancho impar elegido.')}</dd></div><div><dt>champ(x, y, z, largeur, profondeur, "ble")</dt><dd>{translate('Plante des cultures alignées avec irrigation.', 'Plant aligned crops with irrigation.', 'Planta cultivos alineados con riego.')}</dd></div><div><dt>panneau(x, y, z, "Mon village")</dt><dd>{translate('Place un panneau avec ton texte.', 'Place a sign with your text.', 'Coloca un cartel con tu texto.')}</dd></div><div><dt>boutique(x, y, z, "acheter", "pomme", 1, 5)</dt><dd>{translate('Crée une boutique : achète 1 pomme pour 5 pièces avec E. Utilise "vendre" au même endroit pour vendre et "gagner" avec seulement un prix pour recevoir des pièces.', 'Create a shop: buy 1 apple for 5 coins with E. Use "sell" to sell and "earn" with only a price to receive coins.')}</dd></div><div><dt>saison(x1, z1, x2, z2, "hiver")</dt><dd>{translate('Choisis la saison d’une zone. "saisons("printemps", "ete")" mélange les saisons selon les blocs.', 'Choose a zone’s season. "saisons("printemps", "ete")" mixes seasons by block.')}</dd></div><div><dt>donner(x, y, z, "pomme", 3)</dt><dd>{translate('Donne 3 pommes avec E. "soin(x, y, z, 4)" rend 4 vies et "teleporter(x, y, z, 20, 5, 20)" téléporte.', 'Give 3 apples with E. "soin(x, y, z, 4)" restores 4 lives and "teleporter(x, y, z, 20, 5, 20)" teleports.')}</dd></div><div><dt>animal(x, y, z, "vache") · zombie(x, y, z)</dt><dd>{translate('Fait apparaître une vache ou un zombie dans le monde.', 'Spawn a cow or a zombie in the world.')}</dd></div><div><dt>jour() · nuit() · meteo("pluie")</dt><dd>{translate('Règle le jour, la nuit ou la météo : clair, pluie ou neige.', 'Set day, night, or weather: clear, rain, or snow.')}</dd></div><div><dt>checkpoint(x, y, z) · piege(x, y, z, 2)</dt><dd>{translate('Enregistre un checkpoint ou place un piège à 2 dégâts.', 'Save a checkpoint or place a 2-damage trap.')}</dd></div><div><dt>vitesse(x, y, z, 30) · saut(x, y, z, 30) · invisible(x, y, z, 20)</dt><dd>{translate('Donne vitesse, super saut ou invisibilité pendant le temps choisi.', 'Give speed, super jump, or invisibility for the chosen time.')}</dd></div><div><dt>escalier(x, y, z, 6, "bois")</dt><dd>{translate('Construit un escalier montant de 6 blocs.', 'Build a staircase rising 6 blocks.')}</dd></div></dl>
             <p>{translate('Les variables let, les calculs, les conditions if et les boucles for sont prises en charge.', 'Variables let, calculations, if conditions, and for loops are supported.', 'Las variables let, los cálculos, las condiciones if y los bucles for son compatibles.')} {infiniteEditor ? translate('Éditeur infini : x/z libres pour explorer le monde, y de 1 à 64.', 'Infinite editor: x/z are free to explore the world, y from 1 to 64.', 'Editor infinito: x/z libres para explorar el mundo, y de 1 a 64.') : translate('Éditeur fini : x/z de −64 à 64, y de 1 à 64.', 'Finite editor: x/z from −64 to 64, y from 1 to 64.', 'Editor finito: x/z de −64 a 64, y de 1 a 64.')} {translate(`Maximum ${CUSTOM_WORLD_MAX_BLOCKS} blocs.`, `Maximum ${CUSTOM_WORLD_MAX_BLOCKS.toLocaleString('en-US')} blocks.`, `Máximo ${CUSTOM_WORLD_MAX_BLOCKS.toLocaleString('es-ES')} bloques.`)}</p>
             <label htmlFor="world-code-block">Insert block by category
               <select id="world-code-block" value={insertKind} onChange={(event) => setInsertKind(Number(event.target.value) as BlockKind)}>{EDITOR_BLOCK_CATEGORIES.map((category) => <optgroup key={category.id} label={category.name}>{category.kinds.map((kind) => <option key={kind} value={kind}>{selectionInfo(kind).name}</option>)}</optgroup>)}</select>
@@ -202,7 +228,9 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () =
           </aside>
         </div>}
         {tab === 'editor' && <div id="create-panel-editor" role="tabpanel" aria-labelledby="create-tab-editor"><WorldEditor blocks={blocks} terrain={terrain} seed={seedFromName(options.name)} onChange={(next) => { setBlocks(next); setDraftNotice(''); }} onTerrainChange={(next) => { setTerrain(next); setDraftNotice(''); }} onSaveDraft={saveDraft} draftNotice={draftNotice} infinite={infiniteEditor} onInfiniteChange={changeInfinite} /></div>}
-        <div className="create-world-submit"><span>{draftNotice || (options.template === 'custom' ? `${blocks.length} ${translate('blocs', 'blocks', 'bloques')} · ${terrain === 'flat' ? translate('terrain plat', 'flat terrain') : translate('terrain naturel', 'natural terrain')}` : translate('Ton monde sera sauvegardé dans Mes mondes.', 'Your world will be saved in My Worlds.'))}</span><button className="primary-button" type="button" onClick={() => submit()} disabled={options.template === 'custom' && sourceDirty}>{translate('Créer le monde', 'Create world')}</button></div>
+        {tab !== 'lobby' && options.multiplayer && connectionStatus === 'connecting' && <p className="multiplayer-hint" role="status">{translate('Création du monde et connexion au salon…', 'Creating the world and connecting to the room…')}</p>}
+        {tab !== 'lobby' && options.multiplayer && connectionError && <p className="multiplayer-error" role="alert">{connectionError}</p>}
+        {tab !== 'lobby' && <div className="create-world-submit"><span>{draftNotice || (options.template === 'custom' ? `${blocks.length} ${translate('blocs', 'blocks', 'bloques')} · ${terrain === 'flat' ? translate('terrain plat', 'flat terrain') : translate('terrain naturel', 'natural terrain')}` : translate('Ton monde sera sauvegardé dans Mes mondes.', 'Your world will be saved in My Worlds.'))}</span><button className="primary-button" type="button" onClick={() => submit()} disabled={options.template === 'custom' && sourceDirty || options.multiplayer && connectionStatus === 'connecting'}>{translate('Créer le monde', 'Create world')}</button></div>}
       </div>
     </MenuDialog>
   );

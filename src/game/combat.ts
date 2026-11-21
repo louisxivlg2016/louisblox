@@ -12,6 +12,7 @@ import { alertAnimalSound } from './systems/animalSoundSystem';
 import { reportAnimalSpawn } from './animalSync';
 
 export function damagePlayer(world: World, amount: number, kind: 'physical' | 'fire' = 'physical') {
+  if (useGameStore.getState().gameplayMode === 'creative') return;
   const player = world.queryFirst(Player);
   const health = player?.get(PlayerHealth);
   if (!player || !health || (kind === 'fire' && hasEffect('heatResistance'))) return;
@@ -30,7 +31,7 @@ export function findAnimalTarget(world: World, origin: Vector3, direction: Vecto
   let target: AnimalTarget | null = null;
   let closest = maxDistance;
   for (const entity of world.query(Animal, AnimalPosition, AnimalHealth)) {
-    if (entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) continue;
+    if (entity.get(AnimalHealth)!.value <= 0 || entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) continue;
     const kind = entity.get(Animal)!.kind;
     const position = entity.get(AnimalPosition)!;
     const bird = kind === 'chicken' || kind === 'duck';
@@ -59,11 +60,34 @@ export function removeAnimal(world: World, target: Entity) {
   target.destroy();
 }
 
+export function killAnimal(world: World, target: Entity, drop = true) {
+  const health = target.get(AnimalHealth);
+  const animal = target.get(Animal);
+  const position = target.get(AnimalPosition);
+  if (!health || !animal || !position || health.value <= 0) return false;
+  target.set(AnimalHealth, { value: 0 });
+  if (drop) {
+    const dropY = position.y + 0.35;
+    world.spawn(
+      MeatDrop({ kind: animal.kind }),
+      MeatDropPosition(new Vector3(position.x, dropY, position.z)),
+      MeatDropMotion({ age: 0, baseY: dropY }),
+      MeatDropMesh(),
+    );
+  }
+  if (animal.kind === 'zombie') {
+    target.set(AnimalHit, { time: 0.45, panic: 0, flashed: false, attackIn: 0, deathIn: 0.45 });
+    return true;
+  }
+  removeAnimal(world, target);
+  return true;
+}
+
 export function damageAnimal(world: World, target: Entity, amount: number, attacker?: Vector3) {
   const health = target.get(AnimalHealth);
   const animal = target.get(Animal);
   const position = target.get(AnimalPosition);
-  if (!health || !animal || !position || target.get(HorseRider)?.mounted || target.get(HorseRider)?.passenger) return false;
+  if (!health || !animal || !position || health.value <= 0 || target.get(HorseRider)?.mounted || target.get(HorseRider)?.passenger) return false;
   if (amount > 0) alertAnimalSound(world, target);
   const remaining = health.value - amount * (attacker ? attackMultiplier() : 1);
   if (remaining > 0) {
@@ -78,13 +102,5 @@ export function damageAnimal(world: World, target: Entity, amount: number, attac
     return false;
   }
 
-  const dropY = position.y + 0.35;
-  world.spawn(
-    MeatDrop({ kind: animal.kind }),
-    MeatDropPosition(new Vector3(position.x, dropY, position.z)),
-    MeatDropMotion({ age: 0, baseY: dropY }),
-    MeatDropMesh(),
-  );
-  removeAnimal(world, target);
-  return true;
+  return killAnimal(world, target);
 }

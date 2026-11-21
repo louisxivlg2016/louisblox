@@ -4,9 +4,13 @@ import type { Voxel } from './voxel';
 import type { GeneratedChunk } from './levels';
 import { CITY_CENTER_LIMIT, CITY_LIMIT } from './worldMode';
 import { generateCountrysideChunk } from './countryside';
+import { writeChurch } from './constructionTemplates';
 
 const GROUND = 5;
 const BLOCK_SIZE = 48;
+const CITY_STREET_NAMES = ['Rue de la Paix', 'Avenue Louis XIV', 'Boulevard Saint-Germain', 'Rue de Rivoli', 'Avenue de l’Opéra', 'Rue des Champs-Élysées'];
+
+export const CITY_SPAWN = { x: 3, y: GROUND + 0.51, z: 0 };
 
 function hash(x: number, z: number, seed: number) {
   let value = Math.imul(x, 374761393) + Math.imul(z, 668265263) + Math.imul(seed, 1442695041);
@@ -58,9 +62,30 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
     for (let bz = firstZ; bz <= firstZ + 2; bz++) {
       const centerX = bx * BLOCK_SIZE + 28;
       const centerZ = bz * BLOCK_SIZE + 28;
-      const church = !modern && (bx === 0 && bz === -1 || (Math.abs(bx) % 9 === 0 && Math.abs(bz) % 9 === 0 && (bx !== 0 || bz !== 0)));
+      const intersectionX = bx * BLOCK_SIZE;
+      const intersectionZ = bz * BLOCK_SIZE;
+      if (!modern || intersectionZ < 144) {
+        put(intersectionX + 9, GROUND + 1, intersectionZ + 9, BlockKind.StopSign, 'south');
+        put(intersectionX - 9, GROUND + 1, intersectionZ - 9, BlockKind.YieldSign, 'north');
+        put(intersectionX + 9, GROUND + 1, intersectionZ - 9, BlockKind.SpeedLimitSign, 'east');
+        put(intersectionX - 9, GROUND + 1, intersectionZ + 9, BlockKind.PedestrianSign, 'west');
+        put(intersectionX + 10, GROUND + 1, intersectionZ + 10, BlockKind.OneWaySign, 'south');
+        put(intersectionX - 10, GROUND + 1, intersectionZ - 10, BlockKind.ParkingSign, 'north');
+        if ((bx + bz) % 2 === 0) {
+          put(intersectionX + 10, GROUND + 1, intersectionZ - 10, BlockKind.NoEntrySign, 'east');
+          put(intersectionX - 10, GROUND + 1, intersectionZ + 10, BlockKind.DirectionSign, 'west');
+        } else {
+          put(intersectionX + 10, GROUND + 1, intersectionZ - 10, BlockKind.RoundaboutSign, 'east');
+          put(intersectionX - 10, GROUND + 1, intersectionZ + 10, BlockKind.PrioritySign, 'west');
+        }
+        const streetName = CITY_STREET_NAMES[Math.abs(bx + bz) % CITY_STREET_NAMES.length];
+        blocks.set(voxelKey(intersectionX + 8, GROUND + 1, intersectionZ + 8), { x: intersectionX + 8, y: GROUND + 1, z: intersectionZ + 8, kind: BlockKind.ParisStreetSign, facing: 'south', text: streetName });
+        blocks.set(voxelKey(intersectionX + 18, GROUND + 1, intersectionZ + 18), { x: intersectionX + 18, y: GROUND + 1, z: intersectionZ + 18, kind: BlockKind.ParisStreetSign, facing: 'north', text: streetName });
+      }
+      const church = modern && bx === 0 && bz === 0 || !modern && (bx === 0 && bz === -1 || (Math.abs(bx) % 9 === 0 && Math.abs(bz) % 9 === 0 && (bx !== 0 || bz !== 0)));
       if (church) {
-        for (const block of churchBlocks(centerX, centerZ, GROUND + 1)) put(block.x, block.y, block.z, block.kind, block.facing, block.open);
+        if (modern) for (const block of churchBlocks(centerX, centerZ, GROUND + 1)) put(block.x, block.y, block.z, block.kind, block.facing, block.open);
+        else writeChurch((x, y, z, kind, options) => put(x, y, z, kind, options?.facing), centerX, GROUND, centerZ);
         continue;
       }
       if (modern && centerZ >= 96) {
@@ -104,6 +129,27 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
             for (let y = GROUND + 1; y <= GROUND + 5; y++) put(palmX, y, palmZ, BlockKind.Wood);
             for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) if (Math.abs(dx) + Math.abs(dz) <= 2) put(palmX + dx, GROUND + 6, palmZ + dz, BlockKind.Leaves);
           }
+          for (let tier = 0; tier < 4; tier++) {
+            for (let x = centerX - halfX + tier; x <= centerX + halfX - tier; x++) for (let z = centerZ - halfZ + tier; z <= centerZ + halfZ - tier; z++) {
+              if (tier === 3 || Math.abs(x - centerX) === halfX - tier || Math.abs(z - centerZ) === halfZ - tier) put(x, GROUND + 11 + tier, z, BlockKind.ConcreteRed);
+            }
+          }
+          for (let x = centerX - 4; x <= centerX + 4; x++) {
+            put(x, GROUND + 6, centerZ - halfZ - 1, BlockKind.ConcreteWhite);
+            put(x, GROUND + 7, centerZ - halfZ - 1, BlockKind.GlassBlue);
+          }
+          for (const x of [centerX - 5, centerX + 5]) for (let y = GROUND + 2; y <= GROUND + 5; y++) put(x, y, centerZ - halfZ - 1, BlockKind.ConcreteWhite);
+          for (let x = centerX - 8; x <= centerX + 8; x++) {
+            if (Math.abs(x - centerX) <= 1) continue;
+            put(x, GROUND + 1, centerZ - halfZ - 3, BlockKind.Leaves);
+            if (x % 2 === 0) put(x, GROUND + 2, centerZ - halfZ - 3, BlockKind.Leaves);
+          }
+          for (const side of [-1, 1]) {
+            put(centerX + side * 7, GROUND + 1, centerZ + 10, BlockKind.OakPlanks);
+            put(centerX + side * 7, GROUND + 2, centerZ + 10, BlockKind.ConcreteWhite);
+            put(centerX + side * 7, GROUND + 1, centerZ + 11, BlockKind.OakPlanks);
+          }
+          for (let z = centerZ - halfZ - 5; z <= centerZ - halfZ; z++) for (let x = centerX - 1; x <= centerX + 1; x++) put(x, GROUND, z, BlockKind.GrayBrick);
         }
         continue;
       }
@@ -128,8 +174,46 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
             const foundation = localY === 0;
             const stoneBand = !modern && (localY % 4 === 0 || edgeX && edgeZ || facade % 3 === 0);
             const frame = modern && (localY % 4 === 0 || facade % 6 === 0);
-            put(x, y, z, modern ? frame ? BlockKind.ConcreteGray : accent : foundation ? BlockKind.GrayBrick : stoneBand ? BlockKind.BeigeBrick : window ? accent : wall);
+            const modernWindow = hash(x + y * 31, z - y * 17, seed + 88) > 0.86 ? BlockKind.GlassYellow : hash(x + y * 31, z - y * 17, seed + 89) > 0.5 ? BlockKind.GlassBlue : BlockKind.GlassLightBlue;
+            put(x, y, z, modern ? frame ? BlockKind.ConcreteGray : modernWindow : foundation ? BlockKind.GrayBrick : stoneBand ? BlockKind.BeigeBrick : window ? accent : wall);
           }
+        }
+      }
+      for (let y = GROUND + 2; y < height; y += 4) {
+        for (let offset = -half + 2; offset <= half - 2; offset += 4) {
+          if (modern) {
+            for (const side of [-1, 1]) {
+              put(centerX + offset, y, centerZ + side * (half + 1), BlockKind.ConcreteLightGray);
+              put(centerX + offset, y + 1, centerZ + side * (half + 1), BlockKind.GlassBlue);
+              put(centerX + side * (half + 1), y, centerZ + offset, BlockKind.ConcreteLightGray);
+              put(centerX + side * (half + 1), y + 1, centerZ + offset, BlockKind.GlassBlue);
+            }
+          } else {
+            put(centerX + offset, y, centerZ - half - 1, BlockKind.ConcreteLightGray);
+            put(centerX + offset, y + 1, centerZ - half - 1, BlockKind.ConcreteBlack);
+            put(centerX + offset - 1, y + 1, centerZ - half - 1, BlockKind.ConcreteBlack);
+            put(centerX + offset + 1, y + 1, centerZ - half - 1, BlockKind.ConcreteBlack);
+          }
+        }
+      }
+      if (modern) {
+        for (let dx = -3; dx <= 3; dx += 1) for (let dz = -2; dz <= 1; dz += 1) put(centerX + dx, GROUND + 4, centerZ - half + dz, BlockKind.ConcreteGray);
+        for (const offset of [-6, 5]) {
+          put(centerX + offset, height + 1, centerZ + 3, BlockKind.ConcreteGray);
+          put(centerX + offset, height + 2, centerZ + 3, BlockKind.ConcreteLightGray);
+          put(centerX + offset + 1, height + 1, centerZ + 3, BlockKind.ConcreteGray);
+        }
+        for (let offset = -4; offset <= 4; offset += 2) put(centerX + offset, height + 1, centerZ - 4, BlockKind.GlassBlue);
+      } else {
+        for (let offset = -half + 2; offset <= half - 2; offset += 4) {
+          put(centerX + offset, GROUND + 4, centerZ - half - 1, offset % 8 === 0 ? BlockKind.ConcreteRed : BlockKind.ConcreteGreen);
+          put(centerX + offset, GROUND + 5, centerZ - half - 1, BlockKind.ConcreteWhite);
+        }
+        for (const offset of [-8, -3, 3, 8]) for (let y = height + 3; y <= height + 5; y++) put(centerX + offset, y, centerZ + 4, BlockKind.GrayBrick);
+        for (const offset of [-7, 0, 7]) {
+          put(centerX + offset, height + 1, centerZ - half + 2, BlockKind.BeigeBrick);
+          put(centerX + offset, height + 2, centerZ - half + 2, BlockKind.GlassBlue);
+          put(centerX + offset, height + 3, centerZ - half + 2, BlockKind.ConcreteBlack);
         }
       }
       put(centerX, GROUND + 1, centerZ - half, modern ? BlockKind.DoorWhite : BlockKind.DoorBrown, 'south', false);

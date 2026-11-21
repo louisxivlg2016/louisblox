@@ -74,7 +74,7 @@ export function PiratesHud() {
           <button className="primary-button" onClick={() => { setShopOpen(false); void requestPlay(); }}>{translate('Retour au navire', 'Return to ship')}</button>
         </div>
       )}
-      {winner && <div className="pirate-winner">{translate('Victoire de l’équipage {winner === \'red\' ? \'rouge\' : \'bleu\'} !', 'The {winner === \'red\' ? \'red\' : \'blue\'} crew wins!')}<MatchResultActions /></div>}
+      {winner && <div className="pirate-winner">{translate(`Victoire de l’équipage ${winner === 'red' ? 'rouge' : 'bleu'} !`, `The ${winner} crew wins!`, `¡La tripulación ${winner === 'red' ? 'roja' : 'azul'} gana!`)}<MatchResultActions /></div>}
       {isPirateEliminated() && !winner && <div className="battle-death">{translate('Élimination définitive', 'Permanent elimination')}<span>{translate('Le trésor de ton équipage est détruit.', 'Your crew’s treasure has been destroyed.')}</span></div>}
     </>
   );

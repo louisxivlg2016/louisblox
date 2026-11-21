@@ -187,9 +187,9 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   }
   material.userData.faceFrontSign = frontSign;
   const skin = appearance.originalSkinColor || outfit === 'knight' ? null : new Color(appearance.skinColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const hair = appearance.originalHairColor || outfit === 'knight' || outfit === 'trader' || outfit === 'firefighter' ? null : new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const hair = appearance.originalHairColor || outfit === 'knight' || outfit === 'trader' || outfit === 'firefighter' || outfit === 'worker' ? null : new Color(appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const eyes = outfit === 'louis15' || outfit === 'princess' ? null : new Color(appearance.eyeColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
-  const eyebrows = outfit === 'knight' || outfit === 'firefighter' || outfit === 'trader' || outfit === 'princess' ? null : new Color(appearance.eyebrowColor ?? appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const eyebrows = outfit === 'knight' || outfit === 'firefighter' || outfit === 'worker' || outfit === 'trader' || outfit === 'princess' ? null : new Color(appearance.eyebrowColor ?? appearance.hairColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
   const uniformColor = null;
   const uniform = uniformColor ? new Color(uniformColor).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace) : null;
   const uniformMask = uniform

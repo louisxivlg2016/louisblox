@@ -8,7 +8,9 @@ import { useTradeStore } from './trading';
 import { useHomeStore } from './homes';
 import { useMultiplayerStore } from './multiplayerStore';
 import { isMultiplayerOnlyMode } from './worldMode';
-import { honk, toggleHeadlights, toggleSiren } from './vehicleControls';
+import { honk, toggleHeadlights, toggleSiren, useVehicleControls } from './vehicleControls';
+import { useConstructionStore } from './constructions';
+import { placeNextBlueprintBlock } from './blueprints';
 
 const keys = new Set<string>();
 const touchKeys = new Set<string>();
@@ -165,6 +167,22 @@ export function initInput() {
       }
       return;
     }
+    if (event.code === 'KeyC' && !event.repeat) {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLElement && event.target.isContentEditable) return;
+      const state = useGameStore.getState();
+      if (!['creative', 'survival', 'city-ancient', 'city-modern'].includes(state.gameplayMode)) return;
+      event.preventDefault();
+      const construction = useConstructionStore.getState();
+      if (construction.open) {
+        construction.setOpen(false);
+        void requestPlay();
+      } else if (state.mode === 'play') {
+        construction.setOpen(true);
+        state.setMode('pause');
+        if (document.pointerLockElement) document.exitPointerLock();
+      }
+      return;
+    }
     if (event.code === 'KeyB' && !event.repeat) {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return;
       event.preventDefault();
@@ -259,13 +277,17 @@ export function initInput() {
     }
     if (event.code === 'KeyV' && !event.repeat && useGameStore.getState().mode === 'play') {
       const riding = useGameStore.getState().riding;
+      const controls = useVehicleControls.getState();
       if (riding === 'firetruck' || riding === 'police') toggleSiren(riding);
+      else if (controls.firetruck) toggleSiren('firetruck');
+      else if (controls.police) toggleSiren('police');
     }
     if (event.code === 'KeyQ' && !event.repeat && useGameStore.getState().mode === 'play') {
       event.preventDefault();
       void import('./droppedItems').then(({ dropSelectedItem }) => dropSelectedItem());
     }
     if (event.code === 'KeyE' && !event.repeat && useGameStore.getState().mode === 'play') {
+      if (placeNextBlueprintBlock()) return;
       actions.harvest += 1;
     }
     if (event.code === 'Space' && !event.repeat && useGameStore.getState().mode === 'play') {

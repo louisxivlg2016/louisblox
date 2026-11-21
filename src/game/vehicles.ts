@@ -11,7 +11,6 @@ import { turnToward } from './rotation';
 import { isCollidable, moveVoxelCharacter } from './systems/collisionSystem';
 import { syncVehicleMotion, syncVehicleSpawn } from './vehicleSync';
 import { CABINS, canWalkInVehicle, isAnimalMount } from './vehicleTypes';
-import { stopSirens } from './vehicleControls';
 import { findInteractionTarget } from './interactionTargets';
 import { useTradeStore } from './trading';
 import { animalSeatOffset } from './mounts';
@@ -51,8 +50,8 @@ function landingGroundAt(world: World, x: number, z: number, fromY: number) {
   return isWaterBlock(water?.kind) ? Math.max(solidGround, SEA_LEVEL + 0.02) : solidGround;
 }
 
-export function spawnVehicle(world: World, kind: VehicleKind, x: number, y: number, z: number, color = '#d63935', yaw = 0, id = crypto.randomUUID(), freePlacement = false) {
-  const spawnY = freePlacement ? y : kind === 'plane' ? groundAt(world, x, z, y + 0.01) : y;
+export function spawnVehicle(world: World, kind: VehicleKind, x: number, y: number, z: number, color = '#d63935', yaw = 0, id = crypto.randomUUID(), _freePlacement = false) {
+  const spawnY = kind === 'boat' ? y : groundAt(world, x, z, y + 3);
   const entity = world.spawn(
     Vehicle({ id, color, kind }),
     VehiclePosition(new Vector3(x, spawnY, z)),
@@ -114,7 +113,13 @@ export function vehicleInteractionPosition(vehicle: Entity) {
 
 export function vehicleSeatPosition(vehicle: Entity, kind: VehicleKind, role: SeatRole, seat = 0) {
   const offset = new Vector3(...seatOffset(kind, role, seat));
-  if (kind === 'car' && vehicle.get(Vehicle)?.color.toLowerCase() === '#347cd0') offset.x *= -1;
+  if (kind === 'car' && vehicle.get(Vehicle)?.color.toLowerCase() === '#347cd0') {
+    offset.x *= -1;
+    if (role === 'driver') {
+      offset.y = 1.2;
+      offset.z = 0;
+    }
+  }
   return vehicleLocalPosition(vehicle, offset);
 }
 
@@ -179,7 +184,7 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
       : kind === 'camel' ? role === 'passenger' ? translate('Passager du chameau · E : descendre', 'Camel passenger · E: dismount') : guidedCamel ? translate('Chameau attaché au marchand · Il guide le trajet · E : descendre', 'Camel tied to trader · he leads the journey · E: dismount') : translate('Chameau · WASD / flèches : le guider · Espace : sauter · E : descendre', 'Camel · WASD / arrows: guide · Space: jump · E: dismount')
         : walkable ? translate('Passager · WASD / flèches : marcher dans le véhicule · E : descendre · Le véhicule reste arrêté sans conducteur.', 'Passenger · WASD / arrows: walk inside vehicle · E: exit · The vehicle stays still without a driver.')
         : role === 'passenger' ? translate('Passager · E : descendre · Le véhicule reste arrêté sans conducteur.', 'Passenger · E: exit · The vehicle stays still without a driver.')
-          : kind === 'plane' ? translate('WASD : piloter · Espace/C : monter/descendre · E : sortir', 'WASD: pilot · Space/C: ascend/descend · E: exit')
+          : kind === 'plane' ? translate('WASD : piloter · Espace/N : monter/descendre · E : sortir', 'WASD: pilot · Space/N: ascend/descend · E: exit')
             : kind === 'cannon' ? translate('Clic gauche : tirer · Caméra : viser · E : descendre', 'Left click: fire · Camera: aim · E: exit')
               : kind === 'carriage' ? translate('Cocher · WASD / flèches : guider les chevaux · E : descendre', 'Carriage driver · WASD / arrows: guide horses · E: exit')
                 : translate('WASD / flèches : conduire · E : descendre', 'WASD / arrows: drive · E: exit'),
@@ -193,7 +198,6 @@ export function dismount(world: World) {
   const position = player?.get(PlayerPosition);
   const body = player?.get(PlayerBody)?.value;
   if (!player || !mount?.vehicle || !position) return false;
-  stopSirens();
   player.get(PlayerCollider)?.value?.setEnabled(true);
   const vehicle = mount.vehicle;
   const vehiclePosition = isAnimalMount(mount.kind) ? vehicle.get(AnimalPosition) : vehicle.get(VehiclePosition);
@@ -309,7 +313,7 @@ function moveMount(world: World, position: Vector3, yaw: number, speed: number, 
   const leading = speed >= 0 ? halfLength : -halfLength;
   const frontX = x - Math.sin(yaw) * leading;
   const frontZ = z - Math.cos(yaw) * leading;
-  const ground = Math.max(groundAt(world, x, z, position.y + 0.05), groundAt(world, frontX, frontZ, position.y + 0.05));
+  const ground = Math.max(groundAt(world, x, z, position.y + 1.01), groundAt(world, frontX, frontZ, position.y + 1.01));
   if (ground > position.y + 1.01) return false;
   const velocityY = motion ? Math.max(-30, motion.velocityY - 24 * dt) : 0;
   const y = ground < position.y ? Math.max(ground, position.y + velocityY * dt) : ground;
@@ -406,9 +410,16 @@ export function vehicleMovementSystem(world: World, dt: number) {
       const steering = useVehicleSteeringStore.getState();
       useVehicleSteeringStore.setState({ angle: turnToward(steering.angle, 0, dt * 7) });
     }
+    if (vehicle.kind !== 'plane' && vehicle.kind !== 'boat') {
+      const ground = groundAt(world, position.x, position.z, position.y + 1.01);
+      if (ground > position.y) {
+        position.y = ground;
+        motion.velocityY = 0;
+      }
+    }
     if (vehicle.kind === 'plane') {
-      if (active && (isDown('Space') || isDown('KeyC'))) mount.landing = false;
-      const vertical = active ? Number(isDown('Space')) - Number(isDown('KeyC')) - Number(landing) : 0;
+      if (active && (isDown('Space') || isDown('KeyN'))) mount.landing = false;
+      const vertical = active ? Number(isDown('Space')) - Number(isDown('KeyN')) - Number(landing) : 0;
       if (motion.speed !== 0 || vertical !== 0) {
         const movement = movePlane(world, position, motion.yaw, motion.speed, dt, vertical, landing);
         if (!movement || movement === 'landed') motion.speed = 0;

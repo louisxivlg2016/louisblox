@@ -52,11 +52,12 @@ export function fireSystem(world: World, dt: number) {
   const blocks = getBlockIndex(world);
   const flame = blocks.get(voxelKey(Math.round(player.x), Math.round(player.y + 0.2), Math.round(player.z)));
   const touchingFire = flame?.kind === BlockKind.Campfire || flame?.kind === BlockKind.Wildfire;
+  const trap = flame?.shop?.action === 'trap';
   const damageIn = (fireDamageClocks.get(world) ?? 0) + dt;
-  if (touchingFire && damageIn >= 1) {
-    damagePlayer(world, 1, 'fire');
+  if ((touchingFire || trap) && damageIn >= 1) {
+    damagePlayer(world, trap ? Math.max(1, flame.shop?.price ?? 1) : 1, trap ? 'physical' : 'fire');
     fireDamageClocks.set(world, 0);
-  } else fireDamageClocks.set(world, touchingFire ? damageIn : 0);
+  } else fireDamageClocks.set(world, touchingFire || trap ? damageIn : 0);
   fireHazardSystem(world, dt);
   const fires = world.query(Fire, FirePosition);
   if (fires.length === 0) return;

@@ -13,6 +13,8 @@ import music8Url from '../../son/music8.mp4';
 import whistleUrl from '../../son/siflet.mp3';
 import fireSirenUrl from '../../son/sirene-de-pompier.mp3';
 import policeSirenUrl from '../../son/sirene-de-police.mp3';
+import carHornUrl from '../../klaxon-bruit.mp3';
+import fireHornUrl from '../../camion-pompier-bruit.mp3';
 import breakBlockUrl from '../../son/son-de-casse-un-bloc.mp3';
 import breakDirtUrl from '../../son/casse-un-bloc-de-terre.mp3';
 import vehicleCarUrl from '../../son-de-voiture.mp3';
@@ -177,7 +179,7 @@ export function initAudio() {
 }
 
 export type SoundEffect = 'whistle' | 'fireSiren' | 'policeSiren' | 'breakBlock' | 'breakDirt' | 'breakGlass' | 'breakWood' | 'vehicleCar' | 'vehicleTrain' | 'vehicleMetro' | 'vehiclePlane' | 'gunshot' | 'ball' | 'explosion' | 'fire' | 'eat' | 'walk' | 'placeBlock' | 'waterSplash'
-  | 'animal_duck' | 'animal_horse' | 'animal_pig' | 'animal_sheep' | 'animal_cow' | 'animal_elephant' | 'animal_ocelot' | 'animal_wolf' | 'animal_bear' | 'animal_chicken';
+  | 'animal_duck' | 'animal_horse' | 'animal_pig' | 'animal_sheep' | 'animal_cow' | 'animal_elephant' | 'animal_ocelot' | 'animal_wolf' | 'animal_bear' | 'animal_chicken' | 'carHorn' | 'fireHorn';
 
 const soundUrls: Record<SoundEffect, string> = {
   whistle: whistleUrl,
@@ -209,6 +211,8 @@ const soundUrls: Record<SoundEffect, string> = {
   animal_wolf: wolfSoundUrl,
   animal_bear: bearSoundUrl,
   animal_chicken: chickenSoundUrl,
+  carHorn: carHornUrl,
+  fireHorn: fireHornUrl,
 };
 
 const animalEffects: Partial<Record<AnimalKind, SoundEffect>> = {
@@ -253,27 +257,8 @@ export function playSound(name: SoundEffect, volume = 0.5) {
   return element;
 }
 
-let hornContext: AudioContext | null = null;
-
-export function playCarHorn() {
-  if (!useAudioSettings.getState().sounds || typeof window === 'undefined') return;
-  hornContext ??= new AudioContext();
-  const context = hornContext;
-  void context.resume();
-  const start = context.currentTime;
-  for (const frequency of [390, 490]) {
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = 'square';
-    oscillator.frequency.setValueAtTime(frequency, start);
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(0.12, start + 0.025);
-    gain.gain.setValueAtTime(0.12, start + 0.3);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.42);
-    oscillator.connect(gain).connect(context.destination);
-    oscillator.start(start);
-    oscillator.stop(start + 0.44);
-  }
+export function playCarHorn(kind: 'car' | 'firetruck' = 'car') {
+  return playSound(kind === 'firetruck' ? 'fireHorn' : 'carHorn', 0.65);
 }
 
 export function animalSoundEffect(kind: AnimalKind) {

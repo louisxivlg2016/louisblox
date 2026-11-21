@@ -8,10 +8,11 @@ import { battleSpawn, generateBattleChunk } from './battleArena';
 import { generatePirateChunk, pirateSpawn } from './pirates';
 import { spawnPirateCannons } from './pirateCannons';
 import { footballSpawn, generateFootballChunk } from './footballArena';
-import { generateMazeChunk, mazeSpawn } from './maze';
+import { generateMazeChunk } from './maze';
+import { mazePlaygroundSpawn } from './mazePlayground';
 import type { GameplayMode } from './worldMode';
 import { CITY_CENTER_LIMIT, isCityMode, isMinigameMode } from './worldMode';
-import { generateCityChunk } from './cities';
+import { CITY_SPAWN, generateCityChunk } from './cities';
 import { spawnCountrysideAnimals } from './countryside';
 import { generateVillageBlocks } from './villages';
 import { spawnAnimal, spawnChunkAnimals } from './animals';
@@ -42,8 +43,9 @@ import { createCustomWorld, DEFAULT_WORLD_SOURCE, sanitizeCustomWorld } from './
 import { initTaming } from './taming';
 import { translate } from './language';
 import { isSeason, useSeasonStore } from './seasons';
+import { DAY_DURATION } from './dayNight';
 
-export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; textSize?: number; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean; waterlogged?: boolean; floodSource?: boolean } | null;
+export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; textSize?: number; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean; waterlogged?: boolean; floodSource?: boolean; shop?: Voxel['shop']; season?: Voxel['season'] } | null;
 export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: VehicleKind };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
@@ -63,12 +65,17 @@ export type WorldSave = {
   vehicles?: SavedCar[];
   saddledHorses?: SavedHorse[];
   apples: number;
+  coins?: number;
   meat?: Record<import('./animals').AnimalKind, number>;
   elapsed: number;
   edits: Array<[string, Array<[string, ChunkEdit]>]>;
   protection?: WorldProtection;
   paint?: import('./paintball').SavedPaintStroke[];
   season?: import('./seasons').Season;
+  mixedSeasons?: import('./seasons').Season[];
+  checkpoint?: { x: number; y: number; z: number };
+  revision?: number;
+  savedAt?: number;
 };
 
 type SavedTrader = { data: { homeX: number; homeZ: number; targetX: number; targetZ: number; phase: number; walking: boolean; health: number; panic: number; fireIn: number }; position: Vector3; yaw: number };
@@ -190,7 +197,7 @@ export function snapshotSaddledHorses(world: World): SavedHorse[] {
   return horses;
 }
 
-function touchChunk(entity: Entity | undefined) {
+export function touchChunk(entity: Entity | undefined) {
   if (!entity) return;
   const chunk = entity.get(Chunk);
   if (chunk) entity.set(Chunk, { revision: chunk.revision + 1 });
@@ -227,6 +234,8 @@ function blockEdit(block: Voxel): ChunkEdit {
   if (block.protected === true) edit.protected = true;
   if (block.waterlogged === true) edit.waterlogged = true;
   if (block.floodSource === true) edit.floodSource = true;
+  if (block.shop !== undefined) edit.shop = block.shop;
+  if (block.season !== undefined) edit.season = block.season;
   return Object.keys(edit).length === 1 ? block.kind : edit;
 }
 
@@ -300,9 +309,12 @@ export function loadChunk(world: World, cx: number, cz: number) {
       else {
         const [x, y, z] = position.split(',').map(Number);
         const data = typeof kind === 'number' ? { kind, open: false } : kind;
-        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing, text: typeof data.text === 'string' ? data.text.replace(/\r/g, '').slice(0, 120) : undefined, textSize: data.textSize === undefined ? undefined : cleanSignTextSize(data.textSize), food: data.food, meat: data.meat, protected: data.protected, waterlogged: data.waterlogged, floodSource: data.floodSource });
+        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing, text: typeof data.text === 'string' ? data.text.replace(/\r/g, '').slice(0, 120) : undefined, textSize: data.textSize === undefined ? undefined : cleanSignTextSize(data.textSize), food: data.food, meat: data.meat, protected: data.protected, waterlogged: data.waterlogged, floodSource: data.floodSource, shop: data.shop, season: data.season });
       }
     }
+  }
+  for (const block of blockMap.values()) {
+    if (isPirateSeabed(block)) block.protected = true;
   }
   if (template !== 'custom') {
     for (const [position, block] of blockMap) {
@@ -408,7 +420,7 @@ function unloadChunk(world: World, entity: Entity) {
   data.bombs = [];
   data.saplings = [];
   state.chunkCache.set(chunkKey(chunk.x, chunk.z), { blocks: data.blocks, water: data.water });
-  if (state.chunkCache.size > 48) state.chunkCache.delete(state.chunkCache.keys().next().value!);
+  if (state.chunkCache.size > 160) state.chunkCache.delete(state.chunkCache.keys().next().value!);
   state.chunks.delete(chunkKey(chunk.x, chunk.z));
   entity.destroy();
   touchNeighbors(state, chunk.x, chunk.z);
@@ -474,7 +486,12 @@ export function getWorldSeed(world: World) {
   return stateFor(world).seed;
 }
 
+function isPirateSeabed(block: Voxel) {
+  return useGameStore.getState().gameplayMode === 'pirates' && block.kind === BlockKind.Sand && block.y === 2 && Math.abs(block.x) <= 48 && Math.abs(block.z) <= 48;
+}
+
 export function removeVoxel(world: World, hit: VoxelHit, authoritative = false) {
+  if (isPirateSeabed(hit.block)) return;
   if (!authoritative && (hit.block.protected === true || !canEditAt(hit.x, hit.z, 'break'))) return;
   const state = stateFor(world);
   const cx = chunkCoordinate(hit.x);
@@ -505,7 +522,7 @@ export function explodeVoxels(world: World, x: number, y: number, z: number, rad
       let changed = false;
       for (const block of data.blocks) {
         const distance = Math.hypot(block.x - x, block.y - y, block.z - z);
-        if (distance <= radius && block.kind !== BlockKind.Bedrock && block.protected !== true && !(useGameStore.getState().gameplayMode === 'pirates' && block.kind === BlockKind.Chest)) {
+        if (distance <= radius && block.kind !== BlockKind.Bedrock && block.protected !== true && !isPirateSeabed(block) && !(useGameStore.getState().gameplayMode === 'pirates' && block.kind === BlockKind.Chest)) {
           const position = voxelKey(block.x, block.y, block.z);
           clearPaintSplashAt(world, block.x, block.y, block.z);
           state.blocks.delete(position);
@@ -742,6 +759,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   const restore = saved && (saved.version === 1 || saved.version === 2 || saved.version === 3 || saved.version === 4 || saved.version === 5) ? saved : null;
   useEffectStore.getState().reset();
   useSeasonStore.getState().setSeason(isSeason(restore?.season) ? restore.season : 'auto');
+  useSeasonStore.getState().setMixedSeasons(restore?.mixedSeasons?.filter(isSeason) ?? []);
   const worldTemplate = restore?.template ?? (restore ? restore.gameplayMode === 'city-ancient' || restore.gameplayMode === 'city-modern' ? restore.gameplayMode : 'nature' : useGameStore.getState().worldTemplate);
   const customWorld = worldTemplate === 'custom' ? (restore ? sanitizeCustomWorld(restore.customWorld) : sanitizeCustomWorld(useGameStore.getState().customWorld)) ?? createCustomWorld(DEFAULT_WORLD_SOURCE, restore?.seed ?? 73421) : null;
   Object.assign(useGameStore.getState(), { worldTemplate, customWorld });
@@ -770,16 +788,18 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   initTaming(world);
   const restorePosition = restore !== null && restore.version >= 2;
   const gameplayMode = restore?.gameplayMode ?? (restore ? 'creative' : useGameStore.getState().gameplayMode);
-  const spawn = restore && restorePosition
+  const city = worldTemplate === 'city-ancient' || worldTemplate === 'city-modern';
+  const legacyCitySignSpawn = city && restore !== null && Math.hypot(restore.player.x, restore.player.z) < 1;
+  const spawn = restore && restorePosition && !legacyCitySignSpawn
     ? { x: restore.player.x, y: restore.player.y, z: restore.player.z }
-    : gameplayMode === 'pirates' ? pirateSpawn('red') : gameplayMode === 'football' ? footballSpawn(null) : gameplayMode === 'maze' ? mazeSpawn(0) : gameplayMode === 'battle' ? battleSpawn(null) : worldTemplate === 'city-ancient' || worldTemplate === 'city-modern' ? { x: 0, y: 5.51, z: 0 } : worldTemplate === 'custom' ? customWorldSpawn(customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, seed), seed) : safeSpawnAt(0, 0, seed);
+    : gameplayMode === 'pirates' ? pirateSpawn('red') : gameplayMode === 'football' ? footballSpawn(null) : gameplayMode === 'maze' ? mazePlaygroundSpawn(0) : gameplayMode === 'battle' ? battleSpawn(null) : city ? { ...CITY_SPAWN } : worldTemplate === 'custom' ? customWorldSpawn(customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, seed), seed) : safeSpawnAt(0, 0, seed);
   world.spawn(
     Player,
     PlayerBody(),
     PlayerCollider(),
     PlayerMesh(),
     PlayerMount(),
-    PlayerHealth({ value: restore?.lives ?? 10, max: 10 }),
+    PlayerHealth({ value: gameplayMode === 'creative' ? 10 : restore?.lives ?? 10, max: 10 }),
     PlayerPosition(new Vector3(spawn.x, spawn.y, spawn.z)),
     PlayerVelocity(),
     PlayerState({
@@ -791,6 +811,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   world.spawn(BlockTarget(), TargetMesh());
   const environmentEntity = world.spawn(Environment(), RainMaterial(), SnowMaterial());
   if (restore) environmentEntity.get(Environment)!.elapsed = restore.elapsed;
+  if (customWorld?.environment?.time) environmentEntity.get(Environment)!.elapsed = customWorld.environment.time === 'night' ? (0.88 - 0.38) * DAY_DURATION : 0;
   const hotbar = restore?.hotbar?.length === 10 && restore.hotbar.every((kind) => kind === null || isSelectedKind(kind))
     ? restore.hotbar.map((kind) => kind === null ? null : normalizePaintballGun(kind))
     : useGameStore.getState().hotbarSlots;
@@ -813,8 +834,10 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     ridingRole: null,
     seatChoice: null,
     bookOpen: false,
-    lives: restore?.lives ?? 10,
+    lives: gameplayMode === 'creative' ? 10 : restore?.lives ?? 10,
     apples: restore?.apples ?? 0,
+    coins: restore?.coins ?? 0,
+    checkpoint: restore?.checkpoint ?? null,
     flying: restore?.player.flying ?? false,
     notice: '',
   });
@@ -829,5 +852,6 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   }
   if (gameplayMode === 'pirates') spawnPirateCannons(world);
   for (let index = 0; index < 9; index += 1) streamChunks(world, spawn.x, spawn.z);
+  for (const animal of customWorld?.spawns ?? []) spawnAnimal(world, animal.kind, animal.x, animal.y, animal.z, seed);
   return { spawn };
 }

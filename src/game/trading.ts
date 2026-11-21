@@ -95,6 +95,19 @@ export function beginTraderStory(traderId: import('koota').Entity) {
   });
 }
 
+export function viewTraderOffers(world: World) {
+  const traderId = useTradeStore.getState().traderId;
+  if (traderId) {
+    traderId.set(Trader, { walking: false });
+    for (const camel of world.query(CamelLeash)) {
+      if (camel.get(CamelLeash)?.trader !== traderId) continue;
+      camel.set(AnimalMotion, { speed: 0, running: false });
+    }
+  }
+  useTradeStore.getState().setView('offers');
+  useGameStore.getState().setMode('pause');
+}
+
 export function openTrader(traderId: import('koota').Entity) {
   const trader = traderId.get(Trader);
   const villager = trader?.villager === true;

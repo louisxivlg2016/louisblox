@@ -6,7 +6,7 @@ import { CROP_KINDS } from './extraBlocks';
 import type { Voxel } from './voxel';
 
 export const CHUNK_SIZE = 16;
-export const VIEW_DISTANCE = 1;
+export const VIEW_DISTANCE = 5;
 export const SEA_LEVEL = 5;
 export const MIN_WORLD_Y = -64;
 export const MAX_BUILD_Y = Number.MAX_SAFE_INTEGER;
@@ -166,12 +166,12 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
   const maxX = minX + CHUNK_SIZE;
   const maxZ = minZ + CHUNK_SIZE;
 
-  const put = (x: number, y: number, z: number, kind: BlockKind, overwrite = true) => {
+  const put = (x: number, y: number, z: number, kind: BlockKind, overwrite = true, growth?: number) => {
     if (x < minX || x >= maxX || z < minZ || z >= maxZ || y < MIN_WORLD_Y || y > MAX_BUILD_Y) return;
     const treePart = kind === BlockKind.Wood || kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves || kind === BlockKind.JungleVine || kind === BlockKind.Apple;
     if (treePart && biomeAt(x, z, seed) === 'winter' && heightAt(x, z, seed) > 14) return;
     const key = voxelKey(x, y, z);
-    if (overwrite || !blocks.has(key)) blocks.set(key, { x, y, z, kind });
+    if (overwrite || !blocks.has(key)) blocks.set(key, { x, y, z, kind, ...(growth !== undefined ? { growth } : {}) });
   };
 
   for (let x = minX; x < maxX; x += 1) {
@@ -199,7 +199,10 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
       if (height < SEA_LEVEL) {
         water.push({ x, z });
         for (let y = height + 1; y <= SEA_LEVEL; y += 1) put(x, y, z, BlockKind.Water);
-        if (biome === 'winter') put(x, SEA_LEVEL, z, BlockKind.Ice);
+        if (biome === 'winter') {
+          put(x, SEA_LEVEL, z, BlockKind.Ice);
+          put(x, SEA_LEVEL + 1, z, BlockKind.CalmWater);
+        }
       }
     }
   }

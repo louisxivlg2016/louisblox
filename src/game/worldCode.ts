@@ -1,6 +1,10 @@
 import { BLOCK_INFO, BlockKind, voxelKey } from './voxel';
 import type { Voxel } from './voxel';
 import { translate } from './language';
+import { isSelectedKind, ITEM_META, selectionInfo } from './items';
+import type { SelectedKind } from './items';
+import { isSeason } from './seasons';
+import type { Season } from './seasons';
 
 export const CUSTOM_WORLD_RADIUS = 64;
 export const CUSTOM_WORLD_MAX_Y = 64;
@@ -9,12 +13,15 @@ export const CUSTOM_WORLD_MAX_SOURCE = 240000;
 export const INFINITE_EDITOR_COORDINATE = 1000000000;
 
 export type CustomTerrain = 'flat' | 'natural';
+export type CustomEntitySpawn = { kind: import('./animals').AnimalKind; x: number; y: number; z: number };
 export type CustomWorldDefinition = {
   version: 1;
   terrain: CustomTerrain;
   source: string;
   blocks: Voxel[];
   infinite?: boolean;
+  environment?: { time?: 'day' | 'night'; weather?: 'clear' | 'rain' | 'snow' };
+  spawns?: CustomEntitySpawn[];
 };
 
 export const DEFAULT_WORLD_SOURCE = `terrain("plat");
@@ -296,15 +303,24 @@ class Scope {
   }
 }
 
-type CompiledWorld = Pick<CustomWorldDefinition, 'terrain' | 'blocks'>;
+type CompiledWorld = Pick<CustomWorldDefinition, 'terrain' | 'blocks' | 'environment' | 'spawns'>;
 
 export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x: number, z: number) => number = () => 0, infinite = false): CompiledWorld {
   if (typeof source !== 'string' || source.length > CUSTOM_WORLD_MAX_SOURCE) throw new Error(translate(`Le code est limité à ${CUSTOM_WORLD_MAX_SOURCE} caractères.`, `Code is limited to ${CUSTOM_WORLD_MAX_SOURCE} characters.`));
   const program = new WorldCodeParser(tokenize(source)).parse();
   const blocks = new Map<string, Voxel>();
+  const spawns: CustomEntitySpawn[] = [];
+  const environment: CustomWorldDefinition['environment'] = {};
   let terrain: CustomTerrain = 'flat';
   let operations = 0;
   let randomState = seed >>> 0;
+  let mixedSeasons: Season[] = [];
+  const seasonZones: Array<{ minX: number; maxX: number; minZ: number; maxZ: number; season: Season }> = [];
+  const seasonFor = (x: number, z: number): Season | undefined => {
+    const zone = seasonZones.find((candidate) => x >= candidate.minX && x <= candidate.maxX && z >= candidate.minZ && z <= candidate.maxZ);
+    if (zone) return zone.season;
+    return mixedSeasons.length > 0 ? mixedSeasons[Math.abs(x + z) % mixedSeasons.length] : undefined;
+  };
   const tick = (line?: number) => {
     operations += 1;
     if (operations > 250000) throw new Error(translate(`Ligne ${line ?? 1} : le code fait trop d’opérations. Réduis les boucles.`, `Line ${line ?? 1}: code performs too many operations. Reduce the loops.`));
@@ -332,11 +348,26 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
     if (result === undefined) throw new Error(translate(`Ligne ${line} : bloc « ${value} » inconnu. Choisis un nom dans l’éditeur.`, `Line ${line}: unknown block “${value}”. Choose a name in the editor.`));
     return result;
   };
+  const shopItem = (value: Value, line: number): SelectedKind => {
+    if (typeof value !== 'string') throw new Error(translate(`Ligne ${line} : écris le nom de l’objet entre guillemets.`, `Line ${line}: write the item name in quotes.`));
+    if (isSelectedKind(value)) return value;
+    for (const [id, meta] of Object.entries(ITEM_META)) if (identifier(id) === identifier(value) || identifier(meta.name) === identifier(value)) return id as SelectedKind;
+    const block = resolveWorldBlock(value);
+    if (block !== undefined) return block;
+    throw new Error(translate(`Ligne ${line} : objet « ${value} » inconnu.`, `Line ${line}: unknown item “${value}”.`));
+  };
+  const seasonName = (value: Value, line: number): Season => {
+    const names: Record<string, Season> = { printemps: 'spring', spring: 'spring', ete: 'summer', summer: 'summer', automne: 'autumn', autumn: 'autumn', hiver: 'winter', winter: 'winter' };
+    const season = typeof value === 'string' ? names[identifier(value)] : undefined;
+    if (!season) throw new Error(translate(`Ligne ${line} : choisis printemps, ete, automne ou hiver.`, `Line ${line}: choose spring, summer, autumn, or winter.`));
+    return season;
+  };
   const put = (x: number, y: number, z: number, block: BlockKind, line: number, protectedBlock = false) => {
     tick(line);
     const key = voxelKey(x, y, z);
     if (!blocks.has(key) && blocks.size >= CUSTOM_WORLD_MAX_BLOCKS) throw new Error(translate(`Ligne ${line} : la construction est limitée à ${CUSTOM_WORLD_MAX_BLOCKS} blocs.`, `Line ${line}: construction is limited to ${CUSTOM_WORLD_MAX_BLOCKS} blocks.`));
-    blocks.set(key, { x, y, z, kind: block, ...(protectedBlock ? { protected: true } : {}) });
+    const season = seasonFor(x, z);
+    blocks.set(key, { x, y, z, kind: block, ...(protectedBlock ? { protected: true } : {}), ...(season ? { season } : {}) });
   };
   const arity = (args: Value[], count: number, name: string, line: number) => {
     if (args.length !== count) throw new Error(`Ligne ${line} : ${name} attend ${count} arguments.`);
@@ -348,6 +379,145 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
       const value = args[0];
       if (value !== 'plat' && value !== 'nature') throw new Error(`Ligne ${line} : terrain accepte « plat » ou « nature ».`);
       terrain = value === 'nature' ? 'natural' : 'flat';
+      return;
+    }
+    if (name === 'saisons') {
+      if (args.length < 1 || args.length > 4) throw new Error(translate(`Ligne ${line} : saisons attend entre 1 et 4 saisons.`, `Line ${line}: seasons expects between 1 and 4 seasons.`));
+      mixedSeasons = args.map((value) => seasonName(value, line));
+      for (const block of blocks.values()) {
+        const season = seasonFor(block.x, block.z);
+        if (season) block.season = season;
+        else delete block.season;
+      }
+      return;
+    }
+    if (name === 'saison') {
+      arity(args, 5, name, line);
+      const x1 = integer(args[0], 'x1', line);
+      const z1 = integer(args[1], 'z1', line);
+      const x2 = integer(args[2], 'x2', line);
+      const z2 = integer(args[3], 'z2', line);
+      const season = seasonName(args[4], line);
+      seasonZones.push({ minX: Math.min(x1, x2), maxX: Math.max(x1, x2), minZ: Math.min(z1, z2), maxZ: Math.max(z1, z2), season });
+      for (const block of blocks.values()) {
+        const next = seasonFor(block.x, block.z);
+        if (next) block.season = next;
+        else delete block.season;
+      }
+      return;
+    }
+    if (name === 'checkpoint') {
+      arity(args, 3, name, line);
+      const [x, y, z] = position(args, 0, line);
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: 'checkpoint' }, text: 'Enregistrer le checkpoint' });
+      return;
+    }
+    if (name === 'message') {
+      arity(args, 4, name, line);
+      const [x, y, z] = position(args, 0, line);
+      if (typeof args[3] !== 'string') throw new Error(translate(`Ligne ${line} : écris le message entre guillemets.`, `Line ${line}: write the message in quotes.`));
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: 'message' }, text: args[3].slice(0, 120) });
+      return;
+    }
+    if (name === 'vitesse' || name === 'saut' || name === 'invisible') {
+      arity(args, 4, name, line);
+      const [x, y, z] = position(args, 0, line);
+      const duration = integer(args[3], 'durée', line);
+      if (duration < 1 || duration > 3600) throw new Error(translate(`Ligne ${line} : la durée doit être entre 1 et 3600 secondes.`, `Line ${line}: duration must be between 1 and 3600 seconds.`));
+      const effect = name === 'vitesse' ? 'speed' : name === 'saut' ? 'jump' : 'invisibility';
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: 'effect', effect, price: duration }, text: `${name} · ${duration} secondes` });
+      return;
+    }
+    if (name === 'piege') {
+      arity(args, 4, name, line);
+      const [x, y, z] = position(args, 0, line);
+      const damage = integer(args[3], 'dégâts', line);
+      if (damage < 1 || damage > 10) throw new Error(translate(`Ligne ${line} : les dégâts doivent être entre 1 et 10.`, `Line ${line}: damage must be between 1 and 10.`));
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: 'trap', price: damage }, text: `Piège · ${damage} dégâts` });
+      return;
+    }
+    if (name === 'escalier') {
+      if (args.length !== 5 && args.length !== 6) throw new Error(translate(`Ligne ${line} : escalier attend x, y, z, hauteur et bloc.`, `Line ${line}: stairs expects x, y, z, height, and block.`));
+      const [x, y, z] = position(args, 0, line);
+      const height = integer(args[3], 'hauteur', line);
+      if (height < 1 || height > 32) throw new Error(translate(`Ligne ${line} : la hauteur doit être entre 1 et 32.`, `Line ${line}: height must be between 1 and 32.`));
+      const material = kind(args[4], line);
+      const block = material === BlockKind.Wood ? BlockKind.StairOak : material;
+      if (block < BlockKind.StairOak || block > BlockKind.StairBedrock) throw new Error(translate(`Ligne ${line} : choisis un bloc de type escalier.`, `Line ${line}: choose a stair block.`));
+      for (let index = 0; index < height; index += 1) put(x, y + index, z - index, block, line, args[5] === true);
+      return;
+    }
+    if (name === 'donner') {
+      arity(args, 5, name, line);
+      const [x, y, z] = position(args, 0, line);
+      const item = shopItem(args[3], line);
+      const count = integer(args[4], 'quantité', line);
+      if (count < 1 || count > 999) throw new Error(translate(`Ligne ${line} : la quantité doit être entre 1 et 999.`, `Line ${line}: count must be between 1 and 999.`));
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: 'gift', item, count }, text: `Recevoir ${selectionInfo(item).name} ×${count}` });
+      return;
+    }
+    if (name === 'soin') {
+      arity(args, 4, name, line);
+      const [x, y, z] = position(args, 0, line);
+      const amount = integer(args[3], 'soin', line);
+      if (amount < 1 || amount > 10) throw new Error(translate(`Ligne ${line} : le soin doit être entre 1 et 10.`, `Line ${line}: healing must be between 1 and 10.`));
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: 'heal', price: amount }, text: `Récupérer ${amount} vies` });
+      return;
+    }
+    if (name === 'teleporter') {
+      arity(args, 6, name, line);
+      const [x, y, z] = position(args, 0, line);
+      const [dx, dy, dz] = position(args, 3, line);
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: 'teleport', destination: { x: dx, y: dy, z: dz } }, text: `Téléporter vers ${dx}, ${dy}, ${dz}` });
+      return;
+    }
+    if (name === 'animal' || name === 'zombie') {
+      const [x, y, z] = position(args, 0, line);
+      if (spawns.length >= 200) throw new Error(translate(`Ligne ${line} : maximum 200 animaux par monde.`, `Line ${line}: maximum 200 animals per world.`));
+      if (name === 'zombie') {
+        arity(args, 3, name, line);
+        spawns.push({ kind: 'zombie', x, y, z });
+        return;
+      }
+      arity(args, 4, name, line);
+      if (typeof args[3] !== 'string') throw new Error(translate(`Ligne ${line} : écris le nom de l’animal entre guillemets.`, `Line ${line}: write the animal name in quotes.`));
+      const aliases = new Map<string, CustomEntitySpawn['kind']>([['vache', 'cow'], ['cow', 'cow'], ['cheval', 'horse'], ['horse', 'horse'], ['cochon', 'pig'], ['pig', 'pig'], ['mouton', 'sheep'], ['sheep', 'sheep'], ['poulet', 'chicken'], ['chicken', 'chicken'], ['canard', 'duck'], ['duck', 'duck'], ['ours', 'bear'], ['bear', 'bear'], ['loup', 'wolf'], ['wolf', 'wolf'], ['cameau', 'camel'], ['camel', 'camel'], ['singe', 'monkey'], ['monkey', 'monkey'], ['ocelot', 'ocelot'], ['girafe', 'giraffe'], ['giraffe', 'giraffe'], ['elephant', 'elephant'], ['elephant', 'elephant']]);
+      const animalKind = aliases.get(identifier(args[3]));
+      if (!animalKind) throw new Error(translate(`Ligne ${line} : animal « ${args[3]} » inconnu.`, `Line ${line}: unknown animal “${args[3]}”.`));
+      spawns.push({ kind: animalKind, x, y, z });
+      return;
+    }
+    if (name === 'jour' || name === 'nuit') {
+      arity(args, 0, name, line);
+      environment.time = name === 'nuit' ? 'night' : 'day';
+      return;
+    }
+    if (name === 'meteo') {
+      arity(args, 1, name, line);
+      const weather = typeof args[0] === 'string' ? ({ clair: 'clear', clear: 'clear', pluie: 'rain', rain: 'rain', neige: 'snow', snow: 'snow' } as const)[identifier(args[0])] : undefined;
+      if (!weather) throw new Error(translate(`Ligne ${line} : choisis clair, pluie ou neige.`, `Line ${line}: choose clear, rain, or snow.`));
+      environment.weather = weather;
+      return;
+    }
+    if (name === 'boutique') {
+      const action = args[3];
+      if (action === 'gagner') {
+        if (args.length !== 5 && args.length !== 6) throw new Error(translate(`Ligne ${line} : boutique avec gagner attend x, y, z, gagner et un prix.`, `Line ${line}: shop with earn expects x, y, z, earn, and a price.`));
+        const [x, y, z] = position(args, 0, line);
+        const price = integer(args[4], 'prix', line);
+        if (price < 1 || price > 1000000) throw new Error(translate(`Ligne ${line} : le prix doit être entre 1 et 1000000.`, `Line ${line}: price must be between 1 and 1000000.`));
+        blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: 'earn', price }, text: `Recevoir ${price} pièces`, ...(args[5] === true ? { protected: true } : {}) });
+        return;
+      }
+      if (action !== 'acheter' && action !== 'vendre') throw new Error(translate(`Ligne ${line} : choisis acheter, vendre ou gagner.`, `Line ${line}: choose buy, sell, or earn.`));
+      if (args.length !== 7 && args.length !== 8) throw new Error(translate(`Ligne ${line} : boutique attend x, y, z, action, objet, quantité et prix.`, `Line ${line}: shop expects x, y, z, action, item, count, and price.`));
+      const [x, y, z] = position(args, 0, line);
+      const item = shopItem(args[4], line);
+      const count = integer(args[5], 'quantité', line);
+      const price = integer(args[6], 'prix', line);
+      if (count < 1 || count > 999 || price < 0 || price > 1000000) throw new Error(translate(`Ligne ${line} : quantité entre 1 et 999 et prix entre 0 et 1000000.`, `Line ${line}: count between 1 and 999 and price between 0 and 1000000.`));
+      const itemName = selectionInfo(item).name;
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: action === 'acheter' ? 'buy' : 'sell', item, count, price }, text: `${action === 'acheter' ? 'Acheter' : 'Vendre'} ${itemName} ×${count} · ${price} pièces`, ...(args[7] === true ? { protected: true } : {}) });
       return;
     }
     if (name === 'bloc' || name === 'effacer') {
@@ -531,7 +701,7 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
       value ^= value + Math.imul(value ^ value >>> 7, value | 61);
       return ((value ^ value >>> 14) >>> 0) / 4294967296;
     }
-    throw new Error(`Ligne ${line} : commande « ${name} » inconnue. Utilise terrain, bloc, remplir, sphere, ligne, mur, cylindre, pyramide, arbre, maison, route, champ, panneau, effacer, hauteur ou aleatoire.`);
+    throw new Error(`Ligne ${line} : commande « ${name} » inconnue. Utilise terrain, bloc, remplir, sphere, ligne, mur, cylindre, pyramide, arbre, maison, route, champ, panneau, boutique, saison, saisons, donner, soin, teleporter, checkpoint, message, vitesse, saut, invisible, piege, escalier, effacer, hauteur ou aleatoire.`);
   };
   const evaluate = (expression: Expression, scope: Scope): Value => {
     if (expression.type === 'value') return expression.value;
@@ -602,7 +772,7 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
   };
   const global = new Scope();
   for (const statement of program) run(statement, global);
-  return { terrain, blocks: [...blocks.values()].sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z) };
+  return { terrain, blocks: [...blocks.values()].sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z), ...(Object.keys(environment).length > 0 ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}) };
 }
 
 export function sanitizeCustomWorld(value: unknown): CustomWorldDefinition | null {
@@ -614,16 +784,62 @@ export function sanitizeCustomWorld(value: unknown): CustomWorldDefinition | nul
   for (const block of definition.blocks) {
     if (!block || typeof block !== 'object' || !Number.isSafeInteger(block.x) || !Number.isSafeInteger(block.y) || !Number.isSafeInteger(block.z) || typeof block.kind !== 'number' || !(block.kind in BLOCK_INFO)) return null;
     if (Math.abs(block.x) > limit || Math.abs(block.z) > limit || block.y < 1 || block.y > CUSTOM_WORLD_MAX_Y) return null;
-    blocks.set(voxelKey(block.x, block.y, block.z), { x: block.x, y: block.y, z: block.z, kind: block.kind, ...(block.protected === true ? { protected: true } : {}) });
+    const shop = block.shop;
+    if (shop) {
+      if (shop.action !== 'buy' && shop.action !== 'sell' && shop.action !== 'earn' && shop.action !== 'gift' && shop.action !== 'heal' && shop.action !== 'teleport' && shop.action !== 'effect' && shop.action !== 'checkpoint' && shop.action !== 'message' && shop.action !== 'trap') return null;
+      if (shop.action === 'effect' && (shop.effect !== 'speed' && shop.effect !== 'jump' && shop.effect !== 'invisibility' || typeof shop.price !== 'number' || !Number.isInteger(shop.price) || shop.price < 1 || shop.price > 3600)) return null;
+      if (shop.action === 'trap' && (typeof shop.price !== 'number' || !Number.isInteger(shop.price) || shop.price < 1 || shop.price > 10)) return null;
+      if ((shop.action === 'buy' || shop.action === 'sell' || shop.action === 'earn' || shop.action === 'heal') && (typeof shop.price !== 'number' || !Number.isInteger(shop.price) || shop.price < 0 || shop.price > 1000000)) return null;
+      if ((shop.action === 'buy' || shop.action === 'sell' || shop.action === 'gift') && (!shop.item || !isSelectedKind(shop.item) || typeof shop.count !== 'number' || !Number.isInteger(shop.count) || shop.count < 1 || shop.count > 999)) return null;
+      if (shop.action === 'teleport' && (!shop.destination || !Number.isSafeInteger(shop.destination.x) || !Number.isSafeInteger(shop.destination.y) || !Number.isSafeInteger(shop.destination.z) || Math.abs(shop.destination.x) > limit || Math.abs(shop.destination.z) > limit || shop.destination.y < 1 || shop.destination.y > CUSTOM_WORLD_MAX_Y)) return null;
+    }
+    blocks.set(voxelKey(block.x, block.y, block.z), {
+      x: block.x,
+      y: block.y,
+      z: block.z,
+      kind: block.kind,
+      ...(block.protected === true ? { protected: true } : {}),
+      ...(typeof block.text === 'string' ? { text: block.text.slice(0, 120) } : {}),
+      ...(block.facing === 'north' || block.facing === 'south' || block.facing === 'east' || block.facing === 'west' ? { facing: block.facing } : {}),
+      ...(shop ? { shop } : {}),
+      ...(isSeason(block.season) && block.season !== 'auto' ? { season: block.season } : {}),
+    });
   }
-  return { version: 1, terrain: definition.terrain, source: definition.source, blocks: [...blocks.values()], ...(definition.infinite === true ? { infinite: true } : {}) };
+  const environment = definition.environment;
+  if (environment && (environment.time !== undefined && environment.time !== 'day' && environment.time !== 'night' || environment.weather !== undefined && environment.weather !== 'clear' && environment.weather !== 'rain' && environment.weather !== 'snow')) return null;
+  const spawns: CustomEntitySpawn[] = [];
+  const animalKinds = new Set<CustomEntitySpawn['kind']>(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie', 'monkey', 'ocelot', 'giraffe', 'elephant']);
+  if (definition.spawns !== undefined && !Array.isArray(definition.spawns)) return null;
+  for (const spawn of definition.spawns ?? []) {
+    if (!spawn || typeof spawn !== 'object' || !animalKinds.has(spawn.kind) || !Number.isSafeInteger(spawn.x) || !Number.isSafeInteger(spawn.y) || !Number.isSafeInteger(spawn.z) || Math.abs(spawn.x) > limit || Math.abs(spawn.z) > limit || spawn.y < 1 || spawn.y > CUSTOM_WORLD_MAX_Y) return null;
+    spawns.push({ kind: spawn.kind, x: spawn.x, y: spawn.y, z: spawn.z });
+  }
+  return { version: 1, terrain: definition.terrain, source: definition.source, blocks: [...blocks.values()], ...(definition.infinite === true ? { infinite: true } : {}), ...(environment ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}) };
 }
 
 export function createCustomWorld(source: string, seed: number, terrainHeight?: (x: number, z: number) => number, infinite = false): CustomWorldDefinition {
   return { version: 1, source, ...executeWorldCode(source, seed, terrainHeight, infinite), ...(infinite ? { infinite: true } : {}) };
 }
 
-export function worldCodeFromBlocks(definition: Pick<CustomWorldDefinition, 'terrain' | 'blocks'>) {
+export function worldCodeFromBlocks(definition: Pick<CustomWorldDefinition, 'terrain' | 'blocks' | 'environment' | 'spawns'>) {
   const sorted = [...definition.blocks].sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z);
-  return `terrain("${definition.terrain === 'natural' ? 'nature' : 'plat'}");\n\n${sorted.map((block) => `bloc(${block.x}, ${block.y}, ${block.z}, "${worldBlockId(block.kind)}"${block.protected === true ? ', true' : ''});`).join('\n')}`;
+  const environment = `${definition.environment?.time === 'night' ? 'nuit();\n' : definition.environment?.time === 'day' ? 'jour();\n' : ''}${definition.environment?.weather ? `meteo("${definition.environment.weather}");\n` : ''}`;
+  const spawns = (definition.spawns ?? []).map((spawn) => `${spawn.kind === 'zombie' ? 'zombie' : 'animal'}(${spawn.x}, ${spawn.y}, ${spawn.z}${spawn.kind === 'zombie' ? '' : `, "${spawn.kind}"`});`).join('\n');
+  return `terrain("${definition.terrain === 'natural' ? 'nature' : 'plat'}");\n${environment}\n${sorted.map((block) => {
+    const protectedBlock = block.protected === true ? ', true' : '';
+    if (block.shop) {
+      const shop = block.shop;
+      if (shop.action === 'earn') return `boutique(${block.x}, ${block.y}, ${block.z}, "gagner", ${shop.price ?? 0}${protectedBlock});`;
+      if (shop.action === 'checkpoint') return `checkpoint(${block.x}, ${block.y}, ${block.z});`;
+      if (shop.action === 'message') return `message(${block.x}, ${block.y}, ${block.z}, "${block.text ?? ''}");`;
+      if (shop.action === 'effect') return `${shop.effect === 'speed' ? 'vitesse' : shop.effect === 'jump' ? 'saut' : 'invisible'}(${block.x}, ${block.y}, ${block.z}, ${shop.price ?? 30});`;
+      if (shop.action === 'trap') return `piege(${block.x}, ${block.y}, ${block.z}, ${shop.price ?? 1});`;
+      if (shop.action === 'gift') return `donner(${block.x}, ${block.y}, ${block.z}, "${shop.item}", ${shop.count ?? 1});`;
+      if (shop.action === 'heal') return `soin(${block.x}, ${block.y}, ${block.z}, ${shop.price ?? 1});`;
+      if (shop.action === 'teleport' && shop.destination) return `teleporter(${block.x}, ${block.y}, ${block.z}, ${shop.destination.x}, ${shop.destination.y}, ${shop.destination.z});`;
+      return `boutique(${block.x}, ${block.y}, ${block.z}, "${shop.action === 'buy' ? 'acheter' : 'vendre'}", "${shop.item}", ${shop.count ?? 1}, ${shop.price ?? 0}${protectedBlock});`;
+    }
+    const season = block.season && block.season !== 'auto' ? `saison(${block.x}, ${block.z}, ${block.x}, ${block.z}, "${({ spring: 'printemps', summer: 'ete', autumn: 'automne', winter: 'hiver' } as const)[block.season]}");\n` : '';
+    return `${season}bloc(${block.x}, ${block.y}, ${block.z}, "${worldBlockId(block.kind)}"${protectedBlock});`;
+  }).join('\n')}${spawns ? `\n${spawns}` : ''}`;
 }
