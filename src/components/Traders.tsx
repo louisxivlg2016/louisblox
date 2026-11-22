@@ -11,7 +11,10 @@ import { TraderBubble } from './TraderBubble';
 function TraderPerson({ entity }: { entity: Entity }) {
   const meal = useRef<import('three').Group>(null);
   useFrame(() => {
-    if (meal.current) meal.current.visible = entity.get(Trader)?.restaurantMeal === 'eating';
+    if (!meal.current) return;
+    const eating = entity.get(Trader)?.restaurantMeal === 'eating';
+    meal.current.visible = eating;
+    meal.current.position.y = eating ? 0.95 : 1.4;
   });
   return (
     <group

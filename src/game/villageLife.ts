@@ -120,7 +120,8 @@ export function updateMerchantRestaurant(world: World, entity: Entity, dt: numbe
   const mesh = entity.get(TraderMesh)?.value;
   if (!trader?.restaurantMeal || trader.villager || !position) return false;
   const seed = getWorldSeed(world);
-  const door = restaurantAt(tradeCityAt(seed), seed);
+  const site = trader.destinationX !== null && trader.destinationZ !== null ? { x: trader.destinationX, z: trader.destinationZ } : tradeCityAt(seed);
+  const door = restaurantAt(site, seed);
   if (trader.restaurantMeal === 'eating') {
     const restaurantMealTime = trader.restaurantMealTime + (talkingTo === entity ? 0 : dt);
     if (restaurantMealTime >= 20) {
@@ -132,7 +133,7 @@ export function updateMerchantRestaurant(world: World, entity: Entity, dt: numbe
     if (mesh) {
       mesh.position.copy(position);
       mesh.rotation.y = Math.atan2(door.x + 2 - position.x, door.z - position.z);
-      mesh.rotation.x = -0.12;
+      mesh.rotation.x = 0;
     }
     return true;
   }

@@ -10,10 +10,11 @@ import { requestPlayerTeleport, respondToTeleportRequest, useTeleportRequestStor
 import { world } from '../game/world';
 import { MAX_HOMES, NO_HOMES, useHomeStore } from '../game/homes';
 import type { Home } from '../game/homes';
-import { teleportToFarm, teleportToHome, teleportToVillage } from '../game/teleport';
+import { teleportToFarm, teleportToHome, teleportToTrader, teleportToVillage } from '../game/teleport';
 import { translate } from '../game/language';
 import { sendFriendRequest, useFriendStore } from '../game/friends';
 import { useCharacterStore } from '../game/characterStore';
+import { historicCityDestinations } from '../game/historicCapitals';
 
 const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'jungle', 'prairie', 'desert'];
 const RUINS: Array<{ type: RuinType; name: string }> = [
@@ -31,6 +32,7 @@ const CITY_DESTINATIONS = {
     { name: translate('Église', 'Church'), x: 28, y: 5.51, z: -56 },
     { name: translate('Quartier historique', 'Historic district'), x: 0, y: 5.51, z: 28 },
     { name: translate('Place centrale', 'Central square'), x: 0, y: 5.51, z: 0 },
+    ...historicCityDestinations(),
   ],
 } as const;
 
@@ -79,6 +81,11 @@ export function TeleportPanel() {
   };
   const travelToFarm = () => {
     if (!teleportToFarm(world)) return;
+    setOpen(false);
+    void requestPlay();
+  };
+  const travelToTrader = () => {
+    if (!teleportToTrader(world)) return;
     setOpen(false);
     void requestPlay();
   };
@@ -137,6 +144,7 @@ export function TeleportPanel() {
       )}
       {(gameplayMode === 'city-ancient' || worldTemplate === 'nature') && <button type="button" data-teleport-village onClick={travelToVillage}>{translate('Petit village', 'Small village')}</button>}
       {(gameplayMode === 'city-ancient' || worldTemplate === 'nature') && <button type="button" data-teleport-farm onClick={travelToFarm}>{translate('Ferme', 'Farm')}</button>}
+      {(gameplayMode === 'city-ancient' || worldTemplate === 'nature') && <button type="button" data-teleport-trader onClick={travelToTrader}>{translate('Marchand le plus proche', 'Nearest trader')}</button>}
       {cityDestinations ? cityDestinations.map((destination) => (
         <button key={destination.name} onClick={() => travelToCity(destination)}>{destination.name}</button>
       )) : <>

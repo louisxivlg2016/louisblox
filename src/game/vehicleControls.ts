@@ -4,6 +4,7 @@ import { playCarHorn, setLoopSound } from './audio';
 import { useGameStore } from './store';
 import { Player, PlayerMount, PlayerPosition, VehiclePosition } from './traits';
 import { world } from './world';
+import { isAnimalMount } from './vehicleTypes';
 
 type SirenKind = 'firetruck' | 'police';
 type VehicleControlState = Record<SirenKind | 'headlights', boolean>;
@@ -14,13 +15,16 @@ const SIREN_RANGE = 100;
 let sirenVehicle: Entity | null = null;
 
 export function toggleHeadlights() {
+  if (isAnimalMount(useGameStore.getState().riding)) return false;
   const enabled = !useVehicleControls.getState().headlights;
   useVehicleControls.setState({ headlights: enabled });
   return enabled;
 }
 
 export function honk() {
+  if (isAnimalMount(useGameStore.getState().riding)) return false;
   playCarHorn(useGameStore.getState().riding === 'firetruck' ? 'firetruck' : 'car');
+  return true;
 }
 
 export function toggleSiren(kind: SirenKind) {

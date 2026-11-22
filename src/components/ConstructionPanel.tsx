@@ -18,8 +18,8 @@ export function ConstructionPanel() {
   const itemCounts = useGameStore((state) => state.itemCounts);
   const price = selectedItemPrice(selected);
   const count = inventoryCount(selected, { gameplayMode, itemCounts });
-  const stock = gameplayMode === 'creative' ? itemCounts[inventoryKey(selected)] ?? 1 : count;
-  const canSell = price > 0 && stock > 0;
+  const stock = gameplayMode === 'survival' ? count : itemCounts[inventoryKey(selected)] ?? 1;
+  const canSell = price > 0 && (gameplayMode !== 'survival' || stock > 0);
   if (!open) return null;
   const close = () => {
     setOpen(false);
@@ -40,7 +40,7 @@ export function ConstructionPanel() {
         <p className="construction-balance">{translate('Monnaie', 'Coins')} · <strong>{coins}</strong></p>
         <div className="construction-sell">
           <ItemIcon kind={selected} />
-          <div><strong>{translate('Vendre l’objet sélectionné', 'Sell selected item')}</strong><p>{selectionInfo(selected).name}{` · ${translate('stock', 'stock')} ${stock}`}{price > 0 ? ` · ${price} ${translate('pièces', 'coins')}` : ''}</p></div>
+          <div><strong>{translate('Vendre l’objet sélectionné', 'Sell selected item')}</strong><p>{selectionInfo(selected).name}{gameplayMode !== 'survival' ? ` · ${translate('illimité', 'unlimited')}` : ` · ${translate('stock', 'stock')} ${stock}`}{price > 0 ? ` · ${price} ${translate('pièces', 'coins')}` : ''}</p></div>
           <button type="button" data-sell-selected disabled={!canSell} onClick={() => sellSelectedItem()}>{translate('Vendre', 'Sell')}</button>
         </div>
         <p className="construction-hint">{translate('Choisis un objet dans ta barre rapide, puis ouvre Construction avec C pour le vendre.', 'Choose an item in your hotbar, then open Construction with C to sell it.')}</p>

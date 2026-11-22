@@ -34,10 +34,18 @@ export function PiratesHud() {
     releasePointerForOverlay();
   }, [gameplayMode, mode, winner]);
   useEffect(() => {
+    if (gameplayMode !== 'pirates' || !shopOpen) return;
+    releasePointerForOverlay();
+    useGameStore.getState().setMode('pause');
+  }, [gameplayMode, shopOpen]);
+  useEffect(() => {
     if (gameplayMode !== 'pirates') return;
     const toggle = () => setShopOpen((current) => {
       if (current) void requestPlay();
-      else releasePointerForOverlay();
+      else {
+        releasePointerForOverlay();
+        useGameStore.getState().setMode('pause');
+      }
       return !current;
     });
     window.addEventListener('louisblox:pirate-shop-toggle', toggle);
@@ -66,7 +74,7 @@ export function PiratesHud() {
           )}
         </div>
       )}
-      {team && !winner && <button className="pirate-shop-toggle" aria-label={translate('Boutique pirate', 'Pirate shop')} onClick={() => { releasePointerForOverlay(); setShopOpen(true); }}>{language === 'es' ? <span className="localized-button-text">TIENDA PIRATA</span> : <img src={pirateShopButtonUrl} alt="" />}</button>}
+      {team && !winner && <button className="pirate-shop-toggle" aria-label={translate('Boutique pirate', 'Pirate shop')} onClick={() => { releasePointerForOverlay(); useGameStore.getState().setMode('pause'); setShopOpen(true); }}>{language === 'es' ? <span className="localized-button-text">TIENDA PIRATA</span> : <img src={pirateShopButtonUrl} alt="" />}</button>}
       {shopOpen && (
         <div className="pirate-shop-panel">
           <h2>{translate('Boutique pirate · {money} pièces', 'Pirate shop · {money} coins')}</h2>

@@ -119,7 +119,7 @@ export function Backpack() {
           {sections.crops && <><p className="backpack-label">{translate('Graines et plants · sur herbe ou terre · E pour récolter quand c’est mûr', 'Seeds and crops · on grass or dirt · E to harvest when ripe')}</p>
           <div className="backpack-blocks">{CROP_KINDS.filter((kind) => matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div></>}
           {sections.items && <><p className="backpack-label">{survival ? translate('Objets fabriqués', 'Crafted items') : translate('Pioches, pelles, épées, armures et équipement · clic gauche pour miner ou utiliser', 'Pickaxes, shovels, swords, armor, and equipment · left click to mine or use')}</p>
-          <div className="backpack-blocks">{ITEM_ORDER.filter((kind) => kind !== 'apple' && matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div></>}
+          <div className="backpack-blocks">{ITEM_ORDER.filter((kind) => matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div></>}
           {survival && <CraftingPanel />}
           {sections.gallery && <><div className="gallery-controls">
             <select aria-label={translate('Catégorie de la galerie', 'Gallery category')} value={galleryCategory} onChange={(event) => setGalleryCategory(event.target.value)}>

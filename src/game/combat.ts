@@ -83,12 +83,20 @@ export function killAnimal(world: World, target: Entity, drop = true) {
   return true;
 }
 
-export function damageAnimal(world: World, target: Entity, amount: number, attacker?: Vector3) {
+const lastPlayerHits = new WeakMap<World, { entity: Entity; worldId: string }>();
+
+export function animalHitByPlayer(world: World) {
+  const hit = lastPlayerHits.get(world);
+  return hit?.worldId === useGameStore.getState().worldId ? hit.entity : null;
+}
+
+export function damageAnimal(world: World, target: Entity, amount: number, attacker?: Vector3, fromPlayer = false, playSound = true) {
   const health = target.get(AnimalHealth);
   const animal = target.get(Animal);
   const position = target.get(AnimalPosition);
   if (!health || !animal || !position || health.value <= 0 || target.get(HorseRider)?.mounted || target.get(HorseRider)?.passenger) return false;
-  if (amount > 0) alertAnimalSound(world, target);
+  if (fromPlayer) lastPlayerHits.set(world, { entity: target, worldId: useGameStore.getState().worldId });
+  if (amount > 0 && playSound) alertAnimalSound(world, target);
   const remaining = health.value - amount * (attacker ? attackMultiplier() : 1);
   if (remaining > 0) {
     target.set(AnimalHealth, { value: remaining });

@@ -13,6 +13,7 @@ import { spawnPaintSplash } from '../paintball';
 import { raycastPaintSurface } from '../paintSurface';
 import { playSound } from '../audio';
 import { damagePirateObjectivesInRadius } from '../piratesClient';
+import { useGameStore } from '../store';
 
 const step = new Vector3();
 const next = new Vector3();
@@ -26,14 +27,21 @@ function paintImpact(world: World, color: string | undefined, position: Vector3,
 export function fireProjectile(world: World, origin: Vector3, direction: Vector3, kind: 'arrow' | 'bullet' | 'bomb', damage = 1, color?: string | null, effect?: 'smoke' | 'firework') {
   if (kind !== 'arrow' && !color) playSound('gunshot', 0.45);
   const velocity = direction.clone().normalize().multiplyScalar(kind === 'bullet' ? 48 : kind === 'bomb' ? 18 : 30);
+  let life = effect === 'firework' ? 1.5 : effect === 'smoke' ? 2.5 : kind === 'bullet' ? 1.5 : 8;
   if (effect === 'firework') {
-    velocity.x *= 0.35;
-    velocity.z *= 0.35;
-    velocity.y = Math.max(14, velocity.y + 12);
+    const aim = direction.clone().normalize();
+    const hit = raycastVoxel(getBlockIndex(world), origin, aim, 64);
+    const flightTime = hit ? Math.max(0.8, Math.min(2.4, hit.distance / 18)) : 1.5;
+    const target = hit ? origin.clone().addScaledVector(aim, hit.distance).add(new Vector3(hit.normal.x, hit.normal.y, hit.normal.z).multiplyScalar(3)) : origin.clone().addScaledVector(aim, 30);
+    target.y = Math.max(target.y, origin.y + 4);
+    const start = origin.clone().addScaledVector(aim, 0.8);
+    velocity.copy(target.sub(start).divideScalar(flightTime));
+    velocity.y += 4 * flightTime;
+    life = flightTime;
   }
   const position = origin.clone().addScaledVector(direction, 0.8);
   const entity = world.spawn(
-    Projectile({ id: crypto.randomUUID(), kind, life: effect === 'firework' ? 1.35 : effect === 'smoke' ? 2.5 : kind === 'bullet' ? 1.5 : 8, damage, color: color ?? undefined, effect }),
+    Projectile({ id: crypto.randomUUID(), kind, life, damage, color: color ?? undefined, effect }),
     ProjectilePosition(position),
     ProjectileVelocity(velocity),
     ProjectileMesh(),
@@ -44,10 +52,11 @@ export function fireProjectile(world: World, origin: Vector3, direction: Vector3
 
 export function detonateProjectile(world: World, position: Vector3, damagePlayers = true) {
   playSound('explosion', 0.6);
-  explodeVoxels(world, position.x, position.y, position.z, 2.8);
-  damageCreaturesInRadius(world, position, 4.5);
-  damagePirateObjectivesInRadius(position, 3.5);
-  if (damagePlayers) damageBattlePlayersInRadius(world, position, 3.5);
+  const pirates = useGameStore.getState().gameplayMode === 'pirates';
+  explodeVoxels(world, position.x, position.y, position.z, pirates ? 1.6 : 2.8);
+  damageCreaturesInRadius(world, position, pirates ? 2.5 : 4.5);
+  damagePirateObjectivesInRadius(position, pirates ? 2 : 3.5);
+  if (damagePlayers) damageBattlePlayersInRadius(world, position, pirates ? 2 : 3.5);
   world.spawn(
     Explosion({ time: 0.45, maxTime: 0.45 }),
     ExplosionPosition(position.clone()),
@@ -120,7 +129,7 @@ export function projectileSystem(world: World, dt: number) {
           position.copy(animalPosition);
           detonateProjectileEffect(world, position, projectile);
         } else {
-          damageAnimal(world, target.entity, projectile.damage, position);
+          damageAnimal(world, target.entity, projectile.damage, position, true);
         }
         const paint = paintImpact(world, projectile.effect ? undefined : projectile.color, animalPosition, direction.clone().negate());
         syncProjectileRemoval(world, entity, projectile.kind === 'bomb', paint);

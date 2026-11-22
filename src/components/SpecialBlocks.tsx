@@ -7,6 +7,7 @@ import type { Voxel } from '../game/voxel';
 import { PixelPart } from './ItemModel';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import redFireUrl from '../../assets/models/red-fire.glb';
+import { DecorationCulling } from './DecorationCulling';
 
 const flameOrange = new MeshBasicMaterial({ color: '#ff9b28' });
 const flameYellow = new MeshBasicMaterial({ color: '#ffe890' });
@@ -75,12 +76,12 @@ export function CampfireModel({ destructive = false, withLight = true }: { destr
 
 export function SpecialBlocks({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }) {
   return (
-    <>
+    <DecorationCulling distance={60}>
       {blocks.map((block) => (
         <group key={`${block.x},${block.y},${block.z}`} position={[block.x, block.y - 0.5, block.z]}>
           {kind === BlockKind.Candle ? <CandleModel /> : <CampfireModel destructive={kind === BlockKind.Wildfire} />}
         </group>
       ))}
-    </>
+    </DecorationCulling>
   );
 }

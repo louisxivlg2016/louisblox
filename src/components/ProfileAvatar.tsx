@@ -28,6 +28,7 @@ import corsairUrl from '../../assets/avatars/corsair.webp';
 import footballerUrl from '../../assets/avatars/footballer.webp';
 import firefighterUrl from '../../assets/avatars/firefighter.webp';
 import policeUrl from '../../assets/avatars/police.webp';
+import workerUrl from '../../assets/avatars/worker.webp';
 import { translate } from '../game/language';
 
 export const PHOTO_AVATARS = () => ({
@@ -54,12 +55,12 @@ export const PHOTO_AVATARS = () => ({
   corsair: { name: 'Bandana Pirate', url: corsairUrl },
   footballer: { name: translate('Joueur de foot', 'Footballer'), url: footballerUrl },
   firefighter: { name: 'Firefighter', url: firefighterUrl },
-  worker: { name: 'Construction Worker', url: firefighterUrl },
+  worker: { name: 'Construction Worker', url: workerUrl },
   police: { name: 'Police Officer', url: policeUrl },
 });
 const photoKinds = Object.keys(PHOTO_AVATARS()) as Array<keyof ReturnType<typeof PHOTO_AVATARS>>;
 
-export function ProfileAvatar({ kind, size = 58 }: {
+export function ProfileAvatar({ kind, size = 58, outfit }: {
   kind?: ProfileAvatarKind | OutfitKind;
   character?: CharacterKind;
   outfit?: OutfitKind;
@@ -68,7 +69,7 @@ export function ProfileAvatar({ kind, size = 58 }: {
   size?: number;
 }) {
   const selected = useAvatarStore((state) => state.kind);
-  const current = kind ?? selected;
+  const current = kind ?? (outfit && outfit !== 'default' ? outfit : selected);
   const photoKind = current === 'pixel' || current === 'default' ? 'boy' : current;
   const photo = PHOTO_AVATARS()[photoKind];
   const newPortrait = ['girl', 'boy', 'trader', 'soldier'].includes(photoKind) || photoKind.startsWith('girl-') || photoKind.startsWith('boy-');

@@ -50,6 +50,10 @@ export function reportAnimalSpawn(entity: Entity) {
   return reportAnimal(entity, 'animal-spawn');
 }
 
+export function clearAnimalInterpolation(world: World, entity: Entity) {
+  animalInterpolations.get(world)?.delete(entity);
+}
+
 export function reportAnimalTame(entity: Entity) {
   return reportAnimal(entity, 'animal-tame');
 }

@@ -4,7 +4,7 @@ import { releasePointerForOverlay, requestPlay } from '../game/input';
 import { translate } from '../game/language';
 import { useRemotePlayerStore } from '../game/multiplayerStore';
 import { useGameStore } from '../game/store';
-import { Player, PlayerPosition, PlayerState } from '../game/traits';
+import { Player, PlayerPosition, PlayerState, AnimalPosition, AnimalTame } from '../game/traits';
 import { BLOCK_INFO, BlockKind, isWaterBlock, voxelKey } from '../game/voxel';
 import { world } from '../game/world';
 import { useNavigationStore } from '../game/navigation';
@@ -40,7 +40,7 @@ function RouteGuide() {
         const targetYaw = Math.atan2(-dx, -dz);
         const angle = Math.atan2(Math.sin(yaw - targetYaw), Math.cos(yaw - targetYaw));
         if (arrow.current) arrow.current.style.transform = `rotate(${angle}rad)`;
-        if (label.current) label.current.textContent = `${translate('Itinéraire', 'Route')} · ${Math.round(distance)} m`;
+        if (label.current) label.current.textContent = `${destination.source === 'caravan' ? translate('Village du marchand', 'Trader village') : translate('Itinéraire', 'Route')} · ${Math.round(distance)} m`;
         if (root.current) root.current.dataset.distance = String(Math.round(distance));
       }
       animation = requestAnimationFrame(update);
@@ -50,9 +50,9 @@ function RouteGuide() {
   }, [destination, worldId, clearDestination]);
   if (!destination || destination.worldId !== worldId) return null;
   return (
-    <div ref={root} className="route-guide" data-route-guide>
+    <div ref={root} className="route-guide" data-route-guide data-route-kind={destination.source ?? 'map'}>
       <i ref={arrow} aria-hidden="true" />
-      <span ref={label}>{translate('Itinéraire', 'Route')}</span>
+      <span ref={label}>{destination.source === 'caravan' ? translate('Village du marchand', 'Trader village') : translate('Itinéraire', 'Route')}</span>
       <button type="button" onClick={clearDestination} aria-label={translate('Effacer l’itinéraire', 'Clear route')}>{translate('Effacer', 'Clear')}</button>
     </div>
   );
@@ -140,6 +140,22 @@ export function Minimap() {
         context.beginPath();
         context.arc(center + dx, center + dz, 4, 0, Math.PI * 2);
         context.fill();
+      }
+      for (const animal of world.query(AnimalTame, AnimalPosition)) {
+        if (!animal.get(AnimalTame)?.tamed) continue;
+        const position = animal.get(AnimalPosition)!;
+        const rawDx = (position.x - centerX) * CELL;
+        const rawDz = (position.z - centerZ) * CELL;
+        const outside = Math.abs(rawDx) > center - 5 || Math.abs(rawDz) > center - 5;
+        const dx = Math.max(-center + 5, Math.min(center - 5, rawDx));
+        const dz = Math.max(-center + 5, Math.min(center - 5, rawDz));
+        context.fillStyle = '#73d6ff';
+        context.strokeStyle = '#ffffff';
+        context.lineWidth = large ? 2 : 1;
+        context.beginPath();
+        context.arc(center + dx, center + dz, outside ? large ? 4 : 3 : large ? 5 : 4, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
       }
       const yaw = playerEntity?.get(PlayerState)?.yaw ?? 0;
       context.save();

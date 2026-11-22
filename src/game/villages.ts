@@ -44,6 +44,34 @@ export function villageAt(cx: number, cz: number, seed: number) {
   return site;
 }
 
+export function nearestVillageAt(x: number, z: number, seed: number, maxRadius = 12): { x: number; z: number } | null {
+  const centerX = Math.floor(x / 192);
+  const centerZ = Math.floor(z / 192);
+  const visited = new Set<string>();
+  for (let radius = 0; radius <= maxRadius; radius += 1) {
+    let nearest: { x: number; z: number } | null = null;
+    let bestDistance = Infinity;
+    const consider = (site: { x: number; z: number } | null) => {
+      if (!site || visited.has(`${site.x},${site.z}`)) return;
+      visited.add(`${site.x},${site.z}`);
+      const distance = Math.hypot(site.x - x, site.z - z);
+      if (distance < bestDistance) {
+        nearest = site;
+        bestDistance = distance;
+      }
+    };
+    if (radius === 0) consider(villageAt(0, 0, seed));
+    for (let dx = -radius; dx <= radius; dx += 1) for (let dz = -radius; dz <= radius; dz += 1) {
+      if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
+      const candidateX = (centerX + dx) * 192 + 96;
+      const candidateZ = (centerZ + dz) * 192 + 96;
+      consider(villageAt(Math.floor(candidateX / 16), Math.floor(candidateZ / 16), seed));
+    }
+    if (nearest) return nearest;
+  }
+  return null;
+}
+
 const tradeCitySites = new Map<number, { x: number; z: number }>();
 
 export function tradeCityAt(seed: number) {
@@ -147,8 +175,8 @@ export function generateVillageBlocks(cx: number, cz: number, seed: number): Vox
     }
   }
   for (const block of smallChurchBlocks(site, seed)) put(block.x, block.y, block.z, block.kind, block);
+  for (const block of restaurantBlocks(site, seed)) put(block.x, block.y, block.z, block.kind, block);
   if (city) {
-    for (const block of restaurantBlocks(site, seed)) put(block.x, block.y, block.z, block.kind, block);
     for (const block of fieldBlocks(site, seed)) put(block.x, block.y, block.z, block.kind, block);
   }
   const lampOffset = city ? 14 : 7;
@@ -185,4 +213,14 @@ export function spawnVillageResidents(world: World, cx: number, cz: number, seed
     ));
   }
   return residents;
+}
+
+const naturalTreeKinds = new Set<BlockKind>([BlockKind.Wood, BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple]);
+
+export function removeVillageTrees(blocks: Voxel[], cx: number, cz: number, seed: number) {
+  const site = villageAt(cx, cz, seed);
+  if (!site) return blocks;
+  const tradeCity = tradeCityAt(seed);
+  const radius = site.x === tradeCity.x && site.z === tradeCity.z ? 40 : 32;
+  return blocks.filter((block) => !naturalTreeKinds.has(block.kind) || Math.max(Math.abs(block.x - site.x), Math.abs(block.z - site.z)) > radius);
 }

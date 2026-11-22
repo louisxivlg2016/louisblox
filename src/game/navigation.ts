@@ -1,14 +1,18 @@
 import { create } from 'zustand';
 import { useGameStore } from './store';
 
-export type RouteDestination = { x: number; z: number; worldId: string };
+export type RouteDestination = { x: number; z: number; worldId: string; source?: 'map' | 'caravan' };
 
 export const useNavigationStore = create<{
   destination: RouteDestination | null;
   setDestination: (x: number, z: number) => void;
+  setCaravanDestination: (x: number, z: number) => void;
   clearDestination: () => void;
+  clearCaravanDestination: () => void;
 }>((set) => ({
   destination: null,
-  setDestination: (x, z) => set({ destination: { x, z, worldId: useGameStore.getState().worldId } }),
+  setDestination: (x, z) => set({ destination: { x, z, worldId: useGameStore.getState().worldId, source: 'map' } }),
+  setCaravanDestination: (x, z) => set({ destination: { x, z, worldId: useGameStore.getState().worldId, source: 'caravan' } }),
   clearDestination: () => set({ destination: null }),
+  clearCaravanDestination: () => set((state) => state.destination?.source === 'caravan' ? { destination: null } : state),
 }));

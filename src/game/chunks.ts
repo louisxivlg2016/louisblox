@@ -2,7 +2,7 @@ import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
 import { DroppedItem } from './traits';
 import { useEffectStore } from './effects';
-import { CHUNK_SIZE, MAX_BUILD_Y, MIN_WORLD_Y, VIEW_DISTANCE, biomeAt, generateChunk, safeSpawnAt } from './levels';
+import { CHUNK_SIZE, MAX_BUILD_Y, MIN_WORLD_Y, VIEW_DISTANCE, biomeAt, generateChunk, generateChunkDepth, safeSpawnAt } from './levels';
 import type { GeneratedChunk, LevelData } from './levels';
 import { battleSpawn, generateBattleChunk } from './battleArena';
 import { generatePirateChunk, pirateSpawn } from './pirates';
@@ -14,7 +14,7 @@ import type { GameplayMode } from './worldMode';
 import { CITY_CENTER_LIMIT, isCityMode, isMinigameMode } from './worldMode';
 import { CITY_SPAWN, generateCityChunk } from './cities';
 import { spawnCountrysideAnimals } from './countryside';
-import { generateVillageBlocks } from './villages';
+import { generateVillageBlocks, removeVillageTrees } from './villages';
 import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnChunkFish } from './fish';
 import { spawnBomb } from './bombLifecycle';
@@ -51,6 +51,7 @@ export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
   version: 1 | 2 | 3 | 4 | 5;
   worldId?: string;
+  worldName?: string;
   generation: number;
   gameplayMode?: GameplayMode;
   template?: import('./worldMode').WorldTemplate;
@@ -85,6 +86,7 @@ type WorldChunks = {
   seed: number;
   chunks: Map<string, Entity>;
   chunkCache: Map<string, GeneratedChunk>;
+  depths: Map<string, number>;
   blocks: Map<string, Voxel>;
   water: Map<string, Voxel>;
   tops: Map<string, number>;
@@ -289,6 +291,30 @@ function editsFor(state: WorldChunks, cx: number, cz: number) {
   return edits;
 }
 
+export function ensureChunkDepth(world: World, cx: number, cz: number, fromY: number) {
+  const state = stateFor(world);
+  const key = chunkKey(cx, cz);
+  const entity = state.chunks.get(key);
+  if (!entity) return;
+  const current = state.depths.get(key) ?? MIN_WORLD_Y;
+  if (fromY >= current - 2 || current <= MIN_WORLD_Y) return;
+  const target = Math.max(MIN_WORLD_Y, Math.min(current - 1, Math.floor(fromY) - 4));
+  const data = entity.get(ChunkData)!;
+  const edits = state.edits.get(key);
+  for (const block of generateChunkDepth(cx, cz, target, current - 1, state.seed)) {
+    const position = voxelKey(block.x, block.y, block.z);
+    if (state.blocks.has(position)) continue;
+    const edit = edits?.get(position);
+    if (edit === null) continue;
+    const actual = typeof edit === 'object' ? { ...block, ...edit } : edit === undefined ? block : { ...block, kind: edit };
+    data.blocks.push(actual);
+    state.blocks.set(position, actual);
+    indexBlock(state, actual);
+  }
+  state.depths.set(key, target);
+  touchChunk(entity);
+}
+
 export function loadChunk(world: World, cx: number, cz: number) {
   const state = stateFor(world);
   const key = chunkKey(cx, cz);
@@ -300,7 +326,10 @@ export function loadChunk(world: World, cx: number, cz: number) {
   const customWorld = template === 'custom' ? useGameStore.getState().customWorld : null;
   const cached = state.chunkCache.get(key);
   const generated = cached ?? (mode === 'pirates' ? generatePirateChunk(cx, cz) : mode === 'football' ? generateFootballChunk(cx, cz) : mode === 'maze' ? generateMazeChunk(cx, cz) : battle ? generateBattleChunk(cx, cz) : template === 'custom' ? generateCustomChunk(cx, cz, state.seed, customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, state.seed)) : template === 'city-ancient' || template === 'city-modern' ? generateCityChunk(cx, cz, state.seed, template === 'city-modern') : generateChunk(cx, cz, state.seed));
-  if (!cached && !isMinigameMode(mode) && !isCityMode(mode) && template !== 'custom') generated.blocks.push(...generateVillageBlocks(cx, cz, state.seed));
+  if (!cached && !isMinigameMode(mode) && !isCityMode(mode) && template !== 'custom') {
+    generated.blocks = removeVillageTrees(generated.blocks, cx, cz, state.seed);
+    generated.blocks.push(...generateVillageBlocks(cx, cz, state.seed));
+  }
   const blockMap = new Map(generated.blocks.map((block) => [voxelKey(block.x, block.y, block.z), block]));
   const edits = state.edits.get(key);
   if (edits) {
@@ -326,6 +355,7 @@ export function loadChunk(world: World, cx: number, cz: number) {
   const data = entity.get(ChunkData)!;
   data.blocks = [...blockMap.values()];
   data.water = generated.water;
+  state.depths.set(key, data.blocks.reduce((minimum, block) => block.y > MIN_WORLD_Y ? Math.min(minimum, block.y) : minimum, MAX_BUILD_Y));
   state.chunks.set(key, entity);
 
   for (const block of data.blocks) {
@@ -422,6 +452,7 @@ function unloadChunk(world: World, entity: Entity) {
   state.chunkCache.set(chunkKey(chunk.x, chunk.z), { blocks: data.blocks, water: data.water });
   if (state.chunkCache.size > 160) state.chunkCache.delete(state.chunkCache.keys().next().value!);
   state.chunks.delete(chunkKey(chunk.x, chunk.z));
+  state.depths.delete(chunkKey(chunk.x, chunk.z));
   entity.destroy();
   touchNeighbors(state, chunk.x, chunk.z);
 }
@@ -487,7 +518,7 @@ export function getWorldSeed(world: World) {
 }
 
 function isPirateSeabed(block: Voxel) {
-  return useGameStore.getState().gameplayMode === 'pirates' && block.kind === BlockKind.Sand && block.y === 2 && Math.abs(block.x) <= 48 && Math.abs(block.z) <= 48;
+  return useGameStore.getState().gameplayMode === 'pirates' && Math.abs(block.x) <= 48 && Math.abs(block.z) <= 48 && (block.kind === BlockKind.Sand && block.y === 2 || isWaterBlock(block.kind) && block.y === 4);
 }
 
 export function removeVoxel(world: World, hit: VoxelHit, authoritative = false) {
@@ -771,6 +802,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     seed,
     chunks: new Map(),
     chunkCache: new Map(),
+    depths: new Map(),
     blocks: new Map(),
     water: new Map(),
     tops: new Map(),

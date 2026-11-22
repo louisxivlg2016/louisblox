@@ -55,6 +55,17 @@ export function listWorlds(): WorldMeta[] {
   if (readWorldSave(DEFAULT_WORLD_ID) && !saved.some((world) => world.id === DEFAULT_WORLD_ID)) {
     saved.push({ id: DEFAULT_WORLD_ID, name: translate('Monde principal', 'Main World'), gameplayMode: readWorldSave(DEFAULT_WORLD_ID)?.gameplayMode, updatedAt: 0 });
   }
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (!key?.startsWith('louisblox-world-')) continue;
+      const id = key.slice('louisblox-world-'.length);
+      if (saved.some((world) => world.id === id)) continue;
+      const save = readWorldSave(id);
+      if (save) saved.push({ id, name: save.worldName?.trim().slice(0, 80) || id, gameplayMode: save.gameplayMode, updatedAt: save.savedAt ?? 0 });
+    }
+  } catch {
+  }
   return saved.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
@@ -93,7 +104,7 @@ export function writeWorldSave(worldId: string, save: WorldSave, name = worldId)
   const savedAt = Date.now();
   const metadata: WorldMeta = { id: worldId, name: name.trim().slice(0, 80) || worldId, gameplayMode: save.gameplayMode, updatedAt: savedAt };
   try {
-    localStorage.setItem(worldKey(worldId), JSON.stringify({ ...save, worldId, revision, savedAt }));
+    localStorage.setItem(worldKey(worldId), JSON.stringify({ ...save, worldId, worldName: metadata.name, revision, savedAt }));
     worldRevisions.set(worldId, revision);
     const worlds = listWorlds().filter((world) => world.id !== worldId);
     worlds.unshift(metadata);
@@ -134,6 +145,7 @@ export function createWorldSave(world: World, store: GameSnapshot = useGameStore
   return {
     version: 5,
     worldId: store.worldId,
+    worldName: store.worldName,
     generation: store.generation,
     gameplayMode: store.gameplayMode,
     template: store.worldTemplate,
@@ -197,6 +209,10 @@ export function initPersistence(world: World) {
   onVoxelEdit(world, schedule);
   useProtectionStore.subscribe(schedule);
   useSeasonStore.subscribe(schedule);
+  window.setInterval(() => {
+    if (useGameStore.getState().mode === 'play') saveWorld(world);
+  }, 5000);
+  window.addEventListener('blur', flush);
   window.addEventListener('pagehide', flush);
   window.addEventListener('beforeunload', flush);
   document.addEventListener('visibilitychange', () => {

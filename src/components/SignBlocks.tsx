@@ -6,6 +6,7 @@ import { facingYaw } from '../game/extraBlocks';
 import { wallMount } from '../game/wallMount';
 import { PixelPart } from './ItemModel';
 import { ParisStreetSignModel } from './ParisStreetSign';
+import { DecorationCulling } from './DecorationCulling';
 
 function signTexture(text: string, textSize: number) {
   const size = cleanSignTextSize(textSize);
@@ -57,9 +58,9 @@ export function SignModel({ text = '', textSize = DEFAULT_SIGN_TEXT_SIZE, wallMo
 }
 
 export function SignBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIndex: ReadonlyMap<string, Voxel> }) {
-  return blocks.map((block) => {
+  return <DecorationCulling distance={55}>{blocks.map((block) => {
     const mount = wallMount(blockIndex, block, facingYaw(block.facing));
     const scale = 0.6 * cleanSignTextSize(block.textSize) / DEFAULT_SIGN_TEXT_SIZE;
     return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y - 0.5, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} scale={scale} userData={{ wallMounted: mount.mounted }}>{block.kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel text={block.text} textSize={block.textSize} /> : <SignModel text={block.text ?? ''} textSize={block.textSize} wallMounted={mount.mounted} />}</group>;
-  });
+  })}</DecorationCulling>;
 }

@@ -50,6 +50,7 @@ export const AnimalPosition = trait(() => new Vector3());
 export const AnimalMotion = trait({ yaw: 0, displayYaw: 0, turnIn: 0, phase: 0, running: false, speed: 0.5, idle: 0, velocityY: 0, grounded: true, avoid: 0, climbTarget: null as number | null, hunting: false, sightIn: 0 });
 export const AnimalMesh = trait(() => ({ value: null as import('three').Object3D | null }));
 export const AnimalTame = trait({ tamed: false, giftDay: 0, baby: false, babyBorn: false, friendship: 1, happiness: 100, lastFedAt: 0 });
+export const AnimalRest = trait({ sleeping: false, birthRestUntil: null as number | null });
 export const AnimalLove = trait({ time: 0 });
 export const AnimalHome = trait({ x: 0, y: 0, z: 0, radius: 1.25 });
 

@@ -110,9 +110,10 @@ export function cameraSystem(world: World, camera: Camera, dt = 1 / 60) {
     if (rayDistance > 0.001) {
       cameraOffset.divideScalar(rayDistance);
       const hit = raycastVoxel(getBlockIndex(world), cameraTarget, cameraOffset, rayDistance);
-      if (hit) camera.position.copy(cameraTarget).addScaledVector(cameraOffset, Math.max(0.15, hit.distance - 0.25));
+      if (hit) camera.position.copy(cameraTarget).addScaledVector(cameraOffset, Math.max(0.35, hit.distance - 0.25));
     }
     camera.lookAt(cameraTarget);
+    if (avatar && !mounted) avatar.visible = camera.position.distanceTo(cameraTarget) >= 1.2;
   } else {
     releaseCameraChunk(world);
     camera.position.copy(position);

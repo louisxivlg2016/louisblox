@@ -1,11 +1,16 @@
 import { useEffect } from 'react';
-import { acceptRestaurantInvitation, advanceTraderStory, canTrade, eatRestaurantMeal, merchantStories, openRestaurant, tradeWithMerchant, TRADE_OFFERS, useTradeStore, viewTraderOffers } from '../game/trading';
+import { acceptRestaurantInvitation, advanceTraderStory, arriveAtVillageWithTrader, canTrade, eatRestaurantMeal, merchantStories, openRestaurant, tradeWithMerchant, TRADE_OFFERS, useTradeStore, viewTraderOffers } from '../game/trading';
 import { world } from '../game/world';
 import { requestPlay } from '../game/input';
 import { selectionInfo } from '../game/items';
 import { useGameStore } from '../game/store';
+import { mountTraderCamel } from '../game/traderCamel';
 import { ItemIcon } from './ItemIcon';
 import { translate } from '../game/language';
+import { getWorldSeed } from '../game/chunks';
+import { nearestVillageAt, tradeCityAt } from '../game/villages';
+import { useNavigationStore } from '../game/navigation';
+import { TraderPosition } from '../game/traits';
 
 export function TradingPanel() {
   const open = useTradeStore((state) => state.open);
@@ -38,11 +43,15 @@ export function TradingPanel() {
     void requestPlay();
   };
   const accompany = () => {
+    const position = traderId?.get(TraderPosition);
+    const destination = (position ? nearestVillageAt(position.x, position.z, getWorldSeed(world)) : null) ?? tradeCityAt(getWorldSeed(world));
+    useNavigationStore.getState().setCaravanDestination(destination.x, destination.z);
     useTradeStore.getState().setFollowing(true);
     useGameStore.getState().setNotice(translate('Suis le marchand jusqu’à la ville, à environ 1 km. Il t’attend si tu t’éloignes.', 'Follow the trader to the city, about 1 km away. He waits if you fall behind.'));
     close();
   };
   const stopAccompanying = () => {
+    useNavigationStore.getState().clearCaravanDestination();
     useTradeStore.getState().setFollowing(false);
     useGameStore.getState().setNotice(translate('Tu reprends la route seul.', 'You are traveling alone again.'));
     close();
@@ -74,11 +83,13 @@ export function TradingPanel() {
             <p><strong>{definition.title}</strong> · Story {step + 1} / {definition.steps.length}</p>
             <p>{following ? definition.companion : story}</p>
             {!following && step < lastStep && <p>{translate('Reste près de moi pour écouter la suite, ou avance le récit ici.', 'Stay close to hear more, or advance the story here.')}</p>}
-            {!following && step === lastStep && <p>{translate('Veux-tu m’accompagner un moment, ou préfères-tu voir mes marchandises ?', 'Would you like to travel with me, or would you rather see my goods?')}</p>}
+            {!following && step === lastStep && <p>{translate('Veux-tu monter sur un chameau ?', 'Would you like to ride a camel?')}</p>}
             <div className="trade-story-actions">
               {!following && step < lastStep && <button className="primary-button" aria-keyshortcuts="E" onClick={() => advanceTraderStory(traderId)}>{translate('Texte suivant (E)', 'Next text (E)')}</button>}
-              {!following && step === lastStep && <button className="primary-button" onClick={accompany}>{translate('L’accompagner', 'Travel with him')}</button>}
+              {!following && step === lastStep && <button className="primary-button" data-mount-trader-camel onClick={() => mountTraderCamel(world)}>{translate('Oui, monter sur un chameau', 'Yes, ride a camel')}</button>}
+              {!following && step === lastStep && <button className="secondary-button" onClick={accompany}>{translate('L’accompagner', 'Travel with him')}</button>}
               {following && <button className="primary-button" onClick={stopAccompanying}>{translate('Reprendre la route seul', 'Travel alone again')}</button>}
+              <button className="secondary-button" data-skip-trader-journey onClick={() => arriveAtVillageWithTrader(world)}>{translate('Arriver immédiatement au village', 'Arrive at the village immediately')}</button>
               <button className="secondary-button" onClick={() => viewTraderOffers(world)}>{translate('Voir les marchandises', 'View goods')}</button>
               <button className="secondary-button" onClick={close}>{translate('Plus tard', 'Later')}</button>
             </div>

@@ -13,6 +13,7 @@ import shopButtonFrUrl from '../../assets/ui/shop-button.webp';
 import shopButtonEnUrl from '../../assets/ui/english/shop.webp';
 import shopButtonEsUrl from '../../assets/ui/spanish/tienda.webp';
 import teleportButtonUrl from '../../assets/ui/teleport-button.webp';
+import constructionButtonUrl from '../../assets/ui/construction-button.webp';
 import tribeButtonUrl from '../../assets/menu/tribe-button.webp';
 import { Backpack } from './Backpack';
 import { BoutiquePanel } from './BoutiquePanel';
@@ -52,6 +53,8 @@ import { translate } from '../game/language';
 import { useConstructionStore } from '../game/constructions';
 import { ConstructionPanel } from './ConstructionPanel';
 import { BlueprintControls } from './BlueprintControls';
+import { CompanionPanel } from './CompanionPanel';
+import { useCompanionMenuStore } from '../game/companionMenu';
 
 export function Hud() {
   const language = useLanguageStore((state) => state.language);
@@ -74,6 +77,7 @@ export function Hud() {
   const chatOpen = useChatStore((state) => state.open);
   const emoteOpen = useEmoteStore((state) => state.open);
   const tradeOpen = useTradeStore((state) => state.open);
+  const companionOpen = useCompanionMenuStore((state) => state.open);
   const homeOpen = useHomeStore((state) => state.open);
   const tribeOpen = useTribeStore((state) => state.panelOpen);
   const tribeInvitations = useTribeStore((state) => state.invitations.length);
@@ -121,7 +125,7 @@ export function Hud() {
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
           {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label={translate('Sac à dos', 'Backpack')}><img src={translate(backpackButtonFrUrl, backpackButtonEnUrl, backpackButtonEsUrl)} alt="" /></button>}
           {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label={translate('Boutique', 'Shop')}><img src={translate(shopButtonFrUrl, shopButtonEnUrl, shopButtonEsUrl)} alt="" /></button>}
-          {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="construction-toggle" onClick={openConstruction} aria-label={translate('Construction · C', 'Construction · C')}>{translate('Construction', 'Construction')}</button>}
+          {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="construction-toggle" onClick={openConstruction} aria-label={translate('Construction · C', 'Construction · C')}><img src={constructionButtonUrl} alt={translate('Construction', 'Construction')} /></button>}
           {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label={translate('Téléportation · T', 'Teleportation · T')}>{language === 'es' ? <span className="localized-button-text">TELETRANSPORTE · T</span> : <img src={teleportButtonUrl} alt={translate('Téléportation · T', 'Teleportation · T')} />}</button>}
           {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label={translate('Ouvrir ma tribu', 'Open my tribe')}>{language === 'es' ? <span className="localized-button-text">TRIBU</span> : <img src={tribeButtonUrl} alt="TRIBU" />}{tribeInvitations > 0 && <span className="tribe-invitation-count">{tribeInvitations}</span>}</button>}
           {notice && <div className="game-notice">{notice}</div>}
@@ -146,7 +150,7 @@ export function Hud() {
       <PlaneTitleEditor />
       <PoliceTitleEditor />
 
-      {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !constructionOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && !tradeOpen && !homeOpen && !tribeOpen && (
+      {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !constructionOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && !tradeOpen && !companionOpen && !homeOpen && !tribeOpen && (
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />
       )}
 
@@ -185,6 +189,7 @@ export function Hud() {
       <SignPanel />
       <SeatChoicePanel />
       <TradingPanel />
+      <CompanionPanel />
       <HomePanel />
       <TeleportRequestDialog />
       <FriendRequestDialog />

@@ -63,7 +63,7 @@ const MODE_CARDS = (): ModeCard[] => [
   { mode: 'pirates', image: translate(piratesUrl, piratesUrl, piratesEsUrl), alt: translate('Bataille navale du mode Pirates', 'Pirate naval battle'), name: translate('Pirates', 'Pirates', 'Piratas'), className: 'battle-card pirates-card', multiplayer: true, description: () => translate('Deux navires, un trésor à détruire et des abordages en équipe', 'Two ships, a treasure to destroy, and team boarding'), tag: () => translate('Combat naval', 'Naval combat') },
   { mode: 'football', image: translate(footballFrUrl, footballEnUrl, footballEsUrl), alt: translate('Stade et ballon du mode Football', 'Football stadium and ball'), name: 'Football', className: 'battle-card football-card', multiplayer: true, description: () => translate('Match de 5 minutes, cartons, corners, penaltys et hors-jeu', 'Five-minute match, cards, corners, penalties, and offside'), tag: () => translate('Rouge contre Bleu', 'Red versus Blue') },
   { mode: 'maze', image: translate(mazeFrUrl, mazeEnUrl, mazeEsUrl), alt: translate('Parcours d’obstacles du mode Labyrinthe', 'Maze obstacle courses'), name: translate('100 Parcours Labyrinthe', '100 Maze Courses'), className: 'battle-card maze-card', description: () => translate('100 parcours d’obstacles différents avec lave et labyrinthe', '100 different obstacle courses with lava and maze'), tag: () => translate('100 parcours', '100 courses') },
-  { mode: 'city-ancient', image: translate(citiesFrUrl, citiesEnUrl, citiesEsUrl), alt: translate('Ville ancienne et ses bâtiments parisiens', 'Historic city with Parisian buildings'), name: translate('Ville ancienne', 'Historic City'), className: 'city-card', description: () => translate('Bâtiments parisiens · 10 km × 10 km', 'Parisian buildings · 10 km × 10 km'), tag: (enabled) => enabled ? translate('Multijoueur', 'Multiplayer') : 'Solo' },
+  { mode: 'city-ancient', image: translate(citiesFrUrl, citiesEnUrl, citiesEsUrl), alt: translate('Capitales européennes et leurs monuments', 'European capitals and their landmarks'), name: translate('Ville ancienne', 'Historic City'), className: 'city-card', description: () => translate('Paris, Londres, Berlin, Rome et 5 autres capitales · 10 km × 10 km', 'Paris, London, Berlin, Rome and 5 more capitals · 10 km × 10 km', 'París, Londres, Berlín, Roma y 5 capitales más · 10 km × 10 km'), tag: (enabled) => enabled ? translate('Multijoueur', 'Multiplayer') : 'Solo' },
   { mode: 'city-modern', image: translate(citiesFrUrl, citiesEnUrl, citiesEsUrl), alt: translate('Ville moderne, villas et immeubles de verre', 'Modern city with villas and glass buildings'), name: translate('Ville moderne', 'Modern City'), className: 'city-card', description: () => translate('Villas et petits gratte-ciel · 10 km × 10 km', 'Villas and small skyscrapers · 10 km × 10 km'), tag: (enabled) => enabled ? translate('Multijoueur', 'Multiplayer') : 'Solo' },
 ];
 
@@ -183,7 +183,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const soloModeBlocked = !enabled && isMultiplayerOnlyMode(currentMode);
   return (
     <div className="menu-screen">
-      <LanguagePanel />
+      {!createOpen && <LanguagePanel />}
       <div className="menu-layout">
         <aside className="menu-sidebar">
           <div className="menu-brand"><img className="menu-brand-icon" src={gameIconUrl} alt="LouisBlox" /><div><strong>LOUISBLOX</strong><small>{translate('Joue, construis, partage.', 'Play, build, share.')}</small></div></div>
@@ -191,11 +191,16 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           {!['pirates', 'football', 'maze', 'battle'].includes(currentMode) && <button className="sidebar-shop" onClick={onShop}><img src={translate(shopFrUrl, shopEnUrl, shopEsUrl)} alt="" /><span>{translate('Ouvrir la boutique', 'Open shop')}</span></button>}
         </aside>
         <main className="world-browser">
-          <div className="world-browser-header"><div><p className="eyebrow">{translate('TON AVENTURE', 'YOUR ADVENTURE')}</p><h1>{paused ? translate('PARTIE EN PAUSE', 'GAME PAUSED') : translate('Choisis ton monde', 'Choose your world')}<span className="creator-label">{translate('JEU DU CRÉATEUR', 'CREATOR GAME')}</span></h1></div><div className="world-entry-actions">{enabled && <button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={pendingWorld !== null}>{translate('Rejoindre', 'Join')}</button>}{paused && <button className="primary-button resume-button" onClick={onPlay} disabled={soloModeBlocked} title={soloModeBlocked ? translate('Active le multijoueur pour reprendre cette partie', 'Enable multiplayer to resume this game') : undefined}>{translate('Reprendre', 'Resume')}</button>}</div></div>
+          <div className="world-browser-header">
+            <div>
+              <h1>{!paused && translate('Choisis ton monde', 'Choose your world')}<span className="creator-label">{translate('JEU DU CRÉATEUR', 'CREATOR GAME')}</span></h1>
+            </div>
+            <div className="world-entry-actions">{enabled && <button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={pendingWorld !== null}>{translate('Rejoindre', 'Join')}</button>}{paused && <button className="primary-button resume-button" onClick={onPlay} disabled={soloModeBlocked} title={soloModeBlocked ? translate('Active le multijoueur pour reprendre cette partie', 'Enable multiplayer to resume this game') : undefined}>{translate('Reprendre', 'Resume')}</button>}</div>
+          </div>
           <div className="world-cards">
             <button className="world-card featured" aria-controls="mes-mondes" aria-expanded={libraryOpen} aria-haspopup="dialog" onClick={() => setLibraryOpen(true)}>
               <img src={translate(myWorldsFrUrl, myWorldsEnUrl, myWorldsEsUrl)} alt={translate('Mes mondes', 'My worlds')} />
-              <span className="world-card-label"><strong>{translate('Mes mondes', 'My worlds')}</strong><small>{translate('Retrouve toutes tes sauvegardes', 'Find all your saved worlds')}</small></span>
+              <span className="world-card-label"><strong>{translate('Mes mondes', 'My worlds')}</strong></span>
             </button>
             {MODE_CARDS().map((card) => {
               const locked = !enabled && isMultiplayerOnlyMode(card.mode);
@@ -204,7 +209,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
                 <div className="world-card-shell" key={card.mode}>
                   <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode)} disabled={pendingWorld !== null || locked} title={locked ? translate('Active « Jouer en multijoueur » pour choisir ce mode', 'Enable multiplayer to choose this mode') : undefined}>
                     <img src={card.image} alt={card.alt} />
-                    <span className="world-card-label"><strong>{card.name}</strong><small>{locked ? translate('Active le multijoueur pour jouer', 'Enable multiplayer to play') : card.description(enabled)}</small></span>
+                    <span className="world-card-label"><strong>{card.name}</strong></span>
                     <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{locked ? translate('Multijoueur requis', 'Multiplayer required') : card.tag(enabled)}</span>
                     {enabled && <span className="world-mode-badges">
                       {POPULAR_MODES.has(card.mode) && <span className="world-mode-popular">{translate('Populaire', 'Popular')}</span>}
@@ -215,7 +220,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               );
             })}
           </div>
-          <PlayerWorlds onPlay={onPlay} />
+          {enabled && <PlayerWorlds onPlay={onPlay} />}
           <MenuActionBar multiplayer={enabled} onSolo={() => setEnabled(false)} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} createDisabled={full} />
           {soloModeBlocked && <p className="multiplayer-error" role="status">{translate('Les modes Pirates et Football sont réservés au multijoueur.', 'Pirates and Football require multiplayer.')}</p>}
           {enabled && error && <p className="multiplayer-error" role="alert">{error}</p>}

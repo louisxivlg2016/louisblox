@@ -1,7 +1,8 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { Mesh, NearestFilter, Vector3 } from 'three';
+import { Mesh, MeshPhysicalMaterial, MeshStandardMaterial, NearestFilter, Vector3 } from 'three';
+import type { Material } from 'three';
 import type { Entity } from 'koota';
 import type { Group } from 'three';
 import { AnimalMesh, AnimalMotion, AnimalPosition, Trader } from '../game/traits';
@@ -28,6 +29,19 @@ import traderUrl from '../../assets/models/full-trader.glb';
 
 const hunyuanAnimals = { cow: cowUrl, chicken: chickenUrl, sheep: sheepUrl, pig: pigUrl, horse: horseUrl, camel: camelUrl, duck: duckUrl, wolf: wolfUrl, snowWolf: snowWolfUrl, bear: bearUrl, snowBear: snowBearUrl, deer: deerUrl, snowDeer: snowDeerUrl, monkey: singeUrl, ocelot: ocelotUrl, giraffe: girafeUrl, elephant: elephantUrl };
 for (const model of [...Object.values(hunyuanAnimals), traderUrl]) useGLTF.preload(model);
+
+export function matteAnimalMaterial(material: Material) {
+  if (!(material instanceof MeshStandardMaterial)) return;
+  material.roughness = 1;
+  material.metalness = 0;
+  material.emissive.set('#000000');
+  material.emissiveIntensity = 0;
+  if (material instanceof MeshPhysicalMaterial) {
+    material.specularIntensity = 0;
+    material.specularColor.set('#000000');
+  }
+  material.needsUpdate = true;
+}
 
 function useAnimalLegs(entity: Entity, bird = false, yawOffset = 0, legAxis: 'x' | 'z' = 'x', amplitude = 1) {
   const renderPosition = useRef<Vector3 | null>(null);
@@ -83,6 +97,7 @@ function HunyuanAnimal({ entity, kind }: { entity: Entity; kind: keyof typeof hu
       object.material = Array.isArray(object.material) ? object.material.map((material) => material.clone()) : object.material.clone();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) {
+        matteAnimalMaterial(material);
         if (!material.map) continue;
         material.map.magFilter = NearestFilter;
         material.map.minFilter = NearestFilter;
@@ -105,7 +120,7 @@ export function ReferenceAnimal({ entity, kind }: { entity: Entity; kind: Animal
   return null;
 }
 
-type TraderRig = { leftArm?: Group; rightArm?: Group; leftLeg?: Group; rightLeg?: Group };
+type TraderRig = { leftArm?: Group; rightArm?: Group; leftLeg?: Group; rightLeg?: Group; leftLowerLeg?: Group; rightLowerLeg?: Group };
 
 export function ReferenceTrader({ entity }: { entity: Entity }) {
   const { scene } = useGLTF(traderUrl);
@@ -119,14 +134,20 @@ export function ReferenceTrader({ entity }: { entity: Entity }) {
     return model;
   }, [scene]);
   const rig = character.userData.rig as TraderRig;
+  const group = useRef<Group>(null);
   const phase = useRef(0);
   useFrame((_, delta) => {
-    rig.leftArm?.rotation.set(0, 0, 0);
-    rig.rightArm?.rotation.set(0, 0, 0);
-    if (entity.get(Trader)?.walking) phase.current += delta * 6;
-    const swing = entity.get(Trader)?.walking ? Math.sin(phase.current) * 0.42 : 0;
-    if (rig.leftLeg) rig.leftLeg.rotation.x = swing;
-    if (rig.rightLeg) rig.rightLeg.rotation.x = -swing;
+    const trader = entity.get(Trader);
+    const sitting = trader?.restaurantMeal === 'eating';
+    if (group.current) group.current.position.y = sitting ? -0.45 : 0;
+    rig.leftArm?.rotation.set(sitting ? -0.85 : 0, 0, 0);
+    rig.rightArm?.rotation.set(sitting ? -0.85 : 0, 0, 0);
+    if (trader?.walking) phase.current += delta * 6;
+    const swing = trader?.walking ? Math.sin(phase.current) * 0.42 : 0;
+    if (rig.leftLeg) rig.leftLeg.rotation.x = sitting ? Math.PI / 2 : swing;
+    if (rig.rightLeg) rig.rightLeg.rotation.x = sitting ? Math.PI / 2 : -swing;
+    if (rig.leftLowerLeg) rig.leftLowerLeg.rotation.x = sitting ? -Math.PI / 2 : 0;
+    if (rig.rightLowerLeg) rig.rightLowerLeg.rotation.x = sitting ? -Math.PI / 2 : 0;
   });
-  return <group name="reference-trader" userData={{ source: 'Hunyuan' }}><primitive object={character} /></group>;
+  return <group ref={group} name="reference-trader" userData={{ source: 'Hunyuan' }}><primitive object={character} /></group>;
 }

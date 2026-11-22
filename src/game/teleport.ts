@@ -3,14 +3,15 @@ import { getBlockIndex, getWorldSeed, streamChunks } from './chunks';
 import { groundAt } from './vehicles';
 import { isCollidable } from './systems/collisionSystem';
 import { biomeAt, heightAt, safeSpawnAt } from './levels';
-import { tradeCityAt, villageAt } from './villages';
+import { nearestVillageAt, tradeCityAt } from './villages';
 import { nearestFarmstead, nearestHamlet } from './countryside';
 import { saveWorld } from './save';
 import { translate } from './language';
 import type { Biome } from './levels';
 import { nearestRuinOfType } from './ruins';
 import type { RuinType } from './ruins';
-import { Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from './traits';
+import { Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep, AnimalHome, AnimalMesh, AnimalMotion, AnimalPosition, AnimalTame, Trader, TraderPosition } from './traits';
+import { clearAnimalInterpolation, reportAnimalSpawn } from './animalSync';
 import { dismount } from './vehicles';
 import { useGameStore } from './store';
 import type { Home } from './homes';
@@ -32,6 +33,24 @@ function safeDestination(world: World, x: number, y: number, z: number) {
   const nextX = Math.round(x);
   const nextZ = Math.round(z);
   return { x: nextX, y: groundAt(world, nextX, nextZ) + 0.02, z: nextZ };
+}
+
+function bringTamedAnimals(world: World, x: number, y: number, z: number, yaw: number) {
+  let index = 0;
+  for (const animal of world.query(AnimalTame, AnimalPosition, AnimalMotion)) {
+    if (!animal.get(AnimalTame)?.tamed) continue;
+    clearAnimalInterpolation(world, animal);
+    const offset = 1.2 + index * 0.8;
+    const destination = safeDestination(world, x + offset, y, z);
+    animal.get(AnimalPosition)!.set(destination.x, destination.y, destination.z);
+    animal.set(AnimalMotion, { yaw, displayYaw: yaw, speed: 0, running: false, velocityY: 0, grounded: true });
+    const mesh = animal.get(AnimalMesh)?.value;
+    if (mesh) mesh.position.copy(animal.get(AnimalPosition)!);
+    const home = animal.get(AnimalHome);
+    if (home) animal.set(AnimalHome, { x: destination.x, z: destination.z, radius: 2 });
+    reportAnimalSpawn(animal);
+    index += 1;
+  }
 }
 
 export function teleportToBiome(world: World, biome: Biome) {
@@ -73,6 +92,7 @@ export function teleportToBiome(world: World, biome: Biome) {
   entity.get(PlayerBody)?.value?.setTranslation(safe, true);
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false });
+  bringTamedAnimals(world, safe.x, safe.y, safe.z, 0);
   return safe;
 }
 
@@ -89,35 +109,8 @@ export function teleportToRuin(world: World, type: RuinType) {
   entity.get(PlayerBody)?.value?.setTranslation(safe, true);
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false });
+  bringTamedAnimals(world, safe.x, safe.y, safe.z, 0);
   return safe;
-}
-
-function nearestNaturalVillage(x: number, z: number, seed: number) {
-  const centerX = Math.floor(x / 192);
-  const centerZ = Math.floor(z / 192);
-  const visited = new Set<string>();
-  for (let radius = 0; radius <= 12; radius += 1) {
-    let nearest: { x: number; z: number } | null = null;
-    let bestDistance = Infinity;
-    const consider = (site: { x: number; z: number } | null) => {
-      if (!site || visited.has(`${site.x},${site.z}`)) return;
-      visited.add(`${site.x},${site.z}`);
-      const distance = Math.hypot(site.x - x, site.z - z);
-      if (distance < bestDistance) {
-        nearest = site;
-        bestDistance = distance;
-      }
-    };
-    if (radius === 0) consider(villageAt(0, 0, seed));
-    for (let dx = -radius; dx <= radius; dx += 1) for (let dz = -radius; dz <= radius; dz += 1) {
-      if (Math.max(Math.abs(dx), Math.abs(dz)) !== radius) continue;
-      const candidateX = (centerX + dx) * 192 + 96;
-      const candidateZ = (centerZ + dz) * 192 + 96;
-      consider(villageAt(Math.floor(candidateX / 16), Math.floor(candidateZ / 16), seed));
-    }
-    if (nearest) return nearest;
-  }
-  return null;
 }
 
 export function teleportToVillage(world: World) {
@@ -127,7 +120,7 @@ export function teleportToVillage(world: World) {
   const game = useGameStore.getState();
   const seed = getWorldSeed(world);
   const ancient = game.gameplayMode === 'city-ancient';
-  const site = ancient ? nearestHamlet(position.x, position.z, seed) : game.worldTemplate === 'nature' ? nearestNaturalVillage(position.x, position.z, seed) : null;
+  const site = ancient ? nearestHamlet(position.x, position.z, seed) : game.worldTemplate === 'nature' ? nearestVillageAt(position.x, position.z, seed) : null;
   if (!site) {
     game.setNotice(translate('Aucun petit village trouvé dans ce monde.', 'No small village found in this world.'));
     return null;
@@ -140,6 +133,31 @@ export function teleportToVillage(world: World) {
     game.setNotice(translate('Téléportation au petit village réussie !', 'Teleported to the small village!'));
   }
   return destination;
+}
+
+export function teleportToTrader(world: World) {
+  const player = world.queryFirst(Player)?.get(PlayerPosition);
+  if (!player) return null;
+  let destination: { x: number; y: number; z: number } | null = null;
+  let closest = Infinity;
+  for (const trader of world.query(Trader, TraderPosition)) {
+    if (trader.get(Trader)?.villager) continue;
+    const position = trader.get(TraderPosition)!;
+    const distance = position.distanceToSquared(player);
+    if (distance >= closest) continue;
+    closest = distance;
+    destination = { x: position.x - 2, y: position.y, z: position.z };
+  }
+  if (!destination) {
+    useGameStore.getState().setNotice(translate('Aucun marchand trouvé dans ce monde.', 'No trader found in this world.'));
+    return null;
+  }
+  const result = teleportToHome(world, { ...destination, yaw: 0, pitch: 0 });
+  if (result) {
+    saveWorld(world);
+    useGameStore.getState().setNotice(translate('Téléportation au marchand réussie !', 'Teleported to the trader!'));
+  }
+  return result;
 }
 
 export function teleportToFarm(world: World) {
@@ -182,5 +200,6 @@ export function teleportToHome(world: World, destination: Pick<Home, 'x' | 'y' |
   entity.get(PlayerVelocity)?.set(0, 0, 0);
   entity.set(PlayerState, { flying: false, grounded: false, yaw: destination.yaw, pitch: destination.pitch });
   useGameStore.getState().setFlying(false);
+  bringTamedAnimals(world, safe.x, safe.y, safe.z, destination.yaw);
   return { x: safe.x, y: safe.y, z: safe.z };
 }

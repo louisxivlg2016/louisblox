@@ -4,7 +4,7 @@ import { changeInventory, inventoryCount } from './inventory';
 import type { SelectedKind } from './items';
 import { selectionInfo } from './items';
 import { useGameStore } from './store';
-import { AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Player, PlayerBody, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Trader, TraderMesh, TraderPosition } from './traits';
+import { AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Player, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, Trader, TraderMesh, TraderPosition } from './traits';
 import type { World } from 'koota';
 import { BlockKind } from './voxel';
 import { findInteractionTarget } from './interactionTargets';
@@ -12,6 +12,12 @@ import { getWorldSeed, streamChunks } from './chunks';
 import { tradeCityAt, restaurantAt } from './villages';
 import { requestPlay } from './input';
 import { translate } from './language';
+import { teleportToHome } from './teleport';
+import { heightAt } from './levels';
+import { groundAt } from './vehicles';
+import { reportAnimalSpawn } from './animalSync';
+import { saveWorld } from './save';
+import { useNavigationStore } from './navigation';
 
 export type TradeOffer = { id: string; cost: SelectedKind; costCount: number; reward: SelectedKind; rewardCount: number };
 
@@ -146,13 +152,50 @@ export function openRestaurant() {
   useTradeStore.setState({ view: 'restaurant', story: translate('Le marchand t’invite à partager un repas chaud au restaurant du village. Les champs et les habitants sont autour de toi.', 'The trader invites you to share a warm meal at the village restaurant. Fields and residents surround you.'), message: '' });
 }
 
+export function arriveAtVillageWithTrader(world: World) {
+  const traderId = useTradeStore.getState().traderId;
+  const trader = traderId?.get(Trader);
+  if (!traderId || !trader || trader.villager) return false;
+  const seed = getWorldSeed(world);
+  const site = tradeCityAt(seed);
+  const destination = teleportToHome(world, { x: site.x, y: heightAt(site.x, site.z + 7, seed) + 0.51, z: site.z + 7, yaw: 0, pitch: 0 });
+  if (!destination) return false;
+  traderId.set(Trader, { following: false, arrived: true, walking: false, targetX: site.x, targetZ: site.z, destinationX: site.x, destinationZ: site.z });
+  const traderPosition = traderId.get(TraderPosition);
+  if (traderPosition) {
+    traderPosition.set(destination.x + 2, groundAt(world, destination.x + 2, destination.z, destination.y + 8), destination.z);
+    const mesh = traderId.get(TraderMesh)?.value;
+    if (mesh) mesh.position.copy(traderPosition);
+  }
+  for (const camel of world.query(CamelLeash, AnimalPosition, AnimalMotion)) {
+    const leash = camel.get(CamelLeash)!;
+    if (leash.trader !== traderId) continue;
+    const x = destination.x - 2.7 - leash.order * 2.6;
+    const z = destination.z + (leash.order % 2 === 0 ? -1 : 1);
+    const position = camel.get(AnimalPosition)!;
+    position.set(x, groundAt(world, x, z, destination.y + 8), z);
+    camel.set(AnimalMotion, { yaw: Math.PI / 2, displayYaw: Math.PI / 2, speed: 0, running: false, velocityY: 0, grounded: true });
+    const mesh = camel.get(AnimalMesh)?.value;
+    if (mesh) mesh.position.copy(position);
+    reportAnimalSpawn(camel);
+  }
+  useTradeStore.setState({ following: false, open: false });
+  useNavigationStore.getState().clearCaravanDestination();
+  useGameStore.getState().setNotice(translate('La caravane est arrivée au village !', 'The caravan has arrived at the village!'));
+  saveWorld(world);
+  void requestPlay();
+  return true;
+}
+
 export function acceptRestaurantInvitation(world: World) {
   const playerEntity = world.queryFirst(Player);
   const player = playerEntity?.get(PlayerPosition);
   if (!playerEntity || !player) return false;
   const seed = getWorldSeed(world);
-  const next = restaurantAt(tradeCityAt(seed), seed);
   const merchant = useTradeStore.getState().traderId;
+  const merchantData = merchant?.get(Trader);
+  const site = merchantData?.destinationX !== null && merchantData?.destinationX !== undefined && merchantData.destinationZ !== null && merchantData.destinationZ !== undefined ? { x: merchantData.destinationX, z: merchantData.destinationZ } : tradeCityAt(seed);
+  const next = restaurantAt(site, seed);
   if (merchant && !merchant.get(Trader)?.villager) {
     merchant.set(Trader, { arrived: true, following: false, walking: true, restaurantInvited: true, restaurantMeal: 'going', restaurantMealTime: 0, restaurantStep: 0, restaurantMessage: translate('Viens au restaurant avec moi. Je mange aussi avec toi !', 'Come to the restaurant with me. I will eat with you too!'), targetX: next.x, targetZ: next.z });
   }
@@ -174,18 +217,12 @@ export function acceptRestaurantInvitation(world: World) {
       if (mesh) mesh.position.copy(position);
     }
   }
-  player.set(next.x, next.y, next.z);
-  playerEntity.get(PlayerBody)?.value?.setTranslation(next, true);
-  playerEntity.get(PlayerVelocity)?.set(0, 0, 0);
-  playerEntity.set(PlayerState, { flying: false, grounded: true });
-  useGameStore.setState({ flying: false });
+  const state = playerEntity.get(PlayerState);
+  const destination = teleportToHome(world, { x: next.x, y: next.y, z: next.z, yaw: state?.yaw ?? 0, pitch: state?.pitch ?? 0 });
+  if (!destination) return false;
   useGameStore.getState().setNotice(translate('Te voilà au restaurant ! Choisis ton repas ici ou ramasse la nourriture sur la table avec E.', 'Here you are at the restaurant! Choose your meal here or pick up food from the table with E.'));
   useTradeStore.getState().setOpen(false);
-  void requestPlay().then(() => {
-    playerEntity.get(PlayerPosition)?.set(next.x, next.y, next.z);
-    playerEntity.get(PlayerBody)?.value?.setTranslation(next, true);
-    playerEntity.set(PlayerState, { flying: false, grounded: true });
-  });
+  void requestPlay();
   return true;
 }
 

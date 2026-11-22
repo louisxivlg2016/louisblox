@@ -8,7 +8,7 @@ import type { Voxel } from './voxel';
 export const CHUNK_SIZE = 16;
 export const VIEW_DISTANCE = 5;
 export const SEA_LEVEL = 5;
-export const MIN_WORLD_Y = -64;
+export const MIN_WORLD_Y = -256;
 export const MAX_BUILD_Y = Number.MAX_SAFE_INTEGER;
 
 export type Biome = 'prairie' | 'forest' | 'jungle' | 'winter' | 'desert' | 'autumn';
@@ -158,6 +158,14 @@ function stoneAt(x: number, y: number, z: number, seed: number): BlockKind {
   return BlockKind.Stone;
 }
 
+export function generateChunkDepth(cx: number, cz: number, minY: number, maxY: number, seed = 73421): Voxel[] {
+  const blocks: Voxel[] = [];
+  for (let x = cx * CHUNK_SIZE; x < (cx + 1) * CHUNK_SIZE; x += 1) for (let z = cz * CHUNK_SIZE; z < (cz + 1) * CHUNK_SIZE; z += 1) {
+    for (let y = Math.max(MIN_WORLD_Y, minY); y <= maxY; y += 1) blocks.push({ x, y, z, kind: stoneAt(x, y, z, seed) });
+  }
+  return blocks;
+}
+
 export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedChunk {
   const blocks = new Map<string, Voxel>();
   const water: WaterTile[] = [];
@@ -180,7 +188,7 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
       const biome = biomeAt(x, z, seed);
       const beach = height < SEA_LEVEL;
 
-      for (let y = MIN_WORLD_Y; y <= height; y += 1) {
+      for (let y = Math.max(MIN_WORLD_Y, height - 12); y <= height; y += 1) {
         let kind: BlockKind = stoneAt(x, y, z, seed);
         if (y === height) {
           if (beach || biome === 'desert') kind = BlockKind.Sand;
@@ -195,6 +203,7 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
         }
         put(x, y, z, kind);
       }
+      put(x, MIN_WORLD_Y, z, BlockKind.Bedrock);
 
       if (height < SEA_LEVEL) {
         water.push({ x, z });

@@ -1,18 +1,23 @@
 import type { Entity, World } from 'koota';
 import type { Vector3 } from 'three';
 import { damageAnimal } from './combat';
-import { Animal, AnimalHealth, AnimalHit, AnimalPosition, FirePosition, HorseRider, Player, PlayerMount, Trader, TraderPosition } from './traits';
+import { Animal, AnimalHealth, AnimalHit, AnimalPosition, Fire, FirePosition, HorseRider, Player, PlayerMount, Trader, TraderPosition } from './traits';
+import { BlockKind } from './voxel';
+import { isTamedAnimal } from './taming';
 import { dismount } from './vehicles';
 import { applyTraderDeath, reportTraderDeath } from './deathSync';
 
-export function getFireSources(world: World) {
-  return world.query(FirePosition).map((entity) => entity.get(FirePosition)!);
+export type FireSource = Vector3 & { kind?: BlockKind };
+
+export function getFireSources(world: World): FireSource[] {
+  return world.query(FirePosition).map((entity) => Object.assign(entity.get(FirePosition)!.clone(), { kind: entity.get(Fire)?.kind }));
 }
 
-export function nearestFire(fires: readonly Vector3[], position: Vector3, radius = 6) {
+export function nearestFire(fires: readonly FireSource[], position: Vector3, radius = 6, ignoreCampfire = false) {
   let nearest: Vector3 | null = null;
   let closest = radius * radius;
   for (const fire of fires) {
+    if (ignoreCampfire && fire.kind === BlockKind.Campfire) continue;
     if (Math.abs(fire.y - position.y) > 4) continue;
     const distance = (fire.x - position.x) ** 2 + (fire.z - position.z) ** 2;
     if (distance >= closest) continue;
@@ -55,9 +60,10 @@ export function fireHazardSystem(world: World, dt: number) {
   for (const entity of world.query(Animal, AnimalHealth, AnimalHit, AnimalPosition)) {
     const hit = entity.get(AnimalHit)!;
     const position = entity.get(AnimalPosition)!;
+    const hazards = isTamedAnimal(entity) ? fires.filter((fire) => fire.kind !== BlockKind.Campfire) : fires;
     const fireIn = Math.max(0, hit.fireIn - dt);
     entity.set(AnimalHit, { fireIn });
-    if (fireIn > 0 || !touchingFire(fires, position, 0.5)) continue;
+    if (fireIn > 0 || !touchingFire(hazards, position, 0.5)) continue;
     entity.set(AnimalHit, { fireIn: 1 });
     damageAnimalFromHazard(world, entity, 1);
   }

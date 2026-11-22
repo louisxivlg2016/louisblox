@@ -14,6 +14,9 @@ export const INFINITE_EDITOR_COORDINATE = 1000000000;
 
 export type CustomTerrain = 'flat' | 'natural';
 export type CustomEntitySpawn = { kind: import('./animals').AnimalKind; x: number; y: number; z: number };
+export type CustomWorldImage = { x: number; y: number; z: number; url: string; width: number; height: number };
+export type CustomCharacterKind = 'worker' | 'trader' | 'princess' | 'knight' | 'pirate' | 'police' | 'explorer';
+export type CustomCharacter = { x: number; y: number; z: number; kind: CustomCharacterKind; name?: string };
 export type CustomWorldDefinition = {
   version: 1;
   terrain: CustomTerrain;
@@ -22,6 +25,8 @@ export type CustomWorldDefinition = {
   infinite?: boolean;
   environment?: { time?: 'day' | 'night'; weather?: 'clear' | 'rain' | 'snow' };
   spawns?: CustomEntitySpawn[];
+  images?: CustomWorldImage[];
+  characters?: CustomCharacter[];
 };
 
 export const DEFAULT_WORLD_SOURCE = `terrain("plat");
@@ -39,6 +44,17 @@ bloc(0, 2, -4, "bougie");
 
 function identifier(value: string) {
   return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function validImageUrl(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length < 1 || value.length > 200000) return false;
+  return /^https:\/\/[^\s"']+$/.test(value) || /^data:image\/(?:png|jpeg|gif|webp);base64,[a-z0-9+/=]+$/i.test(value);
+}
+
+function customCharacterKind(value: unknown): CustomCharacterKind | null {
+  if (typeof value !== 'string') return null;
+  const aliases = new Map<string, CustomCharacterKind>([['travailleur', 'worker'], ['worker', 'worker'], ['marchand', 'trader'], ['trader', 'trader'], ['princesse', 'princess'], ['princess', 'princess'], ['chevalier', 'knight'], ['knight', 'knight'], ['pirate', 'pirate'], ['policier', 'police'], ['police', 'police'], ['explorateur', 'explorer'], ['explorer', 'explorer']]);
+  return aliases.get(identifier(value)) ?? null;
 }
 
 export function worldBlockId(kind: BlockKind) {
@@ -78,6 +94,11 @@ export const EDITOR_BLOCK_CATEGORIES: EditorBlockCategory[] = [
   { id: 'doors', name: 'Doors and trapdoors', kinds: [...Array.from({ length: 32 }, (_, index) => (BlockKind.DoorWhite + index) as BlockKind), ...Array.from({ length: 3 }, (_, index) => (BlockKind.TrapdoorIron + index) as BlockKind)] },
   { id: 'furniture', name: translate('Maison et décoration', 'Home and decoration'), kinds: [BlockKind.Chest, BlockKind.Furnace, BlockKind.Ladder, BlockKind.Sign, BlockKind.Candle, BlockKind.Lantern, BlockKind.ModernCeilingLight, BlockKind.Tnt, BlockKind.Campfire, BlockKind.Wildfire, BlockKind.Food, ...Array.from({ length: 17 }, (_, index) => (BlockKind.Bed + index) as BlockKind)] },
   { id: 'street', name: 'Street and rails', kinds: [BlockKind.Rail, BlockKind.TrafficLight, BlockKind.StreetLamp, BlockKind.ParisStreetLamp, ...Array.from({ length: 12 }, (_, index) => (BlockKind.StopSign + index) as BlockKind), BlockKind.ParisStreetSign] },
+  { id: 'lighting', name: translate('Lumières et feu', 'Lighting and fire'), kinds: [BlockKind.Candle, BlockKind.Lantern, BlockKind.ModernCeilingLight, BlockKind.Campfire, BlockKind.Wildfire, BlockKind.StreetLamp, BlockKind.ParisStreetLamp] },
+  { id: 'storage', name: translate('Rangement et ateliers', 'Storage and workstations'), kinds: [BlockKind.Chest, BlockKind.Furnace, BlockKind.Ladder, BlockKind.Sign] },
+  { id: 'beds', name: translate('Lits et chambres', 'Beds and bedrooms'), kinds: Array.from({ length: 17 }, (_, index) => (BlockKind.Bed + index) as BlockKind) },
+  { id: 'food', name: translate('Nourriture et cultures', 'Food and crops'), kinds: [BlockKind.Food, BlockKind.Wheat, BlockKind.Corn, BlockKind.Tomato, BlockKind.Carrot, BlockKind.Watermelon, BlockKind.Apple] },
+  { id: 'mechanisms', name: translate('Mécanismes et explosifs', 'Mechanisms and explosives'), kinds: [BlockKind.Tnt, BlockKind.TrafficLight, BlockKind.Sign, BlockKind.Rail] },
 ];
 
 type Value = number | string | boolean | undefined;
@@ -303,13 +324,15 @@ class Scope {
   }
 }
 
-type CompiledWorld = Pick<CustomWorldDefinition, 'terrain' | 'blocks' | 'environment' | 'spawns'>;
+type CompiledWorld = Pick<CustomWorldDefinition, 'terrain' | 'blocks' | 'environment' | 'spawns' | 'images' | 'characters'>;
 
 export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x: number, z: number) => number = () => 0, infinite = false): CompiledWorld {
   if (typeof source !== 'string' || source.length > CUSTOM_WORLD_MAX_SOURCE) throw new Error(translate(`Le code est limité à ${CUSTOM_WORLD_MAX_SOURCE} caractères.`, `Code is limited to ${CUSTOM_WORLD_MAX_SOURCE} characters.`));
   const program = new WorldCodeParser(tokenize(source)).parse();
   const blocks = new Map<string, Voxel>();
   const spawns: CustomEntitySpawn[] = [];
+  const images: CustomWorldImage[] = [];
+  const characters: CustomCharacter[] = [];
   const environment: CustomWorldDefinition['environment'] = {};
   let terrain: CustomTerrain = 'flat';
   let operations = 0;
@@ -469,6 +492,27 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
       const [x, y, z] = position(args, 0, line);
       const [dx, dy, dz] = position(args, 3, line);
       blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: 'teleport', destination: { x: dx, y: dy, z: dz } }, text: `Téléporter vers ${dx}, ${dy}, ${dz}` });
+      return;
+    }
+    if (name === 'image') {
+      if (args.length < 4 || args.length > 6) throw new Error(translate(`Ligne ${line} : image attend x, y, z, une adresse et facultativement largeur et hauteur.`, `Line ${line}: image expects x, y, z, an address, and optional width and height.`));
+      const [x, y, z] = position(args, 0, line);
+      if (!validImageUrl(args[3])) throw new Error(translate(`Ligne ${line} : utilise une adresse https ou une image PNG, JPEG, GIF ou WebP importée.`, `Line ${line}: use an https address or an imported PNG, JPEG, GIF, or WebP image.`));
+      const width = args[4] === undefined ? 4 : number(args[4], 'largeur', line);
+      const height = args[5] === undefined ? 4 : number(args[5], 'hauteur', line);
+      if (width < 0.5 || width > 16 || height < 0.5 || height > 16) throw new Error(translate(`Ligne ${line} : la largeur et la hauteur doivent être entre 0.5 et 16.`, `Line ${line}: width and height must be between 0.5 and 16.`));
+      if (images.length >= 40) throw new Error(translate(`Ligne ${line} : maximum 40 images par monde.`, `Line ${line}: maximum 40 images per world.`));
+      images.push({ x, y, z, url: args[3], width, height });
+      return;
+    }
+    if (name === 'personnage') {
+      if (args.length !== 4 && args.length !== 5) throw new Error(translate(`Ligne ${line} : personnage attend x, y, z, un type et facultativement un nom.`, `Line ${line}: character expects x, y, z, a kind, and an optional name.`));
+      const [x, y, z] = position(args, 0, line);
+      const characterKind = customCharacterKind(args[3]);
+      if (!characterKind) throw new Error(translate(`Ligne ${line} : choisis travailleur, marchand, princesse, chevalier, pirate, policier ou explorateur.`, `Line ${line}: choose worker, trader, princess, knight, pirate, police, or explorer.`));
+      if (args[4] !== undefined && typeof args[4] !== 'string') throw new Error(translate(`Ligne ${line} : le nom doit être entre guillemets.`, `Line ${line}: the name must be in quotes.`));
+      if (characters.length >= 100) throw new Error(translate(`Ligne ${line} : maximum 100 personnages par monde.`, `Line ${line}: maximum 100 characters per world.`));
+      characters.push({ x, y, z, kind: characterKind, ...(typeof args[4] === 'string' && args[4].trim() ? { name: args[4].trim().slice(0, 24) } : {}) });
       return;
     }
     if (name === 'animal' || name === 'zombie') {
@@ -772,7 +816,7 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
   };
   const global = new Scope();
   for (const statement of program) run(statement, global);
-  return { terrain, blocks: [...blocks.values()].sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z), ...(Object.keys(environment).length > 0 ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}) };
+  return { terrain, blocks: [...blocks.values()].sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z), ...(Object.keys(environment).length > 0 ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}), ...(images.length > 0 ? { images } : {}), ...(characters.length > 0 ? { characters } : {}) };
 }
 
 export function sanitizeCustomWorld(value: unknown): CustomWorldDefinition | null {
@@ -814,17 +858,32 @@ export function sanitizeCustomWorld(value: unknown): CustomWorldDefinition | nul
     if (!spawn || typeof spawn !== 'object' || !animalKinds.has(spawn.kind) || !Number.isSafeInteger(spawn.x) || !Number.isSafeInteger(spawn.y) || !Number.isSafeInteger(spawn.z) || Math.abs(spawn.x) > limit || Math.abs(spawn.z) > limit || spawn.y < 1 || spawn.y > CUSTOM_WORLD_MAX_Y) return null;
     spawns.push({ kind: spawn.kind, x: spawn.x, y: spawn.y, z: spawn.z });
   }
-  return { version: 1, terrain: definition.terrain, source: definition.source, blocks: [...blocks.values()], ...(definition.infinite === true ? { infinite: true } : {}), ...(environment ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}) };
+  const images: CustomWorldImage[] = [];
+  if (definition.images !== undefined && !Array.isArray(definition.images)) return null;
+  for (const image of definition.images ?? []) {
+    if (!image || typeof image !== 'object' || !Number.isSafeInteger(image.x) || !Number.isSafeInteger(image.y) || !Number.isSafeInteger(image.z) || Math.abs(image.x) > limit || Math.abs(image.z) > limit || image.y < 1 || image.y > CUSTOM_WORLD_MAX_Y || !validImageUrl(image.url) || typeof image.width !== 'number' || !Number.isFinite(image.width) || image.width < 0.5 || image.width > 16 || typeof image.height !== 'number' || !Number.isFinite(image.height) || image.height < 0.5 || image.height > 16 || images.length >= 40) return null;
+    images.push({ x: image.x, y: image.y, z: image.z, url: image.url, width: image.width, height: image.height });
+  }
+  const characters: CustomCharacter[] = [];
+  if (definition.characters !== undefined && !Array.isArray(definition.characters)) return null;
+  for (const character of definition.characters ?? []) {
+    const characterKind = character && typeof character === 'object' ? customCharacterKind(character.kind) : null;
+    if (!character || typeof character !== 'object' || !characterKind || !Number.isSafeInteger(character.x) || !Number.isSafeInteger(character.y) || !Number.isSafeInteger(character.z) || Math.abs(character.x) > limit || Math.abs(character.z) > limit || character.y < 1 || character.y > CUSTOM_WORLD_MAX_Y || characters.length >= 100) return null;
+    characters.push({ x: character.x, y: character.y, z: character.z, kind: characterKind, ...(typeof character.name === 'string' && character.name.trim() ? { name: character.name.trim().slice(0, 24) } : {}) });
+  }
+  return { version: 1, terrain: definition.terrain, source: definition.source, blocks: [...blocks.values()], ...(definition.infinite === true ? { infinite: true } : {}), ...(environment ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}), ...(images.length > 0 ? { images } : {}), ...(characters.length > 0 ? { characters } : {}) };
 }
 
 export function createCustomWorld(source: string, seed: number, terrainHeight?: (x: number, z: number) => number, infinite = false): CustomWorldDefinition {
   return { version: 1, source, ...executeWorldCode(source, seed, terrainHeight, infinite), ...(infinite ? { infinite: true } : {}) };
 }
 
-export function worldCodeFromBlocks(definition: Pick<CustomWorldDefinition, 'terrain' | 'blocks' | 'environment' | 'spawns'>) {
+export function worldCodeFromBlocks(definition: Pick<CustomWorldDefinition, 'terrain' | 'blocks' | 'environment' | 'spawns' | 'images' | 'characters'>) {
   const sorted = [...definition.blocks].sort((a, b) => a.y - b.y || a.x - b.x || a.z - b.z);
   const environment = `${definition.environment?.time === 'night' ? 'nuit();\n' : definition.environment?.time === 'day' ? 'jour();\n' : ''}${definition.environment?.weather ? `meteo("${definition.environment.weather}");\n` : ''}`;
   const spawns = (definition.spawns ?? []).map((spawn) => `${spawn.kind === 'zombie' ? 'zombie' : 'animal'}(${spawn.x}, ${spawn.y}, ${spawn.z}${spawn.kind === 'zombie' ? '' : `, "${spawn.kind}"`});`).join('\n');
+  const images = (definition.images ?? []).map((image) => `image(${image.x}, ${image.y}, ${image.z}, ${JSON.stringify(image.url)}, ${image.width}, ${image.height});`).join('\n');
+  const characters = (definition.characters ?? []).map((character) => `personnage(${character.x}, ${character.y}, ${character.z}, "${character.kind}"${character.name ? `, ${JSON.stringify(character.name)}` : ''});`).join('\n');
   return `terrain("${definition.terrain === 'natural' ? 'nature' : 'plat'}");\n${environment}\n${sorted.map((block) => {
     const protectedBlock = block.protected === true ? ', true' : '';
     if (block.shop) {
@@ -841,5 +900,5 @@ export function worldCodeFromBlocks(definition: Pick<CustomWorldDefinition, 'ter
     }
     const season = block.season && block.season !== 'auto' ? `saison(${block.x}, ${block.z}, ${block.x}, ${block.z}, "${({ spring: 'printemps', summer: 'ete', autumn: 'automne', winter: 'hiver' } as const)[block.season]}");\n` : '';
     return `${season}bloc(${block.x}, ${block.y}, ${block.z}, "${worldBlockId(block.kind)}"${protectedBlock});`;
-  }).join('\n')}${spawns ? `\n${spawns}` : ''}`;
+  }).join('\n')}${spawns ? `\n${spawns}` : ''}${images ? `\n${images}` : ''}${characters ? `\n${characters}` : ''}`;
 }

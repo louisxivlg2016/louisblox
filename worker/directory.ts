@@ -42,9 +42,9 @@ export function json(value: unknown, status = 200) {
 }
 
 const color = (value: unknown) => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
-const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'corsair', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
+const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'corsair', 'footballer', 'firefighter', 'worker', 'police', 'soldier', 'trader']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
-const avatars = new Set(['pixel', 'girl', 'girl-dark', 'girl-brown', 'girl-red', 'girl-black', 'boy', 'boy-dark', 'boy-brown', 'boy-red', 'boy-black', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
+const avatars = new Set(['pixel', 'girl', 'girl-dark', 'girl-brown', 'girl-red', 'girl-black', 'boy', 'boy-dark', 'boy-brown', 'boy-red', 'boy-black', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'worker', 'police', 'soldier', 'trader']);
 
 export function parseAppearance(value: unknown, character: 'boy' | 'girl' = 'boy'): Appearance {
   const data = value && typeof value === 'object' ? value as Record<string, unknown> : {};
@@ -105,16 +105,30 @@ export class PlayerDirectory extends DurableObject<Env> {
         this.ctx.storage.get<Array<[string, string]>>('names-v1'),
         this.ctx.storage.get<Array<[string, SharedWorld]>>('worlds-v1'),
       ]);
-      this.knownPlayers = new Map(known ?? []);
-      this.invitations = new Map(invitations ?? []);
-      this.nameOwners = new Map(owners ?? []);
-      this.sharedWorlds = new Map(worlds ?? []);
-      for (const player of this.knownPlayers.values()) {
-        const key = player.name.trim().toLocaleLowerCase();
-        if (!this.nameOwners.has(key)) this.nameOwners.set(key, player.playerId);
+      try {
+        this.knownPlayers = new Map((known ?? []).filter((entry) => Array.isArray(entry) && parseSocialPlayer(entry[1]) !== null));
+        this.invitations = new Map((invitations ?? []).filter((entry) => Array.isArray(entry) && typeof entry[0] === 'string'));
+        this.nameOwners = new Map((owners ?? []).filter((entry) => Array.isArray(entry) && typeof entry[0] === 'string'));
+        this.sharedWorlds = new Map((worlds ?? []).filter((entry) => Array.isArray(entry) && typeof entry[0] === 'string'));
+        for (const player of this.knownPlayers.values()) {
+          const key = player.name.trim().toLocaleLowerCase();
+          if (!this.nameOwners.has(key)) this.nameOwners.set(key, player.playerId);
+        }
+      } catch {
+        this.knownPlayers = new Map();
+        this.invitations = new Map();
+        this.nameOwners = new Map();
+        this.sharedWorlds = new Map();
       }
     });
-    await this.ready;
+    try {
+      await this.ready;
+    } catch {
+      this.knownPlayers = new Map();
+      this.invitations = new Map();
+      this.nameOwners = new Map();
+      this.sharedWorlds = new Map();
+    }
   }
 
   private saveWorlds() {
@@ -177,11 +191,11 @@ export class PlayerDirectory extends DurableObject<Env> {
     if (url.pathname === '/players' && request.method === 'GET') {
       const query = normalizeSearch(url.searchParams.get('q') ?? '');
       const mode = url.searchParams.get('mode');
-      const players = isGameplayMode(mode)
+      const players = (isGameplayMode(mode)
         ? [...this.onlinePlayers.values()].filter((player) => player.gameplayMode === mode)
         : query
           ? [...this.knownPlayers.values()].filter((player) => matchesSearch(player.name, query))
-          : [...this.onlinePlayers.values()];
+          : [...this.onlinePlayers.values()]).filter((player) => typeof player.name === 'string');
       return json({
         players: players
           .map((player) => ({ ...player, online: this.onlinePlayers.has(player.playerId) }))

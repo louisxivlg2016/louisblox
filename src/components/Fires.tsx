@@ -1,9 +1,9 @@
-import { Suspense, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { useQuery, useQueryFirst } from 'koota/react';
 import type { Entity } from 'koota';
-import { Box3, BoxGeometry, InstancedMesh, Matrix4, MeshBasicMaterial, Vector3 } from 'three';
+import { Box3, BoxGeometry, CanvasTexture, Color, InstancedMesh, Matrix4, MeshBasicMaterial, PlaneGeometry, Vector3 } from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { Fire, FirePosition, Player, PlayerPosition } from '../game/traits';
 import redFireUrl from '../../assets/models/red-fire.glb';
@@ -55,15 +55,55 @@ function FlameInstances({ fires }: { fires: readonly Entity[] }) {
   );
 }
 
-const SMOKE_PUFFS = 6;
+const SMOKE_PUFFS = 10;
 const SMOKE_CAPACITY = 96 * SMOKE_PUFFS;
-const smokeMaterial = new MeshBasicMaterial({ color: '#6d777f', transparent: true, opacity: 0.34, depthWrite: false });
+const smokeGeometry = new PlaneGeometry(1, 1);
+const smokePosition = new Vector3();
+const smokeScale = new Vector3();
+const smokeColor = new Color();
+const smokeBaseColor = new Color('#454b52');
+const smokeTopColor = new Color('#b8bec2');
+
+function createSmokeTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const context = canvas.getContext('2d')!;
+  let seed = 731;
+  const random = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  for (let puff = 0; puff < 20; puff += 1) {
+    const angle = random() * Math.PI * 2;
+    const distance = Math.sqrt(random()) * 27;
+    const x = 64 + Math.cos(angle) * distance;
+    const y = 64 + Math.sin(angle) * distance;
+    const radius = 25 + random() * 27;
+    const opacity = 0.13 + random() * 0.12;
+    const shade = Math.round(215 + random() * 40);
+    const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+    gradient.addColorStop(0, `rgba(${shade},${shade},${shade},${opacity})`);
+    gradient.addColorStop(0.42, `rgba(${shade},${shade},${shade},${opacity * 0.78})`);
+    gradient.addColorStop(0.76, `rgba(${shade},${shade},${shade},${opacity * 0.24})`);
+    gradient.addColorStop(1, `rgba(${shade},${shade},${shade},0)`);
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 128, 128);
+  }
+  return new CanvasTexture(canvas);
+}
 
 function SmokeInstances({ fires }: { fires: readonly Entity[] }) {
   const smoke = useRef<InstancedMesh>(null);
   const capacity = Math.max(SMOKE_CAPACITY, fires.length * SMOKE_PUFFS);
+  const smokeMaterial = useMemo(() => new MeshBasicMaterial({ map: createSmokeTexture(), transparent: true, opacity: 0.68, depthWrite: false, alphaTest: 0.004 }), []);
 
-  useFrame(({ clock }) => {
+  useEffect(() => () => {
+    smokeMaterial.map?.dispose();
+    smokeMaterial.dispose();
+  }, [smokeMaterial]);
+
+  useFrame(({ clock, camera }) => {
     if (!smoke.current) return;
     const time = clock.elapsedTime;
     let index = 0;
@@ -74,26 +114,31 @@ function SmokeInstances({ fires }: { fires: readonly Entity[] }) {
       const flameScale = 1.2 + fire.age / 20;
       const offset = ((position.x * 0.17 + position.z * 0.29) % 1 + 1) % 1;
       for (let puff = 0; puff < SMOKE_PUFFS && index < capacity; puff += 1) {
-        const progress = (time * 0.3 + puff / SMOKE_PUFFS + offset) % 1;
-        const spread = 0.08 + progress * 0.65;
-        const size = (0.16 + progress * 0.4) * Math.sin(progress * Math.PI) * (0.75 + flameScale * 0.2);
-        const angle = time * 0.6 + puff * 1.9 + offset * Math.PI * 2;
-        matrix.makeScale(size, size * 0.82, size);
-        matrix.setPosition(
-          position.x + Math.sin(angle) * spread + progress * 0.3,
-          position.y - 0.5 + flameScale * 0.8 + progress * 3.4,
-          position.z + Math.cos(angle * 0.83) * spread * 0.65,
+        const progress = (time * 0.17 + puff / SMOKE_PUFFS + offset) % 1;
+        const spread = 0.05 + progress * 0.62;
+        const fadeScale = Math.max(0, Math.min(1, progress / 0.08, (1 - progress) / 0.2));
+        const size = (0.3 + progress * 1.25) * (0.82 + flameScale * 0.13) * fadeScale;
+        const angle = time * 0.38 + puff * 1.9 + offset * Math.PI * 2;
+        smokePosition.set(
+          position.x + Math.sin(angle) * spread + progress * progress * 1.15,
+          position.y - 0.5 + flameScale * 0.78 + progress * 4.4,
+          position.z + Math.cos(angle * 0.83) * spread * 0.65 + Math.sin(progress * 5 + offset) * progress * 0.16,
         );
+        smokeScale.set(size * 1.15, size, 1);
+        matrix.compose(smokePosition, camera.quaternion, smokeScale);
         smoke.current.setMatrixAt(index, matrix);
+        smokeColor.copy(smokeBaseColor).lerp(smokeTopColor, progress * 0.9);
+        smoke.current.setColorAt(index, smokeColor);
         index += 1;
       }
       if (index >= capacity) break;
     }
     smoke.current.count = index;
     smoke.current.instanceMatrix.needsUpdate = true;
+    if (smoke.current.instanceColor) smoke.current.instanceColor.needsUpdate = true;
   });
 
-  return <instancedMesh name="fire-smoke" ref={smoke} args={[geometry, smokeMaterial, capacity]} count={0} frustumCulled={false} dispose={null} />;
+  return <instancedMesh name="fire-smoke" ref={smoke} args={[smokeGeometry, smokeMaterial, capacity]} count={0} frustumCulled={false} dispose={null} />;
 }
 
 function RedFlame({ entity }: { entity: Entity }) {

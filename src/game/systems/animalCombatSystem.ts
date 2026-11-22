@@ -46,10 +46,10 @@ export function animalCombatSystem(world: World, camera: Camera, dt: number, tou
   if (!target) return false;
   const damage = typeof selected === 'string' ? getItemMeta(selected).damage ?? 1 : 1;
   if (touchTaps > 0) {
-    if (damageAnimal(world, target.entity, damage, player)) stopMining();
+    if (damageAnimal(world, target.entity, damage, player, true)) stopMining();
     cooldowns.set(world, 0.35);
   } else if (isMouseButtonDown(0) && cooldown <= 0) {
-    if (damageAnimal(world, target.entity, damage, player)) stopMining();
+    if (damageAnimal(world, target.entity, damage, player, true)) stopMining();
     cooldowns.set(world, typeof selected === 'string' ? getItemMeta(selected).cooldown ?? 0.35 : 0.35);
   }
   return true;

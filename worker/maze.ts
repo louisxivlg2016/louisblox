@@ -111,7 +111,7 @@ export class MazeEngine {
 
   constrainState(player: PlayerAttachment, state: NonNullable<PlayerAttachment['state']>) {
     state.flying = false;
-    if (this.phase === 'playground' || this.phase === 'finished') {
+    if (this.phase === 'playground' || this.phase === 'finished' && this.course < 99) {
       state.x = Math.max(MAZE_PLAYGROUND_BOUNDS.minX, Math.min(MAZE_PLAYGROUND_BOUNDS.maxX, state.x));
       state.z = Math.max(MAZE_PLAYGROUND_BOUNDS.minZ, Math.min(MAZE_PLAYGROUND_BOUNDS.maxZ, state.z));
       return;
@@ -160,10 +160,15 @@ export class MazeEngine {
     this.winner = player.playerId;
     this.winnerName = player.name;
     this.finishMs = Math.max(0, now - this.startedAt);
-    this.notice = `${player.name} found the exit! Course ${this.course + 1}/100 unlocked!`;
-    this.course = (this.course + 1) % 100;
+    const final = this.course === 99;
+    this.notice = final ? 'All 100 courses complete!' : `${player.name} found the exit! Course ${this.course + 1}/100 unlocked!`;
+    if (!final) this.course += 1;
+    if (!final && this.course < 99) this.spawnPlayground();
+    else {
+      this.phase = final ? 'finished' : 'waiting';
+      this.spawnAll();
+    }
     this.whistle();
-    this.spawnPlayground();
     this.update();
     void this.room.save();
   }
@@ -177,6 +182,14 @@ export class MazeEngine {
       this.whistle();
       this.spawnAll();
       this.update();
+      return true;
+    }
+    if (data.type === 'maze-continue' && this.phase === 'finished') {
+      this.phase = this.course === 99 ? 'waiting' : 'playground';
+      this.notice = this.course === 99 ? 'Final level · the Maze!' : `Course ${this.course + 1}/100 · reach the cake!`;
+      this.spawnAll();
+      this.update();
+      void this.room.save();
       return true;
     }
     if (data.type === 'maze-reset') {

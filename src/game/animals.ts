@@ -5,7 +5,7 @@ import type { Biome, WaterTile } from './levels';
 import { Animal, AnimalHealth, AnimalHit, AnimalHome, AnimalId, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Trader, TraderMesh, TraderPosition } from './traits';
 import { useGameStore } from './store';
 import { isInAnyRuinFootprint } from './ruins';
-import { spawnVillageResidents, tradeCityAt } from './villages';
+import { nearestVillageAt, spawnVillageResidents, tradeCityAt } from './villages';
 import { isAnimalDead, isTraderDead } from './deathSync';
 import { applyTameState } from './taming';
 import { groundAt } from './vehicles';
@@ -138,7 +138,7 @@ export function spawnTrader(world: World, x: number, z: number, seed: number, de
     const camels = world.query(CamelLeash).filter((entity) => entity.get(CamelLeash)?.trader === existing).sort((a, b) => a.get(CamelLeash)!.order - b.get(CamelLeash)!.order);
     return [existing, ...camels];
   }
-  const destination = tradeCityAt(destinationSeed);
+  const destination = nearestVillageAt(site.x, site.z, destinationSeed) ?? tradeCityAt(destinationSeed);
   const trader = world.spawn(
     Trader({ homeX: site.x, homeZ: site.z, targetX: site.x, targetZ: site.z, destinationX: destination.x, destinationZ: destination.z }),
     TraderPosition(new Vector3(site.x, site.y, site.z)),
@@ -163,7 +163,7 @@ function spawnTradersAlongGrid(world: World, cx: number, cz: number, seed: numbe
       const x = cellX * 100 + 50;
       const z = cellZ * 100 + 50;
       if (x < cx * 16 || x >= (cx + 1) * 16 || z < cz * 16 || z >= (cz + 1) * 16) continue;
-      if (hash(cellX, cellZ, seed + 900) < 0.5) continue;
+      if (hash(cellX, cellZ, seed + 900) < 0.82) continue;
       entities.push(...spawnTrader(world, x, z, seed + cellX * 37 + cellZ * 61, seed));
     }
   }

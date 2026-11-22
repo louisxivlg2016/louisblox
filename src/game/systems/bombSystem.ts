@@ -12,6 +12,7 @@ import {
 import { playSound } from '../audio';
 import { damageCreaturesInRadius } from '../hazards';
 import { damagePirateObjectivesInRadius } from '../piratesClient';
+import { useGameStore } from '../store';
 
 export function bombSystem(world: World, dt: number) {
   world.query(Bomb, BombPosition).updateEach(([bomb, position], entity) => {
@@ -19,9 +20,10 @@ export function bombSystem(world: World, dt: number) {
     if (bomb.fuse > 0) return;
 
     playSound('explosion', 0.6);
-    explodeVoxels(world, position.x, position.y, position.z, 3);
-    damageCreaturesInRadius(world, position, 4.5);
-    damagePirateObjectivesInRadius(position, 3.5);
+    const pirates = useGameStore.getState().gameplayMode === 'pirates';
+    explodeVoxels(world, position.x, position.y, position.z, pirates ? 1.6 : 3);
+    damageCreaturesInRadius(world, position, pirates ? 2.5 : 4.5);
+    damagePirateObjectivesInRadius(position, pirates ? 2 : 3.5);
     world.spawn(
       Explosion({ time: 0.45, maxTime: 0.45 }),
       ExplosionPosition(position.clone()),

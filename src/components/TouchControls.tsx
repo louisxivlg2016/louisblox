@@ -6,6 +6,7 @@ import { landPlane } from '../game/vehicles';
 import { world } from '../game/world';
 import { translate } from '../game/language';
 import { honk, toggleHeadlights, useVehicleControls } from '../game/vehicleControls';
+import { isAnimalMount } from '../game/vehicleTypes';
 
 function HoldButton({ code, label, onDoubleTap, ariaLabel }: { code: string; label: string; onDoubleTap?: () => void; ariaLabel?: string }) {
   const lastTap = useRef(0);
@@ -66,6 +67,7 @@ export function TouchControls() {
   const plane = riding === 'plane';
   const pilot = useGameStore((state) => state.ridingRole === 'driver');
   const cannon = riding === 'cannon' && pilot;
+  const animal = isAnimalMount(riding);
   const flying = useGameStore((state) => state.flying);
   const headlights = useVehicleControls((state) => state.headlights);
 
@@ -115,8 +117,8 @@ export function TouchControls() {
         <HoldButton code="KeyS" label="↓" ariaLabel={translate('Reculer', 'Reverse')} />
         <HoldButton code="KeyA" label="←" ariaLabel={translate('Tourner à gauche', 'Turn left')} />
         <HoldButton code="KeyD" label="→" ariaLabel={translate('Tourner à droite', 'Turn right')} />
-        <button className={`touch-button${headlights ? ' touch-flight' : ''}`} aria-label={translate('Activer ou couper les phares', 'Toggle headlights')} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); toggleHeadlights(); }}>Phares</button>
-        <button className="touch-button" aria-label={translate('Klaxonner', 'Honk horn')} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); honk(); }}>Klaxon</button>
+        {!animal && <><button className={`touch-button${headlights ? ' touch-flight' : ''}`} aria-label={translate('Activer ou couper les phares', 'Toggle headlights')} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); toggleHeadlights(); }}>Phares</button>
+        <button className="touch-button" aria-label={translate('Klaxonner', 'Honk horn')} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); honk(); }}>Klaxon</button></>}
       </div>}
       {football && <div className="football-touch-actions" aria-label="Actions de football">
         <HoldButton code="KeyE" label={translate('Tir puissant', 'Power shot')} />

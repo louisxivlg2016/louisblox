@@ -5,7 +5,7 @@ import { Box3, Group, Mesh, NearestFilter, Vector3 } from 'three';
 import type { AnimalKind } from '../game/animals';
 import type { Entity } from 'koota';
 import { PixelPart } from './ItemModel';
-import { ReferenceAnimal } from './ReferenceAnimals';
+import { matteAnimalMaterial, ReferenceAnimal } from './ReferenceAnimals';
 import { AnimalMesh, AnimalMotion, AnimalPosition } from '../game/traits';
 import zombieUrl from '../../assets/models/zombie.glb';
 
@@ -23,6 +23,7 @@ function ZombieModel({ entity }: { entity: Entity }) {
       if (!(object instanceof Mesh)) return;
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) {
+        matteAnimalMaterial(material);
         if (!material.map) continue;
         material.map.magFilter = NearestFilter;
         material.map.minFilter = NearestFilter;

@@ -1,5 +1,5 @@
 import type { Entity, World } from 'koota';
-import { getBlockIndex, getWorldSeed, isChunkLoaded } from '../chunks';
+import { chunkCoordinate, getBlockIndex, getWorldSeed, isChunkLoaded, loadChunk } from '../chunks';
 import { MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
@@ -10,10 +10,11 @@ import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Playe
 import { getFireSources, nearestFire } from '../hazards';
 import { useTradeStore } from '../trading';
 import { useGameStore } from '../store';
-import { tradeCityAt } from '../villages';
+import { nearestVillageAt, tradeCityAt } from '../villages';
 import { updateMerchantRestaurant, updateVillageSleep } from '../villageLife';
 import { animalSeatOffset } from '../mounts';
 import { translate } from '../language';
+import { useNavigationStore } from '../navigation';
 
 const foliage = new Set<BlockKind>([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple]);
 const stuckCamels = new Map<Entity, { x: number; z: number; time: number }>();
@@ -249,6 +250,29 @@ function guideRestaurantTravel(world: World, entity: Entity, dt: number) {
   }
 }
 
+const tradeCityPreloads = new WeakMap<World, { key: string; index: number }>();
+const destinationSearches = new WeakMap<World, Map<Entity, number>>();
+
+export function preloadTradeCity(world: World, x: number, z: number, count = 1) {
+  const centerX = chunkCoordinate(x);
+  const centerZ = chunkCoordinate(z);
+  const key = `${centerX},${centerZ}`;
+  let task = tradeCityPreloads.get(world);
+  if (!task || task.key !== key) {
+    task = { key, index: 0 };
+    tradeCityPreloads.set(world, task);
+  }
+  const offsets = [] as Array<{ x: number; z: number }>;
+  for (let dx = -2; dx <= 2; dx += 1) for (let dz = -2; dz <= 2; dz += 1) offsets.push({ x: centerX + dx, z: centerZ + dz });
+  offsets.sort((a, b) => Math.abs(a.x - centerX) + Math.abs(a.z - centerZ) - (Math.abs(b.x - centerX) + Math.abs(b.z - centerZ)));
+  for (let index = 0; index < count && task.index < offsets.length; index += 1) {
+    const chunk = offsets[task.index];
+    task.index += 1;
+    loadChunk(world, chunk.x, chunk.z);
+  }
+  return task.index >= offsets.length;
+}
+
 function traderHeading(trader: { homeX: number; homeZ: number }) {
   const angle = trader.homeX * 0.17 + trader.homeZ * 0.31;
   return Math.atan2(Math.sin(angle), Math.cos(angle));
@@ -330,14 +354,42 @@ export function traderSystem(world: World, dt: number) {
     }
     if (trader.following && !fire) {
       if (trader.destinationX === null || trader.destinationZ === null) {
-        const destination = tradeCityAt(getWorldSeed(world));
+        const destination = nearestVillageAt(position.x, position.z, getWorldSeed(world)) ?? tradeCityAt(getWorldSeed(world));
         trader.destinationX = destination.x;
         trader.destinationZ = destination.z;
       }
-      const remaining = Math.hypot(trader.destinationX - position.x, trader.destinationZ - position.z);
+      let remaining = Math.hypot(trader.destinationX - position.x, trader.destinationZ - position.z);
+      let searches = destinationSearches.get(world);
+      if (!searches) {
+        searches = new Map<Entity, number>();
+        destinationSearches.set(world, searches);
+      }
+      const now = performance.now();
+      if (now - (searches.get(entity) ?? 0) >= 1500) {
+        searches.set(entity, now);
+        const destination = nearestVillageAt(position.x, position.z, getWorldSeed(world));
+        if (destination) {
+          const distance = Math.hypot(destination.x - position.x, destination.z - position.z);
+          const changed = destination.x !== trader.destinationX || destination.z !== trader.destinationZ;
+          if (changed && (distance + 8 < remaining || distance <= 24)) {
+            trader.destinationX = destination.x;
+            trader.destinationZ = destination.z;
+            trader.targetX = destination.x;
+            trader.targetZ = destination.z;
+            trader.detourX = null;
+            trader.detourZ = null;
+            trader.detourIn = 0;
+            traderPaths.delete(entity);
+            remaining = distance;
+            if (conversation.traderId === entity) useNavigationStore.getState().setCaravanDestination(destination.x, destination.z);
+          }
+        }
+      }
+      if (remaining < 96) preloadTradeCity(world, trader.destinationX, trader.destinationZ, 2);
       if (remaining <= 2.2) {
         entity.set(Trader, { following: false, arrived: true, walking: false, targetX: trader.destinationX, targetZ: trader.destinationZ });
         if (conversation.traderId === entity) useTradeStore.setState({ following: false });
+        useNavigationStore.getState().clearCaravanDestination();
         useGameStore.getState().setNotice(translate('La caravane est arrivée ! Le marchand t’invite au restaurant du village. Parle-lui pour manger.', 'The caravan has arrived! The trader invites you to the village restaurant. Talk to him to eat.'));
         continue;
       }

@@ -74,7 +74,7 @@ export function texture(kind: BlockKind, face: 'side' | 'top' | 'bottom') {
   for (let x = 0; x < 16; x += 1) {
     for (let y = 0; y < 16; y += 1) {
       const value = random(x, y, kind * 17 + face.length);
-      if ((foliage || sapling) && value < 0.09) continue;
+      if (kind !== BlockKind.PineLeaves && (foliage || sapling) && value < 0.09) continue;
       context.fillStyle = palette[Math.floor(value * palette.length)];
       context.fillRect(x, y, 1, 1);
     }

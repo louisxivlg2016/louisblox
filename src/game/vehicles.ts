@@ -1,6 +1,6 @@
 import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
-import { addVoxel, getBlockIndex, getColumnTop, streamChunks } from './chunks';
+import { addVoxel, chunkCoordinate, ensureChunkDepth, getBlockIndex, getColumnTop, getWorldSeed, streamChunks } from './chunks';
 import { getTouchMovement, isDown } from './input';
 import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from './levels';
 import { useGameStore } from './store';
@@ -19,6 +19,8 @@ import type { MountKind, SeatRole, VehicleKind } from './vehicleTypes';
 import { translate } from './language';
 import { useRadioStore } from './radio';
 import { useVehicleSteeringStore } from './vehicleSteering';
+import { nearestVillageAt, tradeCityAt } from './villages';
+import { useNavigationStore } from './navigation';
 export { METRO_LENGTH, PLANE_SCALE, TRAIN_LENGTH } from './vehicleTypes';
 
 const isVehicleFoliage = (kind: BlockKind) => kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves;
@@ -26,6 +28,7 @@ const isVehicleFoliage = (kind: BlockKind) => kind === BlockKind.Leaves || kind 
 export function groundAt(world: World, x: number, z: number, fromY = MAX_BUILD_Y) {
   const bx = Math.round(x);
   const bz = Math.round(z);
+  ensureChunkDepth(world, chunkCoordinate(bx), chunkCoordinate(bz), fromY);
   const top = getColumnTop(world, bx, bz);
   const blocks = getBlockIndex(world);
   const isGround = (y: number) => {
@@ -166,7 +169,9 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
   const guidedCamel = kind === 'camel' ? vehicle.get(CamelLeash)?.trader ?? null : null;
   const leader = guidedCamel?.get(Trader);
   if (guidedCamel && leader && !leader.arrived && !leader.villager) {
-    guidedCamel.set(Trader, { following: true });
+    const destination = nearestVillageAt(guidedCamel.get(TraderPosition)?.x ?? 0, guidedCamel.get(TraderPosition)?.z ?? 0, getWorldSeed(world)) ?? (leader.destinationX !== null && leader.destinationZ !== null ? { x: leader.destinationX, z: leader.destinationZ } : tradeCityAt(getWorldSeed(world)));
+    guidedCamel.set(Trader, { following: true, destinationX: destination.x, destinationZ: destination.z });
+    useNavigationStore.getState().setCaravanDestination(destination.x, destination.z);
     if (useTradeStore.getState().traderId === guidedCamel) useTradeStore.getState().setFollowing(true);
   }
   const walkable = !isAnimalMount(kind) && canWalkInVehicle(kind, role);

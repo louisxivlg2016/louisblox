@@ -12,7 +12,7 @@ import type { ChunkEdit } from '../game/chunks';
 import { isPlayerSnapshot, resolveMultiplayerUrl } from '../game/multiplayer';
 import type { PlayerSnapshot } from '../game/multiplayer';
 import { useMultiplayerStore, useRemotePlayerStore } from '../game/multiplayerStore';
-import { canCreateWorld, createWorldSave, listWorlds, saveWorld } from '../game/save';
+import { canCreateWorld, createWorldSave, listWorlds, readWorldSave, saveWorld } from '../game/save';
 import { rememberWorld, useGameStore } from '../game/store';
 import { isJoinOnlyRoom } from '../game/roomJoin';
 import { useCharacterStore } from '../game/characterStore';
@@ -365,7 +365,8 @@ export function MultiplayerConnection() {
           socket.current?.close();
           return;
         }
-        const existing = listWorlds().find((saved) => saved.id === room);
+        const localSave = readWorldSave(room);
+        const existing = listWorlds().find((saved) => saved.id === room) ?? (localSave ? { id: room, name: room, gameplayMode: localSave.gameplayMode, updatedAt: localSave.savedAt ?? 0 } : undefined);
         if (!existing && !canCreateWorld(room)) {
           pendingWorld.current = null;
           store.setEnabled(false);
@@ -384,6 +385,10 @@ export function MultiplayerConnection() {
             game.regenerate(mode, room, undefined, game.worldId === room ? game.worldName : room);
           }
           return;
+        }
+        if (localSave) {
+          const current = createWorldSave(world);
+          if (!current || current.seed !== localSave.seed || JSON.stringify(current.edits) !== JSON.stringify(localSave.edits)) return;
         }
         const current = socket.current;
         if (current?.readyState === WebSocket.OPEN && !worldInitSent.current) {
@@ -898,12 +903,14 @@ export function MultiplayerConnection() {
   useEffect(() => {
     if (lastGeneration.current === generation) return;
     lastGeneration.current = generation;
-    if (!connected) return;
+    if (!connected || pendingWorld.current) return;
     const current = socket.current;
     if (current?.readyState === WebSocket.OPEN) {
       const force = requestedRoomForce && requestedRoomMode !== null && requestedRoomMode === useGameStore.getState().gameplayMode;
+      if (worldInitSent.current && !force) return;
       if (force) requestedRoomMode = null;
       sendWorldInitialization(current, world, force);
+      worldInitSent.current = true;
     }
   }, [world, generation, connected]);
 

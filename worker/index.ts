@@ -7,6 +7,7 @@ import { MazeEngine } from './maze';
 import { isAnimalMount, isVehicleKind } from '../src/game/vehicleTypes';
 import { BlockKind } from '../src/game/voxel';
 import { sanitizeCustomWorld } from '../src/game/worldCode';
+import { generatePirateChunk } from '../src/game/pirates';
 import type { CustomWorldDefinition } from '../src/game/worldCode';
 import type { MountKind, VehicleKind } from '../src/game/vehicleTypes';
 export { PlayerDirectory } from './directory';
@@ -110,9 +111,9 @@ const corsHeaders = {
 };
 const facings = new Set(['north', 'south', 'east', 'west']);
 const maxBlockKind = Math.max(...Object.values(BlockKind));
-const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'corsair', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
+const outfits = new Set(['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'corsair', 'footballer', 'firefighter', 'worker', 'police', 'soldier', 'trader']);
 const wigs = new Set(['auto', 'none', 'louis14', 'louis15']);
-const profileAvatars = new Set(['pixel', 'girl', 'girl-dark', 'girl-brown', 'girl-red', 'girl-black', 'boy', 'boy-dark', 'boy-brown', 'boy-red', 'boy-black', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'police', 'soldier', 'trader']);
+const profileAvatars = new Set(['pixel', 'girl', 'girl-dark', 'girl-brown', 'girl-red', 'girl-black', 'boy', 'boy-dark', 'boy-brown', 'boy-red', 'boy-black', 'louis14', 'louis15', 'king', 'explorer', 'princess', 'knight', 'military', 'pirate', 'footballer', 'firefighter', 'worker', 'police', 'soldier', 'trader']);
 const potionEffects = new Set(['speed', 'slowness', 'jump', 'doubleJump', 'haste', 'strength', 'weakness', 'defence', 'regeneration', 'poison', 'invisibility', 'heatResistance', 'knockback']);
 
 function parseHorse(value: unknown): PlayerState['horse'] {
@@ -192,7 +193,7 @@ function parseEdits(value: unknown): EditEntry[] | null {
   for (const entry of value) {
     if (!Array.isArray(entry) || entry.length !== 2) return null;
     const [x, y, z] = String(entry[0]).split(',').map(Number);
-    if (![x, y, z].every(Number.isInteger) || Math.abs(x) > 10000000 || Math.abs(z) > 10000000 || y < -64 || !Number.isSafeInteger(y)) return null;
+    if (![x, y, z].every(Number.isInteger) || Math.abs(x) > 10000000 || Math.abs(z) > 10000000 || y < -256 || !Number.isSafeInteger(y)) return null;
     const key = `${x},${y},${z}`;
     const edit = entry[1];
     if (edit === null) {
@@ -438,9 +439,32 @@ export class GameRoom extends DurableObject<Env> {
     });
   }
 
-  private async saveWorld(publisher?: PlayerAttachment) {
+  private saveTimer?: ReturnType<typeof setTimeout>;
+  private publishTimer?: ReturnType<typeof setTimeout>;
+  private pendingPublisher?: PlayerAttachment;
+
+  private schedulePublishWorld() {
+    if (this.publishTimer !== undefined) return;
+    this.publishTimer = setTimeout(() => {
+      this.publishTimer = undefined;
+      const publisher = this.pendingPublisher;
+      this.pendingPublisher = undefined;
+      void this.publishWorld(publisher).catch(() => {});
+    }, 30000);
+  }
+
+  private async flushWorldSave() {
     await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName, template: this.worldTemplate, customWorld: this.customWorld, protection: this.protection, tribes: this.tribes, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot(), deadAnimals: [...this.deadAnimals], deadTraders: [...this.deadTraders], deathWorldId: this.deathWorldId } satisfies StoredWorld);
-    await this.publishWorld(publisher);
+    this.schedulePublishWorld();
+  }
+
+  private async saveWorld(publisher?: PlayerAttachment) {
+    if (publisher) this.pendingPublisher = publisher;
+    if (this.saveTimer !== undefined) return;
+    this.saveTimer = setTimeout(() => {
+      this.saveTimer = undefined;
+      void this.flushWorldSave().catch(() => {});
+    }, 1000);
   }
 
   private canEditAt(playerId: string, x: number, z: number, action: 'break' | 'place' | 'interact' = 'interact', kind?: number) {
@@ -520,6 +544,11 @@ export class GameRoom extends DurableObject<Env> {
         continue;
       }
     }
+    if (this.saveTimer !== undefined) clearTimeout(this.saveTimer);
+    if (this.publishTimer !== undefined) clearTimeout(this.publishTimer);
+    this.saveTimer = undefined;
+    this.publishTimer = undefined;
+    this.pendingPublisher = undefined;
     await this.ctx.storage.deleteAlarm();
     await this.ctx.storage.deleteAll();
     this.worldSeed = null;
@@ -1200,6 +1229,13 @@ export class GameRoom extends DurableObject<Env> {
       if (!attachment || !edits || this.worldSeed === null) return;
       const permitted = edits.filter(([position, edit]) => {
         const [x, y, z] = position.split(',').map(Number);
+        if (this.gameplayMode === 'pirates' && edit === null && Math.abs(x) <= 48 && Math.abs(z) <= 48) {
+          const generated = generatePirateChunk(Math.floor((x + 0.5) / 16), Math.floor((z + 0.5) / 16)).blocks.find((block) => block.x === x && block.y === y && block.z === z);
+          if (generated?.kind === BlockKind.Sand || generated?.kind === BlockKind.Water) {
+            ws.send(JSON.stringify({ type: 'protection-denied', x, y, z }));
+            return false;
+          }
+        }
         const customBlock = this.customWorld?.blocks.find((block) => block.x === x && block.y === y && block.z === z);
         const current = this.worldEdits.has(position) ? this.worldEdits.get(position) : customBlock ?? null;
         const protectedKind = typeof current === 'object' && current !== null && current.protected === true ? current.kind : null;

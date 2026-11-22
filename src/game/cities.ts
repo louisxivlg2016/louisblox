@@ -5,10 +5,10 @@ import type { GeneratedChunk } from './levels';
 import { CITY_CENTER_LIMIT, CITY_LIMIT } from './worldMode';
 import { generateCountrysideChunk } from './countryside';
 import { writeChurch } from './constructionTemplates';
+import { HISTORIC_CAPITALS, historicCapitalAt, writeHistoricLandmark } from './historicCapitals';
 
 const GROUND = 5;
 const BLOCK_SIZE = 48;
-const CITY_STREET_NAMES = ['Rue de la Paix', 'Avenue Louis XIV', 'Boulevard Saint-Germain', 'Rue de Rivoli', 'Avenue de l’Opéra', 'Rue des Champs-Élysées'];
 
 export const CITY_SPAWN = { x: 3, y: GROUND + 0.51, z: 0 };
 
@@ -48,7 +48,10 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
       }
       if (sea) addWater(x, z);
       const treeRow = !modern && ((cellX === 10 || cellX === 40) && ((z % 12) + 12) % 12 === 0 || (cellZ === 10 || cellZ === 40) && ((x % 12) + 12) % 12 === 0);
-      if (treeRow) {
+      const buildingCenterX = Math.floor(x / BLOCK_SIZE) * BLOCK_SIZE + 28;
+      const buildingCenterZ = Math.floor(z / BLOCK_SIZE) * BLOCK_SIZE + 28;
+      const insideBuildingLot = Math.abs(x - buildingCenterX) <= 14 && Math.abs(z - buildingCenterZ) <= 14;
+      if (treeRow && !insideBuildingLot) {
         for (let y = GROUND + 1; y <= GROUND + 3; y++) put(x, y, z, BlockKind.Wood);
         for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) put(x + dx, GROUND + 4, z + dz, BlockKind.Leaves);
         put(x, GROUND + 5, z, BlockKind.Leaves);
@@ -62,6 +65,7 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
     for (let bz = firstZ; bz <= firstZ + 2; bz++) {
       const centerX = bx * BLOCK_SIZE + 28;
       const centerZ = bz * BLOCK_SIZE + 28;
+      const capital = modern ? null : historicCapitalAt(centerX, centerZ);
       const intersectionX = bx * BLOCK_SIZE;
       const intersectionZ = bz * BLOCK_SIZE;
       if (!modern || intersectionZ < 144) {
@@ -78,11 +82,17 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
           put(intersectionX + 10, GROUND + 1, intersectionZ - 10, BlockKind.RoundaboutSign, 'east');
           put(intersectionX - 10, GROUND + 1, intersectionZ + 10, BlockKind.PrioritySign, 'west');
         }
-        const streetName = CITY_STREET_NAMES[Math.abs(bx + bz) % CITY_STREET_NAMES.length];
+        const streets = (capital ?? HISTORIC_CAPITALS[0]).streets;
+        const streetName = streets[Math.abs(bx + bz) % streets.length];
         blocks.set(voxelKey(intersectionX + 8, GROUND + 1, intersectionZ + 8), { x: intersectionX + 8, y: GROUND + 1, z: intersectionZ + 8, kind: BlockKind.ParisStreetSign, facing: 'south', text: streetName });
         blocks.set(voxelKey(intersectionX + 18, GROUND + 1, intersectionZ + 18), { x: intersectionX + 18, y: GROUND + 1, z: intersectionZ + 18, kind: BlockKind.ParisStreetSign, facing: 'north', text: streetName });
       }
-      const church = modern && bx === 0 && bz === 0 || !modern && (bx === 0 && bz === -1 || (Math.abs(bx) % 9 === 0 && Math.abs(bz) % 9 === 0 && (bx !== 0 || bz !== 0)));
+      const landmark = !modern && capital && capital.bx === bx && capital.bz === bz;
+      if (landmark && capital && capital.id !== 'paris') {
+        writeHistoricLandmark((x, y, z, kind, facing) => put(x, y, z, kind, facing), capital, centerX, GROUND, centerZ);
+        continue;
+      }
+      const church = modern && bx === 0 && bz === 0 || !modern && capital?.id === 'paris' && (bx === 0 && bz === -1 || (Math.abs(bx) % 9 === 0 && Math.abs(bz) % 9 === 0 && (bx !== 0 || bz !== 0)));
       if (church) {
         if (modern) for (const block of churchBlocks(centerX, centerZ, GROUND + 1)) put(block.x, block.y, block.z, block.kind, block.facing, block.open);
         else writeChurch((x, y, z, kind, options) => put(x, y, z, kind, options?.facing), centerX, GROUND, centerZ);
@@ -156,10 +166,10 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
       const variation = hash(bx, bz, seed);
       if (variation < 0.07) continue;
       const half = modern && variation < 0.35 ? 9 : 11;
-      const floors = modern ? variation < 0.35 ? 8 + Math.floor(variation * 4) : 12 + Math.floor(variation * 8) : 3 + Math.floor(variation * 3);
+      const floors = modern ? variation < 0.35 ? 8 + Math.floor(variation * 4) : 12 + Math.floor(variation * 8) : Math.max(2, 3 + Math.floor(variation * 3) + (capital?.floorBonus ?? 0));
       const height = GROUND + floors * 4;
-      const wall = modern ? BlockKind.Glass : variation < 0.5 ? BlockKind.BeigeBrick : BlockKind.WhiteBrick;
-      const accent = BlockKind.Glass;
+      const wall = modern ? BlockKind.Glass : variation < 0.5 ? capital?.wall ?? BlockKind.BeigeBrick : capital?.secondWall ?? BlockKind.WhiteBrick;
+      const accent = modern ? BlockKind.Glass : capital?.window ?? BlockKind.Glass;
       for (let x = centerX - half; x <= centerX + half; x++) {
         for (let z = centerZ - half; z <= centerZ + half; z++) {
           const edgeX = Math.abs(x - centerX) === half;
@@ -242,7 +252,7 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
           const radius = half - tier;
           for (let x = centerX - radius; x <= centerX + radius; x++) {
             for (let z = centerZ - radius; z <= centerZ + radius; z++) {
-              if (Math.abs(x - centerX) === radius || Math.abs(z - centerZ) === radius || tier === 3) put(x, height + tier, z, BlockKind.ConcreteBlack);
+              if (Math.abs(x - centerX) === radius || Math.abs(z - centerZ) === radius || tier === 3) put(x, height + tier, z, capital?.roof ?? BlockKind.ConcreteBlack);
             }
           }
         }
@@ -256,9 +266,12 @@ export function generateCityChunk(cx: number, cz: number, seed: number, modern: 
       }
     }
   }
-  if (!modern && cx === 0 && cz === 0) {
-    put(0, GROUND + 1, 0, BlockKind.Wood);
-    blocks.set(voxelKey(0, GROUND + 2, 0), { x: 0, y: GROUND + 2, z: 0, kind: BlockKind.Sign, text: 'Civilisation · Capitale' });
+  const marker = !modern ? HISTORIC_CAPITALS.find((capital) => Math.floor((capital.bx * BLOCK_SIZE + 2) / 16) === cx && Math.floor((capital.bz * BLOCK_SIZE + 2) / 16) === cz) : undefined;
+  if (marker) {
+    const x = marker.bx * BLOCK_SIZE + 2;
+    const z = marker.bz * BLOCK_SIZE + 2;
+    put(x, GROUND + 1, z, BlockKind.Wood);
+    blocks.set(voxelKey(x, GROUND + 2, z), { x, y: GROUND + 2, z, kind: BlockKind.Sign, text: `${marker.name} · ${marker.landmark}` });
   }
   return { blocks: [...blocks.values()], water };
 }

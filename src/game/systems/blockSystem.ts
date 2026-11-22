@@ -220,8 +220,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
 
     if (inBounds && (replacingWater || !blocks.has(voxelKey(x, y, z))) && !intersectsPlayer(x, y, z, player)) {
       if (typeof kind !== 'number') return;
-      if (isCeilingLight(kind) && hit.normal.y !== -1) {
-        store.setNotice(translate('Cette lumière se fixe sous un plafond.', 'This light attaches to the underside of a ceiling.', 'Esta luz se fija debajo de un techo.'));
+      if (kind === BlockKind.Lantern && hit.normal.y === 0 || kind === BlockKind.ModernCeilingLight && hit.normal.y !== -1) {
+        store.setNotice(translate('Cette lumière se fixe au sol ou sous un plafond.', 'This light attaches to the ground or the underside of a ceiling.', 'Esta luz se fija al suelo o debajo de un techo.'));
         return;
       }
       if (!hasInventory(kind, store)) {

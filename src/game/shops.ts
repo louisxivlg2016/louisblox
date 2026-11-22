@@ -4,7 +4,7 @@ import { BlockKind } from './voxel';
 import { respawnAtBase } from './battle';
 import { streamChunks } from './chunks';
 import { Player, PlayerHealth, PlayerState } from './traits';
-import { changeInventory, inventoryCount, inventoryKey } from './inventory';
+import { changeInventory, inventoryCount } from './inventory';
 import { getItemMeta, selectionInfo } from './items';
 import type { SelectedKind } from './items';
 import { useGameStore } from './store';
@@ -24,22 +24,30 @@ export function selectedItemPrice(kind: SelectedKind) {
   return category === 'vehicle' ? 50 : category === 'armor' ? 25 : category === 'gun' || category === 'bow' ? 15 : category === 'sword' || category === 'pickaxe' || category === 'shovel' ? 8 : category === 'food' ? 3 : 2;
 }
 
+let lastCreativeSale = 0;
+
 export function sellSelectedItem() {
   const store = useGameStore.getState();
-  if (store.gameplayMode !== 'creative' && store.gameplayMode !== 'survival') return false;
+  if (!['creative', 'survival', 'city-ancient', 'city-modern'].includes(store.gameplayMode)) return false;
   const kind = store.selected;
   const price = selectedItemPrice(kind);
   if (price <= 0) {
     store.setNotice(translate('Sélectionne un objet dans la barre rapide pour le vendre.', 'Select an item in the hotbar to sell it.'));
     return false;
   }
-  const available = store.gameplayMode === 'creative' ? store.itemCounts[inventoryKey(kind)] ?? 1 : inventoryCount(kind, store);
-  if (available <= 0) {
+  if (store.gameplayMode !== 'survival') {
+    const now = Date.now();
+    if (now - lastCreativeSale < 500) {
+      store.setNotice(translate('Attends un instant avant de vendre un autre objet.', 'Wait a moment before selling another item.'));
+      return false;
+    }
+    lastCreativeSale = now;
+  } else if (inventoryCount(kind, store) <= 0) {
     store.setNotice(translate('Tu n’as plus cet objet à vendre.', 'You have no more of this item to sell.'));
     return false;
   }
   const name = selectionInfo(kind).name;
-  changeInventory(kind, -1);
+  if (store.gameplayMode === 'survival') changeInventory(kind, -1);
   store.addCoins(price);
   store.setNotice(translate(`${name} vendu pour ${price} pièce${price > 1 ? 's' : ''}.`, `${name} sold for ${price} coin${price > 1 ? 's' : ''}.`));
   return true;

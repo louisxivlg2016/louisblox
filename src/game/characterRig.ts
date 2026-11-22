@@ -61,7 +61,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   const pieces: Array<ReturnType<typeof splitGeometry>> = [];
   const colorAppearance = outfit === 'corsair' || outfit === 'military' ? undefined : appearance;
   scene.traverse((object) => {
-    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, outfit !== 'princess', bounds, colorAppearance, outfit === 'louis15', outfit === 'princess' || outfit === 'classic-girl', outfit));
+    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, true, bounds, colorAppearance, outfit === 'louis15', outfit === 'princess' || outfit === 'classic-girl', outfit));
   });
   const root = new Group();
   const rig: Rig = {};
@@ -96,9 +96,9 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
     }
   }
   if (rig.head) {
-    const cover = new Mesh(new BoxGeometry(width * 0.3, height * 0.035, Math.max(0.12, (bounds.max.z - bounds.min.z) * 0.42)), animalMaterial(appearance ? appearanceSkinColor(appearance, 'boy') : '#c9926e'));
+    const cover = new Mesh(new BoxGeometry(width * 0.26, height * 0.14, Math.max(0.12, (bounds.max.z - bounds.min.z) * 0.32)), animalMaterial(appearance ? appearanceSkinColor(appearance, 'boy') : '#c9926e'));
     cover.name = 'head-neck-cover';
-    cover.position.y = -height * 0.025;
+    cover.position.y = -height * 0.055;
     rig.head.add(cover);
   }
   if (outfit === 'princess') addPrincessHair(rig.head ?? root, width, height, bounds.max.z - bounds.min.z, floor, rig.head ? -(floor + height * 0.68) : 0, appearance?.hairColor);

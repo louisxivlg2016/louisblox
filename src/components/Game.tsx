@@ -35,6 +35,7 @@ import { ExtinguisherSprays } from './ExtinguisherSpray';
 import { PIRATE_LOADOUT } from '../game/pirates';
 import { Chunk } from '../game/traits';
 import { ConstructionGuide } from './ConstructionGuide';
+import { CustomWorldObjects } from './CustomWorldObjects';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -149,6 +150,7 @@ export function Game() {
       <Atmosphere />
       <Weather key={`weather-${generation}`} />
       <ConstructionGuide />
+      <CustomWorldObjects />
       <Animals key={`animals-${generation}`} />
       <Traders key={`traders-${generation}`} />
       <Fish key={`fish-${generation}`} />

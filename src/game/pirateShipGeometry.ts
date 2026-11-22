@@ -41,7 +41,7 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
       for (let y = 10; y <= 12; y++) {
         const wall = Math.abs(x) === 4 || z === 13;
         const doorway = z === 8 && x === 0 && y <= 11;
-        if (wall && !doorway) put(center + x, y, z, y === 11 && Math.abs(x) === 4 && z % 3 === 0 ? BlockKind.Glass : BlockKind.Wood);
+        if (wall && !doorway) put(center + x, y, z, BlockKind.Wood);
       }
     }
   }

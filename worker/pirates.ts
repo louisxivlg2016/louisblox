@@ -138,7 +138,7 @@ export class PirateEngine {
     const distance = Math.hypot(target.attachment.state.x - attacker.state.x, target.attachment.state.y - attacker.state.y, target.attachment.state.z - attacker.state.z);
     if (distance > (kind === 'melee' ? 6 : 90)) return;
     this.room.hits.set(attacker.playerId, now);
-    const base = kind === 'bomb' ? 3 : kind === 'melee' || kind === 'rifle' ? 2 : 1;
+    const base = kind === 'bomb' ? 1 : kind === 'melee' || kind === 'rifle' ? 2 : 1;
     const attack = (attacker.state.effects?.includes('strength') ? 2 : 1) * (attacker.state.effects?.includes('weakness') ? 0.5 : 1);
     const defence = target.attachment.state.effects?.includes('defence') ? 0.5 : 1;
     const damage = Math.max(1, Math.round(base * attack * defence));
@@ -158,7 +158,7 @@ export class PirateEngine {
     if (this.objectives[team] <= 0) return;
     const objective = objectives[team];
     const distance = Math.hypot(point.x - objective.x, point.y - objective.y, point.z - objective.z);
-    if (distance > (impact ? 3.5 : kind === 'melee' ? 6 : 90)) return;
+    if (distance > (impact ? 2 : kind === 'melee' ? 6 : 90)) return;
     const exactChest = impact && PIRATE_CHEST_OFFSETS.some(([dx, dy, dz]) => objective.x + dx === impact.x && objective.y + dy === impact.y && objective.z + dz === impact.z);
     if (kind === 'melee' && !exactChest) return;
     const chest = exactChest ? [impact!.x - objective.x, impact!.y - objective.y, impact!.z - objective.z] : PIRATE_CHEST_OFFSETS[6 - this.objectives[team]];
@@ -175,7 +175,7 @@ export class PirateEngine {
 
   explode(position: { x: number; y: number; z: number }) {
     if (this.room.mode() !== 'pirates') return;
-    const radius = 2.8;
+    const radius = 1.6;
     const edits = new Map<string, null>();
     for (let cx = Math.floor((position.x - radius + 8) / 16); cx <= Math.floor((position.x + radius + 8) / 16); cx++) {
       for (let cz = Math.floor((position.z - radius + 8) / 16); cz <= Math.floor((position.z + radius + 8) / 16); cz++) {

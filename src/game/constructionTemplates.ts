@@ -95,21 +95,22 @@ export function writeFarm(put: ConstructionWriter, barnX: number, ground: number
   }
 }
 
-export function writeChurch(put: ConstructionWriter, centerX: number, ground: number, centerZ: number) {
+export function writeChurch(write: ConstructionWriter, centerX: number, ground: number, centerZ: number) {
+  const put: ConstructionWriter = (x, y, z, kind, options) => write(x, y, z, kind === BlockKind.ConcreteRed ? BlockKind.BeigeBrick : kind, options);
   const glass = [BlockKind.GlassBlue, BlockKind.GlassRed, BlockKind.GlassYellow] as const;
-  for (let dx = -8; dx <= 8; dx += 1) for (let dz = -13; dz <= 10; dz += 1) put(centerX + dx, ground + 1, centerZ + dz, (dx + dz) % 2 === 0 ? BlockKind.ConcreteLightGray : BlockKind.GrayBrick);
+  for (let dx = -8; dx <= 8; dx += 1) for (let dz = -19; dz <= 10; dz += 1) put(centerX + dx, ground + 1, centerZ + dz, (dx + dz) % 2 === 0 ? BlockKind.OakPlanks : BlockKind.PinePlanks);
 
-  for (let dz = -13; dz <= 8; dz += 1) for (const side of [-1, 1]) {
-    for (let y = ground + 2; y <= ground + 10; y += 1) put(centerX + side * 6, y, centerZ + dz, BlockKind.ConcreteRed);
-    for (let y = ground + 2; y <= ground + 6; y += 1) put(centerX + side * 8, y, centerZ + dz, BlockKind.ConcreteRed);
+  for (let dz = -19; dz <= 8; dz += 1) for (const side of [-1, 1]) {
+    for (let y = ground + 2; y <= ground + 11; y += 1) put(centerX + side * 6, y, centerZ + dz, BlockKind.ConcreteRed);
+    for (let y = ground + 2; y <= ground + 7; y += 1) put(centerX + side * 8, y, centerZ + dz, BlockKind.ConcreteRed);
   }
-  for (let dx = -6; dx <= 6; dx += 1) for (let y = ground + 2; y <= ground + 10; y += 1) put(centerX + dx, y, centerZ - 13, BlockKind.ConcreteRed);
+  for (let dx = -6; dx <= 6; dx += 1) for (let y = ground + 2; y <= ground + 10; y += 1) put(centerX + dx, y, centerZ - 19, BlockKind.ConcreteRed);
 
-  for (const [index, dz] of [-10, -6, -2, 2, 6].entries()) {
+  for (const [index, dz] of [-16, -12, -10, -6, -2, 2, 6].entries()) {
     for (const side of [-1, 1]) {
       for (let y = ground + 4; y <= ground + 8; y += 1) put(centerX + side * 6, y, centerZ + dz, glass[(index + (side > 0 ? 1 : 0)) % glass.length]);
       put(centerX + side * 6, ground + 9, centerZ + dz, glass[index % glass.length]);
-      for (let y = ground + 2; y <= ground + 9; y += 1) put(centerX + side * 9, y, centerZ + dz, y === ground + 9 ? BlockKind.BeigeBrick : BlockKind.ConcreteRed);
+      for (let y = ground + 2; y <= ground + 9; y += 1) put(centerX + side * 9, y, centerZ + dz, y === ground + 9 ? BlockKind.WhiteBrick : BlockKind.ConcreteRed);
       put(centerX + side * 8, ground + 7, centerZ + dz, BlockKind.ConcreteBlack);
       put(centerX + side * 9, ground + 10, centerZ + dz, BlockKind.ConcreteBlack);
     }
@@ -117,26 +118,35 @@ export function writeChurch(put: ConstructionWriter, centerX: number, ground: nu
 
   for (let dx = -7; dx <= 7; dx += 1) {
     const roofY = ground + 11 + (7 - Math.abs(dx));
-    for (let dz = -14; dz <= 8; dz += 1) put(centerX + dx, roofY, centerZ + dz, BlockKind.ConcreteBlack);
-    for (const dz of [-13, 8]) for (let y = ground + 11; y < roofY; y += 1) put(centerX + dx, y, centerZ + dz, BlockKind.ConcreteRed);
+    for (let dz = -20; dz <= 10; dz += 1) put(centerX + dx, roofY, centerZ + dz, BlockKind.ConcreteBlack);
+    for (const dz of [-19, 8]) for (let y = ground + 11; y < roofY; y += 1) put(centerX + dx, y, centerZ + dz, BlockKind.ConcreteRed);
   }
-  for (const side of [-1, 1]) for (let dz = -13; dz <= 8; dz += 1) {
+  for (const side of [-1, 1]) for (let dz = -19; dz <= 8; dz += 1) {
     put(centerX + side * 7, ground + 10, centerZ + dz, BlockKind.ConcreteBlack);
     put(centerX + side * 8, ground + 8, centerZ + dz, BlockKind.ConcreteBlack);
   }
 
-  for (let dx = -3; dx <= 3; dx += 1) for (let y = ground + 2; y <= ground + 12; y += 1) {
-    const doorway = Math.abs(dx) <= 1 && y <= ground + 5;
+  for (let dx = -3; dx <= 3; dx += 1) for (let y = ground + 2; y <= ground + 20; y += 1) {
+    const doorway = [-2, 0, 2].includes(dx) && y <= ground + 4;
     if (!doorway) put(centerX + dx, y, centerZ + 10, BlockKind.ConcreteRed);
   }
-  for (const side of [-1, 1]) for (let y = ground + 2; y <= ground + 7; y += 1) put(centerX + side * 2, y, centerZ + 10, BlockKind.BeigeBrick);
-  for (let dx = -2; dx <= 2; dx += 1) put(centerX + dx, ground + 6, centerZ + 10, BlockKind.BeigeBrick);
-  put(centerX, ground + 2, centerZ + 10, BlockKind.DoorBrown, { facing: 'north' });
-  for (let dx = -2; dx <= 2; dx += 1) for (let y = ground + 7; y <= ground + 11; y += 1) {
-    if (Math.abs(dx) === 2 || y === ground + 7 || y === ground + 11) put(centerX + dx, y, centerZ + 10, BlockKind.BeigeBrick);
+  for (const portalX of [-2, 0, 2]) {
+    put(centerX + portalX, ground + 2, centerZ + 10, BlockKind.DoorBrown, { facing: 'north' });
+    for (const side of [-1, 1]) for (let y = ground + 2; y <= ground + 4; y += 1) put(centerX + portalX + side, y, centerZ + 10, BlockKind.WhiteBrick);
+    for (let dx = -1; dx <= 1; dx += 1) put(centerX + portalX + dx, ground + 5, centerZ + 10, BlockKind.WhiteBrick);
+    put(centerX + portalX, ground + 6, centerZ + 10, BlockKind.WhiteBrick);
   }
-  for (let dx = -1; dx <= 1; dx += 1) for (let dy = -1; dy <= 1; dy += 1) {
-    if (Math.abs(dx) + Math.abs(dy) <= 1) put(centerX + dx, ground + 9 + dy, centerZ + 10, glass[(dx - dy + 3) % glass.length]);
+  for (let dx = -3; dx <= 3; dx += 1) {
+    put(centerX + dx, ground + 8, centerZ + 10, BlockKind.GrayBrick);
+    put(centerX + dx, ground + 9, centerZ + 10, BlockKind.WhiteBrick);
+    if (dx % 2 !== 0) put(centerX + dx, ground + 10, centerZ + 10, BlockKind.WhiteBrick);
+    put(centerX + dx, ground + 19, centerZ + 10, BlockKind.WhiteBrick);
+  }
+  for (let dx = -3; dx <= 3; dx += 1) for (let dy = -3; dy <= 3; dy += 1) {
+    const distance = dx * dx + dy * dy;
+    if (distance > 10) continue;
+    const kind = distance >= 7 ? BlockKind.WhiteBrick : dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy) ? BlockKind.GlassYellow : glass[Math.abs(dx + dy) % glass.length];
+    put(centerX + dx, ground + 14 + dy, centerZ + 10, kind);
   }
   for (let dz = 11; dz <= 13; dz += 1) for (let dx = -3; dx <= 3; dx += 1) put(centerX + dx, ground + 1, centerZ + dz, BlockKind.GrayBrick);
 
@@ -147,7 +157,7 @@ export function writeChurch(put: ConstructionWriter, centerX: number, ground: nu
         if (dx !== -2 && dx !== 2 && dz !== -2 && dz !== 2) continue;
         const corner = Math.abs(dx) === 2 && Math.abs(dz) === 2;
         const band = (y - ground) % 6 === 0;
-        put(towerX + dx, y, towerZ + dz, corner || band ? BlockKind.BeigeBrick : BlockKind.ConcreteRed);
+        put(towerX + dx, y, towerZ + dz, corner || band ? BlockKind.WhiteBrick : BlockKind.ConcreteRed);
       }
     }
     for (const [start, end] of [[6, 9], [14, 17], [20, 22]] as const) {
@@ -158,31 +168,35 @@ export function writeChurch(put: ConstructionWriter, centerX: number, ground: nu
         put(towerX + 2, y, towerZ, BlockKind.GlassBlue);
       }
     }
-    for (let layer = 0; layer <= 7; layer += 1) {
-      const radius = layer < 2 ? 2 : layer < 6 ? 1 : 0;
-      for (let dx = -radius; dx <= radius; dx += 1) for (let dz = -radius; dz <= radius; dz += 1) put(towerX + dx, ground + 25 + layer, towerZ + dz, BlockKind.ConcreteBlack);
+    for (let dx = -2; dx <= 2; dx += 1) for (let dz = -2; dz <= 2; dz += 1) {
+      put(towerX + dx, ground + 25, towerZ + dz, BlockKind.ConcreteBlack);
+      if (Math.abs(dx) === 2 || Math.abs(dz) === 2) put(towerX + dx, ground + 26, towerZ + dz, BlockKind.WhiteBrick);
     }
-    for (let y = ground + 33; y <= ground + 35; y += 1) put(towerX, y, towerZ, BlockKind.GoldOre);
-    put(towerX - 1, ground + 34, towerZ, BlockKind.GoldOre);
-    put(towerX + 1, ground + 34, towerZ, BlockKind.GoldOre);
+    for (const dx of [-2, 2]) for (const dz of [-2, 2]) {
+      put(towerX + dx, ground + 27, towerZ + dz, BlockKind.BeigeBrick);
+      put(towerX + dx, ground + 28, towerZ + dz, BlockKind.WhiteBrick);
+    }
   }
 
-  for (const [index, dz] of [-10, -6, -2, 2, 6].entries()) {
+  for (const [index, dz] of [-16, -12, -10, -6, -2, 2, 6].entries()) {
     for (const side of [-1, 1]) {
       for (let y = ground + 4; y <= ground + 8; y += 1) {
-        put(centerX + side * 6, y, centerZ + dz - 1, BlockKind.BeigeBrick);
-        put(centerX + side * 6, y, centerZ + dz + 1, BlockKind.BeigeBrick);
+        put(centerX + side * 6, y, centerZ + dz - 1, BlockKind.WhiteBrick);
+        put(centerX + side * 6, y, centerZ + dz + 1, BlockKind.WhiteBrick);
       }
-      put(centerX + side * 6, ground + 10, centerZ + dz, BlockKind.BeigeBrick);
+      put(centerX + side * 6, ground + 10, centerZ + dz, BlockKind.WhiteBrick);
       for (let step = 0; step < 4; step += 1) {
-        put(centerX + side * (9 + step), ground + 8 - step * 2, centerZ + dz, step === 3 ? BlockKind.GrayBrick : BlockKind.ConcreteRed);
-        if (step < 3) put(centerX + side * (9 + step), ground + 9 - step * 2, centerZ + dz, BlockKind.BeigeBrick);
+        put(centerX + side * (9 + step), ground + 8 - step * 2, centerZ + dz, BlockKind.ConcreteRed);
+        if (step < 3) put(centerX + side * (9 + step), ground + 9 - step * 2, centerZ + dz, BlockKind.WhiteBrick);
       }
-      put(centerX + side * 11, ground + 2, centerZ + dz, BlockKind.GrayBrick);
-      if (index % 2 === 0) put(centerX + side * 10, ground + 4, centerZ + dz, BlockKind.BeigeBrick);
+      put(centerX + side * 11, ground + 2, centerZ + dz, BlockKind.ConcreteRed);
+      for (let y = ground + 2; y <= ground + 6; y += 1) put(centerX + side * 12, y, centerZ + dz, BlockKind.ConcreteRed);
+      put(centerX + side * 12, ground + 7, centerZ + dz, BlockKind.WhiteBrick);
+      put(centerX + side * 12, ground + 8, centerZ + dz, BlockKind.ConcreteBlack);
+      if (index % 2 === 0) put(centerX + side * 10, ground + 4, centerZ + dz, BlockKind.WhiteBrick);
     }
   }
-  for (const side of [-1, 1]) for (const dz of [-9, -3, 3]) {
+  for (const side of [-1, 1]) for (const dz of [-15, -9, -3, 3]) {
     const x = centerX + side * 5;
     put(x, ground + 14, centerZ + dz, BlockKind.GlassBlue);
     put(x, ground + 14, centerZ + dz - 1, BlockKind.ConcreteRed);
@@ -191,45 +205,182 @@ export function writeChurch(put: ConstructionWriter, centerX: number, ground: nu
     put(x - side, ground + 15, centerZ + dz, BlockKind.ConcreteBlack);
     put(x, ground + 16, centerZ + dz, BlockKind.GoldOre);
   }
-  for (const dz of [-12, -6, 0, 6]) {
-    put(centerX, ground + 19, centerZ + dz, BlockKind.GrayBrick);
+  for (const dz of [-18, -12, -6, 0, 6]) {
+    put(centerX, ground + 19, centerZ + dz, BlockKind.ConcreteRed);
     put(centerX, ground + 20, centerZ + dz, BlockKind.GoldOre);
   }
   for (const side of [-1, 1]) {
-    for (let y = ground + 7; y <= ground + 8; y += 1) put(centerX + side * 2, y, centerZ + 10, BlockKind.BeigeBrick);
-    put(centerX + side, ground + 8, centerZ + 10, BlockKind.BeigeBrick);
-    put(centerX + side, ground + 9, centerZ + 10, BlockKind.BeigeBrick);
+    for (let y = ground + 7; y <= ground + 8; y += 1) put(centerX + side * 2, y, centerZ + 10, BlockKind.WhiteBrick);
+    put(centerX + side, ground + 8, centerZ + 10, BlockKind.WhiteBrick);
+    put(centerX + side, ground + 9, centerZ + 10, BlockKind.WhiteBrick);
   }
 
   for (const towerX of [centerX - 6, centerX + 6]) {
     const towerZ = centerZ + 8;
     for (const [start, end] of [[6, 9], [14, 17], [20, 22]] as const) {
       for (let y = ground + start; y <= ground + end; y += 1) {
-        put(towerX - 1, y, towerZ + 2, BlockKind.BeigeBrick);
-        put(towerX + 1, y, towerZ + 2, BlockKind.BeigeBrick);
-        put(towerX - 1, y, towerZ - 2, BlockKind.BeigeBrick);
-        put(towerX + 1, y, towerZ - 2, BlockKind.BeigeBrick);
-        put(towerX - 2, y, towerZ - 1, BlockKind.BeigeBrick);
-        put(towerX - 2, y, towerZ + 1, BlockKind.BeigeBrick);
-        put(towerX + 2, y, towerZ - 1, BlockKind.BeigeBrick);
-        put(towerX + 2, y, towerZ + 1, BlockKind.BeigeBrick);
+        put(towerX - 1, y, towerZ + 2, BlockKind.WhiteBrick);
+        put(towerX + 1, y, towerZ + 2, BlockKind.WhiteBrick);
+        put(towerX - 1, y, towerZ - 2, BlockKind.WhiteBrick);
+        put(towerX + 1, y, towerZ - 2, BlockKind.WhiteBrick);
+        put(towerX - 2, y, towerZ - 1, BlockKind.WhiteBrick);
+        put(towerX - 2, y, towerZ + 1, BlockKind.WhiteBrick);
+        put(towerX + 2, y, towerZ - 1, BlockKind.WhiteBrick);
+        put(towerX + 2, y, towerZ + 1, BlockKind.WhiteBrick);
       }
-      put(towerX, ground + end + 1, towerZ + 2, BlockKind.BeigeBrick);
-      put(towerX, ground + end + 1, towerZ - 2, BlockKind.BeigeBrick);
-      put(towerX - 2, ground + end + 1, towerZ, BlockKind.BeigeBrick);
-      put(towerX + 2, ground + end + 1, towerZ, BlockKind.BeigeBrick);
+      put(towerX, ground + end + 1, towerZ + 2, BlockKind.WhiteBrick);
+      put(towerX, ground + end + 1, towerZ - 2, BlockKind.WhiteBrick);
+      put(towerX - 2, ground + end + 1, towerZ, BlockKind.WhiteBrick);
+      put(towerX + 2, ground + end + 1, towerZ, BlockKind.WhiteBrick);
     }
     for (const dx of [-2, 2]) for (const dz of [-2, 2]) {
-      for (let y = ground + 25; y <= ground + 27; y += 1) put(towerX + dx, y, towerZ + dz, BlockKind.BeigeBrick);
-      put(towerX + dx, ground + 28, towerZ + dz, BlockKind.ConcreteBlack);
-      put(towerX + dx, ground + 29, towerZ + dz, BlockKind.GoldOre);
+      put(towerX + dx, ground + 27, towerZ + dz, BlockKind.BeigeBrick);
+      put(towerX + dx, ground + 28, towerZ + dz, BlockKind.WhiteBrick);
     }
   }
 
-  for (const dz of [-5, -1, 3]) for (const side of [-1, 1]) for (const dx of [2, 3, 4]) put(centerX + side * dx, ground + 2, centerZ + dz, BlockKind.OakPlanks);
-  for (let dx = -2; dx <= 2; dx += 1) put(centerX + dx, ground + 2, centerZ - 10, BlockKind.WhiteBrick);
-  put(centerX, ground + 3, centerZ - 10, BlockKind.Candle);
+  for (let dz = -22; dz <= -19; dz += 1) {
+    const halfWidth = dz === -22 ? 2 : dz === -21 ? 4 : 5;
+    for (let dx = -halfWidth; dx <= halfWidth; dx += 1) {
+      put(centerX + dx, ground + 1, centerZ + dz, BlockKind.OakPlanks);
+      if (Math.abs(dx) === halfWidth) for (let y = ground + 2; y <= ground + 8; y += 1) put(centerX + dx, y, centerZ + dz, BlockKind.ConcreteRed);
+    }
+  }
+  for (let y = ground + 2; y <= ground + 8; y += 1) for (let dx = -2; dx <= 2; dx += 1) {
+    const window = Math.abs(dx) <= 1 && y >= ground + 4 && y <= ground + 7;
+    put(centerX + dx, y, centerZ - 22, window ? BlockKind.GlassYellow : BlockKind.ConcreteRed);
+  }
+  for (let tier = 0; tier < 4; tier += 1) for (let dx = -6 + tier; dx <= 6 - tier; dx += 1) for (let dz = -23 + tier; dz <= -19; dz += 1) put(centerX + dx, ground + 9 + tier, centerZ + dz, BlockKind.ConcreteBlack);
+  for (const side of [-1, 1]) {
+    for (let y = ground + 2; y <= ground + 9; y += 1) put(centerX + side * 6, y, centerZ - 20, BlockKind.ConcreteRed);
+    put(centerX + side * 6, ground + 10, centerZ - 20, BlockKind.ConcreteBlack);
+    put(centerX + side * 4, ground + 9, centerZ - 22, BlockKind.WhiteBrick);
+    put(centerX + side * 4, ground + 10, centerZ - 22, BlockKind.GoldOre);
+  }
+  put(centerX, ground + 8, centerZ - 22, BlockKind.WhiteBrick);
+  put(centerX, ground + 9, centerZ - 22, BlockKind.WhiteBrick);
+
+  for (const dz of [-9, -5, -1, 3]) for (const side of [-1, 1]) for (const dx of [2, 3, 4]) put(centerX + side * dx, ground + 2, centerZ + dz, BlockKind.OakPlanks);
+  for (let dx = -2; dx <= 2; dx += 1) put(centerX + dx, ground + 2, centerZ - 16, BlockKind.WhiteBrick);
+  put(centerX, ground + 3, centerZ - 16, BlockKind.Candle);
   for (const side of [-1, 1]) put(centerX + side * 4, ground + 2, centerZ + 6, BlockKind.Lantern);
+
+  for (const dz of [-14, -10, -6, -2, 2, 6]) {
+    for (const side of [-1, 1]) {
+      put(centerX + side * 5, ground + 2, centerZ + dz, BlockKind.GrayBrick);
+      put(centerX + side * 5, ground + 3, centerZ + dz, BlockKind.GrayBrick);
+      for (let y = ground + 4; y <= ground + 9; y += 1) put(centerX + side * 5, y, centerZ + dz, BlockKind.WhiteBrick);
+      put(centerX + side * 5, ground + 10, centerZ + dz, BlockKind.WhiteBrick);
+      put(centerX + side * 5, ground + 11, centerZ + dz, BlockKind.WhiteBrick);
+    }
+    for (let dx = -5; dx <= 5; dx += 1) put(centerX + dx, ground + 16 - Math.abs(dx), centerZ + dz, BlockKind.WhiteBrick);
+  }
+  for (let y = ground + 19; y <= ground + 27; y += 1) put(centerX, y, centerZ - 4, y < ground + 25 ? BlockKind.ConcreteBlack : BlockKind.IronOre);
+  put(centerX - 1, ground + 26, centerZ - 4, BlockKind.IronOre);
+  put(centerX + 1, ground + 26, centerZ - 4, BlockKind.IronOre);
+}
+
+export function writeParisBuilding(put: ConstructionWriter, centerX: number, ground: number, centerZ: number) {
+  const half = 9;
+  for (let floor = 0; floor < 5; floor += 1) for (let y = ground + 1 + floor * 4; y <= ground + 4 + floor * 4; y += 1) {
+    for (let dx = -half; dx <= half; dx += 1) for (let dz = -7; dz <= 7; dz += 1) {
+      if (Math.abs(dx) !== half && Math.abs(dz) !== 7) continue;
+      const window = (y - ground) % 4 >= 2 && (dx + dz) % 3 !== 0;
+      put(centerX + dx, y, centerZ + dz, y === ground + 1 || (y - ground) % 4 === 0 ? BlockKind.WhiteBrick : window ? BlockKind.GlassBlue : BlockKind.BeigeBrick);
+    }
+    if (floor > 0) for (let dx = -7; dx <= 7; dx += 3) {
+      put(centerX + dx, ground + 1 + floor * 4, centerZ - 8, BlockKind.ConcreteLightGray);
+      put(centerX + dx, ground + 2 + floor * 4, centerZ - 8, BlockKind.ConcreteBlack);
+      put(centerX + dx - 1, ground + 2 + floor * 4, centerZ - 8, BlockKind.ConcreteBlack);
+      put(centerX + dx + 1, ground + 2 + floor * 4, centerZ - 8, BlockKind.ConcreteBlack);
+    }
+  }
+  for (let dx = -half; dx <= half; dx += 1) for (let dz = -7; dz <= 7; dz += 1) put(centerX + dx, ground + 1, centerZ + dz, BlockKind.OakPlanks);
+  put(centerX, ground + 2, centerZ - 7, BlockKind.DoorBrown, { facing: 'south' });
+  for (let dx = -6; dx <= 6; dx += 3) {
+    put(centerX + dx, ground + 4, centerZ - 8, dx % 2 === 0 ? BlockKind.ConcreteRed : BlockKind.ConcreteGreen);
+    put(centerX + dx, ground + 5, centerZ - 8, BlockKind.WhiteBrick);
+  }
+  for (let tier = 0; tier < 4; tier += 1) for (let dx = -half + tier; dx <= half - tier; dx += 1) for (let dz = -7 + tier; dz <= 7 - tier; dz += 1) {
+    if (tier === 3 || Math.abs(dx) === half - tier || Math.abs(dz) === 7 - tier) put(centerX + dx, ground + 21 + tier, centerZ + dz, BlockKind.ConcreteBlack);
+  }
+  for (const dx of [-6, 0, 6]) {
+    put(centerX + dx, ground + 22, centerZ - 5, BlockKind.WhiteBrick);
+    put(centerX + dx, ground + 23, centerZ - 5, BlockKind.GlassBlue);
+    put(centerX + dx, ground + 24, centerZ - 5, BlockKind.ConcreteBlack);
+  }
+  for (const dx of [-7, -3, 3, 7]) for (let y = ground + 24; y <= ground + 27; y += 1) put(centerX + dx, y, centerZ + 3, BlockKind.GrayBrick);
+}
+
+export function writeSkyscraper(put: ConstructionWriter, centerX: number, ground: number, centerZ: number) {
+  const half = 8;
+  for (let floor = 0; floor < 12; floor += 1) for (let y = ground + 1 + floor * 4; y <= ground + 4 + floor * 4; y += 1) {
+    for (let dx = -half; dx <= half; dx += 1) for (let dz = -half; dz <= half; dz += 1) {
+      if (Math.abs(dx) !== half && Math.abs(dz) !== half) continue;
+      const frame = (y - ground) % 4 === 0 || (dx + dz) % 6 === 0;
+      const glass = (dx + y + dz) % 7 === 0 ? BlockKind.GlassYellow : (dx + y + dz) % 2 === 0 ? BlockKind.GlassBlue : BlockKind.GlassLightBlue;
+      put(centerX + dx, y, centerZ + dz, frame ? BlockKind.ConcreteGray : glass);
+    }
+    if (floor > 0) for (let offset = -6; offset <= 6; offset += 4) for (const side of [-1, 1]) {
+      put(centerX + offset, ground + 1 + floor * 4, centerZ + side * 9, BlockKind.ConcreteLightGray);
+      put(centerX + offset, ground + 2 + floor * 4, centerZ + side * 9, BlockKind.GlassBlue);
+      put(centerX + side * 9, ground + 1 + floor * 4, centerZ + offset, BlockKind.ConcreteLightGray);
+      put(centerX + side * 9, ground + 2 + floor * 4, centerZ + offset, BlockKind.GlassBlue);
+    }
+  }
+  for (let dx = -half; dx <= half; dx += 1) for (let dz = -half; dz <= half; dz += 1) put(centerX + dx, ground + 49, centerZ + dz, BlockKind.GlassBlue);
+  for (let tier = 0; tier < 3; tier += 1) {
+    const radius = 6 - tier * 2;
+    for (let dx = -radius; dx <= radius; dx += 1) for (let dz = -radius; dz <= radius; dz += 1) {
+      put(centerX + dx, ground + 50 + tier * 4, centerZ + dz, BlockKind.GlassBlue);
+      if (Math.abs(dx) === radius || Math.abs(dz) === radius) for (let y = ground + 51 + tier * 4; y <= ground + 53 + tier * 4; y += 1) put(centerX + dx, y, centerZ + dz, y === ground + 52 + tier * 4 ? BlockKind.ConcreteGray : BlockKind.GlassBlue);
+    }
+  }
+  for (const dx of [-4, 4]) {
+    put(centerX + dx, ground + 63, centerZ + 2, BlockKind.ConcreteGray);
+    put(centerX + dx, ground + 64, centerZ + 2, BlockKind.ConcreteLightGray);
+  }
+  for (let y = ground + 62; y <= ground + 69; y += 1) put(centerX, y, centerZ, BlockKind.IronOre);
+  put(centerX, ground + 70, centerZ, BlockKind.Candle);
+  put(centerX, ground + 2, centerZ - half, BlockKind.DoorWhite, { facing: 'south' });
+  for (let dx = -3; dx <= 3; dx += 1) put(centerX + dx, ground + 4, centerZ - half - 1, BlockKind.ConcreteGray);
+}
+
+export function writeVilla(put: ConstructionWriter, centerX: number, ground: number, centerZ: number) {
+  for (let floor = 0; floor < 3; floor += 1) for (let y = ground + 1 + floor * 4; y <= ground + 4 + floor * 4; y += 1) {
+    for (let dx = -7; dx <= 7; dx += 1) for (let dz = -5; dz <= 5; dz += 1) {
+      if (Math.abs(dx) !== 7 && Math.abs(dz) !== 5) continue;
+      if (floor === 1 && dx === 0 && dz === -5 && y === ground + 7) continue;
+      const frame = Math.abs(dx) === 7 && Math.abs(dz) === 5 || (y - ground) % 4 === 0;
+      put(centerX + dx, y, centerZ + dz, frame ? BlockKind.ConcreteWhite : (dx + dz) % 3 === 0 ? BlockKind.ConcreteWhite : BlockKind.GlassBlue);
+    }
+  }
+  for (let dx = -7; dx <= 7; dx += 1) for (let dz = -5; dz <= 5; dz += 1) put(centerX + dx, ground + 1, centerZ + dz, BlockKind.OakPlanks);
+  for (const floorY of [ground + 5, ground + 9]) for (let dx = -6; dx <= 6; dx += 1) for (let dz = -4; dz <= 4; dz += 1) {
+    const stairwell = floorY === ground + 5 && dx === -3 && dz >= 0 && dz <= 3 || floorY === ground + 9 && dx === 3 && dz >= 0 && dz <= 3;
+    if (!stairwell) put(centerX + dx, floorY, centerZ + dz, BlockKind.OakPlanks);
+  }
+  for (let step = 0; step < 4; step += 1) {
+    put(centerX - 3, ground + 2 + step, centerZ + 3 - step, BlockKind.StairOak, { facing: 'south' });
+    put(centerX + 3, ground + 6 + step, centerZ + step, BlockKind.StairOak, { facing: 'north' });
+  }
+  for (let tier = 0; tier < 4; tier += 1) for (let dx = -7 + tier; dx <= 7 - tier; dx += 1) for (let dz = -5 + tier; dz <= 5 - tier; dz += 1) {
+    if (tier === 3 || Math.abs(dx) === 7 - tier || Math.abs(dz) === 5 - tier) put(centerX + dx, ground + 13 + tier, centerZ + dz, BlockKind.ConcreteRed);
+  }
+  for (let dx = -4; dx <= 4; dx += 1) {
+    put(centerX + dx, ground + 5, centerZ - 6, BlockKind.OakPlanks);
+    if (dx !== 0) put(centerX + dx, ground + 6, centerZ - 6, BlockKind.GlassBlue);
+  }
+  for (const dx of [-5, 5]) for (let y = ground + 2; y <= ground + 5; y += 1) put(centerX + dx, y, centerZ - 6, BlockKind.ConcreteWhite);
+  put(centerX, ground + 2, centerZ - 5, BlockKind.DoorWhite, { facing: 'south' });
+  put(centerX, ground + 6, centerZ - 5, BlockKind.DoorWhite, { facing: 'south' });
+  for (let dx = -4; dx <= 4; dx += 1) for (let dz = 8; dz <= 13; dz += 1) put(centerX + dx, ground, centerZ + dz, BlockKind.CalmWater);
+  for (const side of [-1, 1]) {
+    for (let y = ground + 1; y <= ground + 5; y += 1) put(centerX + side * 10, y, centerZ + 4, BlockKind.Wood);
+    for (let dx = -2; dx <= 2; dx += 1) for (let dz = -2; dz <= 2; dz += 1) if (Math.abs(dx) + Math.abs(dz) <= 2) put(centerX + side * 10 + dx, ground + 6, centerZ + 4 + dz, BlockKind.Leaves);
+    put(centerX + side * 7, ground + 1, centerZ + 10, BlockKind.OakPlanks);
+    put(centerX + side * 7, ground + 2, centerZ + 10, BlockKind.ConcreteWhite);
+  }
 }
 
 export function writeVillageChurch(put: ConstructionWriter, centerX: number, ground: number, centerZ: number) {
@@ -241,31 +392,31 @@ export function writeVillageChurch(put: ConstructionWriter, centerX: number, gro
       const doorway = dz === 6 && dx === 0 && y <= ground + 4;
       if (!edge || doorway) continue;
       const trim = Math.abs(dx) === 4 && Math.abs(dz) === 6 || y === ground + 6;
-      put(centerX + dx, y, centerZ + dz, trim ? BlockKind.BeigeBrick : BlockKind.ConcreteRed);
+      put(centerX + dx, y, centerZ + dz, trim ? BlockKind.WhiteBrick : BlockKind.ConcreteRed);
     }
     if (dz === -6 || dz === 6) {
       const roofY = ground + roofHeights[Math.abs(dx)];
       for (let y = ground + 7; y < roofY; y += 1) put(centerX + dx, y, centerZ + dz, BlockKind.ConcreteRed);
     }
   }
-  for (let dx = -4; dx <= 4; dx += 1) for (let dz = -7; dz <= 7; dz += 1) put(centerX + dx, ground + roofHeights[Math.abs(dx)], centerZ + dz, Math.abs(dz) === 7 ? BlockKind.BeigeBrick : BlockKind.ConcreteBlack);
+  for (let dx = -4; dx <= 4; dx += 1) for (let dz = -7; dz <= 7; dz += 1) put(centerX + dx, ground + roofHeights[Math.abs(dx)], centerZ + dz, Math.abs(dz) === 7 ? BlockKind.WhiteBrick : BlockKind.ConcreteBlack);
   put(centerX, ground + 2, centerZ + 6, BlockKind.DoorBrown, { facing: 'north' });
   for (const side of [-1, 1]) {
     for (const dz of [-3, 1]) {
       for (let y = ground + 3; y <= ground + 5; y += 1) put(centerX + side * 4, y, centerZ + dz, dz === -3 ? BlockKind.GlassBlue : BlockKind.GlassYellow);
-      put(centerX + side * 4, ground + 6, centerZ + dz, BlockKind.BeigeBrick);
+      put(centerX + side * 4, ground + 6, centerZ + dz, BlockKind.WhiteBrick);
     }
     for (const dz of [-4, 0, 4]) {
       put(centerX + side * 5, ground + 2, centerZ + dz, BlockKind.GrayBrick);
       put(centerX + side * 5, ground + 3, centerZ + dz, BlockKind.ConcreteRed);
-      put(centerX + side * 4, ground + 5, centerZ + dz, BlockKind.BeigeBrick);
+      put(centerX + side * 4, ground + 5, centerZ + dz, BlockKind.WhiteBrick);
     }
     for (const dz of [-2, 2]) put(centerX + side * 2, ground + 2, centerZ + dz, BlockKind.OakPlanks);
   }
   put(centerX, ground + 8, centerZ + 6, BlockKind.GlassRed);
-  put(centerX - 1, ground + 8, centerZ + 6, BlockKind.BeigeBrick);
-  put(centerX + 1, ground + 8, centerZ + 6, BlockKind.BeigeBrick);
-  put(centerX, ground + 9, centerZ + 6, BlockKind.BeigeBrick);
+  put(centerX - 1, ground + 8, centerZ + 6, BlockKind.WhiteBrick);
+  put(centerX + 1, ground + 8, centerZ + 6, BlockKind.WhiteBrick);
+  put(centerX, ground + 9, centerZ + 6, BlockKind.WhiteBrick);
   for (let dx = -2; dx <= 2; dx += 1) for (let dz = 7; dz <= 8; dz += 1) put(centerX + dx, ground + 1, centerZ + dz, BlockKind.GrayBrick);
   for (let dx = -1; dx <= 1; dx += 1) put(centerX + dx, ground + 2, centerZ - 4, BlockKind.WhiteBrick);
   put(centerX, ground + 3, centerZ - 4, BlockKind.Candle);
@@ -273,7 +424,7 @@ export function writeVillageChurch(put: ConstructionWriter, centerX: number, gro
   const towerZ = centerZ + 4;
   for (let dx = -1; dx <= 1; dx += 1) for (let dz = -1; dz <= 1; dz += 1) {
     if (dx !== -1 && dx !== 1 && dz !== -1 && dz !== 1) continue;
-    for (let y = ground + 7; y <= ground + 14; y += 1) put(centerX + dx, y, towerZ + dz, (y - ground) % 4 === 0 ? BlockKind.BeigeBrick : BlockKind.ConcreteRed);
+    for (let y = ground + 7; y <= ground + 14; y += 1) put(centerX + dx, y, towerZ + dz, (y - ground) % 4 === 0 ? BlockKind.WhiteBrick : BlockKind.ConcreteRed);
   }
   for (let y = ground + 10; y <= ground + 12; y += 1) {
     put(centerX, y, towerZ + 1, BlockKind.GlassBlue);
@@ -305,15 +456,15 @@ export function writeRuinedChurch(put: ConstructionWriter, centerX: number, grou
     const hole = ((x - 6) / 3) ** 2 + ((z + 2) / 3) ** 2 < 1 && y >= 3;
     const brokenSpire = x >= 4 && z >= 5 && y >= 29 + Math.floor(ruinDamage(x, 0, z) * 3);
     const brokenGlass = ([BlockKind.Glass, BlockKind.GlassBlue, BlockKind.GlassRed, BlockKind.GlassYellow, BlockKind.GlassLightBlue] as BlockKind[]).includes(kind) && ruinDamage(x, y, z) > 0.62;
-    const chippedWall = y > 5 && ([BlockKind.ConcreteRed, BlockKind.ConcreteBlack, BlockKind.BeigeBrick] as BlockKind[]).includes(kind) && ruinDamage(x, y, z) > 0.965;
+    const chippedWall = y > 5 && ([BlockKind.ConcreteRed, BlockKind.BeigeBrick, BlockKind.ConcreteBlack, BlockKind.WhiteBrick] as BlockKind[]).includes(kind) && ruinDamage(x, y, z) > 0.965;
     const brokenBench = kind === BlockKind.OakPlanks && y === 2 && ruinDamage(x, y, z) > 0.7;
     if (hole || brokenSpire || brokenGlass || chippedWall || brokenBench || kind === BlockKind.DoorBrown) continue;
     put(centerX + x, y + ground, centerZ + z, kind, block);
   }
-  for (let x = -5; x <= 5; x += 1) for (let z = -11; z <= 7; z += 1) {
+  for (let x = -5; x <= 5; x += 1) for (let z = -17; z <= 7; z += 1) {
     if (ruinDamage(x, 2, z) > 0.6) put(centerX + x, ground + 2, centerZ + z, BlockKind.Grass, { growth: 0 });
   }
-  for (let z = -11; z <= 7; z += 1) for (let y = ground + 2; y <= ground + 7; y += 1) {
+  for (let z = -17; z <= 7; z += 1) for (let y = ground + 2; y <= ground + 7; y += 1) {
     if (ruinDamage(-7, y, z) > 0.77) put(centerX - 7, y, centerZ + z, BlockKind.JungleVine);
     if (ruinDamage(9, y, z) > 0.82) put(centerX + 9, y, centerZ + z, BlockKind.JungleVine);
   }
@@ -326,10 +477,13 @@ export function writeRuinedChurch(put: ConstructionWriter, centerX: number, grou
   }
 }
 
-export function constructionTemplate(kind: 'church' | 'farm') {
+export function constructionTemplate(kind: 'church' | 'farm' | 'paris' | 'skyscraper' | 'villa') {
   const blocks = new Map<string, Voxel>();
   const put: ConstructionWriter = (x, y, z, blockKind, options = {}) => blocks.set(voxelKey(x, y, z), { x, y, z, kind: blockKind, ...options });
   if (kind === 'church') writeChurch(put, 0, 0, 0);
-  else writeFarm(put, 0, 0, 0, true);
+  else if (kind === 'farm') writeFarm(put, 0, 0, 0, true);
+  else if (kind === 'paris') writeParisBuilding(put, 0, 0, 0);
+  else if (kind === 'skyscraper') writeSkyscraper(put, 0, 0, 0);
+  else writeVilla(put, 0, 0, 0);
   return [...blocks.values()];
 }

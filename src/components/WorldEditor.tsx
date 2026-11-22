@@ -8,7 +8,7 @@ import { heightAt } from '../game/levels';
 import { BLOCK_INFO, BlockKind, voxelKey } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { CUSTOM_WORLD_MAX_BLOCKS, CUSTOM_WORLD_MAX_Y, CUSTOM_WORLD_RADIUS, EDITOR_BLOCK_CATEGORIES, INFINITE_EDITOR_COORDINATE, worldBlockId } from '../game/worldCode';
-import type { CustomTerrain } from '../game/worldCode';
+import type { CustomCharacter, CustomTerrain, CustomWorldImage } from '../game/worldCode';
 import { ItemIcon } from './ItemIcon';
 import { selectionInfo } from '../game/items';
 import { translate } from '../game/language';
@@ -16,6 +16,7 @@ import { EditorPlayer } from './EditorPlayer';
 import { StairModel } from './StairModel';
 import { SlabModel } from './SlabModel';
 import { isSlab, isStair, isUpsideDownStair } from '../game/extraBlocks';
+import { CustomWorldObjects } from './CustomWorldObjects';
 
 const ALL_BLOCKS = [...new Set(Object.values(BlockKind).filter((kind) => typeof kind === 'number' && kind in BLOCK_INFO))] as BlockKind[];
 const matrix = new Matrix4();
@@ -75,7 +76,7 @@ function BlockInstanceGroup({ kind, values, erase, onInteract }: { kind: BlockKi
   );
 }
 
-function EditorScene({ blocks, terrain, seed, erase, onInteract, playerVisible, resetKey, keys, infinite, spawnPoint }: { blocks: Voxel[]; terrain: CustomTerrain; seed: number; erase: boolean; onInteract: (target: PreviewBlock, normal: { x: number; y: number; z: number }, remove: boolean) => void; playerVisible: boolean; resetKey: number; keys: { current: Set<string> }; infinite: boolean; spawnPoint: { x: number; y: number; z: number } | null }) {
+function EditorScene({ blocks, terrain, images, characters, seed, erase, onInteract, playerVisible, resetKey, keys, infinite, spawnPoint }: { blocks: Voxel[]; terrain: CustomTerrain; images: CustomWorldImage[]; characters: CustomCharacter[]; seed: number; erase: boolean; onInteract: (target: PreviewBlock, normal: { x: number; y: number; z: number }, remove: boolean) => void; playerVisible: boolean; resetKey: number; keys: { current: Set<string> }; infinite: boolean; spawnPoint: { x: number; y: number; z: number } | null }) {
   const controls = useThree((state) => state.controls) as unknown as { target: Vector3 } | null;
   const [center, setCenter] = useState({ x: 0, z: 0 });
   useEffect(() => { if (!infinite) setCenter({ x: 0, z: 0 }); }, [infinite]);
@@ -104,6 +105,7 @@ function EditorScene({ blocks, terrain, seed, erase, onInteract, playerVisible, 
       <hemisphereLight args={['#e3f2ff', '#526240', 2]} />
       <directionalLight position={[16, 30, 12]} intensity={2.2} />
       <BlockInstances blocks={visible} erase={erase} onInteract={onInteract} />
+      <CustomWorldObjects preview images={images} characters={characters} />
       <gridHelper args={[65, 65, '#e9f4ce', '#526a4d']} position={[center.x * 16, 0.506, center.z * 16]} />
       {playerVisible && <EditorPlayer blocks={blocks} terrain={terrain} seed={seed} resetKey={resetKey} keys={keys} spawnPoint={spawnPoint} />}
       <OrbitControls makeDefault target={[0, 2, 0]} minDistance={5} maxDistance={85} maxPolarAngle={Math.PI / 2.05} />
@@ -111,7 +113,7 @@ function EditorScene({ blocks, terrain, seed, erase, onInteract, playerVisible, 
   );
 }
 
-export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, onSaveDraft, draftNotice, infinite, onInfiniteChange }: { blocks: Voxel[]; terrain: CustomTerrain; seed: number; onChange: (blocks: Voxel[]) => void; onTerrainChange: (terrain: CustomTerrain) => void; onSaveDraft: () => boolean; draftNotice: string; infinite: boolean; onInfiniteChange: (infinite: boolean) => void }) {
+export function WorldEditor({ blocks, terrain, images = [], characters = [], seed, onChange, onTerrainChange, onSaveDraft, draftNotice, infinite, onInfiniteChange }: { blocks: Voxel[]; terrain: CustomTerrain; images?: CustomWorldImage[]; characters?: CustomCharacter[]; seed: number; onChange: (blocks: Voxel[]) => void; onTerrainChange: (terrain: CustomTerrain) => void; onSaveDraft: () => boolean; draftNotice: string; infinite: boolean; onInfiniteChange: (infinite: boolean) => void }) {
   const [category, setCategory] = useState('nature');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<BlockKind>(BlockKind.GrayBrick);
@@ -230,7 +232,7 @@ export function WorldEditor({ blocks, terrain, seed, onChange, onTerrainChange, 
         </div>
         <div className="world-editor-canvas">
           <Canvas frameloop={playerVisible ? 'always' : 'demand'} dpr={1} camera={{ position: [20, 20, 24], fov: 50, near: 0.1, far: 200 }} gl={{ antialias: false }} onContextMenu={(event) => event.preventDefault()}>
-            <EditorScene blocks={blocks} terrain={terrain} seed={seed} erase={tool === 'erase'} onInteract={interact} playerVisible={playerVisible} resetKey={resetKey} keys={keys} infinite={infinite} spawnPoint={spawnPoint} />
+            <EditorScene blocks={blocks} terrain={terrain} images={images} characters={characters} seed={seed} erase={tool === 'erase'} onInteract={interact} playerVisible={playerVisible} resetKey={resetKey} keys={keys} infinite={infinite} spawnPoint={spawnPoint} />
           </Canvas>
         </div>
         <p className="world-editor-help">{translate('WASD ou flèches : déplacer le joueur · Espace : sauter · glisser pour tourner · clic pour poser · Enlever ou clic droit pour retirer · Protéger puis clic pour changer la résistance d’un bloc', 'WASD or arrows: move player · Space: jump · drag to rotate · click to place · Remove or right click to delete · Protect then click to change block resistance')}</p>

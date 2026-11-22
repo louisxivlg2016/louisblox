@@ -1,11 +1,12 @@
 import { Suspense } from 'react';
 import { MeshBasicMaterial } from 'three';
-import { BlockKind } from '../game/voxel';
+import { BlockKind, voxelKey } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { PixelPart } from './ItemModel';
 import { NormalStreetLampModel, ParisStreetLampModel } from './StreetLights';
 import { EXTRA_BLOCK_META, facingYaw, isBed, isRail, isTrafficSign } from '../game/extraBlocks';
 import { TrafficSignModel } from './TrafficSigns';
+import { DecorationCulling } from './DecorationCulling';
 import { wallMount } from '../game/wallMount';
 import { ParisStreetSignModel } from './ParisStreetSign';
 
@@ -109,11 +110,11 @@ export function TrafficLightModel() {
   );
 }
 
-export function LanternModel({ withLight = true }: { withLight?: boolean }) {
+export function LanternModel({ withLight = true, floor = false }: { withLight?: boolean; floor?: boolean }) {
   return (
     <group name="ceiling-lantern">
-      <PixelPart position={[0, 0.87, 0]} size={[0.08, 0.26, 0.08]} color="#4b4640" />
-      <PixelPart position={[0, 0.73, 0]} size={[0.54, 0.08, 0.54]} color="#62594b" />
+      {!floor && <PixelPart position={[0, 0.87, 0]} size={[0.08, 0.26, 0.08]} color="#4b4640" />}
+      {!floor && <PixelPart position={[0, 0.73, 0]} size={[0.54, 0.08, 0.54]} color="#62594b" />}
       <PixelPart position={[0, 0.67, 0]} size={[0.44, 0.07, 0.44]} color="#3f3c37" />
       <mesh name="lantern-glow" position={[0, 0.42, 0]} material={lanternGlow}>
         <boxGeometry args={[0.34, 0.43, 0.34]} />
@@ -165,12 +166,12 @@ export function RadioModel({ withLight = true }: { withLight?: boolean }) {
   );
 }
 
-export function UtilityBlockModel({ kind, withLight = true, held = false, wallMounted = false }: { kind: BlockKind; withLight?: boolean; held?: boolean; wallMounted?: boolean }) {
-  return kind === BlockKind.Radio ? <RadioModel withLight={withLight} /> : kind === BlockKind.Lantern ? <LanternModel withLight={withLight} /> : kind === BlockKind.ModernCeilingLight ? <ModernCeilingLightModel withLight={withLight} /> : kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel held={held} /> : isTrafficSign(kind) ? <Suspense fallback={null}><TrafficSignModel kind={kind} held={held} wallMounted={wallMounted} /></Suspense> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
+export function UtilityBlockModel({ kind, withLight = true, held = false, wallMounted = false, floor = false }: { kind: BlockKind; withLight?: boolean; held?: boolean; wallMounted?: boolean; floor?: boolean }) {
+  return kind === BlockKind.Radio ? <RadioModel withLight={withLight} /> : kind === BlockKind.Lantern ? <LanternModel withLight={withLight} floor={floor} /> : kind === BlockKind.ModernCeilingLight ? <ModernCeilingLightModel withLight={withLight} /> : kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel held={held} /> : isTrafficSign(kind) ? <Suspense fallback={null}><TrafficSignModel kind={kind} held={held} wallMounted={wallMounted} /></Suspense> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
 }
 
 export function UtilityBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIndex: ReadonlyMap<string, Voxel> }) {
-  return blocks.map((block) => {
+  return <DecorationCulling distance={60}>{blocks.map((block) => {
     const rail = isRail(block.kind);
     const oriented = block.kind === BlockKind.Ladder || block.kind === BlockKind.Radio || block.kind === BlockKind.TrafficLight || isTrafficSign(block.kind) || isBed(block.kind) || rail;
     const rotation = rail
@@ -178,6 +179,7 @@ export function UtilityBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIn
       : block.kind === BlockKind.Radio ? facingYaw(block.facing) + Math.PI
       : oriented ? facingYaw(block.facing) : 0;
     const mount = isTrafficSign(block.kind) ? wallMount(blockIndex, block, rotation) : { rotation, offset: 0, mounted: false };
-    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y - 0.5, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} scale={isTrafficSign(block.kind) ? 0.6 : 1} userData={{ wallMounted: mount.mounted }}><UtilityBlockModel kind={block.kind} wallMounted={mount.mounted} /></group>;
-  });
+    const floor = block.kind === BlockKind.Lantern && blockIndex.has(voxelKey(block.x, block.y - 1, block.z));
+    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y - 0.5, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} scale={isTrafficSign(block.kind) ? 0.6 : 1} userData={{ wallMounted: mount.mounted }}><UtilityBlockModel kind={block.kind} wallMounted={mount.mounted} floor={floor} /></group>;
+  })}</DecorationCulling>;
 }

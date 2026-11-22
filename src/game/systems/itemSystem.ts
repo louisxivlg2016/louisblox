@@ -9,7 +9,7 @@ import { isGalleryItem } from '../galleryCatalog';
 import { hasWaterOpening } from '../extraBlocks';
 import { useGalleryItem, useShears } from '../galleryActions';
 import { useFood } from '../foods';
-import { hasInventory } from '../inventory';
+import { changeInventory, hasInventory } from '../inventory';
 import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from '../levels';
 import { useGameStore } from '../store';
 import { HorseRider, Player, PlayerPosition, Vehicle, VehicleMotion, VehiclePosition } from '../traits';
@@ -152,6 +152,14 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
     } else {
       useGameStore.getState().setNotice(translate('Vise un cheval pour installer la selle.', 'Aim at a horse to install the saddle.'));
     }
+    return true;
+  }
+  if (selected === 'wool' && interact > 0) {
+    const blocks = getBlockIndex(world);
+    const hit = raycastVoxel(blocks, origin, direction, 6);
+    if (!hit) return true;
+    const placed = addVoxel(world, hit.x + hit.normal.x, hit.y + hit.normal.y, hit.z + hit.normal.z, BlockKind.ConcreteWhite);
+    if (placed) changeInventory('wool', -1);
     return true;
   }
   if (meta.category === 'vehicle' && interact > 0) {
