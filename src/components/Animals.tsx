@@ -19,7 +19,7 @@ function AnimalView({ entity }: { entity: Entity }) {
   const kind = animal.kind;
   return (
     <group
-      scale={tame?.baby ? 0.55 : 1}
+      scale={tame?.baby ? 0.55 : kind === 'horse' ? 1.15 : 1}
       ref={(group) => {
         if (group && !group.userData.flashReady) {
           group.traverse((object) => {
