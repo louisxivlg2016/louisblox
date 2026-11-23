@@ -137,7 +137,8 @@ export function landPlane(world: World) {
 export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role: SeatRole = 'driver') {
   const player = world.queryFirst(Player);
   const mount = player?.get(PlayerMount);
-  if (!player || !mount || mount.vehicle) return false;
+  if (!player || !mount) return false;
+  if (mount.vehicle) dismount(world);
   if (!isAnimalMount(kind)) {
     const motion = vehicle.get(VehicleMotion);
     if (!motion) return false;
