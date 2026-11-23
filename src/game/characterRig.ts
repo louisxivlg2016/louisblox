@@ -24,8 +24,8 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     const y = (position.getY(a) + position.getY(b) + position.getY(c)) / 3;
     const side = x < 0 ? 'left' : 'right';
     let part: Part = 'body';
-    const keepShouldersWithHead = outfit === 'knight' || outfit === 'louis14' || outfit === 'trader' || outfit === 'classic-girl' || outfit === 'classic-boy' || outfit === 'corsair' || outfit === 'king' || outfit === 'footballer';
-    const headWidth = keepShouldersWithHead ? 0.38 : 0.28;
+    const keepShouldersWithHead = outfit === 'knight' || outfit === 'louis14' || outfit === 'trader' || outfit === 'classic-boy' || outfit === 'king';
+    const headWidth = keepShouldersWithHead ? 0.38 : outfit === 'worker' ? 0.2 : 0.28;
     if (Math.abs(x) < width * 0.38 && y > floor + height * 0.82 || Math.abs(x) < width * headWidth && y > floor + height * 0.68) part = 'head';
     else if (Math.abs(x) > width * 0.25 && y > floor + height * 0.28 && y < floor + height * 0.82) part = `${side}Arm`;
     else if (legs && Math.abs(x) < width * 0.28 && y < floor + height * 0.48) part = y < floor + height * 0.24 ? `${side}LowerLeg` : `${side}Leg`;
@@ -61,7 +61,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   const height = bounds.max.y - bounds.min.y;
   const floor = bounds.min.y;
   const pieces: Array<ReturnType<typeof splitGeometry>> = [];
-  const colorAppearance = outfit === 'corsair' || outfit === 'military' ? undefined : appearance;
+  const colorAppearance = outfit === 'corsair' || outfit === 'military' || outfit === 'worker' ? undefined : appearance;
   scene.traverse((object) => {
     if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, true, bounds, colorAppearance, outfit === 'louis15', outfit === 'princess' || outfit === 'classic-girl', outfit));
   });
