@@ -51,7 +51,9 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const animalHandled = !sleeping && !footballHandled && animalInteractionSystem(world, camera, actions.harvest, actions.tap);
       const tradeHandled = !animalHandled && !sleeping && !footballHandled && tradeInteractionSystem(world, camera, actions.place + actions.harvest + actions.tap + actions.interact);
       const itemHandled = !animalHandled && !tradeHandled && !footballHandled && !sleeping && itemSystem(world, camera, delta, actions);
-      const vehicleHandled = !sleeping && !footballHandled && !itemHandled && vehicleInteractionSystem(world, camera, actions.place + actions.harvest);
+      const mount = world.queryFirst(Player)?.get(PlayerMount);
+      const placingWhileMounted = Boolean(mount?.vehicle && (mount.kind === 'horse' || mount.kind === 'camel')) && typeof useGameStore.getState().selected === 'number';
+      const vehicleHandled = !sleeping && !footballHandled && !itemHandled && vehicleInteractionSystem(world, camera, placingWhileMounted ? 0 : actions.place + actions.harvest);
       const cannonHandled = !sleeping && !footballHandled && vehicleWeaponSystem(world, camera, delta, actions.tap);
       const vehicleTarget = !sleeping && !footballHandled && (cannonHandled || vehicleCombatSystem(world, camera, dt, actions.tap));
       const animalTarget = !sleeping && !footballHandled && !vehicleTarget && animalCombatSystem(world, camera, dt, actions.tap);
