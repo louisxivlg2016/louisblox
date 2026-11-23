@@ -576,8 +576,8 @@ export function MultiplayerConnection() {
           else applyTraderDeath(world, data.id);
           return;
         }
-        if (data.type === 'animal-spawn' && isAnimalSnapshot(data.animal)) {
-          applyAnimalSnapshots(world, [data.animal], true);
+        if ((data.type === 'animal-spawn' || data.type === 'animal-storage') && isAnimalSnapshot(data.animal)) {
+          applyAnimalSnapshots(world, [data.animal], true, data.type === 'animal-storage');
           return;
         }
         if (data.type === 'animal-state' && Array.isArray(data.animals)) {

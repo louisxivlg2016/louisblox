@@ -7,7 +7,7 @@ import { useGameStore } from './store';
 import { isInAnyRuinFootprint } from './ruins';
 import { nearestVillageAt, spawnVillageResidents, tradeCityAt } from './villages';
 import { isAnimalDead, isTraderDead } from './deathSync';
-import { applyTameState } from './taming';
+import { applyTameState, isAnimalStored } from './taming';
 import { groundAt } from './vehicles';
 import { isNight, nightIndex } from './dayNight';
 
@@ -102,7 +102,7 @@ function hash(x: number, z: number, seed: number) {
 }
 
 export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number, z: number, seed: number, id = `${kind}:${x}:${z}`) {
-  if (isAnimalDead(id)) return null;
+  if (isAnimalDead(id) || isAnimalStored(world, id)) return null;
   const existing = world.query(Animal, AnimalId).find((entity) => entity.get(AnimalId) === id);
   if (existing) return existing;
   const site = kind === 'duck' ? { x, y, z } : kind === 'monkey' ? monkeyTreeSpawn(world, x, z, seed) : safeRoamSpawn(x, z, seed);

@@ -13,6 +13,7 @@ import { inventoryCount } from '../game/inventory';
 import { CraftingPanel } from './CraftingPanel';
 import { normalizeSearch } from '../game/search';
 import { translate } from '../game/language';
+import { companionAnimalName, releaseStoredAnimal, storedAnimals } from '../game/taming';
 
 export function Backpack() {
   const open = useGameStore((state) => state.backpackOpen);
@@ -25,16 +26,23 @@ export function Backpack() {
   const setHotbarSlot = useGameStore((state) => state.setHotbarSlot);
   const setBackpackItem = useGameStore((state) => state.setBackpackItem);
   const setBackpack = useGameStore((state) => state.setBackpack);
-  const [sections, setSections] = useState({ blocks: true, crops: true, items: true, gallery: true });
+  const [sections, setSections] = useState({ blocks: true, crops: true, items: true, animals: true, gallery: true });
   const [galleryCategory, setGalleryCategory] = useState('Tools & Weapons');
   const [gallerySearch, setGallerySearch] = useState('');
+  const [animalVersion, setAnimalVersion] = useState(0);
   const dragSlot = useRef<{ index: number; kind: SelectedKind; pointerId: number; x: number; y: number } | null>(null);
   const survival = gameplayMode === 'survival';
   const inventory = { itemCounts, gameplayMode, apples };
+  const animals = storedAnimals(world);
   if (!open) return null;
   const close = () => {
     setBackpack(false);
     void requestPlay();
+  };
+  const release = async (id: string) => {
+    if (!await releaseStoredAnimal(world, id)) return;
+    setAnimalVersion((version) => version + 1);
+    close();
   };
   const assign = (index: number) => {
     if (backpackItem !== null) setHotbarSlot(index, backpackItem);
@@ -113,6 +121,7 @@ export function Backpack() {
             ['blocks', translate('Blocs', 'Blocks')],
             ['crops', translate('Graines', 'Seeds')],
             ['items', translate('Objets', 'Items')],
+            ['animals', translate('Animaux', 'Animals')],
             ['gallery', translate('Galerie', 'Gallery')],
           ] as const).map(([key, label]) => <label key={key}><input type="checkbox" checked={sections[key]} onChange={() => toggleSection(key)} /> {label}</label>)}</fieldset>
           {sections.blocks && <><p className="backpack-label">{survival ? translate('Ressources récoltées', 'Gathered resources') : translate('Blocs, portes et trappes', 'Blocks, doors, and trapdoors')}</p>
@@ -122,6 +131,14 @@ export function Backpack() {
           {sections.items && <><p className="backpack-label">{survival ? translate('Objets fabriqués', 'Crafted items') : translate('Pioches, pelles, épées, armures et équipement · clic gauche pour miner ou utiliser', 'Pickaxes, shovels, swords, armor, and equipment · left click to mine or use')}</p>
           <div className="backpack-blocks">{ITEM_ORDER.filter((kind) => matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div></>}
           {survival && <CraftingPanel />}
+          {sections.animals && <><p className="backpack-label">{translate('Animaux rangés · choisis un animal pour le faire ressortir près de toi', 'Stored animals · choose an animal to release it near you')}</p>
+          <div className="backpack-blocks" key={animalVersion}>{animals.filter((animal) => normalizeSearch(companionAnimalName(animal.kind)).includes(query)).map((animal) => (
+            <button type="button" className="backpack-block" key={animal.id} data-stored-animal={animal.id} onClick={() => { void release(animal.id); }} aria-label={translate(`Faire sortir ${companionAnimalName(animal.kind)}`, `Release ${companionAnimalName(animal.kind)}`)}>
+              <span>{companionAnimalName(animal.kind)}{animal.baby ? ` · ${translate('Bébé', 'Baby')}` : ''}</span>
+              <small>{translate('Dans le sac · Faire sortir', 'In backpack · Release')}</small>
+            </button>
+          ))}</div>
+          {animals.length === 0 && <p className="backpack-label">{translate('Aucun animal rangé. Utilise « Ranger dans le sac » dans le menu de ton animal.', 'No stored animals. Use “Store in backpack” in your animal’s menu.')}</p>}</>}
           {sections.gallery && <><div className="gallery-controls">
             <select aria-label={translate('Catégorie de la galerie', 'Gallery category')} value={galleryCategory} onChange={(event) => setGalleryCategory(event.target.value)}>
               <option value="all">{translate('Toutes les catégories', 'All categories')}</option>

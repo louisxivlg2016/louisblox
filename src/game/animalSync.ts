@@ -9,9 +9,9 @@ import { useMultiplayerStore } from './multiplayerStore';
 import { playerIdentity } from './playerIdentity';
 import { turnToward } from './rotation';
 import { applyAnimalDeath, isAnimalDead } from './deathSync';
-import { applyTameState } from './taming';
+import { applyTameState, isAnimalStored, setAnimalStoredState } from './taming';
 
-export type AnimalSnapshot = { id: string; kind: AnimalKind; x: number; y: number; z: number; yaw: number; health: number; speed: number; running?: boolean; saddled?: boolean; tamed?: boolean; ownerId?: string; baby?: boolean; friendship?: number; happiness?: number; lastFedAt?: number };
+export type AnimalSnapshot = { id: string; kind: AnimalKind; x: number; y: number; z: number; yaw: number; health: number; speed: number; running?: boolean; saddled?: boolean; tamed?: boolean; ownerId?: string; stored?: boolean; baby?: boolean; friendship?: number; happiness?: number; lastFedAt?: number };
 export type FishSnapshot = { id: string; kind: FishKind; x: number; y: number; z: number; yaw: number; age: number; phase: number; speed: number };
 
 const animalKinds = new Set<AnimalKind>(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie', 'monkey', 'ocelot', 'giraffe', 'elephant']);
@@ -33,7 +33,7 @@ export function setAnimalSocket(next: WebSocket | null) {
   socket = next;
 }
 
-function reportAnimal(entity: Entity, type: 'animal-spawn' | 'animal-tame') {
+function reportAnimal(entity: Entity, type: 'animal-spawn' | 'animal-tame' | 'animal-storage', stored = false) {
   const id = entity.get(AnimalId);
   const kind = entity.get(Animal)?.kind;
   const position = entity.get(AnimalPosition);
@@ -41,7 +41,7 @@ function reportAnimal(entity: Entity, type: 'animal-spawn' | 'animal-tame') {
   const health = entity.get(AnimalHealth)?.value;
   if (!socket || socket.readyState !== WebSocket.OPEN || !entity.isAlive() || !id || !kind || !position || !motion || health === undefined || health <= 0 || isAnimalDead(id)) return false;
   const tame = entity.get(AnimalTame);
-  const animal: AnimalSnapshot = { id, kind, x: position.x, y: position.y, z: position.z, yaw: entity.get(AnimalMesh)?.value?.rotation.y ?? motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, ownerId: tame?.ownerId ?? undefined, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt };
+  const animal: AnimalSnapshot = { id, kind, x: position.x, y: position.y, z: position.z, yaw: entity.get(AnimalMesh)?.value?.rotation.y ?? motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, ownerId: tame?.ownerId ?? undefined, stored, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt };
   socket.send(JSON.stringify({ type, animal }));
   return true;
 }
@@ -56,6 +56,10 @@ export function clearAnimalInterpolation(world: World, entity: Entity) {
 
 export function reportAnimalTame(entity: Entity) {
   return reportAnimal(entity, 'animal-tame');
+}
+
+export function reportAnimalStorage(entity: Entity, stored: boolean) {
+  return reportAnimal(entity, 'animal-storage', stored);
 }
 
 export function isAnimalAuthority() {
@@ -74,6 +78,7 @@ export function isAnimalSnapshot(value: unknown): value is AnimalSnapshot {
     && (data.saddled === undefined || typeof data.saddled === 'boolean')
     && (data.tamed === undefined || typeof data.tamed === 'boolean')
     && (data.ownerId === undefined || typeof data.ownerId === 'string' && data.ownerId.length > 0 && data.ownerId.length <= 80)
+    && (data.stored === undefined || typeof data.stored === 'boolean')
     && (data.baby === undefined || typeof data.baby === 'boolean')
     && ['friendship', 'happiness', 'lastFedAt'].every((key) => data[key] === undefined || typeof data[key] === 'number' && Number.isFinite(data[key]));
 }
@@ -95,7 +100,7 @@ function interpolationFor(world: World, fish = false) {
   return entries;
 }
 
-export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[], preserveUnseen = false) {
+export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[], preserveUnseen = false, allowRelease = false) {
   const seen = new Set<string>();
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   const localMount = world.queryFirst(Player)?.get(PlayerMount)?.vehicle;
@@ -106,6 +111,15 @@ export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[], 
       applyAnimalDeath(world, snapshot.id);
       continue;
     }
+    if (snapshot.stored === true) {
+      let entity = world.query(Animal, AnimalId).find((candidate) => candidate.get(AnimalId) === snapshot.id);
+      if (!entity && !isAnimalStored(world, snapshot.id)) entity = spawnAnimal(world, snapshot.kind, snapshot.x, snapshot.y, snapshot.z, 0, snapshot.id) ?? undefined;
+      if (entity) applyTameState(world, entity, { tamed: true, ownerId: snapshot.ownerId, stored: true, baby: snapshot.baby === true, friendship: snapshot.friendship, happiness: snapshot.happiness, lastFedAt: snapshot.lastFedAt });
+      setAnimalStoredState(world, snapshot.id, true);
+      continue;
+    }
+    if (allowRelease && snapshot.stored === false && isAnimalStored(world, snapshot.id)) setAnimalStoredState(world, snapshot.id, false);
+    if (isAnimalStored(world, snapshot.id)) continue;
     seen.add(snapshot.id);
     let entity: Entity | undefined = world.query(Animal, AnimalId).find((candidate) => candidate.get(AnimalId) === snapshot.id);
     if (entity === undefined) entity = spawnAnimal(world, snapshot.kind, snapshot.x, snapshot.y, snapshot.z, 0, snapshot.id) ?? undefined;
@@ -228,7 +242,7 @@ export function syncAnimalState(world: World, dt: number) {
     const position = entity.get(AnimalPosition)!;
     const motion = entity.get(AnimalMotion)!;
     const tame = entity.get(AnimalTame);
-    return [{ id, kind: entity.get(Animal)!.kind, x: position.x, y: position.y, z: position.z, yaw: entity.get(AnimalMesh)?.value?.rotation.y ?? motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: entity.get(Animal)!.kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, ownerId: tame?.ownerId ?? undefined, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt }];
+    return [{ id, kind: entity.get(Animal)!.kind, x: position.x, y: position.y, z: position.z, yaw: entity.get(AnimalMesh)?.value?.rotation.y ?? motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: entity.get(Animal)!.kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, ownerId: tame?.ownerId ?? undefined, stored: false, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt }];
   });
   const fish = world.query(Fish, FishId, FishPosition, FishMotion).map((entity) => {
     const position = entity.get(FishPosition)!;

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useCompanionMenuStore } from '../game/companionMenu';
-import { companionAnimalName, companionSchedule, wakeTamedAnimal } from '../game/taming';
+import { companionAnimalName, companionSchedule, storeTamedAnimal, wakeTamedAnimal } from '../game/taming';
 import { Animal, AnimalRest, AnimalTame } from '../game/traits';
 import { DAY_DURATION } from '../game/dayNight';
 import { world } from '../game/world';
 import { mountEntity } from '../game/vehicles';
 import { requestPlay } from '../game/input';
 import { translate } from '../game/language';
+import { useGameStore } from '../game/store';
 
 function duration(seconds: number) {
   if (seconds <= 0) return translate('maintenant', 'now');
@@ -50,6 +51,11 @@ export function CompanionPanel() {
     if (!mountEntity(world, entity, kind)) return;
     resume();
   };
+  const store = async () => {
+    if (!await storeTamedAnimal(world, entity)) return;
+    close();
+    useGameStore.getState().setBackpack(true);
+  };
   return (
     <div className="backpack-backdrop">
       <section className="book-panel backpack-panel companion-panel" role="dialog" aria-modal="true" aria-label={translate('Menu de ton animal', 'Your animal menu')} data-companion-menu>
@@ -60,6 +66,7 @@ export function CompanionPanel() {
           {tame?.baby && schedule && schedule.growUpIn !== null && <p data-grow-up>{translate('Adulte dans', 'Adult in')} <strong>{duration(schedule.growUpIn)}</strong></p>}
           {kind === 'cow' && schedule && schedule.nextGiftIn !== null && <p data-next-gift>{translate('Prochain lait dans', 'Next milk in')} <strong>{duration(schedule.nextGiftIn)}</strong></p>}
           {kind === 'sheep' && schedule && schedule.nextGiftIn !== null && <p data-next-gift>{translate('Prochaine laine dans', 'Next wool in')} <strong>{duration(schedule.nextGiftIn)}</strong></p>}
+          <button type="button" className="primary-button" data-store-companion onClick={() => { void store(); }}>{translate('Ranger dans le sac', 'Store in backpack')}</button>
           {sleeping && <button type="button" className="primary-button" data-wake-companion onClick={() => { wakeTamedAnimal(world, entity); resume(); }}>{translate('Réveiller', 'Wake up')}</button>}
           {!sleeping && (kind === 'horse' || kind === 'camel') && <button type="button" className="primary-button" data-mount-companion onClick={mount}>{kind === 'horse' ? translate('Monter à cheval sans selle', 'Ride horse without a saddle') : translate('Monter sur le chameau sans selle', 'Ride camel without a saddle')}</button>}
         </div>
