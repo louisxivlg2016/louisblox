@@ -74,7 +74,7 @@ export function MilitaryCharacterGlb({ moving, airborne, remote = false, seated 
         <PixelPart position={[0.11, 0.03, -0.267]} size={[0.09, 0.06, 0.025]} color="#f4f4ed" />
         <PixelPart position={[-0.11, 0.03, -0.282]} size={[0.035, 0.045, 0.02]} color="#273b2b" />
         <PixelPart position={[0.11, 0.03, -0.282]} size={[0.035, 0.045, 0.02]} color="#273b2b" />
-        {headAccessory && head.current && createPortal(<group name="military-head-accessory">{headAccessory}</group>, head.current)}
+        {headAccessory && head.current && createPortal(<group name="military-head-accessory" position={[0, -1.14, 0]}>{headAccessory}</group>, head.current)}
       </group>
       <PixelPart position={[0, 1.05, 0]} size={[0.58, 0.68, 0.34]} color="#526b3c" />
       <PixelPart position={[0, 1.08, -0.18]} size={[0.46, 0.36, 0.06]} color="#405630" />

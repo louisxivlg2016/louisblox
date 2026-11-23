@@ -104,7 +104,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
   return (
     <group ref={group} name="full-character" userData={metadata}>
       <primitive object={character} scale={scale} rotation={[0, Math.PI, 0]} />
-      {headAccessory && head ? createPortal(<group name="costume-wig" position={[0, -head.position.y - (outfit.startsWith('classic-') ? 0.48 : 0), 0]}>{headAccessory}</group>, head) : null}
+      {headAccessory && head ? createPortal(<group name="costume-wig" position={[0, -1.3, 0]}>{headAccessory}</group>, head) : null}
       {outfit === 'police' && head ? createPortal(<PoliceSunglasses />, head) : null}
     </group>
   );
