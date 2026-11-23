@@ -452,7 +452,7 @@ export function traderSystem(world: World, dt: number) {
       }
     }
     if (distance > 0.001) {
-      let step = Math.min(distance, dt * (trader.panic > 0 ? 3.2 : following ? trader.following ? 7.2 : 5.5 : 1.05));
+      let step = Math.min(distance, dt * (trader.panic > 0 ? 3.2 : following ? trader.following ? 7.2 : 5.5 : 1.05), 0.35);
       const forward = fire ? Math.atan2(position.x - fire.x, position.z - fire.z) : Math.atan2(dx, dz);
       const forwardGround = walkableGround(world, position.x + Math.sin(forward) * 1.2, position.z + Math.cos(forward) * 1.2, position.y);
       let ground = forwardGround === null ? null : walkableGround(world, position.x + dx / distance * step, position.z + dz / distance * step, position.y);
@@ -471,7 +471,7 @@ export function traderSystem(world: World, dt: number) {
           dx = trader.targetX - position.x;
           dz = trader.targetZ - position.z;
           distance = Math.hypot(dx, dz);
-          step = Math.min(distance, dt * (trader.panic > 0 ? 3.2 : following ? trader.following ? 7.2 : 5.5 : 1.05));
+          step = Math.min(distance, dt * (trader.panic > 0 ? 3.2 : following ? trader.following ? 7.2 : 5.5 : 1.05), 0.35);
         }
       }
       if (path) ground = walkableGround(world, position.x + dx / distance * step, position.z + dz / distance * step, position.y);
@@ -575,7 +575,7 @@ export function traderSystem(world: World, dt: number) {
     const previousX = position.x;
     const previousZ = position.z;
     if (distance > 0.001) {
-      const step = Math.min(distance, dt * (leader?.following ? 8 : 1.65));
+      const step = Math.min(distance, dt * (leader?.following ? 8 : 1.65), 0.35);
       const x = position.x + dx / distance * step;
       const z = position.z + dz / distance * step;
       const ground = walkableGround(world, x, z, position.y, 4.05);

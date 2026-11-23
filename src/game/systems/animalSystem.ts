@@ -437,7 +437,7 @@ export function animalSystem(world: World, dt: number) {
     const zombieTooClose = zombieNearPlayer && distanceSquared < 1.35 * 1.35;
     const stayClose = !fire && (tamed && (defenseTarget ? targetDistanceSquared < 2.2 * 2.2 : distanceSquared < 2.8 * 2.8) || zombieNearPlayer);
     const tamedOnPlayer = tamed && distanceSquared < 1.5 * 1.5;
-    const tamedNeighbor = tamed ? neighbors.find((neighbor) => neighbor.entity !== entity && isTamedAnimal(neighbor.entity) && position.distanceToSquared(neighbor.position) < 1.25 * 1.25) : undefined;
+    const tamedNeighbor = tamed ? neighbors.find((neighbor) => neighbor.entity !== entity && isTamedAnimal(neighbor.entity) && position.distanceToSquared(neighbor.position) < 0.65 * 0.65) : undefined;
     if (tamedNeighbor) {
       const dx = position.x - tamedNeighbor.position.x;
       const dz = position.z - tamedNeighbor.position.z;
@@ -468,7 +468,7 @@ export function animalSystem(world: World, dt: number) {
       const dx = position.x - neighbor.position.x;
       const dz = position.z - neighbor.position.z;
       const distanceSquared = dx * dx + dz * dz;
-      if (distanceSquared >= 0.95 * 0.95 || Math.abs(position.y - neighbor.position.y) > 1.2) continue;
+      if (distanceSquared >= (tamed ? 0.7 * 0.7 : 0.95 * 0.95) || Math.abs(position.y - neighbor.position.y) > 1.2) continue;
       const away = distanceSquared < 0.0001 ? entity * 2.39 : Math.atan2(dx, dz);
       moveInDirection(world, animal.kind, position, motion, away, 4, stepDt, entity);
       break;
