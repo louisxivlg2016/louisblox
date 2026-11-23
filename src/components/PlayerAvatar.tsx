@@ -12,7 +12,7 @@ import { ItemModel, PixelPart, heldItemPosition } from './ItemModel';
 import { attachCharacterHand } from '../game/characterRig';
 import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
-import { isSlab, isStair, isUtilityBlock } from '../game/extraBlocks';
+import { isCarpet, isSlab, isStair, isUtilityBlock } from '../game/extraBlocks';
 import { StairModel } from './StairModel';
 import { SlabModel } from './SlabModel';
 import { BlockKind } from '../game/voxel';
@@ -147,7 +147,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
         {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />}
         <group name="held-item" visible={!eating && !preview && !sleeping && held !== 'parachute'} position={heldItemPosition(held, hasFullCharacter(outfit, wig))} scale={typeof held === 'number' ? 0.5 : typeof held === 'string' && getItemMeta(held).category === 'vehicle' ? 0.2 : 0.72}>
           {typeof held === 'number'
-            ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : isStair(held) ? <StairModel kind={held} followPlayer /> : isSlab(held) ? <SlabModel kind={held} followPlayer /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
+            ? held === BlockKind.Tnt ? <BombModel /> : held === BlockKind.Candle ? <CandleModel /> : held === BlockKind.Campfire || held === BlockKind.Wildfire ? <CampfireModel destructive={held === BlockKind.Wildfire} /> : isUtilityBlock(held) ? <UtilityBlockModel kind={held} withLight={false} /> : isStair(held) ? <StairModel kind={held} followPlayer /> : isSlab(held) ? <SlabModel kind={held} followPlayer /> : isCarpet(held) ? <mesh args={[blockGeometry, blockMaterials[held]]} scale={[1, 0.06, 1]} /> : <mesh args={[blockGeometry, blockMaterials[held]]} />
             : <ItemModel kind={held} flipWeapons={hasFullCharacter(outfit, wig)} />}
         </group>
       </group>

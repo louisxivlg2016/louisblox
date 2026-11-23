@@ -214,6 +214,22 @@ export const EXTRA_BLOCKS = {
   ModernCeilingLight: 239,
   RedBrick: 240,
   Radio: 241,
+  CarpetWhite: 242,
+  CarpetOrange: 243,
+  CarpetMagenta: 244,
+  CarpetLightBlue: 245,
+  CarpetYellow: 246,
+  CarpetLime: 247,
+  CarpetPink: 248,
+  CarpetGray: 249,
+  CarpetLightGray: 250,
+  CarpetCyan: 251,
+  CarpetPurple: 252,
+  CarpetBlue: 253,
+  CarpetBrown: 254,
+  CarpetGreen: 255,
+  CarpetRed: 256,
+  CarpetBlack: 257,
 } as const;
 
 export const PARIS_STREET_SIGN_TEXT = '4th arrondissement\nPeace Street';
@@ -230,6 +246,7 @@ export const isSmallTrapdoor = (kind: number) => kind >= EXTRA_BLOCKS.TrapdoorOa
 export const isMetalTrapdoor = (kind: number) => kind >= EXTRA_BLOCKS.TrapdoorIron && kind <= EXTRA_BLOCKS.TrapdoorCopper || kind >= EXTRA_BLOCKS.TrapdoorIronSmall && kind <= EXTRA_BLOCKS.TrapdoorCopperSmall;
 export const isStair = (kind: number) => kind >= EXTRA_BLOCKS.StairOak && kind <= EXTRA_BLOCKS.StairBedrock;
 export const isSlab = (kind: number) => kind >= EXTRA_BLOCKS.SlabOak && kind <= EXTRA_BLOCKS.SlabGlassBlack;
+export const isCarpet = (kind: number) => kind >= EXTRA_BLOCKS.CarpetWhite && kind <= EXTRA_BLOCKS.CarpetBlack;
 export const STAIR_SOURCES: Readonly<Partial<Record<ExtraBlockKind, number>>> = {
   [EXTRA_BLOCKS.StairOak]: EXTRA_BLOCKS.OakPlanks,
   [EXTRA_BLOCKS.StairPine]: EXTRA_BLOCKS.PinePlanks,
@@ -496,8 +513,14 @@ const SLAB_BASE_MATERIALS: Record<number, ExtraBlockMeta> = {
   18: block('glace', '#a8d5e2', 1.5),
 };
 
+const CARPET_META = Object.fromEntries(Array.from({ length: 16 }, (_, index) => {
+  const material = BASE_EXTRA_BLOCK_META[EXTRA_BLOCKS.ConcreteWhite + index];
+  return [EXTRA_BLOCKS.CarpetWhite + index, block(material.name.replace('Béton', 'Tapis'), material.color, 0.2)];
+}));
+
 export const EXTRA_BLOCK_META = {
   ...BASE_EXTRA_BLOCK_META,
+  ...CARPET_META,
   ...Object.fromEntries(Object.entries(SLAB_SOURCES).map(([kind, source]) => {
     const material = BASE_EXTRA_BLOCK_META[source] ?? SLAB_BASE_MATERIALS[source];
     return [kind, { name: `Plaque en ${material.name.toLocaleLowerCase('fr')}`, color: material.color, hardness: material.hardness, palette: material.palette }];

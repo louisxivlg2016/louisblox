@@ -19,7 +19,7 @@ import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnChunkFish } from './fish';
 import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
-import { hasWaterOpening, isBed, isChest, isCrop, isDoor, isFireBlock, isGrassPlate, isLadder, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
+import { hasWaterOpening, isBed, isCarpet, isChest, isCrop, isDoor, isFireBlock, isGrassPlate, isLadder, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
 import { clearFires, extinguishFireAt, spawnFire } from './fireLifecycle';
 import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
 import type { ArmorKind, SelectedKind } from './items';
@@ -119,7 +119,7 @@ export const chunkCoordinate = (value: number) => Math.floor((value + 0.5) / CHU
 const columnKey = (x: number, z: number) => `${x},${z}`;
 
 function supportsGround(block: Voxel) {
-  return !isGrassPlate(block) && (!isSlab(block.kind) || block.growth === 0) && !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind)
+  return !isGrassPlate(block) && !isCarpet(block.kind) && (!isSlab(block.kind) || block.growth === 0) && !isWaterBlock(block.kind) && block.kind !== BlockKind.JungleVine && !isCrop(block.kind) && !isRail(block.kind)
     && !(block.open && (isDoor(block.kind) || isTrapdoor(block.kind)));
 }
 

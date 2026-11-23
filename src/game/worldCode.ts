@@ -90,6 +90,7 @@ export const EDITOR_BLOCK_CATEGORIES: EditorBlockCategory[] = [
   { id: 'concrete', name: translate('Béton', 'Concrete'), kinds: Array.from({ length: 16 }, (_, index) => (BlockKind.ConcreteWhite + index) as BlockKind) },
   { id: 'stairs', name: 'Stairs', kinds: Array.from({ length: 34 }, (_, index) => (BlockKind.StairOak + index) as BlockKind) },
   { id: 'slabs', name: translate('Plaques', 'Slabs'), kinds: Array.from({ length: 51 }, (_, index) => (BlockKind.SlabOak + index) as BlockKind) },
+  { id: 'carpets', name: translate('Tapis', 'Carpets'), kinds: Array.from({ length: 16 }, (_, index) => (BlockKind.CarpetWhite + index) as BlockKind) },
   { id: 'glass', name: translate('Verre, eau et glace', 'Glass, water, and ice'), kinds: [BlockKind.Glass, ...Array.from({ length: 16 }, (_, index) => (BlockKind.GlassWhite + index) as BlockKind), BlockKind.Water, BlockKind.CalmWater, BlockKind.Ice] },
   { id: 'doors', name: 'Doors and trapdoors', kinds: [...Array.from({ length: 32 }, (_, index) => (BlockKind.DoorWhite + index) as BlockKind), ...Array.from({ length: 3 }, (_, index) => (BlockKind.TrapdoorIron + index) as BlockKind)] },
   { id: 'furniture', name: translate('Maison et décoration', 'Home and decoration'), kinds: [BlockKind.Chest, BlockKind.Furnace, BlockKind.Ladder, BlockKind.Sign, BlockKind.Candle, BlockKind.Lantern, BlockKind.ModernCeilingLight, BlockKind.Tnt, BlockKind.Campfire, BlockKind.Wildfire, BlockKind.Food, ...Array.from({ length: 17 }, (_, index) => (BlockKind.Bed + index) as BlockKind)] },

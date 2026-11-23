@@ -13,7 +13,7 @@ import { BlockKind } from '../game/voxel';
 import { ItemModel, isWeaponItem, itemGripOffset } from './ItemModel';
 import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
-import { isSlab, isStair, isUtilityBlock, slabSource, stairSource } from '../game/extraBlocks';
+import { isCarpet, isSlab, isStair, isUtilityBlock, slabSource, stairSource } from '../game/extraBlocks';
 import { StairModel } from './StairModel';
 import { SlabModel } from './SlabModel';
 
@@ -97,6 +97,8 @@ export function Hands() {
           <group position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.32}><StairModel kind={selected} materials={heldMaterials} renderOrder={11} followPlayer /></group>
         ) : isSlab(selected) ? (
           <group position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.32}><SlabModel kind={selected} materials={heldMaterials} followPlayer /></group>
+        ) : isCarpet(selected) ? (
+          <mesh args={[blockGeometry, heldMaterials]} position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={[0.32, 0.025, 0.32]} renderOrder={11} frustumCulled={false} />
         ) : (
           <mesh args={[blockGeometry, heldMaterials]} position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.16} renderOrder={11} frustumCulled={false} />
         )

@@ -15,7 +15,7 @@ import { translate } from '../game/language';
 import { EditorPlayer } from './EditorPlayer';
 import { StairModel } from './StairModel';
 import { SlabModel } from './SlabModel';
-import { isSlab, isStair, isUpsideDownStair } from '../game/extraBlocks';
+import { isCarpet, isSlab, isStair, isUpsideDownStair } from '../game/extraBlocks';
 import { CustomWorldObjects } from './CustomWorldObjects';
 
 const ALL_BLOCKS = [...new Set(Object.values(BlockKind).filter((kind) => typeof kind === 'number' && kind in BLOCK_INFO))] as BlockKind[];
@@ -48,11 +48,13 @@ function BlockInstanceGroup({ kind, values, erase, onInteract }: { kind: BlockKi
     mesh.current.instanceMatrix.needsUpdate = true;
     mesh.current.computeBoundingSphere();
   }, [values]);
-  if (isStair(kind) || isSlab(kind)) return values.map((target) => (
+  if (isStair(kind) || isSlab(kind) || isCarpet(kind)) return values.map((target) => (
     <group key={`${target.block.x},${target.block.y},${target.block.z}`} onClick={(event) => { if (event.delta > 5) return; event.stopPropagation(); onInteract(target, event.face?.normal ?? { x: 0, y: 1, z: 0 }, erase); }} onPointerDown={(event) => { if (event.button !== 2) return; event.stopPropagation(); onInteract(target, event.face?.normal ?? { x: 0, y: 1, z: 0 }, true); }}>
       {isStair(kind)
         ? <StairModel kind={kind} facing={target.block.facing} upsideDown={isUpsideDownStair(target.block)} position={[target.block.x, target.block.y, target.block.z]} />
-        : <SlabModel kind={kind} facing={target.block.facing} growth={target.block.growth} position={[target.block.x, target.block.y, target.block.z]} />}
+        : isSlab(kind)
+          ? <SlabModel kind={kind} facing={target.block.facing} growth={target.block.growth} position={[target.block.x, target.block.y, target.block.z]} />
+          : <mesh args={[blockGeometry, blockMaterials[kind]]} position={[target.block.x, target.block.y - 0.47, target.block.z]} scale={[1, 0.06, 1]} />}
     </group>
   ));
   return (

@@ -46,6 +46,7 @@ const slabMaterials: Record<string, string> = {
 export function englishItemName(name: string) {
   const direct = names[name];
   if (direct) return direct;
+  if (name.startsWith('Tapis ')) return `${colors[name.slice(6)] ?? name.slice(6)} Carpet`;
   if (name.startsWith('Porte ')) return `${colors[name.slice(6)] ?? name.slice(6)} Door`;
   if (name.startsWith('Trappe ')) {
     const material = name.slice(7);

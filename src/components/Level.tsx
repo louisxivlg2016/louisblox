@@ -15,7 +15,7 @@ import { CropInstances } from './CropInstances';
 import { HunyuanCropInstances } from './HunyuanCropInstances';
 import { UtilityBlocks } from './UtilityBlocks';
 import { SignBlocks } from './SignBlocks';
-import { isCrop, isDoor, isGlass, isGrassPlate, isSapling, isSign, isSlab, isStair, isTrapdoor, isUpsideDownStair, isUtilityBlock } from '../game/extraBlocks';
+import { isCarpet, isCrop, isDoor, isGlass, isGrassPlate, isSapling, isSign, isSlab, isStair, isTrapdoor, isUpsideDownStair, isUtilityBlock } from '../game/extraBlocks';
 import { isPirateObjective } from '../game/pirates';
 import { AppleInstances } from './AppleInstances';
 import { BlockKind, isWaterBlock } from '../game/voxel';
@@ -111,18 +111,19 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
     const doorBlocks: Voxel[] = [];
     const stairBlocks: Voxel[] = [];
     const slabBlocks: Voxel[] = [];
+    const carpetBlocks: Voxel[] = [];
     const grassPlateBlocks: Voxel[] = [];
     const cropBlocks: Voxel[] = [];
     const utilityBlocks: Voxel[] = [];
     const signBlocks: Voxel[] = [];
     const vineBlocks: Voxel[] = [];
     const saplingGroups = new Map<BlockKind, Voxel[]>();
-    if (!data) return { geometries: [], candleBlocks, doorBlocks, stairBlocks, slabBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups };
+    if (!data) return { geometries: [], candleBlocks, doorBlocks, stairBlocks, slabBlocks, carpetBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups };
     const lookup = createChunkLookup(data.blocks, blockIndex);
     for (const block of data.blocks) {
       const exposed = neighborOffsets.some(([x, y, z]) => {
         const neighbor = lookup(block.x + x, block.y + y, block.z + z);
-        return !neighbor || isWaterBlock(neighbor.kind) || isGlass(neighbor.kind) || isGrassPlate(neighbor);
+        return !neighbor || isWaterBlock(neighbor.kind) || isGlass(neighbor.kind) || isGrassPlate(neighbor) || isCarpet(neighbor.kind);
       });
       if (!exposed) continue;
       if (isGrassPlate(block)) {
@@ -158,6 +159,10 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         slabBlocks.push(block);
         continue;
       }
+      if (isCarpet(block.kind)) {
+        carpetBlocks.push(block);
+        continue;
+      }
       if (isDoor(block.kind) || isTrapdoor(block.kind)) {
         doorBlocks.push(block);
         continue;
@@ -168,9 +173,9 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         saplingGroups.set(block.kind, group);
       }
     }
-    return { geometries: buildChunkGeometry(data.blocks, blockIndex, lookup), candleBlocks, doorBlocks, stairBlocks, slabBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups };
+    return { geometries: buildChunkGeometry(data.blocks, blockIndex, lookup), candleBlocks, doorBlocks, stairBlocks, slabBlocks, carpetBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups };
   }, [data, blockIndex, chunk?.revision]);
-  const { geometries, candleBlocks, doorBlocks, stairBlocks, slabBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups } = view;
+  const { geometries, candleBlocks, doorBlocks, stairBlocks, slabBlocks, carpetBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups } = view;
   useEffect(() => () => {
     for (const { geometry } of geometries) geometry.dispose();
   }, [geometries]);
@@ -197,6 +202,7 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
       <DoorInstances blocks={doorBlocks} />
       {stairBlocks.map((block) => <StairModel key={`${block.x},${block.y},${block.z}`} kind={block.kind} facing={block.facing} upsideDown={isUpsideDownStair(block)} position={[block.x, block.y, block.z]} />)}
       {slabBlocks.map((block) => <SlabModel key={`${block.x},${block.y},${block.z}`} kind={block.kind} facing={block.facing} growth={block.growth} position={[block.x, block.y, block.z]} />)}
+      {carpetBlocks.map((block) => <mesh key={`${block.x},${block.y},${block.z}`} name="carpet" args={[blockGeometry, blockMaterials[block.kind]]} position={[block.x, block.y - 0.47, block.z]} scale={[1, 0.06, 1]} />)}
       {grassPlateBlocks.map((block) => <mesh key={`${block.x},${block.y},${block.z}`} name="grass-plate" args={[blockGeometry, blockMaterials[block.kind]]} position={[block.x, block.y - 0.46, block.z]} scale={[1, 0.08, 1]} />)}
     </group>
   );

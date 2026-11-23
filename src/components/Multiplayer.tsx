@@ -23,7 +23,7 @@ import { getItemMeta } from '../game/items';
 import { ItemModel, PixelPart, heldItemPosition } from './ItemModel';
 import { blockGeometry, blockMaterials } from '../game/textures';
 import { BlockKind } from '../game/voxel';
-import { isSlab, isStair, isUtilityBlock } from '../game/extraBlocks';
+import { isCarpet, isSlab, isStair, isUtilityBlock } from '../game/extraBlocks';
 import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
 import { PlayerNameTag } from './PlayerNameTag';
@@ -222,7 +222,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
           >
             {typeof state.selected === 'string'
               ? <ItemModel kind={state.selected} flipWeapons={hasFullCharacter(outfit, wig)} />
-              : state.selected === BlockKind.Tnt ? <BombModel /> : state.selected === BlockKind.Candle ? <CandleModel /> : state.selected === BlockKind.Campfire || state.selected === BlockKind.Wildfire ? <CampfireModel destructive={state.selected === BlockKind.Wildfire} /> : isUtilityBlock(state.selected) ? <UtilityBlockModel kind={state.selected} withLight={false} /> : isStair(state.selected) ? <StairModel kind={state.selected} upsideDown={state.pitch > 0.15} /> : isSlab(state.selected) ? <SlabModel kind={state.selected} growth={state.pitch > 0.15 ? 1 : 0} /> : <mesh args={[blockGeometry, blockMaterials[state.selected]]} />}
+              : state.selected === BlockKind.Tnt ? <BombModel /> : state.selected === BlockKind.Candle ? <CandleModel /> : state.selected === BlockKind.Campfire || state.selected === BlockKind.Wildfire ? <CampfireModel destructive={state.selected === BlockKind.Wildfire} /> : isUtilityBlock(state.selected) ? <UtilityBlockModel kind={state.selected} withLight={false} /> : isStair(state.selected) ? <StairModel kind={state.selected} upsideDown={state.pitch > 0.15} /> : isSlab(state.selected) ? <SlabModel kind={state.selected} growth={state.pitch > 0.15 ? 1 : 0} /> : isCarpet(state.selected) ? <mesh args={[blockGeometry, blockMaterials[state.selected]]} scale={[1, 0.06, 1]} /> : <mesh args={[blockGeometry, blockMaterials[state.selected]]} />}
           </group>
         )}
       </group>

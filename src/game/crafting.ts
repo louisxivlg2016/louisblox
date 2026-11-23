@@ -2,7 +2,7 @@ import { BlockKind } from './voxel';
 import { getItemMeta, selectionInfo } from './items';
 import type { SelectedKind } from './items';
 import { GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
-import { isGlass, isSlab, isStair, slabSource, stairSource } from './extraBlocks';
+import { isCarpet, isGlass, isSlab, isStair, slabSource, stairSource } from './extraBlocks';
 import { changeInventory, inventoryCount } from './inventory';
 import { useGameStore } from './store';
 import { translate } from './language';
@@ -29,6 +29,10 @@ function materialFor(name: string): BlockKind {
 }
 
 function blockRecipe(kind: BlockKind): Recipe | null {
+  if (isCarpet(kind)) {
+    const concrete = (BlockKind.ConcreteWhite + kind - BlockKind.CarpetWhite) as BlockKind;
+    return recipe(kind, 3, [['wool', 2], [concrete, 1]]);
+  }
   if (isStair(kind)) return recipe(kind, 4, [[stairSource(kind) as BlockKind, 1]]);
   if (isSlab(kind)) return recipe(kind, 6, [[slabSource(kind) as BlockKind, 1]]);
   if (kind === BlockKind.OakPlanks || kind === BlockKind.PinePlanks || kind === BlockKind.AutumnPlanks) return recipe(kind, 4, [[BlockKind.Wood, 1]]);
