@@ -344,11 +344,16 @@ function moveRiddenAnimal(world: World, position: Vector3, yaw: number, speed: n
   const blocks = getBlockIndex(world);
   const seaWater = blocks.get(voxelKey(Math.round(next.x), SEA_LEVEL, Math.round(next.z)));
   const feetWater = blocks.get(voxelKey(Math.round(next.x), Math.round(next.y), Math.round(next.z)));
-  if (ground < SEA_LEVEL && next.y < SEA_LEVEL + 0.35 && isWaterBlock(seaWater?.kind) || isWaterBlock(feetWater?.kind) || feetWater?.waterlogged) return false;
+  const inWater = ground < SEA_LEVEL && next.y < SEA_LEVEL + 0.35 && isWaterBlock(seaWater?.kind) || isWaterBlock(feetWater?.kind) || feetWater?.waterlogged;
+  if (inWater) {
+    next.y = Math.max(next.y, SEA_LEVEL + 0.35);
+    rider.grounded = true;
+    rider.velocityY = 0;
+  }
   const moved = Math.hypot(next.x - position.x, next.z - position.z) > 0.000001;
   position.copy(next);
-  rider.grounded = movement.grounded;
-  if (movement.grounded && rider.velocityY < 0) rider.velocityY = -0.1;
+  if (!inWater) rider.grounded = movement.grounded;
+  if (!inWater && movement.grounded && rider.velocityY < 0) rider.velocityY = -0.1;
   if (movement.hitCeiling) rider.velocityY = Math.min(0, rider.velocityY);
   return moved;
 }
@@ -471,7 +476,7 @@ export function vehicleMovementSystem(world: World, dt: number) {
       rider.speed = 0;
       return;
     }
-    const target = input.forward * (input.forward < 0 ? 2.2 : animal.kind === 'camel' ? 10.5 : 12);
+    const target = input.forward * (input.forward < 0 ? 2.2 : animal.kind === 'camel' ? 12 : 18);
     rider.speed += Math.max(-10 * dt, Math.min(10 * dt, target - rider.speed));
     motion.yaw = state.yaw;
     if (input.strafe !== 0) motion.yaw -= input.strafe * dt * 1.4 * Math.sign(rider.speed || 1);
