@@ -60,7 +60,7 @@ export const PHOTO_AVATARS = () => ({
 });
 const photoKinds = Object.keys(PHOTO_AVATARS()) as Array<keyof ReturnType<typeof PHOTO_AVATARS>>;
 
-export function ProfileAvatar({ kind, size = 58, outfit }: {
+export function ProfileAvatar({ kind, size = 58 }: {
   kind?: ProfileAvatarKind | OutfitKind;
   character?: CharacterKind;
   outfit?: OutfitKind;
@@ -69,7 +69,7 @@ export function ProfileAvatar({ kind, size = 58, outfit }: {
   size?: number;
 }) {
   const selected = useAvatarStore((state) => state.kind);
-  const current = kind ?? (outfit && outfit !== 'default' ? outfit : selected);
+  const current = kind ?? selected;
   const photoKind = current === 'pixel' || current === 'default' ? 'boy' : current;
   const photo = PHOTO_AVATARS()[photoKind];
   const newPortrait = ['girl', 'boy', 'trader', 'soldier'].includes(photoKind) || photoKind.startsWith('girl-') || photoKind.startsWith('boy-');

@@ -46,7 +46,7 @@ export function FriendRequestDialog() {
     <div className="menu-backdrop friend-request-backdrop">
       <section className="menu-panel friend-request-panel" role="dialog" aria-modal="true" aria-labelledby="friend-request-title">
         <p className="eyebrow">{translate('DEMANDE D’AMI', 'FRIEND REQUEST', 'SOLICITUD DE AMISTAD')}</p>
-        <ProfileAvatar kind={player.outfit === 'default' ? 'pixel' : player.outfit} character={player.character} outfit={player.outfit} wig={player.wig} appearance={player.appearance} size={76} />
+        <ProfileAvatar kind={player.avatar ?? 'pixel'} character={player.character} outfit={player.outfit} wig={player.wig} appearance={player.appearance} size={76} />
         <h2 id="friend-request-title">{player.name}</h2>
         <p>{translate('veut être ton ami.', 'wants to be your friend.', 'quiere ser tu amigo.')}</p>
         <div className="teleport-request-actions">
