@@ -65,14 +65,7 @@ export function ChatPanel() {
   return (
     <>
       {mode === 'play' && !open && (
-        <>
-          <div className="chat-feed" aria-live="polite">
-            {messages.slice(-6).map((message) => (
-              <p key={message.messageId}><strong>{message.name}</strong> · {message.text}</p>
-            ))}
-          </div>
-          <button className="chat-toggle" onClick={openChat} aria-label={translate('Ouvrir le chat', 'Open chat')}><img src={chatButtonUrl} alt={translate('Chat · Entrée', 'Chat · Enter')} /></button>
-        </>
+        <button className="chat-toggle" onClick={openChat} aria-label={translate('Ouvrir le chat', 'Open chat')}><img src={chatButtonUrl} alt={translate('Chat · Entrée', 'Chat · Enter')} /></button>
       )}
       {open && (
         <div className="chat-backdrop">

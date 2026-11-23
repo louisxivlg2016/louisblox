@@ -10,7 +10,7 @@ import { requestPlayerTeleport, respondToTeleportRequest, useTeleportRequestStor
 import { world } from '../game/world';
 import { MAX_HOMES, NO_HOMES, useHomeStore } from '../game/homes';
 import type { Home } from '../game/homes';
-import { teleportToFarm, teleportToHome, teleportToTrader, teleportToVillage } from '../game/teleport';
+import { teleportToFarm, teleportToHome, teleportToHorse, teleportToTrader, teleportToVillage } from '../game/teleport';
 import { translate } from '../game/language';
 import { sendFriendRequest, useFriendStore } from '../game/friends';
 import { useCharacterStore } from '../game/characterStore';
@@ -89,6 +89,11 @@ export function TeleportPanel() {
     setOpen(false);
     void requestPlay();
   };
+  const travelToHorse = () => {
+    if (!teleportToHorse(world)) return;
+    setOpen(false);
+    void requestPlay();
+  };
   const manageHomes = () => {
     setOpen(false);
     setHomeOpen(true);
@@ -145,6 +150,7 @@ export function TeleportPanel() {
       {(gameplayMode === 'city-ancient' || worldTemplate === 'nature') && <button type="button" data-teleport-village onClick={travelToVillage}>{translate('Petit village', 'Small village')}</button>}
       {(gameplayMode === 'city-ancient' || worldTemplate === 'nature') && <button type="button" data-teleport-farm onClick={travelToFarm}>{translate('Ferme', 'Farm')}</button>}
       {(gameplayMode === 'city-ancient' || worldTemplate === 'nature') && <button type="button" data-teleport-trader onClick={travelToTrader}>{translate('Marchand le plus proche', 'Nearest trader')}</button>}
+      {(gameplayMode === 'city-ancient' || worldTemplate === 'nature') && <button type="button" data-teleport-horse onClick={travelToHorse}>{translate('Cheval le plus proche', 'Nearest horse')}</button>}
       {cityDestinations ? cityDestinations.map((destination) => (
         <button key={destination.name} onClick={() => travelToCity(destination)}>{destination.name}</button>
       )) : <>

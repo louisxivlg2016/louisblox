@@ -10,7 +10,7 @@ import { translate } from './language';
 import type { Biome } from './levels';
 import { nearestRuinOfType } from './ruins';
 import type { RuinType } from './ruins';
-import { Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep, AnimalHome, AnimalMesh, AnimalMotion, AnimalPosition, AnimalTame, Trader, TraderPosition } from './traits';
+import { Player, PlayerBody, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep, Animal, AnimalHome, AnimalMesh, AnimalMotion, AnimalPosition, AnimalTame, Trader, TraderPosition } from './traits';
 import { clearAnimalInterpolation, reportAnimalSpawn } from './animalSync';
 import { dismount } from './vehicles';
 import { useGameStore } from './store';
@@ -133,6 +133,31 @@ export function teleportToVillage(world: World) {
     game.setNotice(translate('Téléportation au petit village réussie !', 'Teleported to the small village!'));
   }
   return destination;
+}
+
+export function teleportToHorse(world: World) {
+  const player = world.queryFirst(Player)?.get(PlayerPosition);
+  if (!player) return null;
+  let destination: { x: number; y: number; z: number } | null = null;
+  let closest = Infinity;
+  for (const horse of world.query(Animal, AnimalPosition)) {
+    if (horse.get(Animal)?.kind !== 'horse') continue;
+    const position = horse.get(AnimalPosition)!;
+    const distance = position.distanceToSquared(player);
+    if (distance >= closest) continue;
+    closest = distance;
+    destination = { x: position.x - 2, y: position.y, z: position.z };
+  }
+  if (!destination) {
+    useGameStore.getState().setNotice(translate('Aucun cheval trouvé dans ce monde.', 'No horse found in this world.'));
+    return null;
+  }
+  const result = teleportToHome(world, { ...destination, yaw: 0, pitch: 0 });
+  if (result) {
+    saveWorld(world);
+    useGameStore.getState().setNotice(translate('Téléportation au cheval réussie !', 'Teleported to the horse!'));
+  }
+  return result;
 }
 
 export function teleportToTrader(world: World) {
