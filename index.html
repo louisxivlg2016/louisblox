@@ -922,10 +922,17 @@
       .world-library-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
       .world-library-heading h2 { margin: 0; font-size: 19px; }
       .world-library-heading span { color: #c2cada; font-size: 12px; }
-      .world-library-categories { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
-      .world-library-categories button { min-height: 48px; padding: 10px; color: #e2eaf5; background: #293a50; border: 2px solid #647b98; cursor: pointer; font-weight: 700; }
-      .world-library-categories button.active { color: #fff2ad; background: #465b45; border-color: #e0bb53; }
+      .world-library-start > p { margin: 0 0 20px; color: #c4d4e5; }
+      .world-library-mode-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; padding: 14px 0; }
+      .world-library-mode-choice { position: relative; display: grid; place-items: center; gap: 10px; min-height: 150px; padding: 30px 18px; overflow: hidden; color: #d8ffff; background: linear-gradient(rgba(33,194,222,.72), rgba(15,116,165,.86)), repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 12px, transparent 12px 24px); border: 6px solid #43d9ef; box-shadow: 0 0 18px rgba(55,207,255,.75), inset 0 0 0 4px #176a9b, inset 0 0 24px rgba(130,250,255,.7); cursor: pointer; font-size: clamp(24px, 4vw, 38px); font-weight: 900; letter-spacing: 2px; text-shadow: 3px 3px 0 #176584; }
+      .world-library-mode-choice::before, .world-library-mode-choice::after { position: absolute; right: 0; left: 0; height: 13px; content: ''; background: repeating-linear-gradient(90deg, #b4ffff 0 14px, #197aa5 14px 20px); }
+      .world-library-mode-choice::before { top: 0; }
+      .world-library-mode-choice::after { bottom: 0; }
+      .world-library-mode-choice span { font-size: 12px; font-weight: 700; letter-spacing: 0; text-shadow: 1px 1px 0 #176584; }
+      .world-library-mode-choice:hover { filter: brightness(1.16); }
+      .world-library-back { width: auto; margin: 0 0 16px; }
       .world-create-solo { margin-bottom: 12px; }
+      @media (max-width: 650px) { .world-library-mode-choices { grid-template-columns: 1fr; } }
       .world-backup { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
       .world-backup .secondary-button, .world-backup-import { width: auto; min-height: 40px; margin: 0; padding: 10px 14px; }
       .world-backup-import { display: inline-flex; align-items: center; justify-content: center; color: #fff; background: #4c5b71; border: 2px solid #8391a9; cursor: pointer; font-weight: 700; font-size: 12px; }

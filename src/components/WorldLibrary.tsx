@@ -3,7 +3,6 @@ import { isMultiplayerWorld, listWorlds } from '../game/save';
 import type { WorldMeta } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
-import { downloadWorldBackup, importWorldBackup } from '../game/worldBackup';
 import { removeWorld } from '../game/deleteWorld';
 
 import { GAMEPLAY_MODE_LABELS } from '../game/worldMode';
@@ -16,7 +15,7 @@ export function WorldLibrary({ onPlay, onCreateSolo }: { onPlay: () => void | Pr
   const [pending, setPending] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const [category, setCategory] = useState<'solo' | 'multiplayer'>(useMultiplayerStore.getState().enabled ? 'multiplayer' : 'solo');
+  const [category, setCategory] = useState<'solo' | 'multiplayer' | null>(null);
   const worldId = useGameStore((state) => state.worldId);
   const openWorld = useGameStore((state) => state.openWorld);
   const status = useMultiplayerStore((state) => state.status);
@@ -61,54 +60,26 @@ export function WorldLibrary({ onPlay, onCreateSolo }: { onPlay: () => void | Pr
       setBusy(false);
     }
   };
-  const exportBackup = () => {
-    try {
-      const count = downloadWorldBackup();
-      setMessage(translate(`${count} monde${count > 1 ? 's' : ''} exporté${count > 1 ? 's' : ''}. Garde bien ce fichier pour retrouver tes mondes.`, `${count} world${count > 1 ? 's' : ''} exported. Keep this file to restore your worlds.`));
-    } catch {
-      setMessage(translate('Impossible d’exporter les mondes sur cet appareil.', 'Unable to export worlds on this device.'));
-    }
-  };
-  const importBackup = async (file: File) => {
-    setBusy(true);
-    setMessage(translate('Importation de la sauvegarde…', 'Importing backup…'));
-    try {
-      const result = importWorldBackup(JSON.parse(await file.text()));
-      setWorlds(listWorlds());
-      setMessage(translate(`${result.imported.length} monde${result.imported.length > 1 ? 's' : ''} importé${result.imported.length > 1 ? 's' : ''}.${result.skipped > 0 ? ` ${result.skipped} entrée ignorée.` : ''} Tes mondes existants sont conservés.`, `${result.imported.length} world${result.imported.length > 1 ? 's' : ''} imported.${result.skipped > 0 ? ` ${result.skipped} entry skipped.` : ''} Your existing worlds were kept.`));
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : translate('Impossible de lire cette sauvegarde.', 'Unable to read this backup.'));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const filteredWorlds = worlds.filter((world) => isMultiplayerWorld(world) === (category === 'multiplayer'));
+  const soloCount = worlds.filter((world) => !isMultiplayerWorld(world)).length;
+  const multiplayerCount = worlds.length - soloCount;
+
+  if (category === null) return (
+    <section id="mes-mondes" className="world-library world-library-start">
+      <div className="world-library-heading"><h2>{translate('Mes mondes', 'My Worlds')}</h2></div>
+      <p>{translate('Choisis les mondes que tu veux voir.', 'Choose which worlds you want to see.')}</p>
+      <div className="world-library-mode-choices">
+        <button type="button" className="world-library-mode-choice" onClick={() => setCategory('solo')}><strong>Solo</strong><span>{soloCount} {translate('monde', 'world')}{soloCount > 1 ? 's' : ''}</span></button>
+        <button type="button" className="world-library-mode-choice" onClick={() => setCategory('multiplayer')}><strong>{translate('Multijoueur', 'Multiplayer')}</strong><span>{multiplayerCount} {translate('monde', 'world')}{multiplayerCount > 1 ? 's' : ''}</span></button>
+      </div>
+    </section>
+  );
 
   return (
     <section id="mes-mondes" className="world-library">
-      <div className="world-library-heading"><h2>{translate('Mes mondes', 'My Worlds')}</h2><span>{filteredWorlds.length}</span></div>
-      <div className="world-library-categories" role="tablist" aria-label={translate('Type de mondes', 'World type')}>
-        <button type="button" role="tab" aria-selected={category === 'solo'} className={category === 'solo' ? 'active' : ''} onClick={() => setCategory('solo')}>{translate('Tes mondes solos', 'Your solo worlds')} ({worlds.filter((world) => !isMultiplayerWorld(world)).length})</button>
-        <button type="button" role="tab" aria-selected={category === 'multiplayer'} className={category === 'multiplayer' ? 'active' : ''} onClick={() => setCategory('multiplayer')}>{translate('Tes mondes multijoueurs', 'Your multiplayer worlds')} ({worlds.filter((world) => isMultiplayerWorld(world)).length})</button>
-      </div>
+      <button type="button" className="secondary-button world-library-back" onClick={() => setCategory(null)}>{translate('← Changer de catégorie', '← Change category')}</button>
+      <div className="world-library-heading"><h2>{category === 'solo' ? translate('Tes mondes solos', 'Your solo worlds') : translate('Tes mondes multijoueurs', 'Your multiplayer worlds')}</h2><span>{filteredWorlds.length}</span></div>
       {category === 'solo' && <button type="button" className="primary-button world-create-solo" onClick={onCreateSolo}>{translate('Créer un monde solo', 'Create a solo world')}</button>}
-      <div className="world-backup">
-        <button type="button" className="secondary-button" onClick={exportBackup} disabled={busy}>{translate('Exporter mes mondes', 'Export my worlds')}</button>
-        <label className="world-backup-import" role="button" tabIndex={0} onKeyDown={(event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return;
-          event.preventDefault();
-          event.currentTarget.querySelector('input')?.click();
-        }}>
-          {translate('Importer une sauvegarde', 'Import a backup', 'Importar una copia de seguridad')}
-          <input type="file" accept="application/json,.json" disabled={busy} onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) void importBackup(file);
-            event.currentTarget.value = '';
-          }} />
-        </label>
-      </div>
-      <p className="world-backup-hint">{translate('Le fichier contient tes mondes et leurs maisons. Garde-le pour les retrouver sur un autre appareil ou après un effacement du navigateur.', 'This file contains your worlds and homes. Keep it to restore them on another device or after clearing the browser.')}</p>
       {message && <p className="world-backup-message" role="status">{message}</p>}
       <div className="world-library-list">
         {filteredWorlds.map((world) => (
