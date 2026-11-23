@@ -36,7 +36,7 @@ import { isAnimalMount } from '../game/vehicleTypes';
 import { appearanceSkinColor } from '../game/appearance';
 import { StairModel } from './StairModel';
 import { SlabModel } from './SlabModel';
-import { isOutfitKind, isWigSelection, OUTFITS, selectedWig } from '../game/outfits';
+import { canRotateHead, isOutfitKind, isWigSelection, OUTFITS, selectedWig } from '../game/outfits';
 import type { OutfitKind, WigSelection } from '../game/outfits';
 import { CharacterOutfit } from './CharacterOutfit';
 import { hasFullCharacter } from './FullCharacterGlb';
@@ -169,10 +169,10 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
     if (leftLeg.current) leftLeg.current.rotation.x += ((legRotation ?? -swing) - leftLeg.current.rotation.x) * amount;
     if (rightLeg.current) rightLeg.current.rotation.x += ((legRotation ?? swing) - rightLeg.current.rotation.x) * amount;
     if (headRef.current) {
-      const headYaw = Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y));
+      const headYaw = canRotateHead(outfit) ? Math.atan2(Math.sin(state.yaw - group.current.rotation.y), Math.cos(state.yaw - group.current.rotation.y)) : 0;
       headRef.current.rotation.order = 'YXZ';
       headRef.current.rotation.y += (headYaw - headRef.current.rotation.y) * amount;
-      headRef.current.rotation.x = hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch;
+      headRef.current.rotation.x = canRotateHead(outfit) ? hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch : 0;
       if (outfit === 'soldier') headRef.current.rotation.z = 0;
     }
     updateBattleTargetPose(playerId, group.current.position, group.current.rotation.y, group.current.rotation.x < -Math.PI / 4);

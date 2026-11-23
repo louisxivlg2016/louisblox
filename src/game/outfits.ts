@@ -40,6 +40,10 @@ export function isWigSelection(value: unknown): value is WigSelection {
   return typeof value === 'string' && (WIG_ORDER as readonly string[]).includes(value);
 }
 
+export function canRotateHead(outfit: OutfitKind) {
+  return outfit === 'knight' || outfit === 'louis14' || outfit === 'trader' || outfit === 'military';
+}
+
 export function selectedWig(outfit: OutfitKind, selection: WigSelection): WigKind | null {
   if (selection === 'none') return null;
   if (selection !== 'auto') return selection;

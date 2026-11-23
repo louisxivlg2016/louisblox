@@ -16,7 +16,7 @@ import { isCarpet, isSlab, isStair, isUtilityBlock } from '../game/extraBlocks';
 import { StairModel } from './StairModel';
 import { SlabModel } from './SlabModel';
 import { BlockKind } from '../game/voxel';
-import { OUTFITS, selectedWig } from '../game/outfits';
+import { canRotateHead, OUTFITS, selectedWig } from '../game/outfits';
 import { CharacterOutfit } from './CharacterOutfit';
 import { hasFullCharacter } from './FullCharacterGlb';
 import { useEmoteStore } from '../game/emotes';
@@ -81,10 +81,10 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
     if (rightLeg.current) rightLeg.current.rotation.x += (swing - rightLeg.current.rotation.x) * amount;
     if (headRef.current && state) {
       const bodyYaw = entity.get(PlayerMesh)?.value?.rotation.y ?? state.yaw;
-      const headYaw = Math.atan2(Math.sin(state.yaw - bodyYaw), Math.cos(state.yaw - bodyYaw));
+      const headYaw = canRotateHead(outfit) ? Math.atan2(Math.sin(state.yaw - bodyYaw), Math.cos(state.yaw - bodyYaw)) : 0;
       headRef.current.rotation.order = 'YXZ';
       headRef.current.rotation.y += (headYaw - headRef.current.rotation.y) * amount;
-      const pitch = hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch;
+      const pitch = canRotateHead(outfit) ? hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch : 0;
       headRef.current.rotation.x += (pitch - headRef.current.rotation.x) * amount;
       if (outfit === 'soldier') headRef.current.rotation.z = 0;
     }
