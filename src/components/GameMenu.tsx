@@ -30,9 +30,6 @@ import survivalEsUrl from '../../assets/menu/spanish/modo-survival.webp';
 import creativeFrUrl from '../../assets/menu/creative.webp';
 import creativeEnUrl from '../../assets/menu/english/creative-world.webp';
 import creativeEsUrl from '../../assets/menu/spanish/modo-creativo.webp';
-import shopFrUrl from '../../assets/menu/shop.webp';
-import shopEnUrl from '../../assets/menu/english/shop.webp';
-import shopEsUrl from '../../assets/menu/spanish/tienda.webp';
 import battleFrUrl from '../../assets/menu/battle.webp';
 import battleEnUrl from '../../assets/menu/english/combat-mode.webp';
 import battleEsUrl from '../../assets/menu/spanish/modo-conbate.webp';
@@ -95,6 +92,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const [pendingWorld, setPendingWorld] = useState<string | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [createInitialMultiplayer, setCreateInitialMultiplayer] = useState<boolean | undefined>(undefined);
   const [profileOpen, setProfileOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [modeImages, setModeImages] = useState<ModeImages>(readModeImages);
@@ -157,9 +155,9 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const full = !canCreateWorld();
   const create = (gameplayMode: GameplayMode, sharedOverride?: boolean, options?: import('./CreateWorldDialog').CreateWorldOptions) => {
     if (pendingWorld !== null) return;
-    if (!enabled && isMultiplayerOnlyMode(gameplayMode) && options?.multiplayer !== true) return;
     if (full) return;
-    if (enabled && isMinigameMode(gameplayMode)) {
+    const shared = sharedOverride ?? (enabled && gameplayMode !== 'battle');
+    if (shared && isMinigameMode(gameplayMode)) {
       requestRoomMode(gameplayMode);
       const minigameRoom = `salon-${crypto.randomUUID().slice(0, 8)}`;
       setPendingWorld(minigameRoom);
@@ -167,9 +165,8 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
       configure({ playerName: useMultiplayerStore.getState().playerName, room: minigameRoom, server: useMultiplayerStore.getState().server });
       return;
     }
-    const shared = sharedOverride ?? (enabled && gameplayMode !== 'battle');
     const template = options?.template ?? (gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : 'nature');
-    const names: Record<GameplayMode, string> = { survival: translate('Survie avec tous les joueurs', 'Survival with every player'), creative: translate('Créatif avec tous les joueurs', 'Creative with every player'), battle: translate('Bataille', 'Combat'), 'city-ancient': translate('Ville ancienne · 10 km', 'Historic City · 10 km'), 'city-modern': translate('Ville moderne · 10 km', 'Modern City · 10 km'), pirates: translate('Pirates en équipe', 'Team Pirates'), football: translate('Match de football', 'Football Match'), maze: translate('Course Labyrinthe', 'Maze Race') };
+    const names: Record<GameplayMode, string> = { survival: shared ? translate('Survie avec tous les joueurs', 'Survival with every player') : translate('Survie solo', 'Solo Survival'), creative: shared ? translate('Créatif avec tous les joueurs', 'Creative with every player') : translate('Créatif solo', 'Solo Creative'), battle: translate('Bataille', 'Combat'), 'city-ancient': translate('Ville ancienne · 10 km', 'Historic City · 10 km'), 'city-modern': translate('Ville moderne · 10 km', 'Modern City · 10 km'), pirates: shared ? translate('Pirates en équipe', 'Team Pirates') : translate('Pirates solo', 'Solo Pirates'), football: shared ? translate('Match de football', 'Football Match') : translate('Football solo', 'Solo Football'), maze: translate('Course Labyrinthe', 'Maze Race') };
     const worldName = options?.name.trim().slice(0, 48) || names[gameplayMode];
     const worldId = options?.multiplayer ? `salon-${crypto.randomUUID().slice(0, 8)}` : normalizeRoomId(worldName);
     setEnabled(shared);
@@ -204,21 +201,19 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     setBrowseMode(mode);
     setJoinOpen(true);
   };
-  const soloModeBlocked = !enabled && isMultiplayerOnlyMode(currentMode);
   return (
     <div className="menu-screen">
       <div className="menu-layout">
         <aside className="menu-sidebar">
           <div className="menu-brand"><img className="menu-brand-icon" src={gameIconUrl} alt="LouisBlox" /><div><strong>LOUISBLOX</strong><small>{translate('Joue, construis, partage.', 'Play, build, share.')}</small></div></div>
           <FriendsPanel onPlay={onPlay} />
-          {!['pirates', 'football', 'maze', 'battle'].includes(currentMode) && <button className="sidebar-shop" onClick={onShop}><img src={translate(shopFrUrl, shopEnUrl, shopEsUrl)} alt="" /><span>{translate('Ouvrir la boutique', 'Open shop')}</span></button>}
         </aside>
         <main className="world-browser">
           <div className="world-browser-header">
             <div>
               <h1>{!paused && translate('Choisis ton monde', 'Choose your world')}<span className="creator-label">{translate('JEU DU CRÉATEUR', 'CREATOR GAME')}</span></h1>
             </div>
-            <div className="world-entry-actions">{!createOpen && <LanguagePanel inline />}{enabled && <button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={pendingWorld !== null}>{translate('Rejoindre', 'Join')}</button>}{paused && <button className="primary-button resume-button" onClick={onPlay} disabled={soloModeBlocked} title={soloModeBlocked ? translate('Active le multijoueur pour reprendre cette partie', 'Enable multiplayer to resume this game') : undefined}>{translate('Reprendre', 'Resume')}</button>}</div>
+            <div className="world-entry-actions">{!createOpen && <LanguagePanel inline />}{enabled && <button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={pendingWorld !== null}>{translate('Rejoindre', 'Join')}</button>}{paused && <button className="primary-button resume-button" onClick={onPlay}>{translate('Reprendre', 'Resume')}</button>}</div>
           </div>
           <div className="world-cards">
             <button className="world-card featured" aria-controls="mes-mondes" aria-expanded={libraryOpen} aria-haspopup="dialog" onClick={() => setLibraryOpen(true)}>
@@ -226,14 +221,13 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               <span className="world-card-label"><strong>{translate('Mes mondes', 'My worlds')}</strong></span>
             </button>
             {MODE_CARDS().map((card) => {
-              const locked = !enabled && isMultiplayerOnlyMode(card.mode);
               const playerCount = modePlayerCounts[card.mode] ?? 0;
               return (
                 <div className="world-card-shell" key={card.mode}>
-                  <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode)} disabled={pendingWorld !== null || locked} title={locked ? translate('Active « Jouer en multijoueur » pour choisir ce mode', 'Enable multiplayer to choose this mode') : undefined}>
+                  <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode)} disabled={pendingWorld !== null}>
                     <img src={modeImages[card.mode] ?? card.image} alt={card.alt} />
                     <span className="world-card-label"><strong>{card.name}</strong></span>
-                    <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{locked ? translate('Multijoueur requis', 'Multiplayer required') : card.tag(enabled)}</span>
+                    <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{card.tag(enabled)}</span>
                     {enabled && <span className="world-mode-badges">
                       {POPULAR_MODES.has(card.mode) && <span className="world-mode-popular">{translate('Populaire', 'Popular')}</span>}
                       <span className="world-mode-player-count" aria-label={`${playerCount} ${translate('joueur', 'player')}${playerCount > 1 ? 's' : ''} ${translate('en', 'in')} ${card.name}`}>{playerCount} {translate('joueur', 'player')}{playerCount > 1 ? 's' : ''}</span>
@@ -246,12 +240,11 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           </div>
           {imageMessage && <p className="world-image-message" role="status">{imageMessage}</p>}
           {enabled && <PlayerWorlds onPlay={onPlay} />}
-          <MenuActionBar multiplayer={enabled} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} createDisabled={full} />
-          {soloModeBlocked && <p className="multiplayer-error" role="status">{translate('Les modes Pirates et Football sont réservés au multijoueur.', 'Pirates and Football require multiplayer.')}</p>}
+          <MenuActionBar multiplayer={enabled} onMultiplayer={() => setEnabled(true)} onCreate={() => { setCreateInitialMultiplayer(undefined); setCreateOpen(true); }} onProfile={() => setProfileOpen(true)} onShop={onShop} createDisabled={full} />
           {enabled && error && <p className="multiplayer-error" role="alert">{error}</p>}
           {pendingWorld && <p className="multiplayer-hint" role="status">{translate('Création du monde et connexion au salon…', 'Creating the world and connecting to the room…')}</p>}
           {full && <div className="world-limit-notice" role="alert"><strong>{translate(`Limite de ${MAX_WORLDS} mondes atteinte`, `${MAX_WORLDS}-world limit reached`)}</strong><span>{translate('Ouvre « Mes mondes » et supprimes-en un avant de créer ou de rejouer une partie.', 'Open “My worlds” and delete one before creating or replaying a game.')}</span></div>}
-          {createOpen && <CreateWorldDialog onClose={() => setCreateOpen(false)} onCreate={(options) => create(options.mode, options.multiplayer, options)} onPlay={onPlay} />}
+          {createOpen && <CreateWorldDialog initialMultiplayer={createInitialMultiplayer} onClose={() => setCreateOpen(false)} onCreate={(options) => create(options.mode, options.multiplayer, options)} onPlay={onPlay} />}
           {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
           {enabled && joinOpen && (
             <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setJoinOpen(false); }}>
@@ -266,7 +259,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             <div className="world-library-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setLibraryOpen(false); }}>
               <section className="world-library-modal" role="dialog" aria-modal="true" aria-label={translate('Mes mondes', 'My worlds')}>
                 <button className="world-library-close" aria-label={translate('Fermer mes mondes', 'Close my worlds')} onClick={() => setLibraryOpen(false)} autoFocus>×</button>
-                <WorldLibrary onPlay={() => { setLibraryOpen(false); return onPlay(); }} />
+                <WorldLibrary onPlay={() => { setLibraryOpen(false); return onPlay(); }} onCreateSolo={() => { setCreateInitialMultiplayer(false); setLibraryOpen(false); setCreateOpen(true); }} />
               </section>
             </div>
           )}

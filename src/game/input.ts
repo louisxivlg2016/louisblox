@@ -457,7 +457,7 @@ export function releasePointerForOverlay() {
 export async function requestPlay() {
   const multiplayer = useMultiplayerStore.getState();
   const game = useGameStore.getState();
-  if (isMultiplayerOnlyMode(game.gameplayMode) && (!multiplayer.enabled || multiplayer.status !== 'online' || !multiplayer.worldReady)) return;
+  if (isMultiplayerOnlyMode(game.gameplayMode) && multiplayer.enabled && (multiplayer.status !== 'online' || !multiplayer.worldReady)) return;
   if (multiplayer.enabled && multiplayer.joined && !multiplayer.worldReady && game.mode !== 'play') return;
   let canvas = document.querySelector<HTMLCanvasElement>('#game-canvas canvas, canvas#game-canvas');
   if (!canvas) {

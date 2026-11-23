@@ -78,12 +78,12 @@ function seedFromName(name: string) {
   return [...normalizeRoomId(name || translate('Monde personnalisé', 'Custom World'))].reduce((value, letter) => Math.imul(value ^ letter.charCodeAt(0), 16777619) >>> 0, 2166136261) % 900000;
 }
 
-export function CreateWorldDialog({ onClose, onCreate, onPlay }: { onClose: () => void; onCreate: (options: CreateWorldOptions) => void; onPlay: () => void | Promise<void> }) {
+export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplayer }: { onClose: () => void; onCreate: (options: CreateWorldOptions) => void; onPlay: () => void | Promise<void>; initialMultiplayer?: boolean }) {
   useLanguageStore((state) => state.language);
   const connectionStatus = useMultiplayerStore((state) => state.status);
   const connectionError = useMultiplayerStore((state) => state.error);
   const [draft] = useState(readEditorDraft);
-  const [options, setOptions] = useState<CreateWorldOptions>({ name: draft?.name ?? translate('Mon aventure', 'My Adventure'), mode: 'creative', template: draft ? 'custom' : 'nature', multiplayer: useMultiplayerStore.getState().enabled, canBreak: true, canPlace: true, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true });
+  const [options, setOptions] = useState<CreateWorldOptions>({ name: draft?.name ?? translate('Mon aventure', 'My Adventure'), mode: 'creative', template: draft ? 'custom' : 'nature', multiplayer: initialMultiplayer ?? useMultiplayerStore.getState().enabled, canBreak: true, canPlace: true, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true });
   const [tab, setTab] = useState<'world' | 'lobby' | 'code' | 'editor'>(draft ? 'editor' : 'world');
   const [source, setSource] = useState(draft?.world.source ?? DEFAULT_WORLD_SOURCE);
   const [terrain, setTerrain] = useState<CustomTerrain>(draft?.world.terrain ?? initialWorld.terrain);

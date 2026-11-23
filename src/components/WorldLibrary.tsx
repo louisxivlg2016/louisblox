@@ -11,7 +11,7 @@ import { translate } from '../game/language';
 
 const MODE_NAMES = GAMEPLAY_MODE_LABELS;
 
-export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> }) {
+export function WorldLibrary({ onPlay, onCreateSolo }: { onPlay: () => void | Promise<void>; onCreateSolo: () => void }) {
   const [worlds, setWorlds] = useState<WorldMeta[]>([]);
   const [pending, setPending] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -92,6 +92,7 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
         <button type="button" role="tab" aria-selected={category === 'solo'} className={category === 'solo' ? 'active' : ''} onClick={() => setCategory('solo')}>{translate('Tes mondes solos', 'Your solo worlds')} ({worlds.filter((world) => !isMultiplayerWorld(world)).length})</button>
         <button type="button" role="tab" aria-selected={category === 'multiplayer'} className={category === 'multiplayer' ? 'active' : ''} onClick={() => setCategory('multiplayer')}>{translate('Tes mondes multijoueurs', 'Your multiplayer worlds')} ({worlds.filter((world) => isMultiplayerWorld(world)).length})</button>
       </div>
+      {category === 'solo' && <button type="button" className="primary-button world-create-solo" onClick={onCreateSolo}>{translate('Créer un monde solo', 'Create a solo world')}</button>}
       <div className="world-backup">
         <button type="button" className="secondary-button" onClick={exportBackup} disabled={busy}>{translate('Exporter mes mondes', 'Export my worlds')}</button>
         <label className="world-backup-import" role="button" tabIndex={0} onKeyDown={(event) => {
