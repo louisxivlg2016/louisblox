@@ -13,7 +13,7 @@ export function BoutiqueAvatarPreview() {
   useEffect(() => () => { previewWorld.reset(); }, [previewWorld]);
   return (
     <div className="boutique-avatar-3d" aria-label={translate('Aperçu 3D du costume. Fais glisser pour le tourner.', '3D outfit preview. Drag to rotate.')}>
-      <Canvas dpr={1} camera={{ position: [0, 1.1, -4.2], fov: 34 }} gl={{ antialias: false }}>
+      <Canvas dpr={1} camera={{ position: [0, 1.1, -3.6], fov: 34 }} gl={{ antialias: false }}>
         <ambientLight intensity={1.3} />
         <directionalLight position={[3, 5, 4]} intensity={2.2} />
         <directionalLight position={[-3, 2, -2]} intensity={0.7} />
