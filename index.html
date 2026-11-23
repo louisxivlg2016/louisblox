@@ -291,6 +291,8 @@
       .backpack-toggle:hover, .shop-toggle:hover { filter: brightness(1.08); }
       .construction-toggle { position: absolute; right: 18px; bottom: 130px; z-index: 12; width: 150px; min-height: 0; padding: 0; pointer-events: auto; background: transparent; border: 0; box-shadow: none; touch-action: manipulation; }
       .construction-toggle img { display: block; width: 100%; height: auto; pointer-events: none; image-rendering: pixelated; }
+      .screenshot-toggle { position: absolute; top: 74px; left: 18px; z-index: 12; min-width: 88px; padding: 10px 12px; color: #2d2410; background: #f5d553; border: 2px solid #fff0a0; pointer-events: auto; cursor: pointer; font-size: 12px; font-weight: 900; }
+      @media (pointer: coarse) { .screenshot-toggle { top: 130px; left: 12px; min-width: 76px; padding: 8px 10px; font-size: 10px; } }
       .construction-backdrop { position: absolute; inset: 0; z-index: 52; display: grid; place-items: center; padding: 20px; pointer-events: auto; background: rgba(5, 10, 7, .76); }
       .construction-panel { width: min(680px, 100%); max-height: calc(100vh - 40px); padding: 24px; overflow-y: auto; color: #e8efdc; background: #18271e; border: 4px solid #71885e; box-shadow: 0 12px 40px rgba(0,0,0,.55); }
       .construction-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
@@ -1215,6 +1217,9 @@
         .chat-toggle { width: 96px; min-height: 48px; }
       }
       .world-card-shell { position: relative; min-width: 0; }
+      .world-card-image-button { position: absolute; top: 9px; left: 9px; z-index: 2; padding: 5px 7px; color: #fff; background: rgba(20,31,46,.9); border: 1px solid #7288a5; cursor: pointer; font-size: 10px; font-weight: 700; }
+      .world-card-image-button input { display: none; }
+      .world-image-message { margin: 12px 0 0; color: #52657e; font-size: 12px; }
       .world-card-shell .world-card { width: 100%; height: 100%; }
       .world-card-shell .world-card-label { padding-bottom: 14px; }
       .community-random:disabled { opacity: .5; cursor: not-allowed; }
