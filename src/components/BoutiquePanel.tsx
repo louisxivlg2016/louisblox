@@ -101,7 +101,7 @@ export function BoutiquePanel() {
             </div>
             <p className="backpack-label">{translate('Coiffure normale ou perruque · ton choix reste quand tu changes de costume', 'Normal hair or wig · your choice remains when you change costumes')}</p>
             <div className="outfit-grid wig-grid">
-              {WIG_ORDER.map((kind) => {
+              {WIG_ORDER.filter((kind) => kind !== 'auto').map((kind) => {
                 const item = WIGS()[kind];
                 return (
                   <button key={kind} className={`outfit-card ${wig === kind ? 'active' : ''}`} onClick={() => setWig(kind)} aria-pressed={wig === kind}>
