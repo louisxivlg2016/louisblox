@@ -2,7 +2,7 @@ import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { createPortal, useFrame } from '@react-three/fiber';
 import { Box3, Mesh } from 'three';
-import { removeClassicBoyBand } from '../game/characterAppearance';
+import { hideCharacterHair, removeClassicBoyBand } from '../game/characterAppearance';
 import type { Object3D } from 'three';
 import { animateCharacterRig, createCharacterRig } from '../game/characterRig';
 import type { Ref, ReactNode } from 'react';
@@ -53,6 +53,12 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
         if (object instanceof Mesh && !Array.isArray(object.material)) object.material = removeClassicBoyBand(object.material, object.geometry, bounds);
       });
     }
+    if (headAccessory) {
+      const bounds = new Box3().setFromObject(source);
+      source.traverse((object) => {
+        if (object instanceof Mesh && !Array.isArray(object.material)) object.material = hideCharacterHair(object.material, object.geometry, bounds);
+      });
+    }
     if (outfit === 'soldier') {
       const sideHair: Object3D[] = [];
       source.traverse((object) => {
@@ -63,7 +69,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
       for (const part of sideHair) part.removeFromParent();
     }
     return createCharacterRig(source, outfit, scale, appearance);
-  }, [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor, appearance?.eyeColor, appearance?.eyebrowColor, appearance?.clothingColor, appearance?.originalHairColor, appearance?.originalSkinColor]);
+  }, [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor, appearance?.eyeColor, appearance?.eyebrowColor, appearance?.clothingColor, appearance?.originalHairColor, appearance?.originalSkinColor, headAccessory]);
   const metadata = useMemo(() => ({ outfit: outfit.startsWith('classic-') ? 'default' : outfit, avatar: profileAvatar, source: 'Hunyuan', whole: true }), [outfit, profileAvatar]);
   const eating = useEatingStore((state) => remote ? null : state.eating);
 

@@ -154,6 +154,40 @@ export function removeClassicBoyBand(source: Material & { map?: import('three').
   return material;
 }
 
+export function hideCharacterHair(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3) {
+  const material = source.clone();
+  const image = material.map?.image as { width?: number; height?: number } | undefined;
+  if (!material.map || !image?.width || !image.height || !geometry.getAttribute('uv')) return material;
+  const canvas = document.createElement('canvas');
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const context = canvas.getContext('2d')!;
+  context.drawImage(material.map.image as CanvasImageSource, 0, 0);
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+  const mask = maskCanvas(geometry, bounds, 'hair', canvas.width, canvas.height, material.map.flipY).getImageData(0, 0, canvas.width, canvas.height).data;
+  for (let index = 0; index < pixels.data.length; index += 4) {
+    if (mask[index + 3] === 0) continue;
+    const red = pixels.data[index];
+    const green = pixels.data[index + 1];
+    const blue = pixels.data[index + 2];
+    if (hairPixel(red, green, blue, false, true)) pixels.data[index + 3] = 0;
+  }
+  context.putImageData(pixels, 0, 0);
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = material.map.colorSpace;
+  texture.wrapS = material.map.wrapS;
+  texture.wrapT = material.map.wrapT;
+  texture.flipY = material.map.flipY;
+  texture.magFilter = NearestFilter;
+  texture.minFilter = NearestFilter;
+  texture.generateMipmaps = false;
+  material.map = texture;
+  material.transparent = true;
+  material.alphaTest = 0.05;
+  material.needsUpdate = true;
+  return material;
+}
+
 export function colorCharacterMaterial(source: Material & { map?: import('three').Texture | null }, geometry: BufferGeometry, bounds: Box3, appearance: Pick<CharacterAppearance, 'skinColor' | 'hairColor' | 'eyeColor' | 'eyebrowColor' | 'clothingColor' | 'originalHairColor' | 'originalSkinColor'>, allowGrayHair = false, princessHair = false, outfit?: import('./outfits').OutfitKind | 'classic-girl' | 'classic-boy') {
   const material = source.clone();
   const image = material.map?.image as { width?: number; height?: number } | undefined;
