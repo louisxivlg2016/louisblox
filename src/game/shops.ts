@@ -1,15 +1,21 @@
 import type { World } from 'koota';
+import { Vector3 } from 'three';
 import type { Voxel } from './voxel';
 import { BlockKind } from './voxel';
 import { streamChunks } from './chunks';
 import { teleportToHome } from './teleport';
-import { Player, PlayerHealth, PlayerState } from './traits';
+import { AnimalPosition, Environment, Player, PlayerHealth, PlayerState } from './traits';
 import { changeInventory, sellableInventoryCount } from './inventory';
 import { getItemMeta, selectionInfo } from './items';
 import type { SelectedKind } from './items';
 import { useGameStore } from './store';
 import { translate } from './language';
 import { useEffectStore, EFFECT_NAMES } from './effects';
+import { spawnBomb } from './bombLifecycle';
+import { fireProjectile } from './systems/projectileSystem';
+import { spawnAnimal } from './animals';
+import { reportAnimalSpawn } from './animalSync';
+import { DAY_DURATION } from './dayNight';
 
 export function selectedItemPrice(kind: SelectedKind) {
   if (kind === 'hand') return 0;
@@ -72,6 +78,57 @@ export function useShopBlock(world: World, block: Voxel) {
     const duration = Math.max(1, price || 30);
     useEffectStore.getState().activate(shop.effect, duration);
     store.setNotice(translate(`${EFFECT_NAMES()[shop.effect]} pendant ${duration} secondes.`, `${EFFECT_NAMES()[shop.effect]} for ${duration} seconds.`));
+    return true;
+  }
+  if (shop.action === 'bomb') {
+    const count = Math.max(1, Math.min(10, Math.floor(shop.count ?? 1)));
+    for (let index = 0; index < count; index += 1) spawnBomb(world, block.x + (index % 3 - 1) * 0.6, block.y + 1 + Math.floor(index / 3) * 0.5, block.z);
+    store.setNotice(translate(`${count} bombe${count > 1 ? 's' : ''} activée${count > 1 ? 's' : ''} !`, `${count} bomb${count > 1 ? 's' : ''} activated!`));
+    return true;
+  }
+  if (shop.action === 'firework') {
+    const count = Math.max(1, Math.min(10, Math.floor(shop.count ?? 1)));
+    const colors = ['#ff4f64', '#ffd84d', '#63d8ff', '#9f7aff', '#6dff8b'];
+    for (let index = 0; index < count; index += 1) {
+      const origin = new Vector3(block.x + (index % 3 - 1) * 0.45, block.y + 0.6, block.z + (Math.floor(index / 3) % 2 - 0.5) * 0.35);
+      fireProjectile(world, origin, new Vector3(0, 1, 0), 'bomb', 0, colors[Math.abs(block.x * 7 + block.z * 11 + index) % colors.length], 'firework');
+    }
+    store.setNotice(translate('Feu d’artifice lancé !', 'Fireworks launched!'));
+    return true;
+  }
+  if ((shop.action === 'day' || shop.action === 'night') && world.queryFirst(Environment)) {
+    const night = shop.action === 'night';
+    world.queryFirst(Environment)!.get(Environment)!.elapsed = night ? (0.88 - 0.38) * DAY_DURATION : 0;
+    store.setEnvironment({ ...store.environment, dayProgress: night ? 0.88 : 0.38 });
+    store.setNotice(translate(night ? 'La nuit arrive !' : 'Le jour se lève !', night ? 'Night falls!' : 'Day breaks!'));
+    return true;
+  }
+  if (shop.action === 'weather' && shop.weather) {
+    const environment = world.queryFirst(Environment)?.get(Environment);
+    if (environment) environment.weather = shop.weather;
+    if (store.customWorld) useGameStore.setState({ customWorld: { ...store.customWorld, environment: { ...store.customWorld.environment, weather: shop.weather } } });
+    store.setEnvironment({ ...store.environment, weather: shop.weather });
+    store.setNotice(translate('La météo change !', 'The weather changes!'));
+    return true;
+  }
+  if (shop.action === 'spawn' && shop.animal) {
+    const entity = spawnAnimal(world, shop.animal, block.x, block.y + 1, block.z, Date.now(), `${shop.animal}:button:${crypto.randomUUID()}`);
+    if (entity) {
+      entity.get(AnimalPosition)!.set(block.x, block.y + 1, block.z);
+      reportAnimalSpawn(entity);
+    }
+    store.setNotice(translate('Un animal apparaît !', 'An animal appears!'));
+    return true;
+  }
+  if (shop.action === 'trap') {
+    const player = world.queryFirst(Player);
+    const health = player?.get(PlayerHealth);
+    if (player && health) {
+      const value = Math.max(0, health.value - Math.max(1, price));
+      player.set(PlayerHealth, { value });
+      store.setLives(value);
+      store.setNotice(translate(`Piège ! Tu perds ${Math.max(1, price)} vies.`, `Trap! You lose ${Math.max(1, price)} lives.`));
+    }
     return true;
   }
   if (shop.action === 'gift' && shop.item) {

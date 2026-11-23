@@ -516,6 +516,24 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
       characters.push({ x, y, z, kind: characterKind, ...(typeof args[4] === 'string' && args[4].trim() ? { name: args[4].trim().slice(0, 24) } : {}) });
       return;
     }
+    if (name === 'bombe' || name === 'feu_artifice') {
+      if (args.length !== 3 && args.length !== 4) throw new Error(translate(`Ligne ${line} : ${name} attend x, y, z et facultativement une quantité.`, `Line ${line}: ${name} expects x, y, z, and an optional count.`));
+      const [x, y, z] = position(args, 0, line);
+      const count = args[3] === undefined ? 1 : integer(args[3], 'quantité', line);
+      if (count < 1 || count > 10) throw new Error(translate(`Ligne ${line} : la quantité doit être entre 1 et 10.`, `Line ${line}: count must be between 1 and 10.`));
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: name === 'bombe' ? 'bomb' : 'firework', count }, text: `${name === 'bombe' ? 'Bombes' : 'Feux d’artifice'} ×${count}` });
+      return;
+    }
+    if (name === 'invoquer') {
+      arity(args, 4, name, line);
+      const [x, y, z] = position(args, 0, line);
+      if (typeof args[3] !== 'string') throw new Error(translate(`Ligne ${line} : écris le nom de l’animal entre guillemets.`, `Line ${line}: write the animal name in quotes.`));
+      const aliases = new Map<string, CustomEntitySpawn['kind']>([['vache', 'cow'], ['cow', 'cow'], ['cheval', 'horse'], ['horse', 'horse'], ['cochon', 'pig'], ['pig', 'pig'], ['mouton', 'sheep'], ['sheep', 'sheep'], ['poulet', 'chicken'], ['chicken', 'chicken'], ['canard', 'duck'], ['duck', 'duck'], ['ours', 'bear'], ['bear', 'bear'], ['loup', 'wolf'], ['wolf', 'wolf'], ['cameau', 'camel'], ['camel', 'camel'], ['singe', 'monkey'], ['monkey', 'monkey'], ['ocelot', 'ocelot'], ['girafe', 'giraffe'], ['giraffe', 'giraffe'], ['elephant', 'elephant'], ['elephant', 'elephant'], ['zombie', 'zombie']]);
+      const animal = aliases.get(identifier(args[3]));
+      if (!animal) throw new Error(translate(`Ligne ${line} : animal « ${args[3]} » inconnu.`, `Line ${line}: unknown animal “${args[3]}”.`));
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: 'spawn', animal }, text: `Invoquer ${args[3]}` });
+      return;
+    }
     if (name === 'animal' || name === 'zombie') {
       const [x, y, z] = position(args, 0, line);
       if (spawns.length >= 200) throw new Error(translate(`Ligne ${line} : maximum 200 animaux par monde.`, `Line ${line}: maximum 200 animals per world.`));
@@ -533,15 +551,27 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
       return;
     }
     if (name === 'jour' || name === 'nuit') {
-      arity(args, 0, name, line);
-      environment.time = name === 'nuit' ? 'night' : 'day';
+      if (args.length === 0) {
+        environment.time = name === 'nuit' ? 'night' : 'day';
+        return;
+      }
+      arity(args, 3, name, line);
+      const [x, y, z] = position(args, 0, line);
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: name === 'nuit' ? 'night' : 'day' }, text: name === 'nuit' ? 'Faire la nuit' : 'Faire le jour' });
       return;
     }
     if (name === 'meteo') {
-      arity(args, 1, name, line);
-      const weather = typeof args[0] === 'string' ? ({ clair: 'clear', clear: 'clear', pluie: 'rain', rain: 'rain', neige: 'snow', snow: 'snow' } as const)[identifier(args[0])] : undefined;
+      if (args.length === 1) {
+        const weather = typeof args[0] === 'string' ? ({ clair: 'clear', clear: 'clear', pluie: 'rain', rain: 'rain', neige: 'snow', snow: 'snow' } as const)[identifier(args[0])] : undefined;
+        if (!weather) throw new Error(translate(`Ligne ${line} : choisis clair, pluie ou neige.`, `Line ${line}: choose clear, rain, or snow.`));
+        environment.weather = weather;
+        return;
+      }
+      arity(args, 4, name, line);
+      const [x, y, z] = position(args, 0, line);
+      const weather = typeof args[3] === 'string' ? ({ clair: 'clear', clear: 'clear', pluie: 'rain', rain: 'rain', neige: 'snow', snow: 'snow' } as const)[identifier(args[3])] : undefined;
       if (!weather) throw new Error(translate(`Ligne ${line} : choisis clair, pluie ou neige.`, `Line ${line}: choose clear, rain, or snow.`));
-      environment.weather = weather;
+      blocks.set(voxelKey(x, y, z), { x, y, z, kind: BlockKind.Sign, shop: { action: 'weather', weather }, text: `Météo · ${args[3]}` });
       return;
     }
     if (name === 'boutique') {
@@ -831,12 +861,15 @@ export function sanitizeCustomWorld(value: unknown): CustomWorldDefinition | nul
     if (Math.abs(block.x) > limit || Math.abs(block.z) > limit || block.y < 1 || block.y > CUSTOM_WORLD_MAX_Y) return null;
     const shop = block.shop;
     if (shop) {
-      if (shop.action !== 'buy' && shop.action !== 'sell' && shop.action !== 'earn' && shop.action !== 'gift' && shop.action !== 'heal' && shop.action !== 'teleport' && shop.action !== 'effect' && shop.action !== 'checkpoint' && shop.action !== 'message' && shop.action !== 'trap') return null;
+      if (!['buy', 'sell', 'earn', 'gift', 'heal', 'teleport', 'effect', 'checkpoint', 'message', 'trap', 'bomb', 'firework', 'day', 'night', 'weather', 'spawn'].includes(shop.action)) return null;
       if (shop.action === 'effect' && (shop.effect !== 'speed' && shop.effect !== 'jump' && shop.effect !== 'invisibility' || typeof shop.price !== 'number' || !Number.isInteger(shop.price) || shop.price < 1 || shop.price > 3600)) return null;
       if (shop.action === 'trap' && (typeof shop.price !== 'number' || !Number.isInteger(shop.price) || shop.price < 1 || shop.price > 10)) return null;
       if ((shop.action === 'buy' || shop.action === 'sell' || shop.action === 'earn' || shop.action === 'heal') && (typeof shop.price !== 'number' || !Number.isInteger(shop.price) || shop.price < 0 || shop.price > 1000000)) return null;
       if ((shop.action === 'buy' || shop.action === 'sell' || shop.action === 'gift') && (!shop.item || !isSelectedKind(shop.item) || typeof shop.count !== 'number' || !Number.isInteger(shop.count) || shop.count < 1 || shop.count > 999)) return null;
       if (shop.action === 'teleport' && (!shop.destination || !Number.isSafeInteger(shop.destination.x) || !Number.isSafeInteger(shop.destination.y) || !Number.isSafeInteger(shop.destination.z) || Math.abs(shop.destination.x) > limit || Math.abs(shop.destination.z) > limit || shop.destination.y < 1 || shop.destination.y > CUSTOM_WORLD_MAX_Y)) return null;
+      if ((shop.action === 'bomb' || shop.action === 'firework') && (typeof shop.count !== 'number' || !Number.isInteger(shop.count) || shop.count < 1 || shop.count > 10)) return null;
+      if (shop.action === 'weather' && shop.weather !== 'clear' && shop.weather !== 'rain' && shop.weather !== 'snow') return null;
+      if (shop.action === 'spawn' && (typeof shop.animal !== 'string' || !['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie', 'monkey', 'ocelot', 'giraffe', 'elephant'].includes(shop.animal))) return null;
     }
     blocks.set(voxelKey(block.x, block.y, block.z), {
       x: block.x,
@@ -894,6 +927,10 @@ export function worldCodeFromBlocks(definition: Pick<CustomWorldDefinition, 'ter
       if (shop.action === 'message') return `message(${block.x}, ${block.y}, ${block.z}, "${block.text ?? ''}");`;
       if (shop.action === 'effect') return `${shop.effect === 'speed' ? 'vitesse' : shop.effect === 'jump' ? 'saut' : 'invisible'}(${block.x}, ${block.y}, ${block.z}, ${shop.price ?? 30});`;
       if (shop.action === 'trap') return `piege(${block.x}, ${block.y}, ${block.z}, ${shop.price ?? 1});`;
+      if (shop.action === 'bomb' || shop.action === 'firework') return `${shop.action === 'bomb' ? 'bombe' : 'feu_artifice'}(${block.x}, ${block.y}, ${block.z}, ${shop.count ?? 1});`;
+      if (shop.action === 'day' || shop.action === 'night') return `${shop.action === 'night' ? 'nuit' : 'jour'}(${block.x}, ${block.y}, ${block.z});`;
+      if (shop.action === 'weather') return `meteo(${block.x}, ${block.y}, ${block.z}, "${shop.weather}");`;
+      if (shop.action === 'spawn') return `invoquer(${block.x}, ${block.y}, ${block.z}, "${shop.animal}");`;
       if (shop.action === 'gift') return `donner(${block.x}, ${block.y}, ${block.z}, "${shop.item}", ${shop.count ?? 1});`;
       if (shop.action === 'heal') return `soin(${block.x}, ${block.y}, ${block.z}, ${shop.price ?? 1});`;
       if (shop.action === 'teleport' && shop.destination) return `teleporter(${block.x}, ${block.y}, ${block.z}, ${shop.destination.x}, ${shop.destination.y}, ${shop.destination.z});`;

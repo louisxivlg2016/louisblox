@@ -224,13 +224,16 @@ function parseEdits(value: unknown): EditEntry[] | null {
     }
     if (data.shop && typeof data.shop === 'object') {
       const shop = data.shop as Record<string, unknown>;
-      const actionValid = shop.action === 'buy' || shop.action === 'sell' || shop.action === 'earn' || shop.action === 'gift' || shop.action === 'heal' || shop.action === 'teleport' || shop.action === 'effect' || shop.action === 'checkpoint' || shop.action === 'message' || shop.action === 'trap';
-      const priceValid = shop.action === 'teleport' || shop.action === 'gift' || shop.action === 'checkpoint' || shop.action === 'message' || typeof shop.price === 'number' && Number.isInteger(shop.price) && shop.price >= 0 && shop.price <= 1000000;
-      const itemValid = shop.action === 'heal' || shop.action === 'teleport' || shop.action === 'earn' || shop.action === 'effect' || shop.action === 'checkpoint' || shop.action === 'message' || shop.action === 'trap' || (typeof shop.item === 'string' || typeof shop.item === 'number') && typeof shop.count === 'number' && Number.isInteger(shop.count) && shop.count >= 1 && shop.count <= 999;
+      const actionValid = ['buy', 'sell', 'earn', 'gift', 'heal', 'teleport', 'effect', 'checkpoint', 'message', 'trap', 'bomb', 'firework', 'day', 'night', 'weather', 'spawn'].includes(shop.action as string);
+      const priceValid = ['teleport', 'gift', 'checkpoint', 'message', 'bomb', 'firework', 'day', 'night', 'weather', 'spawn'].includes(shop.action as string) || typeof shop.price === 'number' && Number.isInteger(shop.price) && shop.price >= 0 && shop.price <= 1000000;
+      const itemValid = ['heal', 'teleport', 'earn', 'effect', 'checkpoint', 'message', 'trap', 'bomb', 'firework', 'day', 'night', 'weather', 'spawn'].includes(shop.action as string) || (typeof shop.item === 'string' || typeof shop.item === 'number') && typeof shop.count === 'number' && Number.isInteger(shop.count) && shop.count >= 1 && shop.count <= 999;
       const effectValid = shop.action !== 'effect' || shop.effect === 'speed' || shop.effect === 'jump' || shop.effect === 'invisibility';
       const destination = shop.destination as { x: unknown; y: unknown; z: unknown } | undefined;
       const destinationValid = shop.action !== 'teleport' || destination && [destination.x, destination.y, destination.z].every((value) => Number.isSafeInteger(value));
-      if (actionValid && priceValid && itemValid && effectValid && destinationValid) result.shop = shop as Exclude<VoxelEdit, number | null>['shop'];
+      const countValid = shop.action !== 'bomb' && shop.action !== 'firework' || typeof shop.count === 'number' && Number.isInteger(shop.count) && shop.count >= 1 && shop.count <= 10;
+      const weatherValid = shop.action !== 'weather' || shop.weather === 'clear' || shop.weather === 'rain' || shop.weather === 'snow';
+      const animalValid = shop.action !== 'spawn' || typeof shop.animal === 'string' && ['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie', 'monkey', 'ocelot', 'giraffe', 'elephant'].includes(shop.animal);
+      if (actionValid && priceValid && itemValid && effectValid && destinationValid && countValid && weatherValid && animalValid) result.shop = shop as Exclude<VoxelEdit, number | null>['shop'];
     }
     if (typeof data.season === 'string' && ['spring', 'summer', 'autumn', 'winter'].includes(data.season)) result.season = data.season;
     edits.push([key, result]);
