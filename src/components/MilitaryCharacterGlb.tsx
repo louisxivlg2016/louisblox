@@ -86,13 +86,13 @@ export function MilitaryCharacterGlb({ moving, airborne, remote = false, seated 
         <PixelPart position={[0, -0.33, 0]} size={[0.2, 0.66, 0.24]} color="#526b3c" />
         <PixelPart position={[0, -0.59, 0]} size={[0.2, 0.16, 0.24]} color={skin} />
       </group>
-      <group ref={leftLeg} name="left-leg" position={[-0.22, 0.74, 0]}>
+      <group ref={leftLeg} name="left-leg" position={[-0.19, 0.74, 0]}>
         <PixelPart position={[0, -0.36, 0]} size={[0.26, 0.72, 0.3]} color="#405630" />
         <group ref={leftKnee} name="left-knee" position={[0, -0.68, 0]}>
           <PixelPart position={[0, -0.08, -0.04]} size={[0.27, 0.18, 0.34]} color="#293526" />
         </group>
       </group>
-      <group ref={rightLeg} name="right-leg" position={[0.22, 0.74, 0]}>
+      <group ref={rightLeg} name="right-leg" position={[0.19, 0.74, 0]}>
         <PixelPart position={[0, -0.36, 0]} size={[0.26, 0.72, 0.3]} color="#405630" />
         <group ref={rightKnee} name="right-knee" position={[0, -0.68, 0]}>
           <PixelPart position={[0, -0.08, -0.04]} size={[0.27, 0.18, 0.34]} color="#293526" />

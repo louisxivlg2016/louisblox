@@ -136,7 +136,7 @@ export function FootballerAvatar({ moving, airborne, remote = false, seated = fa
         <PixelPart position={[0, -0.04, 0]} size={[0.2, 0.2, 0.25]} color={jersey} />
         <PixelPart position={[0, -0.34, 0]} size={[0.18, 0.4, 0.22]} color={skin} />
       </group>
-      {([['left-leg', leftLeg, -0.21], ['right-leg', rightLeg, 0.21]] as const).map(([name, ref, x]) => (
+      {([['left-leg', leftLeg, -0.18], ['right-leg', rightLeg, 0.18]] as const).map(([name, ref, x]) => (
         <group key={name} name={name} ref={ref} position={[x, 0.76, 0]}>
           <PixelPart position={[0, -0.1, 0]} size={[0.28, 0.28, 0.34]} color="#f0f1eb" />
           <PixelPart position={[0, -0.31, 0]} size={[0.22, 0.16, 0.26]} color={skin} />
