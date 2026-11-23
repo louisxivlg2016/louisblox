@@ -94,7 +94,8 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
           (parent ?? root).add(pivot);
           rig[part] = pivot;
         }
-        subset.translate(-pivotX, -pivotY, 0);
+        const legSeparation = part.endsWith('Leg') ? side * width * 0.06 : 0;
+        subset.translate(-pivotX + legSeparation, -pivotY, 0);
         pivot.add(mesh);
       }
     }
