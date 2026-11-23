@@ -128,8 +128,8 @@ export function animateCharacterRig(root: Object3D, time: number, walking: boole
   else turn(rig.rightArm, seated ? -1.05 : -swing, delta);
   turn(rig.leftLeg, seated ? Math.PI / 2 : -swing * 0.85, delta);
   turn(rig.rightLeg, seated ? Math.PI / 2 : swing * 0.85, delta);
-  turn(rig.leftLowerLeg, seated ? -Math.PI / 2 : 0, delta);
-  turn(rig.rightLowerLeg, seated ? -Math.PI / 2 : 0, delta);
+  turn(rig.leftLowerLeg, seated ? -Math.PI / 2 : moving ? -Math.max(0, Math.sin(time * 8)) * 0.5 : 0, delta);
+  turn(rig.rightLowerLeg, seated ? -Math.PI / 2 : moving ? -Math.max(0, -Math.sin(time * 8)) * 0.5 : 0, delta);
 }
 
 export function attachCharacterHand(avatar: Object3D | null, hand: Group | null, fullCharacter: boolean) {

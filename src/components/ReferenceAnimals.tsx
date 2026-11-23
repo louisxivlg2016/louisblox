@@ -146,8 +146,8 @@ export function ReferenceTrader({ entity }: { entity: Entity }) {
     const swing = trader?.walking ? Math.sin(phase.current) * 0.42 : 0;
     if (rig.leftLeg) rig.leftLeg.rotation.x = sitting ? Math.PI / 2 : swing;
     if (rig.rightLeg) rig.rightLeg.rotation.x = sitting ? Math.PI / 2 : -swing;
-    if (rig.leftLowerLeg) rig.leftLowerLeg.rotation.x = sitting ? -Math.PI / 2 : 0;
-    if (rig.rightLowerLeg) rig.rightLowerLeg.rotation.x = sitting ? -Math.PI / 2 : 0;
+    if (rig.leftLowerLeg) rig.leftLowerLeg.rotation.x = sitting ? -Math.PI / 2 : trader?.walking ? -Math.max(0, Math.sin(phase.current)) * 0.5 : 0;
+    if (rig.rightLowerLeg) rig.rightLowerLeg.rotation.x = sitting ? -Math.PI / 2 : trader?.walking ? -Math.max(0, -Math.sin(phase.current)) * 0.5 : 0;
   });
   return <group ref={group} name="reference-trader" userData={{ source: 'Hunyuan' }}><primitive object={character} /></group>;
 }

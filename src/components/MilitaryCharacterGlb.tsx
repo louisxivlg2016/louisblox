@@ -55,8 +55,8 @@ export function MilitaryCharacterGlb({ moving, airborne, remote = false, seated 
     } else turn(rightArm.current, sitting ? -1.05 : -swing);
     turn(leftLeg.current, sitting ? Math.PI / 2 : -swing * 0.85);
     turn(rightLeg.current, sitting ? Math.PI / 2 : swing * 0.85);
-    turn(leftKnee.current, sitting ? -Math.PI / 2 : 0);
-    turn(rightKnee.current, sitting ? -Math.PI / 2 : 0);
+    turn(leftKnee.current, sitting ? -Math.PI / 2 : movingForward ? -Math.max(0, swing) * 0.5 : 0);
+    turn(rightKnee.current, sitting ? -Math.PI / 2 : movingForward ? -Math.max(0, -swing) * 0.5 : 0);
     if (group.current) {
       group.current.position.y = sitting ? -0.45 : 0;
       group.current.userData.clip = jumping ? 'jump' : walking ? 'run' : 'idle';
