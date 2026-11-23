@@ -85,6 +85,13 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const [joinOpen, setJoinOpen] = useState(false);
   const currentMode = useGameStore((state) => state.gameplayMode);
   const [browseMode, setBrowseMode] = useState<GameplayMode>(currentMode);
+  useEffect(() => {
+    try {
+      localStorage.removeItem('louisblox-mode-images-v1');
+      localStorage.removeItem('louisblox-create-tab-images-v1');
+    } catch {
+    }
+  }, []);
   useEffect(() => setBrowseMode(currentMode), [currentMode]);
   useEffect(() => {
     if (!libraryOpen && !joinOpen) return;
