@@ -24,7 +24,7 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     const y = (position.getY(a) + position.getY(b) + position.getY(c)) / 3;
     const side = x < 0 ? 'left' : 'right';
     let part: Part = 'body';
-    const keepShouldersWithHead = outfit === 'knight' || outfit === 'louis14' || outfit === 'trader' || outfit === 'king';
+    const keepShouldersWithHead = outfit === 'knight' || outfit === 'louis14' || outfit === 'trader';
     const headWidth = keepShouldersWithHead ? 0.38 : outfit === 'worker' ? 0.2 : 0.28;
     const headBottom = outfit === 'worker' || outfit === 'footballer' ? 0.78 : 0.68;
     if (Math.abs(x) < width * 0.38 && y > floor + height * 0.82 || Math.abs(x) < width * headWidth && y > floor + height * headBottom) part = 'head';
