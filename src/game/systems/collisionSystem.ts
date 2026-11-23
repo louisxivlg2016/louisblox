@@ -140,6 +140,7 @@ export function moveVoxelCharacter(
   canStep: boolean,
   cabin?: CabinDefinition,
   height = HEIGHT,
+  maxStepHeight = 1.05,
 ) {
   const substeps = Math.max(1, Math.ceil(Math.max(Math.abs(movement.x), Math.abs(movement.y), Math.abs(movement.z)) / MAX_SUBSTEP));
   let grounded = false;
@@ -160,7 +161,7 @@ export function moveVoxelCharacter(
       const candidateHeights = [...new Set([start.y + 0.18 + EPSILON, Math.round((start.y - 0.5) * 2) / 2 + 1 + EPSILON, Math.round(start.y - 0.5) + 1.5 + EPSILON])];
       for (const candidateY of candidateHeights) {
         const candidate = { ...start, y: candidateY };
-        if (candidate.y - start.y > 1.05 || collides(blocks, candidate, cabin, height)) continue;
+        if (candidate.y - start.y > maxStepHeight || collides(blocks, candidate, cabin, height)) continue;
         slide(blocks, candidate, 'x', x, cabin, height);
         slide(blocks, candidate, 'z', z, cabin, height);
         slide(blocks, candidate, 'y', -0.15, cabin, height);

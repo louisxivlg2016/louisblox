@@ -345,7 +345,7 @@ function moveRiddenAnimal(world: World, position: Vector3, yaw: number, speed: n
     x: -Math.sin(yaw) * speed * dt,
     y: rider.velocityY * dt,
     z: -Math.cos(yaw) * speed * dt,
-  }, rider.grounded, undefined, kind === 'camel' ? 3.25 : 2.85);
+  }, rider.grounded, undefined, kind === 'camel' ? 3.25 : 2.85, 1.25);
   const ground = groundAt(world, next.x, next.z, next.y + 0.05);
   const blocks = getBlockIndex(world);
   const seaWater = blocks.get(voxelKey(Math.round(next.x), SEA_LEVEL, Math.round(next.z)));
@@ -359,7 +359,8 @@ function moveRiddenAnimal(world: World, position: Vector3, yaw: number, speed: n
   const moved = Math.hypot(next.x - position.x, next.z - position.z) > 0.000001;
   position.copy(next);
   if (!inWater) rider.grounded = movement.grounded;
-  if (!inWater && movement.grounded && rider.velocityY < 0) rider.velocityY = -0.1;
+  if (!inWater && movement.stepped) rider.velocityY = 0;
+  else if (!inWater && movement.grounded && rider.velocityY < 0) rider.velocityY = -0.1;
   if (movement.hitCeiling) rider.velocityY = Math.min(0, rider.velocityY);
   return moved;
 }
