@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useCharacterStore } from '../game/characterStore';
 import { requestPlay } from '../game/input';
-import { OUTFIT_ORDER, OUTFITS, WIG_ORDER, WIGS } from '../game/outfits';
+import { OUTFIT_ORDER, OUTFITS, WIG_ORDER, WIGS, type OutfitKind } from '../game/outfits';
 import { useGameStore } from '../game/store';
 import { defaultAppearance } from '../game/appearance';
 import { BoutiqueAvatarPreview } from './BoutiqueAvatarPreview';
@@ -10,8 +10,23 @@ import shopFrUrl from '../../assets/menu/shop.webp';
 import shopEnUrl from '../../assets/menu/english/shop.webp';
 import shopEsUrl from '../../assets/menu/spanish/tienda.webp';
 import settingsButtonUrl from '../../assets/ui/settings-button.webp';
-import boyAvatarUrl from '../../assets/avatars/garcon.webp';
-import girlAvatarUrl from '../../assets/avatars/fille.webp';
+import defaultBoyUrl from '../../assets/avatars/outfits/default-boy.webp';
+import defaultGirlUrl from '../../assets/avatars/outfits/default-girl.webp';
+import kingAvatarUrl from '../../assets/avatars/outfits/king.webp';
+import militaryAvatarUrl from '../../assets/avatars/outfits/military.webp';
+import knightAvatarUrl from '../../assets/avatars/outfits/knight.webp';
+import explorerAvatarUrl from '../../assets/avatars/outfits/explorer.webp';
+import princessAvatarUrl from '../../assets/avatars/outfits/princess.webp';
+import louis14AvatarUrl from '../../assets/avatars/outfits/louis14.webp';
+import louis15AvatarUrl from '../../assets/avatars/outfits/louis15.webp';
+import pirateAvatarUrl from '../../assets/avatars/outfits/pirate.webp';
+import corsairAvatarUrl from '../../assets/avatars/outfits/corsair.webp';
+import footballerAvatarUrl from '../../assets/avatars/outfits/footballer.webp';
+import firefighterAvatarUrl from '../../assets/avatars/outfits/firefighter.webp';
+import workerAvatarUrl from '../../assets/avatars/outfits/worker.webp';
+import policeAvatarUrl from '../../assets/avatars/outfits/police.webp';
+import soldierAvatarUrl from '../../assets/avatars/outfits/soldier.webp';
+import traderAvatarUrl from '../../assets/avatars/outfits/trader.webp';
 import { translate, useLanguageStore } from '../game/language';
 import { saveWorld } from '../game/save';
 import { world } from '../game/world';
@@ -21,6 +36,7 @@ const SKIN_COLORS = ['#f0c7a6', '#e7a0aa', '#c98962', '#966045', '#704735', '#49
 const HAIR_COLORS = ['#49382f', '#25232a', '#8a5838', '#d6b46a', '#d7d0c3', '#a74a82', '#4e79a7', '#50844a'];
 const EYE_COLORS = ['#273b4b', '#3d6e45', '#6f4d35', '#4e79a7', '#784da0', '#a13c3c'];
 const CLOTHING_COLORS = ['#4d83a7', '#9a5f9f', '#8e303d', '#526647', '#c467a5', '#2d467f', '#b98a53', '#35434c'];
+const OUTFIT_IMAGES: Record<OutfitKind, string> = { default: defaultBoyUrl, king: kingAvatarUrl, military: militaryAvatarUrl, knight: knightAvatarUrl, explorer: explorerAvatarUrl, princess: princessAvatarUrl, louis14: louis14AvatarUrl, louis15: louis15AvatarUrl, pirate: pirateAvatarUrl, corsair: corsairAvatarUrl, footballer: footballerAvatarUrl, firefighter: firefighterAvatarUrl, worker: workerAvatarUrl, police: policeAvatarUrl, soldier: soldierAvatarUrl, trader: traderAvatarUrl };
 
 export function BoutiquePanel() {
   const language = useLanguageStore((state) => state.language);
@@ -75,7 +91,7 @@ export function BoutiquePanel() {
                 const item = OUTFITS()[kind];
                 return (
                   <button key={kind} className={`outfit-card ${outfit === kind ? 'active' : ''}`} onClick={() => setOutfit(kind)} disabled={battle && kind !== 'military'} aria-pressed={outfit === kind}>
-                    {kind === 'default' ? <img className="outfit-swatch outfit-character-image" src={character === 'girl' ? girlAvatarUrl : boyAvatarUrl} alt="" /> : <span className="outfit-swatch" style={{ backgroundColor: appearance.clothingColor ?? item.color }} />}
+                    <img className="outfit-swatch outfit-character-image" src={kind === 'default' && character === 'girl' ? defaultGirlUrl : OUTFIT_IMAGES[kind]} alt={item.name} />
                     <strong>{item.name}</strong>
                     <small>{item.description}</small>
                     {outfit === kind && <span className="outfit-selected">{translate('Portée', 'Equipped')}</span>}
