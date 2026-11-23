@@ -6,12 +6,13 @@ import { useGameStore } from './store';
 export type InventoryState = {
   gameplayMode: GameplayMode;
   itemCounts: Record<string, number>;
+  apples?: number;
 };
 
 export const inventoryKey = (kind: SelectedKind) => typeof kind === 'number' ? `block_${kind}` : kind;
 
 export function inventoryCount(kind: SelectedKind, state: InventoryState) {
-  return state.itemCounts[inventoryKey(kind)] ?? 0;
+  return kind === 'apple' && typeof state.apples === 'number' ? state.apples : state.itemCounts[inventoryKey(kind)] ?? 0;
 }
 
 export function hasInventory(kind: SelectedKind, state: InventoryState) {
@@ -21,19 +22,21 @@ export function hasInventory(kind: SelectedKind, state: InventoryState) {
 export function changeInventory(kind: SelectedKind, amount: number) {
   const key = inventoryKey(kind);
   useGameStore.setState((state) => {
-    const count = Math.max(0, (state.itemCounts[key] ?? 0) + amount);
-    const itemCounts = { ...state.itemCounts, [key]: count };
+    const count = Math.max(0, (kind === 'apple' ? state.apples : state.itemCounts[key] ?? 0) + amount);
+    const itemCounts = kind === 'apple' ? state.itemCounts : { ...state.itemCounts, [key]: count };
+    const apples = kind === 'apple' ? count : state.apples;
     if (state.gameplayMode === 'survival' && amount > 0 && kind !== 'hand' && !state.hotbarSlots.includes(kind)) {
       const empty = state.hotbarSlots.findIndex((slot) => slot === null);
       if (empty >= 0) {
         const hotbarSlots = [...state.hotbarSlots];
         hotbarSlots[empty] = kind;
-        return { itemCounts, hotbarSlots, selected: state.selected === 'hand' ? kind : state.selected, selectedSlot: state.selected === 'hand' ? empty : state.selectedSlot };
+        return { itemCounts, apples, hotbarSlots, selected: state.selected === 'hand' ? kind : state.selected, selectedSlot: state.selected === 'hand' ? empty : state.selectedSlot };
       }
     }
-    if (state.gameplayMode !== 'survival' || count > 0 || kind === 'hand') return { itemCounts };
+    if (count > 0 || kind === 'hand') return kind === 'apple' ? { apples } : { itemCounts };
     return {
       itemCounts,
+      apples,
       hotbarSlots: state.hotbarSlots.map((slot) => slot === kind ? null : slot),
       selected: state.selected === kind ? 'hand' as const : state.selected,
       selectedSlot: state.selected === kind ? 0 : state.selectedSlot,

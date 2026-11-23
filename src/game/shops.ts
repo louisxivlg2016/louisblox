@@ -42,12 +42,13 @@ export function sellSelectedItem() {
       return false;
     }
     lastCreativeSale = now;
-  } else if (inventoryCount(kind, store) <= 0) {
+  }
+  if (inventoryCount(kind, store) <= 0) {
     store.setNotice(translate('Tu n’as plus cet objet à vendre.', 'You have no more of this item to sell.'));
     return false;
   }
   const name = selectionInfo(kind).name;
-  if (store.gameplayMode === 'survival') changeInventory(kind, -1);
+  changeInventory(kind, -1);
   store.addCoins(price);
   store.setNotice(translate(`${name} vendu pour ${price} pièce${price > 1 ? 's' : ''}.`, `${name} sold for ${price} coin${price > 1 ? 's' : ''}.`));
   return true;

@@ -239,7 +239,7 @@ export function eatRestaurantMeal(world: World) {
 
 export function canTrade(offer: TradeOffer) {
   const state = useGameStore.getState();
-  return state.gameplayMode !== 'survival' || inventoryCount(offer.cost, state) >= offer.costCount;
+  return inventoryCount(offer.cost, state) >= offer.costCount;
 }
 
 export function tradeWithMerchant(offer: TradeOffer) {
@@ -247,7 +247,7 @@ export function tradeWithMerchant(offer: TradeOffer) {
     useTradeStore.getState().setMessage(`Objet insuffisant : il faut ${offer.costCount} ${selectionInfo(offer.cost).name}.`);
     return false;
   }
-  if (useGameStore.getState().gameplayMode === 'survival') changeInventory(offer.cost, -offer.costCount);
+  changeInventory(offer.cost, -offer.costCount);
   changeInventory(offer.reward, offer.rewardCount);
   useTradeStore.getState().setMessage(translate('Échange réussi ! Les objets sont dans ton sac.', 'Trade successful! The items are in your backpack.'));
   return true;

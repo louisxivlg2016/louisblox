@@ -20,6 +20,7 @@ export function Backpack() {
   const hotbarSlots = useGameStore((state) => state.hotbarSlots);
   const backpackItem = useGameStore((state) => state.backpackItem);
   const itemCounts = useGameStore((state) => state.itemCounts);
+  const apples = useGameStore((state) => state.apples);
   const equippedArmor = useGameStore((state) => state.equippedArmor);
   const setHotbarSlot = useGameStore((state) => state.setHotbarSlot);
   const setBackpackItem = useGameStore((state) => state.setBackpackItem);
@@ -29,7 +30,7 @@ export function Backpack() {
   const [gallerySearch, setGallerySearch] = useState('');
   const dragSlot = useRef<{ index: number; kind: SelectedKind; pointerId: number; x: number; y: number } | null>(null);
   const survival = gameplayMode === 'survival';
-  const inventory = { itemCounts, gameplayMode };
+  const inventory = { itemCounts, gameplayMode, apples };
   if (!open) return null;
   const close = () => {
     setBackpack(false);
