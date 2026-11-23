@@ -9,13 +9,19 @@ import { sanitizeCustomWorld } from './worldCode';
 import { translate } from './language';
 import { snapshotPaintStrokes } from './paintball';
 import { useSeasonStore } from './seasons';
+import { useMultiplayerStore } from './multiplayerStore';
+import { isMultiplayerOnlyMode } from './worldMode';
 
 const LEGACY_SAVE_KEY = 'louisblox-save-v1';
 const WORLDS_KEY = 'louisblox-worlds-v1';
 const DEFAULT_WORLD_ID = 'main-room';
 
-export type WorldMeta = { id: string; name: string; gameplayMode: WorldSave['gameplayMode']; updatedAt: number };
+export type WorldMeta = { id: string; name: string; gameplayMode: WorldSave['gameplayMode']; multiplayer?: boolean; updatedAt: number };
 export const MAX_WORLDS = 20;
+
+export function isMultiplayerWorld(world: Pick<WorldMeta, 'id' | 'gameplayMode' | 'multiplayer'>) {
+  return world.multiplayer ?? (world.id.startsWith('salon-') || isMultiplayerOnlyMode(world.gameplayMode ?? 'creative'));
+}
 
 export function canCreateWorld(_worldId?: string) {
   return true;
@@ -53,7 +59,8 @@ export function listWorlds(): WorldMeta[] {
   } catch {
   }
   if (readWorldSave(DEFAULT_WORLD_ID) && !saved.some((world) => world.id === DEFAULT_WORLD_ID)) {
-    saved.push({ id: DEFAULT_WORLD_ID, name: translate('Monde principal', 'Main World'), gameplayMode: readWorldSave(DEFAULT_WORLD_ID)?.gameplayMode, updatedAt: 0 });
+    const mainSave = readWorldSave(DEFAULT_WORLD_ID);
+    saved.push({ id: DEFAULT_WORLD_ID, name: translate('Monde principal', 'Main World'), gameplayMode: mainSave?.gameplayMode, multiplayer: mainSave?.multiplayer, updatedAt: 0 });
   }
   try {
     for (let index = 0; index < localStorage.length; index += 1) {
@@ -62,7 +69,7 @@ export function listWorlds(): WorldMeta[] {
       const id = key.slice('louisblox-world-'.length);
       if (saved.some((world) => world.id === id)) continue;
       const save = readWorldSave(id);
-      if (save) saved.push({ id, name: save.worldName?.trim().slice(0, 80) || id, gameplayMode: save.gameplayMode, updatedAt: save.savedAt ?? 0 });
+      if (save) saved.push({ id, name: save.worldName?.trim().slice(0, 80) || id, gameplayMode: save.gameplayMode, multiplayer: save.multiplayer, updatedAt: save.savedAt ?? 0 });
     }
   } catch {
   }
@@ -102,7 +109,7 @@ export function writeWorldSave(worldId: string, save: WorldSave, name = worldId)
   }
   const revision = localRevision + 1;
   const savedAt = Date.now();
-  const metadata: WorldMeta = { id: worldId, name: name.trim().slice(0, 80) || worldId, gameplayMode: save.gameplayMode, updatedAt: savedAt };
+  const metadata: WorldMeta = { id: worldId, name: name.trim().slice(0, 80) || worldId, gameplayMode: save.gameplayMode, multiplayer: save.multiplayer, updatedAt: savedAt };
   try {
     localStorage.setItem(worldKey(worldId), JSON.stringify({ ...save, worldId, worldName: metadata.name, revision, savedAt }));
     worldRevisions.set(worldId, revision);
@@ -142,12 +149,18 @@ export function createWorldSave(world: World, store: GameSnapshot = useGameStore
   const state = playerEntity?.get(PlayerState);
   const health = playerEntity?.get(PlayerHealth);
   if (!position || !state || !environment) return null;
+  const switchingWorld = store.worldId !== useGameStore.getState().worldId;
+  const storedSave = switchingWorld ? readWorldSave(store.worldId) : null;
+  const multiplayer = switchingWorld
+    ? isMultiplayerWorld({ id: store.worldId, gameplayMode: store.gameplayMode, multiplayer: storedSave?.multiplayer })
+    : useMultiplayerStore.getState().enabled;
   return {
     version: 5,
     worldId: store.worldId,
     worldName: store.worldName,
     generation: store.generation,
     gameplayMode: store.gameplayMode,
+    multiplayer,
     template: store.worldTemplate,
     customWorld: store.customWorld ?? undefined,
     seed: getWorldSeed(world),

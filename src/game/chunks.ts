@@ -54,6 +54,7 @@ export type WorldSave = {
   worldName?: string;
   generation: number;
   gameplayMode?: GameplayMode;
+  multiplayer?: boolean;
   template?: import('./worldMode').WorldTemplate;
   customWorld?: import('./worldCode').CustomWorldDefinition;
   seed: number;

@@ -10,6 +10,8 @@ import shopFrUrl from '../../assets/menu/shop.webp';
 import shopEnUrl from '../../assets/menu/english/shop.webp';
 import shopEsUrl from '../../assets/menu/spanish/tienda.webp';
 import settingsButtonUrl from '../../assets/ui/settings-button.webp';
+import boyAvatarUrl from '../../assets/avatars/garcon.webp';
+import girlAvatarUrl from '../../assets/avatars/fille.webp';
 import { translate, useLanguageStore } from '../game/language';
 import { saveWorld } from '../game/save';
 import { world } from '../game/world';
@@ -73,7 +75,7 @@ export function BoutiquePanel() {
                 const item = OUTFITS()[kind];
                 return (
                   <button key={kind} className={`outfit-card ${outfit === kind ? 'active' : ''}`} onClick={() => setOutfit(kind)} disabled={battle && kind !== 'military'} aria-pressed={outfit === kind}>
-                    <span className="outfit-swatch" style={{ backgroundColor: appearance.clothingColor ?? item.color }} />
+                    {kind === 'default' ? <img className="outfit-swatch outfit-character-image" src={character === 'girl' ? girlAvatarUrl : boyAvatarUrl} alt="" /> : <span className="outfit-swatch" style={{ backgroundColor: appearance.clothingColor ?? item.color }} />}
                     <strong>{item.name}</strong>
                     <small>{item.description}</small>
                     {outfit === kind && <span className="outfit-selected">{translate('Portée', 'Equipped')}</span>}

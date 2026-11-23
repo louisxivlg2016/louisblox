@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { listWorlds } from '../game/save';
+import { isMultiplayerWorld, listWorlds } from '../game/save';
 import type { WorldMeta } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { downloadWorldBackup, importWorldBackup } from '../game/worldBackup';
 import { removeWorld } from '../game/deleteWorld';
 
-import { GAMEPLAY_MODE_LABELS, isMultiplayerOnlyMode } from '../game/worldMode';
+import { GAMEPLAY_MODE_LABELS } from '../game/worldMode';
 import { translate } from '../game/language';
 
 const MODE_NAMES = GAMEPLAY_MODE_LABELS;
@@ -16,14 +16,15 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
   const [pending, setPending] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [category, setCategory] = useState<'solo' | 'multiplayer'>(useMultiplayerStore.getState().enabled ? 'multiplayer' : 'solo');
   const worldId = useGameStore((state) => state.worldId);
   const openWorld = useGameStore((state) => state.openWorld);
-  const enabled = useMultiplayerStore((state) => state.enabled);
   const status = useMultiplayerStore((state) => state.status);
   const worldReady = useMultiplayerStore((state) => state.worldReady);
   const playerName = useMultiplayerStore((state) => state.playerName);
   const server = useMultiplayerStore((state) => state.server);
   const configure = useMultiplayerStore((state) => state.configure);
+  const setEnabled = useMultiplayerStore((state) => state.setEnabled);
 
   useEffect(() => setWorlds(listWorlds()), [worldId]);
   useEffect(() => {
@@ -34,16 +35,15 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
   }, [pending, status, worldReady, onPlay]);
 
   const open = (world: WorldMeta) => {
-    if (!enabled && isMultiplayerOnlyMode(world.gameplayMode ?? 'creative')) {
-      setMessage(translate('Les modes Pirates et Football nécessitent le multijoueur. Choisis « Jouer en multijoueur » pour ouvrir cette sauvegarde.', 'Pirates and Football require multiplayer. Choose “Play multiplayer” to open this save.'));
-      return;
-    }
+    const multiplayer = isMultiplayerWorld(world);
     setMessage('');
+    setEnabled(multiplayer);
     openWorld(world.id, world.name);
-    if (enabled) {
+    if (multiplayer) {
       configure({ playerName, room: world.id, server });
       setPending(true);
     } else {
+      setPending(false);
       window.setTimeout(onPlay, 120);
     }
   };
@@ -83,9 +83,15 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
     }
   };
 
+  const filteredWorlds = worlds.filter((world) => isMultiplayerWorld(world) === (category === 'multiplayer'));
+
   return (
     <section id="mes-mondes" className="world-library">
-      <div className="world-library-heading"><h2>{translate('Mes mondes', 'My Worlds')}</h2><span>{worlds.length}</span></div>
+      <div className="world-library-heading"><h2>{translate('Mes mondes', 'My Worlds')}</h2><span>{filteredWorlds.length}</span></div>
+      <div className="world-library-categories" role="tablist" aria-label={translate('Type de mondes', 'World type')}>
+        <button type="button" role="tab" aria-selected={category === 'solo'} className={category === 'solo' ? 'active' : ''} onClick={() => setCategory('solo')}>{translate('Tes mondes solos', 'Your solo worlds')} ({worlds.filter((world) => !isMultiplayerWorld(world)).length})</button>
+        <button type="button" role="tab" aria-selected={category === 'multiplayer'} className={category === 'multiplayer' ? 'active' : ''} onClick={() => setCategory('multiplayer')}>{translate('Tes mondes multijoueurs', 'Your multiplayer worlds')} ({worlds.filter((world) => isMultiplayerWorld(world)).length})</button>
+      </div>
       <div className="world-backup">
         <button type="button" className="secondary-button" onClick={exportBackup} disabled={busy}>{translate('Exporter mes mondes', 'Export my worlds')}</button>
         <label className="world-backup-import" role="button" tabIndex={0} onKeyDown={(event) => {
@@ -104,7 +110,7 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
       <p className="world-backup-hint">{translate('Le fichier contient tes mondes et leurs maisons. Garde-le pour les retrouver sur un autre appareil ou après un effacement du navigateur.', 'This file contains your worlds and homes. Keep it to restore them on another device or after clearing the browser.')}</p>
       {message && <p className="world-backup-message" role="status">{message}</p>}
       <div className="world-library-list">
-        {worlds.map((world) => (
+        {filteredWorlds.map((world) => (
           <div className="world-library-item" key={world.id}>
             <button className="world-library-entry" onClick={() => open(world)} aria-label={translate(`Ouvrir ${world.name}`, `Open ${world.name}`, `Abrir ${world.name}`)} disabled={busy || pending}>
               <strong>{world.name}</strong>
@@ -113,7 +119,7 @@ export function WorldLibrary({ onPlay }: { onPlay: () => void | Promise<void> })
             <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={busy || pending} aria-label={translate(`Supprimer ${world.name}`, `Delete ${world.name}`, `Eliminar ${world.name}`)}>{translate('Supprimer', 'Delete')}</button>
           </div>
         ))}
-        {worlds.length === 0 && <p>{translate('Aucune partie enregistrée pour le moment.', 'No saved games yet.')}</p>}
+        {filteredWorlds.length === 0 && <p>{category === 'solo' ? translate('Aucun monde solo enregistré pour le moment.', 'No solo worlds saved yet.') : translate('Aucun monde multijoueur enregistré pour le moment.', 'No multiplayer worlds saved yet.')}</p>}
       </div>
     </section>
   );

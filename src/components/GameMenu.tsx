@@ -172,16 +172,15 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     const names: Record<GameplayMode, string> = { survival: translate('Survie avec tous les joueurs', 'Survival with every player'), creative: translate('Créatif avec tous les joueurs', 'Creative with every player'), battle: translate('Bataille', 'Combat'), 'city-ancient': translate('Ville ancienne · 10 km', 'Historic City · 10 km'), 'city-modern': translate('Ville moderne · 10 km', 'Modern City · 10 km'), pirates: translate('Pirates en équipe', 'Team Pirates'), football: translate('Match de football', 'Football Match'), maze: translate('Course Labyrinthe', 'Maze Race') };
     const worldName = options?.name.trim().slice(0, 48) || names[gameplayMode];
     const worldId = options?.multiplayer ? `salon-${crypto.randomUUID().slice(0, 8)}` : normalizeRoomId(worldName);
+    setEnabled(shared);
     if (options) useProtectionStore.getState().setProtection({ ...newProtection(), canBreak: options.canBreak, canPlace: options.canPlace, allowDestructiveFire: options.allowDestructiveFire, allowCampfire: options.allowCampfire, allowFloodingWater: options.allowFloodingWater, allowCalmWater: options.allowCalmWater });
     if (readWorldSave(worldId)) useGameStore.getState().openWorld(worldId, worldName);
     else regenerate(gameplayMode, worldId, template, worldName, options?.customWorld);
     if (shared) useGameStore.setState({ worldName });
     if (shared) {
-      setEnabled(true);
       setPendingWorld(worldId);
       configure({ playerName: useMultiplayerStore.getState().playerName, room: worldId, server: useMultiplayerStore.getState().server });
     } else {
-      setEnabled(false);
       setCreateOpen(false);
       void onPlay();
     }
@@ -247,7 +246,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
           </div>
           {imageMessage && <p className="world-image-message" role="status">{imageMessage}</p>}
           {enabled && <PlayerWorlds onPlay={onPlay} />}
-          <MenuActionBar multiplayer={enabled} onSolo={() => setEnabled(false)} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} createDisabled={full} />
+          <MenuActionBar multiplayer={enabled} onMultiplayer={() => setEnabled(true)} onCreate={() => setCreateOpen(true)} onProfile={() => setProfileOpen(true)} createDisabled={full} />
           {soloModeBlocked && <p className="multiplayer-error" role="status">{translate('Les modes Pirates et Football sont réservés au multijoueur.', 'Pirates and Football require multiplayer.')}</p>}
           {enabled && error && <p className="multiplayer-error" role="alert">{error}</p>}
           {pendingWorld && <p className="multiplayer-hint" role="status">{translate('Création du monde et connexion au salon…', 'Creating the world and connecting to the room…')}</p>}
