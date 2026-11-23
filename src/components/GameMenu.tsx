@@ -213,7 +213,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             <div>
               <h1>{!paused && translate('Choisis ton monde', 'Choose your world')}<span className="creator-label">{translate('JEU DU CRÉATEUR', 'CREATOR GAME')}</span></h1>
             </div>
-            <div className="world-entry-actions">{!createOpen && <LanguagePanel inline />}{enabled && <button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={pendingWorld !== null}>{translate('Rejoindre', 'Join')}</button>}{paused && <button className="primary-button resume-button" onClick={onPlay}>{translate('Reprendre', 'Resume')}</button>}</div>
+            <div className="world-entry-actions">{!createOpen && <LanguagePanel inline />}</div>
           </div>
           <div className="world-cards">
             <button className="world-card featured" aria-controls="mes-mondes" aria-expanded={libraryOpen} aria-haspopup="dialog" onClick={() => setLibraryOpen(true)}>

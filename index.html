@@ -897,13 +897,12 @@
       .sidebar-shop img { display: block; width: 100%; height: 130px; object-fit: cover; }
       .sidebar-shop span { position: absolute; right: 0; bottom: 0; left: 0; padding: 9px; font-size: 13px; font-weight: 700; text-shadow: 2px 2px 0 #231507; background: rgba(24,15,8,.72); }
       .world-browser { flex: 1; min-width: 0; max-height: 100vh; padding: 26px 26px 170px; overflow-y: auto; color: #202a43; background: #fff; }
-      .creator-label { display: inline-block; margin-left: 14px; padding: 10px 16px; vertical-align: middle; color: #f4cf65; background: rgba(22,30,43,.85); border: 2px solid #9e8140; font-size: clamp(18px, 2.3vw, 28px); letter-spacing: 2px; text-shadow: none; }
+      .creator-label { display: inline-block; margin-left: 14px; padding: 14px 20px; vertical-align: middle; color: #f4cf65; background: rgba(22,30,43,.85); border: 2px solid #9e8140; font-size: clamp(28px, 3.5vw, 48px); letter-spacing: 3px; text-shadow: none; }
       .community-worlds { margin-top: 26px; padding: 20px; background: rgba(22,30,43,.82); border: 2px solid #4f4c46; }
       .protection-player-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
       .protection-player-row button { padding: 5px; font-size: 10px; }
       .world-browser-header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
       .world-browser-header h1 { margin: 0; color: #202a43; font-size: clamp(24px, 4vw, 40px); text-shadow: none; }
-      .resume-button { width: auto; min-width: 190px; }
       .world-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
       @media (max-width: 1200px) { .world-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
       .world-card { position: relative; width: 100%; max-width: 320px; height: auto; aspect-ratio: 1; min-width: 0; padding: 0; overflow: hidden; color: #fff; text-align: left; background: #26344c; border: 3px solid #6b6f77; box-shadow: 0 5px 0 rgba(17,11,8,.45); cursor: pointer; transition: transform 130ms, border-color 130ms; }
@@ -1183,7 +1182,6 @@
         .world-card-label strong { font-size: 12px; }
         .world-card img { height: clamp(110px, 26vw, 320px); }
         .world-browser-header { align-items: start; flex-direction: column; }
-        .resume-button { width: 100%; }
         .lobby-section { padding: 13px; }
         .recipe-grid { grid-template-columns: 1fr; }
       }
@@ -1211,8 +1209,6 @@
       .match-result-actions { display: flex; justify-content: center; gap: 12px; margin-top: 16px; pointer-events: auto; }
       .match-result-actions button { min-width: 130px; margin-top: 0; }
       .world-entry-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
-      .join-world-button { position: fixed; top: 12px; right: 240px; z-index: 60; width: auto; min-width: 190px; margin: 0; padding: 10px 14px; }
-      @media (max-width: 650px) { .join-world-button { top: 64px; right: 6px; min-width: 104px; padding: 6px 8px; } }
       .menu-brand-icon { width: 52px; height: 52px; object-fit: cover; border: 2px solid #e5ad5a; image-rendering: pixelated; }
       .boutique-content.with-preview { padding-bottom: 0; }
       .boutique-customization { display: grid; grid-template-columns: minmax(0, 1fr) 240px minmax(0, 1fr); gap: 16px; align-items: start; }
