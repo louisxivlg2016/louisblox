@@ -81,10 +81,10 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
     if (rightLeg.current) rightLeg.current.rotation.x += (swing - rightLeg.current.rotation.x) * amount;
     if (headRef.current && state) {
       const bodyYaw = entity.get(PlayerMesh)?.value?.rotation.y ?? state.yaw;
-      const headYaw = canRotateHead(outfit) ? Math.atan2(Math.sin(state.yaw - bodyYaw), Math.cos(state.yaw - bodyYaw)) : 0;
+      const headYaw = preview ? 0 : canRotateHead(outfit) ? Math.atan2(Math.sin(state.yaw - bodyYaw), Math.cos(state.yaw - bodyYaw)) : 0;
       headRef.current.rotation.order = 'YXZ';
       headRef.current.rotation.y += (headYaw - headRef.current.rotation.y) * amount;
-      const pitch = canRotateHead(outfit) ? hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch : 0;
+      const pitch = preview ? 0 : canRotateHead(outfit) ? hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch : 0;
       headRef.current.rotation.x += (pitch - headRef.current.rotation.x) * amount;
       if (outfit === 'soldier') headRef.current.rotation.z = 0;
     }
