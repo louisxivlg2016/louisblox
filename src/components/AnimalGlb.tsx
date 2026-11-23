@@ -1,19 +1,44 @@
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import type { Group, Vector3 } from 'three';
+import { useGLTF } from '@react-three/drei';
+import { Box3, Group, Mesh, NearestFilter, Vector3 } from 'three';
 import type { AnimalKind } from '../game/animals';
 import type { Entity } from 'koota';
 import { PixelPart } from './ItemModel';
-import { ReferenceAnimal } from './ReferenceAnimals';
+import { matteAnimalMaterial, ReferenceAnimal } from './ReferenceAnimals';
 import { AnimalMesh, AnimalMotion, AnimalPosition } from '../game/traits';
+import zombieUrl from '../../assets/models/zombie.glb';
+
+useGLTF.preload(zombieUrl);
 
 function ZombieModel({ entity }: { entity: Entity }) {
-  const leftArm = useRef<Group>(null);
-  const rightArm = useRef<Group>(null);
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
   const previousPosition = useRef<Vector3 | null>(null);
   const renderYaw = useRef<number | null>(null);
+  const { scene } = useGLTF(zombieUrl);
+  const model = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((object) => {
+      if (!(object instanceof Mesh)) return;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        matteAnimalMaterial(material);
+        if (!material.map) continue;
+        material.map.magFilter = NearestFilter;
+        material.map.minFilter = NearestFilter;
+        material.map.generateMipmaps = false;
+        material.map.needsUpdate = true;
+      }
+    });
+    const box = new Box3().setFromObject(clone);
+    const size = box.getSize(new Vector3());
+    const center = box.getCenter(new Vector3());
+    const scale = 1.9 / Math.max(size.y, 0.001);
+    clone.scale.setScalar(scale);
+    clone.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale);
+    return clone;
+  }, [scene]);
   useFrame(({ clock }, delta) => {
     const motion = entity.get(AnimalMotion);
     const position = entity.get(AnimalPosition);
@@ -34,32 +59,14 @@ function ZombieModel({ entity }: { entity: Entity }) {
     }
     const swing = moving ? Math.sin(clock.elapsedTime * 8) * 0.5 : 0;
     const amount = Math.min(1, delta * 12);
-    const arm = moving ? -Math.PI / 2 + swing * 0.12 : 0;
-    for (const part of [leftArm.current, rightArm.current]) {
-      if (part) part.rotation.x += (arm - part.rotation.x) * amount;
-    }
     if (leftLeg.current) leftLeg.current.rotation.x += (swing - leftLeg.current.rotation.x) * amount;
     if (rightLeg.current) rightLeg.current.rotation.x += (-swing - rightLeg.current.rotation.x) * amount;
   });
   return (
     <group>
-      <PixelPart position={[0, 1.62, 0]} size={[0.52, 0.52, 0.52]} color="#5a8f4c" />
-      <PixelPart position={[-0.11, 1.66, 0.266]} size={[0.1, 0.06, 0.025]} color="#18251b" />
-      <PixelPart position={[0.11, 1.66, 0.266]} size={[0.1, 0.06, 0.025]} color="#18251b" />
-      <PixelPart position={[0, 1.5, 0.266]} size={[0.2, 0.05, 0.025]} color="#315c35" />
-      <PixelPart position={[0, 1.04, 0]} size={[0.58, 0.66, 0.32]} color="#3e8266" />
-      <group ref={leftArm} position={[-0.4, 1.34, 0]}>
-        <PixelPart position={[0, -0.32, 0]} size={[0.2, 0.64, 0.24]} color="#5a8f4c" />
-      </group>
-      <group ref={rightArm} position={[0.4, 1.34, 0]}>
-        <PixelPart position={[0, -0.32, 0]} size={[0.2, 0.64, 0.24]} color="#5a8f4c" />
-      </group>
-      <group ref={leftLeg} position={[-0.16, 0.72, 0]}>
-        <PixelPart position={[0, -0.36, 0]} size={[0.26, 0.72, 0.3]} color="#334e8c" />
-      </group>
-      <group ref={rightLeg} position={[0.16, 0.72, 0]}>
-        <PixelPart position={[0, -0.36, 0]} size={[0.26, 0.72, 0.3]} color="#334e8c" />
-      </group>
+      <primitive object={model} />
+      <group ref={leftLeg} name="left-leg" position={[-0.17, 0.7, 0]}><PixelPart position={[0, -0.35, 0]} size={[0.27, 0.7, 0.3]} color="#334e8c" /></group>
+      <group ref={rightLeg} name="right-leg" position={[0.17, 0.7, 0]}><PixelPart position={[0, -0.35, 0]} size={[0.27, 0.7, 0.3]} color="#334e8c" /></group>
     </group>
   );
 }
