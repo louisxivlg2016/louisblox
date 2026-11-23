@@ -40,7 +40,6 @@ import gameIconUrl from '../../assets/icons/louisblox-icon3.jpeg';
 import { useLanguageStore, translate } from '../game/language';
 import { LanguagePanel } from './LanguagePanel';
 import { PlayerWorlds } from './PlayerWorlds';
-import { fileToPixelDataUrl } from '../game/pixelImages';
 
 type ModeCard = {
   mode: GameplayMode;
@@ -65,17 +64,6 @@ const MODE_CARDS = (): ModeCard[] => [
   { mode: 'city-modern', image: translate(citiesFrUrl, citiesEnUrl, citiesEsUrl), alt: translate('Ville moderne, villas et immeubles de verre', 'Modern city with villas and glass buildings'), name: translate('Ville moderne', 'Modern City'), className: 'city-card', description: () => translate('Villas et petits gratte-ciel · 10 km × 10 km', 'Villas and small skyscrapers · 10 km × 10 km'), tag: (enabled) => enabled ? translate('Multijoueur', 'Multiplayer') : 'Solo' },
 ];
 
-const MODE_IMAGES_KEY = 'louisblox-mode-images-v1';
-type ModeImages = Partial<Record<GameplayMode, string>>;
-function readModeImages(): ModeImages {
-  try {
-    const value = JSON.parse(localStorage.getItem(MODE_IMAGES_KEY) ?? '{}') as Record<string, unknown>;
-    return Object.fromEntries(Object.entries(value).filter(([, url]) => typeof url === 'string' && url.startsWith('data:image/png;base64,'))) as ModeImages;
-  } catch {
-    return {};
-  }
-}
-
 export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: () => void | Promise<void>; onShop: () => void }) {
   useLanguageStore((state) => state.language);
   const regenerate = useGameStore((state) => state.regenerate);
@@ -95,8 +83,6 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const [createInitialMultiplayer, setCreateInitialMultiplayer] = useState<boolean | undefined>(undefined);
   const [profileOpen, setProfileOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
-  const [modeImages, setModeImages] = useState<ModeImages>(readModeImages);
-  const [imageMessage, setImageMessage] = useState('');
   const currentMode = useGameStore((state) => state.gameplayMode);
   const [browseMode, setBrowseMode] = useState<GameplayMode>(currentMode);
   useEffect(() => setBrowseMode(currentMode), [currentMode]);
@@ -182,17 +168,6 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
       void onPlay();
     }
   };
-  const changeModeImage = async (mode: GameplayMode, file: File) => {
-    try {
-      const url = await fileToPixelDataUrl(file);
-      const next = { ...modeImages, [mode]: url };
-      setModeImages(next);
-      localStorage.setItem(MODE_IMAGES_KEY, JSON.stringify(next));
-      setImageMessage(translate('Image du mode convertie en pixel art et sauvegardée.', 'Mode image converted to pixel art and saved.'));
-    } catch {
-      setImageMessage(translate('Choisis une image PNG, JPEG, GIF ou WebP de moins de 8 Mo.', 'Choose a PNG, JPEG, GIF, or WebP image smaller than 8 MB.'));
-    }
-  };
   const openJoinMode = (mode: GameplayMode) => {
     if (!enabled) {
       create(mode, false);
@@ -225,7 +200,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               return (
                 <div className="world-card-shell" key={card.mode}>
                   <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode)} disabled={pendingWorld !== null}>
-                    <img src={modeImages[card.mode] ?? card.image} alt={card.alt} />
+                    <img src={card.image} alt={card.alt} />
                     <span className="world-card-label"><strong>{card.name}</strong></span>
                     <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{card.tag(enabled)}</span>
                     {enabled && <span className="world-mode-badges">
@@ -233,12 +208,10 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
                       <span className="world-mode-player-count" aria-label={`${playerCount} ${translate('joueur', 'player')}${playerCount > 1 ? 's' : ''} ${translate('en', 'in')} ${card.name}`}>{playerCount} {translate('joueur', 'player')}{playerCount > 1 ? 's' : ''}</span>
                     </span>}
                   </button>
-                  {enabled && <label className="world-card-image-button" title={translate('Choisir une image pixelisée pour ce mode', 'Choose a pixelated image for this mode')} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>{translate('Image', 'Image')}<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" aria-label={translate(`Choisir une image pour ${card.name}`, `Choose an image for ${card.name}`)} onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void changeModeImage(card.mode, file); event.currentTarget.value = ''; }} /></label>}
                 </div>
               );
             })}
           </div>
-          {imageMessage && <p className="world-image-message" role="status">{imageMessage}</p>}
           {enabled && <PlayerWorlds onPlay={onPlay} />}
           <MenuActionBar multiplayer={enabled} onMultiplayer={() => setEnabled(true)} onCreate={() => { setCreateInitialMultiplayer(undefined); setCreateOpen(true); }} onProfile={() => setProfileOpen(true)} onShop={onShop} createDisabled={full} />
           {enabled && error && <p className="multiplayer-error" role="alert">{error}</p>}
