@@ -208,7 +208,6 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const soloModeBlocked = !enabled && isMultiplayerOnlyMode(currentMode);
   return (
     <div className="menu-screen">
-      {!createOpen && <LanguagePanel />}
       <div className="menu-layout">
         <aside className="menu-sidebar">
           <div className="menu-brand"><img className="menu-brand-icon" src={gameIconUrl} alt="LouisBlox" /><div><strong>LOUISBLOX</strong><small>{translate('Joue, construis, partage.', 'Play, build, share.')}</small></div></div>
@@ -220,7 +219,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             <div>
               <h1>{!paused && translate('Choisis ton monde', 'Choose your world')}<span className="creator-label">{translate('JEU DU CRÉATEUR', 'CREATOR GAME')}</span></h1>
             </div>
-            <div className="world-entry-actions">{enabled && <button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={pendingWorld !== null}>{translate('Rejoindre', 'Join')}</button>}{paused && <button className="primary-button resume-button" onClick={onPlay} disabled={soloModeBlocked} title={soloModeBlocked ? translate('Active le multijoueur pour reprendre cette partie', 'Enable multiplayer to resume this game') : undefined}>{translate('Reprendre', 'Resume')}</button>}</div>
+            <div className="world-entry-actions">{!createOpen && <LanguagePanel inline />}{enabled && <button className="secondary-button join-world-button" onClick={() => setJoinOpen(true)} disabled={pendingWorld !== null}>{translate('Rejoindre', 'Join')}</button>}{paused && <button className="primary-button resume-button" onClick={onPlay} disabled={soloModeBlocked} title={soloModeBlocked ? translate('Active le multijoueur pour reprendre cette partie', 'Enable multiplayer to resume this game') : undefined}>{translate('Reprendre', 'Resume')}</button>}</div>
           </div>
           <div className="world-cards">
             <button className="world-card featured" aria-controls="mes-mondes" aria-expanded={libraryOpen} aria-haspopup="dialog" onClick={() => setLibraryOpen(true)}>
