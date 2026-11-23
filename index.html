@@ -904,7 +904,7 @@
       .resume-button { width: auto; min-width: 190px; }
       .world-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
       @media (max-width: 1200px) { .world-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-      .world-card { position: relative; width: 100%; max-width: 320px; height: 100%; min-width: 0; padding: 0; overflow: hidden; color: #fff; text-align: left; background: #26344c; border: 3px solid #6b6f77; box-shadow: 0 5px 0 rgba(17,11,8,.45); cursor: pointer; transition: transform 130ms, border-color 130ms; }
+      .world-card { position: relative; width: 100%; max-width: 320px; height: auto; aspect-ratio: 1; min-width: 0; padding: 0; overflow: hidden; color: #fff; text-align: left; background: #26344c; border: 3px solid #6b6f77; box-shadow: 0 5px 0 rgba(17,11,8,.45); cursor: pointer; transition: transform 130ms, border-color 130ms; }
       .world-card:hover { transform: translateY(-3px); border-color: #edca64; }
       .world-card:disabled { opacity: .55; cursor: not-allowed; transform: none; }
       .world-card.featured { border-color: #f5d553; }
@@ -1219,12 +1219,13 @@
         .boutique-dressing-room .boutique-avatar-3d { flex-basis: 160px; width: 160px; height: 200px; }
         .chat-toggle { width: 96px; min-height: 48px; }
       }
-      .world-card-shell { position: relative; width: 100%; max-width: 320px; min-width: 0; }
+      .world-card-shell { position: relative; width: 100%; max-width: 320px; height: auto; aspect-ratio: 1; min-width: 0; }
       .world-card .world-card-label { display: none !important; }
       .world-card-image-button { position: absolute; top: 9px; left: 9px; z-index: 2; padding: 5px 7px; color: #fff; background: rgba(20,31,46,.9); border: 1px solid #7288a5; cursor: pointer; font-size: 10px; font-weight: 700; }
       .world-card-image-button input { display: none; }
       .world-image-message { margin: 12px 0 0; color: #52657e; font-size: 12px; }
       .world-card-shell .world-card { width: 100%; height: 100%; }
+      .world-card img { width: 100%; height: 100% !important; object-fit: cover; }
       .world-card-shell .world-card-label { padding-bottom: 14px; }
       .community-random:disabled { opacity: .5; cursor: not-allowed; }
       .community-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
