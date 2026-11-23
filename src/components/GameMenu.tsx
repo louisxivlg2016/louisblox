@@ -233,7 +233,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
                       <span className="world-mode-player-count" aria-label={`${playerCount} ${translate('joueur', 'player')}${playerCount > 1 ? 's' : ''} ${translate('en', 'in')} ${card.name}`}>{playerCount} {translate('joueur', 'player')}{playerCount > 1 ? 's' : ''}</span>
                     </span>}
                   </button>
-                  <label className="world-card-image-button" title={translate('Choisir une image pixelisée pour ce mode', 'Choose a pixelated image for this mode')} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>{translate('Image', 'Image')}<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" aria-label={translate(`Choisir une image pour ${card.name}`, `Choose an image for ${card.name}`)} onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void changeModeImage(card.mode, file); event.currentTarget.value = ''; }} /></label>
+                  {enabled && <label className="world-card-image-button" title={translate('Choisir une image pixelisée pour ce mode', 'Choose a pixelated image for this mode')} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>{translate('Image', 'Image')}<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" aria-label={translate(`Choisir une image pour ${card.name}`, `Choose an image for ${card.name}`)} onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void changeModeImage(card.mode, file); event.currentTarget.value = ''; }} /></label>}
                 </div>
               );
             })}

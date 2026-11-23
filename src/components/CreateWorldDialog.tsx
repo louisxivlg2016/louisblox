@@ -25,7 +25,6 @@ import createWorldTabEsUrl from '../../assets/menu/spanish/crear-un-mundo.webp';
 import createLobbyTabEsUrl from '../../assets/menu/spanish/crear-sala.webp';
 import worldEditorTabEsUrl from '../../assets/menu/spanish/editor-3d.webp';
 import { translate, useLanguageStore } from '../game/language';
-import { fileToPixelDataUrl } from '../game/pixelImages';
 
 export type CreateWorldOptions = {
   name: string;
@@ -43,17 +42,6 @@ export type CreateWorldOptions = {
 
 export function createLobbyOptions(options: CreateWorldOptions, room: string, mode: GameplayMode | null): CreateWorldOptions {
   return { ...options, name: room.trim().slice(0, 48) || options.name, mode: mode ?? options.mode, multiplayer: true };
-}
-
-const TAB_IMAGES_KEY = 'louisblox-create-tab-images-v1';
-type TabImages = Partial<Record<'world' | 'editor', string>>;
-function readTabImages(): TabImages {
-  try {
-    const value = JSON.parse(localStorage.getItem(TAB_IMAGES_KEY) ?? '{}') as Record<string, unknown>;
-    return Object.fromEntries(Object.entries(value).filter(([id, url]) => (id === 'world' || id === 'editor') && typeof url === 'string' && url.startsWith('data:image/png;base64,'))) as TabImages;
-  } catch {
-    return {};
-  }
 }
 
 const initialWorld = createCustomWorld(DEFAULT_WORLD_SOURCE, 73421);
@@ -95,8 +83,6 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
   const [characters, setCharacters] = useState<NonNullable<CustomWorldDefinition['characters']>>(draft?.world.characters ?? []);
   const [sourceDirty, setSourceDirty] = useState(draft?.sourceDirty ?? false);
   const [message, setMessage] = useState(draft ? translate('Ton brouillon a été restauré.', 'Your draft has been restored.') : translate('Exécute le code pour voir le résultat dans l’éditeur.', 'Run the code to see the result in the editor.'));
-  const [tabImages, setTabImages] = useState<TabImages>(readTabImages);
-  const [tabImageMessage, setTabImageMessage] = useState('');
   const [draftNotice, setDraftNotice] = useState(draft ? translate('Brouillon restauré', 'Draft restored') : '');
   const [insertKind, setInsertKind] = useState<BlockKind>(BlockKind.OakPlanks);
   const change = <K extends keyof CreateWorldOptions>(key: K, value: CreateWorldOptions[K]) => {
@@ -107,17 +93,6 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
     setTab(next);
     if (next === 'code' || next === 'editor') change('template', 'custom');
     if (next === 'lobby') change('multiplayer', true);
-  };
-  const changeTabImage = async (id: 'world' | 'editor', file: File) => {
-    try {
-      const url = await fileToPixelDataUrl(file);
-      const next = { ...tabImages, [id]: url };
-      setTabImages(next);
-      localStorage.setItem(TAB_IMAGES_KEY, JSON.stringify(next));
-      setTabImageMessage(translate('Image du bouton convertie en pixel art et sauvegardée.', 'Button image converted to pixel art and saved.'));
-    } catch {
-      setTabImageMessage(translate('Choisis une image PNG, JPEG, GIF ou WebP de moins de 8 Mo.', 'Choose a PNG, JPEG, GIF, or WebP image smaller than 8 MB.'));
-    }
   };
   const changeSource = (value: string) => {
     setSource(value);
@@ -221,16 +196,8 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
       <div className="create-world-form">
         <div className="world-library-heading"><div><h2>{translate('Créer un monde', 'Create World')}</h2><p>{translate('Choisis un terrain, programme-le, construis-le ou crée ton salon.', 'Choose terrain, program it, build it, or create your room.')}</p></div></div>
         <div className="create-world-tabs" role="tablist" aria-label={translate('Création du monde', 'World creation')}>
-          {CREATE_WORLD_TABS().map(([id, label, image]) => {
-            const customizable = id === 'world' || id === 'editor';
-            const customImage = customizable ? tabImages[id] : undefined;
-            return <div className="create-world-tab-shell" key={id}>
-              <button type="button" role="tab" id={`create-tab-${id}`} aria-label={label} aria-selected={tab === id} aria-controls={`create-panel-${id}`} className={tab === id ? 'selected' : ''} onClick={() => openTab(id)}><img src={customImage ?? image} alt="" /></button>
-              {customizable && <label className="create-world-tab-image" title={translate(`Choisir une image pour le bouton ${label}`, `Choose an image for the ${label} button`)}>{translate('Image', 'Image')}<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" aria-label={translate(`Choisir une image pour le bouton ${label}`, `Choose an image for the ${label} button`)} onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void changeTabImage(id, file); event.currentTarget.value = ''; }} /></label>}
-            </div>;
-          })}
+          {CREATE_WORLD_TABS().map(([id, label, image]) => <button type="button" role="tab" id={`create-tab-${id}`} aria-label={label} aria-selected={tab === id} aria-controls={`create-panel-${id}`} className={tab === id ? 'selected' : ''} key={id} onClick={() => openTab(id)}><img src={image} alt="" /></button>)}
         </div>
-        {tabImageMessage && <p className="world-image-message create-tab-image-message" role="status">{tabImageMessage}</p>}
         {tab === 'world' && <div id="create-panel-world" role="tabpanel" aria-labelledby="create-tab-world" className="create-world-settings">
           <label htmlFor="world-name">{translate('Nom du monde', 'World name', 'Nombre del mundo')}
             <input id="world-name" value={options.name} onChange={(event) => change('name', event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); submit(); } }} placeholder={translate('Nom de ton monde', 'Your world name')} maxLength={48} required autoFocus />
