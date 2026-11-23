@@ -32,7 +32,7 @@ export function changeInventory(kind: SelectedKind, amount: number) {
     const count = Math.max(0, (kind === 'apple' ? state.apples : state.itemCounts[key] ?? 0) + amount);
     const itemCounts = kind === 'apple' ? state.itemCounts : { ...state.itemCounts, [key]: count };
     const apples = kind === 'apple' ? count : state.apples;
-    if (state.gameplayMode === 'survival' && amount > 0 && kind !== 'hand' && !state.hotbarSlots.includes(kind)) {
+    if (amount > 0 && kind !== 'hand' && !state.hotbarSlots.includes(kind)) {
       const empty = state.hotbarSlots.findIndex((slot) => slot === null);
       if (empty >= 0) {
         const hotbarSlots = [...state.hotbarSlots];
