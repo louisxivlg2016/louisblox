@@ -1,8 +1,8 @@
 import type { World } from 'koota';
 import type { Voxel } from './voxel';
 import { BlockKind } from './voxel';
-import { respawnAtBase } from './battle';
 import { streamChunks } from './chunks';
+import { teleportToHome } from './teleport';
 import { Player, PlayerHealth, PlayerState } from './traits';
 import { changeInventory, inventoryCount } from './inventory';
 import { getItemMeta, selectionInfo } from './items';
@@ -93,7 +93,7 @@ export function useShopBlock(world: World, block: Voxel) {
   }
   if (shop.action === 'teleport' && shop.destination) {
     for (let index = 0; index < 12; index += 1) streamChunks(world, shop.destination.x, shop.destination.z);
-    respawnAtBase(world, null, shop.destination);
+    teleportToHome(world, { ...shop.destination, yaw: 0, pitch: 0 });
     world.queryFirst(Player)?.set(PlayerState, { yaw: 0, pitch: 0 });
     store.setNotice(translate('Téléportation réussie !', 'Teleportation successful!'));
     return true;
