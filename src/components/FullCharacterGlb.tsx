@@ -110,7 +110,6 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
 }
 
 export function FullCharacterGlb(props: Parameters<typeof FullCharacter>[0]) {
-  if (props.outfit === 'classic-boy' || props.outfit === 'classic-girl') return <ClassicCharacterGlb {...props} outfit="default" character={props.outfit === 'classic-girl' ? 'girl' : 'boy'} />;
   if (props.outfit === 'worker') return <ClassicCharacterGlb {...props} outfit="worker" />;
   return <Suspense fallback={null}><FullCharacter {...props} /></Suspense>;
 }
