@@ -15,6 +15,7 @@ import { clearAnimalInterpolation, reportAnimalSpawn } from './animalSync';
 import { dismount } from './vehicles';
 import { useGameStore } from './store';
 import type { Home } from './homes';
+import { playerIdentity } from './playerIdentity';
 
 function safeDestination(world: World, x: number, y: number, z: number) {
   const blocks = getBlockIndex(world);
@@ -37,8 +38,10 @@ function safeDestination(world: World, x: number, y: number, z: number) {
 
 function bringTamedAnimals(world: World, x: number, y: number, z: number, yaw: number) {
   let index = 0;
+  const selfId = playerIdentity();
   for (const animal of world.query(AnimalTame, AnimalPosition, AnimalMotion)) {
-    if (!animal.get(AnimalTame)?.tamed) continue;
+    const tame = animal.get(AnimalTame);
+    if (!tame?.tamed || tame.ownerId !== selfId) continue;
     clearAnimalInterpolation(world, animal);
     const offset = 1.2 + index * 0.8;
     const destination = safeDestination(world, x + offset, y, z);

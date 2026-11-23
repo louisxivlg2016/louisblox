@@ -8,6 +8,7 @@ import { Player, PlayerPosition, PlayerState, AnimalPosition, AnimalTame } from 
 import { BLOCK_INFO, BlockKind, isWaterBlock, voxelKey } from '../game/voxel';
 import { world } from '../game/world';
 import { useNavigationStore } from '../game/navigation';
+import { playerIdentity } from '../game/playerIdentity';
 
 const CELL = 4;
 const MINI_RADIUS = 32;
@@ -141,8 +142,10 @@ export function Minimap() {
         context.arc(center + dx, center + dz, 4, 0, Math.PI * 2);
         context.fill();
       }
+      const selfId = playerIdentity();
       for (const animal of world.query(AnimalTame, AnimalPosition)) {
-        if (!animal.get(AnimalTame)?.tamed) continue;
+        const tame = animal.get(AnimalTame);
+        if (!tame?.tamed || tame.ownerId !== selfId) continue;
         const position = animal.get(AnimalPosition)!;
         const rawDx = (position.x - centerX) * CELL;
         const rawDz = (position.z - centerZ) * CELL;

@@ -2,13 +2,14 @@ import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Camera } from 'three';
 import { findAnimalTarget } from '../combat';
-import { animalFoodNotice, canFeedAnimal, feedAnimal, isTamedAnimal } from '../taming';
+import { animalFoodNotice, canFeedAnimal, feedAnimal, isOwnTamedAnimal, isTamedAnimal } from '../taming';
 import { reportAnimalTame } from '../animalSync';
 import { useGameStore } from '../store';
 import { getItemMeta } from '../items';
 import { Player, PlayerPosition } from '../traits';
 import { useCompanionMenuStore } from '../companionMenu';
 import { releasePointerForOverlay } from '../input';
+import { translate } from '../language';
 
 const origin = new Vector3();
 const direction = new Vector3();
@@ -25,6 +26,10 @@ export function animalInteractionSystem(world: World, camera: Camera, interact: 
   const target = findAnimalTarget(world, origin, direction, 5.5);
   if (!target || target.health <= 0) return false;
   if (isTamedAnimal(target.entity) && !canFeedAnimal(target.kind, selected)) {
+    if (!isOwnTamedAnimal(target.entity)) {
+      useGameStore.getState().setNotice(translate('Cet animal appartient déjà à un autre joueur.', 'This animal already belongs to another player.', 'Este animal ya pertenece a otro jugador.'));
+      return true;
+    }
     useCompanionMenuStore.getState().openFor(target.entity);
     useGameStore.getState().setMode('pause');
     releasePointerForOverlay();

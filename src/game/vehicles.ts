@@ -4,7 +4,7 @@ import { addVoxel, chunkCoordinate, ensureChunkDepth, getBlockIndex, getColumnTo
 import { getTouchMovement, isDown } from './input';
 import { MAX_BUILD_Y, MIN_WORLD_Y, SEA_LEVEL } from './levels';
 import { useGameStore } from './store';
-import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, HorseRider, Player, PlayerBody, PlayerCollider, PlayerMount, PlayerPosition, PlayerState, Trader, TraderPosition, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
+import { Animal, AnimalMesh, AnimalMotion, AnimalPosition, AnimalTame, CamelLeash, HorseRider, Player, PlayerBody, PlayerCollider, PlayerMount, PlayerPosition, PlayerState, Trader, TraderPosition, Vehicle, VehicleHealth, VehicleMesh, VehicleMotion, VehiclePosition } from './traits';
 import { BlockKind, isWaterBlock, voxelKey } from './voxel';
 import { EXTRA_BLOCKS, isCrop, isGrassPlate, isRail, isSlab, isStair } from './extraBlocks';
 import { turnToward } from './rotation';
@@ -21,6 +21,7 @@ import { useRadioStore } from './radio';
 import { useVehicleSteeringStore } from './vehicleSteering';
 import { nearestVillageAt, tradeCityAt } from './villages';
 import { useNavigationStore } from './navigation';
+import { playerIdentity } from './playerIdentity';
 export { METRO_LENGTH, PLANE_SCALE, TRAIN_LENGTH } from './vehicleTypes';
 
 const isVehicleFoliage = (kind: BlockKind) => kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves;
@@ -138,6 +139,11 @@ export function mountEntity(world: World, vehicle: Entity, kind: MountKind, role
   const player = world.queryFirst(Player);
   const mount = player?.get(PlayerMount);
   if (!player || !mount) return false;
+  const tame = vehicle.get(AnimalTame);
+  if (tame?.tamed && tame.ownerId !== playerIdentity()) {
+    useGameStore.getState().setNotice(translate('Cet animal appartient déjà à un autre joueur.', 'This animal already belongs to another player.', 'Este animal ya pertenece a otro jugador.'));
+    return false;
+  }
   if (mount.vehicle) dismount(world);
   if (!isAnimalMount(kind)) {
     const motion = vehicle.get(VehicleMotion);

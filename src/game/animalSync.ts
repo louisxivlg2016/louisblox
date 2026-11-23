@@ -11,7 +11,7 @@ import { turnToward } from './rotation';
 import { applyAnimalDeath, isAnimalDead } from './deathSync';
 import { applyTameState } from './taming';
 
-export type AnimalSnapshot = { id: string; kind: AnimalKind; x: number; y: number; z: number; yaw: number; health: number; speed: number; running?: boolean; saddled?: boolean; tamed?: boolean; baby?: boolean; friendship?: number; happiness?: number; lastFedAt?: number };
+export type AnimalSnapshot = { id: string; kind: AnimalKind; x: number; y: number; z: number; yaw: number; health: number; speed: number; running?: boolean; saddled?: boolean; tamed?: boolean; ownerId?: string; baby?: boolean; friendship?: number; happiness?: number; lastFedAt?: number };
 export type FishSnapshot = { id: string; kind: FishKind; x: number; y: number; z: number; yaw: number; age: number; phase: number; speed: number };
 
 const animalKinds = new Set<AnimalKind>(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie', 'monkey', 'ocelot', 'giraffe', 'elephant']);
@@ -41,7 +41,7 @@ function reportAnimal(entity: Entity, type: 'animal-spawn' | 'animal-tame') {
   const health = entity.get(AnimalHealth)?.value;
   if (!socket || socket.readyState !== WebSocket.OPEN || !entity.isAlive() || !id || !kind || !position || !motion || health === undefined || health <= 0 || isAnimalDead(id)) return false;
   const tame = entity.get(AnimalTame);
-  const animal: AnimalSnapshot = { id, kind, x: position.x, y: position.y, z: position.z, yaw: entity.get(AnimalMesh)?.value?.rotation.y ?? motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt };
+  const animal: AnimalSnapshot = { id, kind, x: position.x, y: position.y, z: position.z, yaw: entity.get(AnimalMesh)?.value?.rotation.y ?? motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, ownerId: tame?.ownerId ?? undefined, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt };
   socket.send(JSON.stringify({ type, animal }));
   return true;
 }
@@ -73,6 +73,7 @@ export function isAnimalSnapshot(value: unknown): value is AnimalSnapshot {
     && (data.running === undefined || typeof data.running === 'boolean')
     && (data.saddled === undefined || typeof data.saddled === 'boolean')
     && (data.tamed === undefined || typeof data.tamed === 'boolean')
+    && (data.ownerId === undefined || typeof data.ownerId === 'string' && data.ownerId.length > 0 && data.ownerId.length <= 80)
     && (data.baby === undefined || typeof data.baby === 'boolean')
     && ['friendship', 'happiness', 'lastFedAt'].every((key) => data[key] === undefined || typeof data[key] === 'number' && Number.isFinite(data[key]));
 }
@@ -109,7 +110,7 @@ export function applyAnimalSnapshots(world: World, snapshots: AnimalSnapshot[], 
     let entity: Entity | undefined = world.query(Animal, AnimalId).find((candidate) => candidate.get(AnimalId) === snapshot.id);
     if (entity === undefined) entity = spawnAnimal(world, snapshot.kind, snapshot.x, snapshot.y, snapshot.z, 0, snapshot.id) ?? undefined;
     if (entity === undefined) continue;
-    applyTameState(world, entity, { tamed: snapshot.tamed === true, baby: snapshot.baby === true, friendship: snapshot.friendship, happiness: snapshot.happiness, lastFedAt: snapshot.lastFedAt });
+    applyTameState(world, entity, { tamed: snapshot.tamed === true, ownerId: snapshot.ownerId, baby: snapshot.baby === true, friendship: snapshot.friendship, happiness: snapshot.happiness, lastFedAt: snapshot.lastFedAt });
     if (entity.get(CamelLeash) || entity === localMount) continue;
     entity.set(AnimalId, snapshot.id);
     const position = entity.get(AnimalPosition)!;
@@ -227,7 +228,7 @@ export function syncAnimalState(world: World, dt: number) {
     const position = entity.get(AnimalPosition)!;
     const motion = entity.get(AnimalMotion)!;
     const tame = entity.get(AnimalTame);
-    return [{ id, kind: entity.get(Animal)!.kind, x: position.x, y: position.y, z: position.z, yaw: entity.get(AnimalMesh)?.value?.rotation.y ?? motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: entity.get(Animal)!.kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt }];
+    return [{ id, kind: entity.get(Animal)!.kind, x: position.x, y: position.y, z: position.z, yaw: entity.get(AnimalMesh)?.value?.rotation.y ?? motion.displayYaw, health, speed: motion.speed, running: motion.running, saddled: entity.get(Animal)!.kind === 'horse' && entity.get(HorseRider)?.saddled === true, tamed: tame?.tamed === true, ownerId: tame?.ownerId ?? undefined, baby: tame?.baby === true, friendship: tame?.friendship, happiness: tame?.happiness, lastFedAt: tame?.lastFedAt }];
   });
   const fish = world.query(Fish, FishId, FishPosition, FishMotion).map((entity) => {
     const position = entity.get(FishPosition)!;

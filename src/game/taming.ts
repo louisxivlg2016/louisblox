@@ -9,6 +9,7 @@ import { animalHitByPlayer } from './combat';
 import { changeInventory } from './inventory';
 import { translate } from './language';
 import { DAY_DURATION } from './dayNight';
+import { playerIdentity } from './playerIdentity';
 
 export const TAMED_ANIMAL_MONTH_DAYS = 30;
 
@@ -23,7 +24,7 @@ export function companionAnimalName(kind: AnimalKind) {
   return names()[kind] ?? kind;
 }
 
-type TameRecord = { id: string; kind: AnimalKind; tamedAt: number; giftDay: number; baby: boolean; babyBorn: boolean; lastFedAt: number; friendship: number; x?: number; y?: number; z?: number; lastBabyMonth?: number; adultMonth?: number; sleeping?: boolean; birthRestUntil?: number };
+type TameRecord = { id: string; kind: AnimalKind; ownerId?: string; tamedAt: number; giftDay: number; baby: boolean; babyBorn: boolean; lastFedAt: number; friendship: number; x?: number; y?: number; z?: number; lastBabyMonth?: number; adultMonth?: number; sleeping?: boolean; birthRestUntil?: number };
 const records = new WeakMap<World, Map<string, TameRecord>>();
 const recordWorlds = new WeakMap<World, string>();
 const positionSaves = new WeakMap<World, number>();
@@ -78,6 +79,7 @@ export function initTaming(world: World) {
         saved.set(record.id, {
           id: record.id,
           kind: record.kind as AnimalKind,
+          ownerId: typeof record.ownerId === 'string' && record.ownerId.length > 0 && record.ownerId.length <= 80 ? record.ownerId : playerIdentity(),
           tamedAt: record.tamedAt!,
           giftDay: record.giftDay!,
           baby: record.baby === true,
@@ -118,6 +120,7 @@ export function applyTameState(world: World, entity: Entity, state?: Partial<Tam
   const record: TameRecord = {
     id,
     kind,
+    ownerId: state?.ownerId ?? existing?.ownerId,
     tamedAt: state?.tamedAt ?? existing?.tamedAt ?? currentDay(world) * 1200,
     giftDay: state?.giftDay ?? existing?.giftDay ?? currentDay(world),
     baby: state?.baby ?? existing?.baby ?? false,
@@ -135,7 +138,7 @@ export function applyTameState(world: World, entity: Entity, state?: Partial<Tam
   const changed = !existing || (Object.keys(record) as Array<keyof TameRecord>).some((key) => record[key] !== existing[key]);
   saved.set(id, record);
   const happiness = typeof state?.happiness === 'number' && Number.isFinite(state.happiness) ? Math.max(0, Math.min(100, Math.round(state.happiness))) : Math.max(0, Math.min(100, Math.ceil(100 * (1 - (Date.now() - record.lastFedAt) / FEED_INTERVAL_MS))));
-  const tame = { tamed: true, giftDay: record.giftDay, baby: record.baby, babyBorn: record.babyBorn, friendship: record.friendship, happiness, lastFedAt: record.lastFedAt };
+  const tame = { tamed: true, ownerId: record.ownerId ?? null, giftDay: record.giftDay, baby: record.baby, babyBorn: record.babyBorn, friendship: record.friendship, happiness, lastFedAt: record.lastFedAt };
   if (entity.has(AnimalTame)) entity.set(AnimalTame, tame);
   else entity.add(AnimalTame(tame));
   const rest = { sleeping: record.sleeping === true, birthRestUntil: record.birthRestUntil ?? null };
@@ -146,6 +149,15 @@ export function applyTameState(world: World, entity: Entity, state?: Partial<Tam
 
 export function isTamedAnimal(entity: Entity) {
   return entity.get(AnimalTame)?.tamed === true;
+}
+
+export function isOwnTamedAnimal(entity: Entity) {
+  const tame = entity.get(AnimalTame);
+  return tame?.tamed === true && tame.ownerId === playerIdentity();
+}
+
+function tameOwnershipNotice() {
+  useGameStore.getState().setNotice(translate('Cet animal appartient déjà à un autre joueur.', 'This animal already belongs to another player.', 'Este animal ya pertenece a otro jugador.'));
 }
 
 export function companionSchedule(world: World, entity: Entity) {
@@ -174,6 +186,10 @@ function consumeFood(selected: SelectedKind) {
 }
 
 export function wakeTamedAnimal(world: World, entity: Entity) {
+  if (!isOwnTamedAnimal(entity)) {
+    tameOwnershipNotice();
+    return;
+  }
   const rest = entity.get(AnimalRest);
   if (rest) entity.set(AnimalRest, { sleeping: false, birthRestUntil: null });
   const record = entity.get(AnimalId) ? records.get(world)?.get(entity.get(AnimalId)!) : undefined;
@@ -202,6 +218,12 @@ export function feedAnimal(world: World, entity: Entity, selected: SelectedKind)
   const id = entity.get(AnimalId);
   if (!kind || !id) return false;
   const store = useGameStore.getState();
+  const existing = records.get(world)!.get(id);
+  const ownerId = existing?.ownerId ?? entity.get(AnimalTame)?.ownerId;
+  if ((existing || isTamedAnimal(entity)) && ownerId !== playerIdentity()) {
+    tameOwnershipNotice();
+    return 'handled';
+  }
   if (!canFeedAnimal(kind, selected)) {
     store.setNotice(animalFoodNotice(kind));
     return 'handled';
@@ -211,11 +233,11 @@ export function feedAnimal(world: World, entity: Entity, selected: SelectedKind)
     return 'handled';
   }
   consumeFood(selected);
-  const existing = records.get(world)!.get(id);
   const giftDay = existing?.giftDay ?? currentDay(world);
   const record: TameRecord = {
     id,
     kind,
+    ownerId: existing?.ownerId ?? playerIdentity(),
     tamedAt: existing?.tamedAt ?? giftDay * 1200,
     giftDay,
     baby: existing?.baby ?? false,
@@ -226,7 +248,7 @@ export function feedAnimal(world: World, entity: Entity, selected: SelectedKind)
     friendship: existing ? Math.min(5, existing.friendship + 1) : 1,
   };
   records.get(world)!.set(id, record);
-  const tame = { tamed: true, giftDay, baby: record.baby, babyBorn: record.babyBorn, friendship: record.friendship, happiness: 100, lastFedAt: record.lastFedAt };
+  const tame = { tamed: true, ownerId: record.ownerId ?? null, giftDay, baby: record.baby, babyBorn: record.babyBorn, friendship: record.friendship, happiness: 100, lastFedAt: record.lastFedAt };
   if (entity.has(AnimalTame)) entity.set(AnimalTame, tame);
   else entity.add(AnimalTame(tame));
   const love = entity.get(AnimalLove);
@@ -253,7 +275,7 @@ async function spawnBaby(world: World, parent: Entity, record: TameRecord) {
   const z = position.z + 1.2;
   const id = `baby:${parentId}:${record.giftDay}`;
   const baby = spawnAnimal(world, record.kind, x, groundAt(world, x, z, position.y + 4), z, record.giftDay + record.tamedAt, id);
-  if (baby) applyTameState(world, baby, { id, tamed: true, tamedAt: record.tamedAt, giftDay: record.giftDay, baby: true, babyBorn: true, lastBabyMonth: record.lastBabyMonth, adultMonth: (record.lastBabyMonth ?? currentMonth(world)) + 1 });
+  if (baby) applyTameState(world, baby, { id, tamed: true, ownerId: record.ownerId, tamedAt: record.tamedAt, giftDay: record.giftDay, baby: true, babyBorn: true, lastBabyMonth: record.lastBabyMonth, adultMonth: (record.lastBabyMonth ?? currentMonth(world)) + 1 });
 }
 
 export function tamingSystem(world: World, _dt: number) {
@@ -262,6 +284,7 @@ export function tamingSystem(world: World, _dt: number) {
   const month = currentMonth(world);
   const elapsed = world.queryFirst(Environment)?.get(Environment)?.elapsed ?? 0;
   const now = Date.now();
+  const selfId = playerIdentity();
   let giftsChanged = false;
   let hungerChanged = false;
   let birthsChanged = false;
@@ -273,7 +296,7 @@ export function tamingSystem(world: World, _dt: number) {
     const id = entity.get(AnimalId)!;
     const saved = records.get(world);
     const record = saved?.get(id);
-    if (!tame.tamed || !record) continue;
+    if (!tame.tamed || tame.ownerId !== selfId || !record) continue;
     if (now - record.lastFedAt >= FEED_INTERVAL_MS) {
       saved!.delete(id);
       entity.remove(AnimalTame);
