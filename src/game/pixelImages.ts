@@ -14,10 +14,13 @@ function pixelDataUrl(source: CanvasImageSource, width: number, height: number, 
   return output.toDataURL('image/png');
 }
 
-export async function fileToPixelDataUrl(file: File, width = 96, height = 64, scale = 3) {
+export async function fileToPixelDataUrl(file: File, maxSize = 256, scale = 2) {
   if (!['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024) throw new Error('Choose a PNG, JPEG, GIF, or WebP image smaller than 8 MB.');
   const bitmap = await createImageBitmap(file);
   try {
+    const landscape = bitmap.width >= bitmap.height;
+    const width = landscape ? maxSize : Math.max(1, Math.round(maxSize * bitmap.width / bitmap.height));
+    const height = landscape ? Math.max(1, Math.round(maxSize * bitmap.height / bitmap.width)) : maxSize;
     return pixelDataUrl(bitmap, width, height, scale);
   } finally {
     bitmap.close();
