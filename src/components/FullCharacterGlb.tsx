@@ -30,11 +30,11 @@ import classicGirlUrl from '../../assets/models/full-classic-girl.glb';
 import classicBoyUrl from '../../assets/models/full-classic-boy.glb';
 import traderUrl from '../../assets/models/full-trader.glb';
 import footballerUrl from '../../assets/models/full-footballer.glb';
-import { ClassicCharacterGlb } from './ClassicCharacterGlb';
+import workerUrl from '../../assets/models/full-worker.glb';
 import { PoliceSunglasses } from './PoliceSunglasses';
 
 type FullCharacterModel = Exclude<OutfitKind, 'default'> | 'classic-girl' | 'classic-boy';
-const models: Partial<Record<FullCharacterModel, string>> = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, corsair: corsairUrl, footballer: footballerUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
+const models: Partial<Record<FullCharacterModel, string>> = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, corsair: corsairUrl, footballer: footballerUrl, worker: workerUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
 
 export function hasFullCharacter(_outfit: OutfitKind, _wig: WigSelection = 'auto') {
   return true;
@@ -110,6 +110,5 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
 }
 
 export function FullCharacterGlb(props: Parameters<typeof FullCharacter>[0]) {
-  if (props.outfit === 'worker') return <ClassicCharacterGlb {...props} outfit="worker" />;
   return <Suspense fallback={null}><FullCharacter {...props} /></Suspense>;
 }
