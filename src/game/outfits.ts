@@ -41,7 +41,7 @@ export function isWigSelection(value: unknown): value is WigSelection {
 }
 
 export function canRotateHead(outfit: OutfitKind) {
-  return outfit === 'knight' || outfit === 'louis14' || outfit === 'trader' || outfit === 'military';
+  return outfit === 'default' || outfit === 'worker' || outfit === 'footballer' || outfit === 'knight' || outfit === 'louis14' || outfit === 'trader' || outfit === 'military';
 }
 
 export function selectedWig(outfit: OutfitKind, selection: WigSelection): WigKind | null {

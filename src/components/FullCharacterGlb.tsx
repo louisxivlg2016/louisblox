@@ -30,7 +30,8 @@ import classicGirlUrl from '../../assets/models/full-classic-girl.glb';
 import classicBoyUrl from '../../assets/models/full-classic-boy.glb';
 import traderUrl from '../../assets/models/full-trader.glb';
 import footballerUrl from '../../assets/models/full-footballer.glb';
-import { WorkerCharacterGlb } from './WorkerCharacterGlb';
+import { ClassicCharacterGlb } from './ClassicCharacterGlb';
+import { FootballerAvatar } from './FootballerAvatar';
 import { PoliceSunglasses } from './PoliceSunglasses';
 
 type FullCharacterModel = Exclude<OutfitKind, 'default'> | 'classic-girl' | 'classic-boy';
@@ -110,6 +111,8 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
 }
 
 export function FullCharacterGlb(props: Parameters<typeof FullCharacter>[0]) {
-  if (props.outfit === 'worker') return <Suspense fallback={null}><WorkerCharacterGlb {...props} /></Suspense>;
+  if (props.outfit === 'classic-boy' || props.outfit === 'classic-girl') return <ClassicCharacterGlb {...props} outfit="default" character={props.outfit === 'classic-girl' ? 'girl' : 'boy'} />;
+  if (props.outfit === 'worker') return <ClassicCharacterGlb {...props} outfit="worker" />;
+  if (props.outfit === 'footballer') return <FootballerAvatar {...props} outfit="footballer" />;
   return <Suspense fallback={null}><FullCharacter {...props} /></Suspense>;
 }
