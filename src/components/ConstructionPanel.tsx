@@ -5,7 +5,7 @@ import { translate } from '../game/language';
 import { useGameStore } from '../game/store';
 import { world } from '../game/world';
 import { selectedItemPrice, sellSelectedItem } from '../game/shops';
-import { inventoryCount } from '../game/inventory';
+import { sellableInventoryCount } from '../game/inventory';
 import { selectionInfo } from '../game/items';
 import { ItemIcon } from './ItemIcon';
 
@@ -14,11 +14,8 @@ export function ConstructionPanel() {
   const setOpen = useConstructionStore((state) => state.setOpen);
   const coins = useGameStore((state) => state.coins);
   const selected = useGameStore((state) => state.selected);
-  const gameplayMode = useGameStore((state) => state.gameplayMode);
-  const itemCounts = useGameStore((state) => state.itemCounts);
-  const apples = useGameStore((state) => state.apples);
   const price = selectedItemPrice(selected);
-  const count = inventoryCount(selected, { gameplayMode, itemCounts, apples });
+  const count = sellableInventoryCount(selected, useGameStore.getState());
   const stock = count;
   const canSell = price > 0 && stock > 0;
   if (!open) return null;

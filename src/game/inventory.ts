@@ -7,12 +7,19 @@ export type InventoryState = {
   gameplayMode: GameplayMode;
   itemCounts: Record<string, number>;
   apples?: number;
+  hotbarSlots?: Array<SelectedKind | null>;
 };
 
 export const inventoryKey = (kind: SelectedKind) => typeof kind === 'number' ? `block_${kind}` : kind;
 
 export function inventoryCount(kind: SelectedKind, state: InventoryState) {
   return kind === 'apple' && typeof state.apples === 'number' ? state.apples : state.itemCounts[inventoryKey(kind)] ?? 0;
+}
+
+export function sellableInventoryCount(kind: SelectedKind, state: InventoryState) {
+  const count = inventoryCount(kind, state);
+  if (count > 0 || state.gameplayMode === 'survival') return count;
+  return state.hotbarSlots?.includes(kind) ? 1 : 0;
 }
 
 export function hasInventory(kind: SelectedKind, state: InventoryState) {

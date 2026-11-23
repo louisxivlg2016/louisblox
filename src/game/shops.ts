@@ -4,7 +4,7 @@ import { BlockKind } from './voxel';
 import { streamChunks } from './chunks';
 import { teleportToHome } from './teleport';
 import { Player, PlayerHealth, PlayerState } from './traits';
-import { changeInventory, inventoryCount } from './inventory';
+import { changeInventory, sellableInventoryCount } from './inventory';
 import { getItemMeta, selectionInfo } from './items';
 import type { SelectedKind } from './items';
 import { useGameStore } from './store';
@@ -43,7 +43,7 @@ export function sellSelectedItem() {
     }
     lastCreativeSale = now;
   }
-  if (inventoryCount(kind, store) <= 0) {
+  if (sellableInventoryCount(kind, store) <= 0) {
     store.setNotice(translate('Tu n’as plus cet objet à vendre.', 'You have no more of this item to sell.'));
     return false;
   }
@@ -116,7 +116,7 @@ export function useShopBlock(world: World, block: Voxel) {
     return true;
   }
   if (shop.action === 'sell') {
-    if (inventoryCount(shop.item, store) < count) {
+    if (sellableInventoryCount(shop.item, store) < count) {
       store.setNotice(translate(`Il te faut ${itemName} ×${count} à vendre.`, `You need ${itemName} ×${count} to sell.`));
       return true;
     }
