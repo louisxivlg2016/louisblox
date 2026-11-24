@@ -33,7 +33,7 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     if (cape) part = 'body';
     else if (Math.abs(x) < width * 0.38 && y > floor + height * upperHeadStart || Math.abs(x) < width * headWidth && y > floor + height * headBottom) part = 'head';
     else if (Math.abs(x) > width * 0.25 && y > floor + height * 0.28 && y < floor + height * 0.82) part = `${side}Arm`;
-    else if (legs && outfit !== 'princess' && Math.abs(x) < width * 0.28 && y < floor + height * (outfit === 'pirate' ? 0.36 : 0.48)) part = y < floor + height * 0.24 ? `${side}LowerLeg` : `${side}Leg`;
+    else if (legs && outfit !== 'princess' && Math.abs(x) < width * 0.28 && y < floor + height * (outfit === 'pirate' ? 0.36 : 0.42)) part = y < floor + height * 0.24 ? `${side}LowerLeg` : `${side}Leg`;
     indices[part].push(a, b, c);
   }
   return { geometry, indices, material: appearance ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair, princessHair, outfit) : material };
@@ -86,7 +86,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
       } else {
         const side = part.startsWith('left') ? -1 : 1;
         const lowerLeg = part.endsWith('LowerLeg');
-        const pivotY = floor + height * (part === 'head' ? 0.68 : part.endsWith('Arm') ? 0.7 : lowerLeg ? 0.24 : 0.48);
+        const pivotY = floor + height * (part === 'head' ? 0.68 : part.endsWith('Arm') ? 0.7 : lowerLeg ? 0.24 : outfit === 'pirate' ? 0.36 : 0.42);
         const pivotX = part === 'head' ? 0 : side * width * (part.endsWith('Arm') ? 0.27 : 0.12);
         let pivot = rig[part];
         if (!pivot) {
