@@ -1,4 +1,4 @@
-import { Box3, BoxGeometry, BufferGeometry, Group, MathUtils, Mesh, Vector3 } from 'three';
+import { Box3, BoxGeometry, BufferGeometry, CapsuleGeometry, CylinderGeometry, Group, MathUtils, Mesh, Vector3 } from 'three';
 import type { Material, Object3D } from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { animalMaterial } from './animalTextures';
@@ -44,14 +44,17 @@ function addPrincessHair(root: Group, width: number, height: number, depth: numb
   hair.name = 'princess-back-hair';
   hair.position.y = offsetY;
   const material = animalMaterial(hairColor ?? '#5a321c');
-  const back = new Mesh(new BoxGeometry(width * 0.32, height * 0.28, depth * 0.14), material);
+  const back = new Mesh(new CapsuleGeometry(width * 0.12, height * 0.18, 6, 12), material);
+  back.scale.set(1.35, 1, 0.65);
   back.position.set(0, floor + height * 0.76, -depth * 0.55);
   hair.add(back);
-  const crown = new Mesh(new BoxGeometry(width * 0.31, height * 0.075, depth * 0.56), material);
+  const crown = new Mesh(new CylinderGeometry(width * 0.16, width * 0.16, height * 0.075, 16), material);
+  crown.scale.z = 1.6;
   crown.position.set(0, floor + height * 0.89, 0);
   hair.add(crown);
   for (const side of [-1, 1]) {
-    const strand = new Mesh(new BoxGeometry(width * 0.1, height * 0.26, depth * 0.12), material);
+    const strand = new Mesh(new CapsuleGeometry(width * 0.05, height * 0.18, 6, 10), material);
+    strand.scale.z = 0.75;
     strand.position.set(side * width * 0.12, floor + height * 0.68, -depth * 0.62);
     hair.add(strand);
   }
