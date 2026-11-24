@@ -30,6 +30,9 @@ import survivalEsUrl from '../../assets/menu/spanish/modo-survival.webp';
 import creativeFrUrl from '../../assets/menu/creative.webp';
 import creativeEnUrl from '../../assets/menu/english/creative-world.webp';
 import creativeEsUrl from '../../assets/menu/spanish/modo-creativo.webp';
+import shopFrUrl from '../../assets/menu/shop.webp';
+import shopEnUrl from '../../assets/menu/english/shop.webp';
+import shopEsUrl from '../../assets/menu/spanish/tienda.webp';
 import battleFrUrl from '../../assets/menu/battle.webp';
 import battleEnUrl from '../../assets/menu/english/combat-mode.webp';
 import battleEsUrl from '../../assets/menu/spanish/modo-conbate.webp';
@@ -189,6 +192,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
         <aside className="menu-sidebar">
           <div className="menu-brand"><img className="menu-brand-icon" src={gameIconUrl} alt="LouisBlox" /><div><strong>LOUISBLOX</strong><small>{translate('Joue, construis, partage.', 'Play, build, share.')}</small></div></div>
           <FriendsPanel onPlay={onPlay} />
+          {!['pirates', 'football', 'maze', 'battle'].includes(currentMode) && <button className="sidebar-shop" aria-label={translate('Ouvrir la boutique', 'Open shop')} onClick={onShop}><img src={translate(shopFrUrl, shopEnUrl, shopEsUrl)} alt="" /><span>{translate('Ouvrir la boutique', 'Open shop')}</span></button>}
         </aside>
         <main className="world-browser">
           <div className="world-browser-header">
@@ -220,7 +224,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             })}
           </div>
           {enabled && <PlayerWorlds onPlay={onPlay} />}
-          <MenuActionBar multiplayer={enabled} onMultiplayer={() => setEnabled(true)} onCreate={() => { setCreateInitialMultiplayer(undefined); setCreateOpen(true); }} onProfile={() => setProfileOpen(true)} onShop={onShop} createDisabled={full} />
+          <MenuActionBar multiplayer={enabled} onMultiplayer={() => setEnabled(true)} onCreate={() => { setCreateInitialMultiplayer(undefined); setCreateOpen(true); }} onProfile={() => setProfileOpen(true)} createDisabled={full} />
           {enabled && error && <p className="multiplayer-error" role="alert">{error}</p>}
           {pendingWorld && <p className="multiplayer-hint" role="status">{translate('Création du monde et connexion au salon…', 'Creating the world and connecting to the room…')}</p>}
           {full && <div className="world-limit-notice" role="alert"><strong>{translate(`Limite de ${MAX_WORLDS} mondes atteinte`, `${MAX_WORLDS}-world limit reached`)}</strong><span>{translate('Ouvre « Mes mondes » et supprimes-en un avant de créer ou de rejouer une partie.', 'Open “My worlds” and delete one before creating or replaying a game.')}</span></div>}
