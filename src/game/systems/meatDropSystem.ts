@@ -1,6 +1,6 @@
 import type { Entity, World } from 'koota';
 import type { AnimalKind } from '../animals';
-import { useGameStore } from '../store';
+import { changeInventory } from '../inventory';
 import { MeatDrop, MeatDropMesh, MeatDropMotion, MeatDropPosition, Player, PlayerPosition } from '../traits';
 
 export function meatDropSystem(world: World, dt: number) {
@@ -18,9 +18,8 @@ export function meatDropSystem(world: World, dt: number) {
   });
 
   if (pickups.length === 0) return;
-  const store = useGameStore.getState();
   for (const pickup of pickups) {
     pickup.entity.destroy();
-    store.collectMeat(pickup.kind);
+    changeInventory(pickup.kind === 'chicken' || pickup.kind === 'duck' ? 'raw_chicken' : 'raw_meat', 1);
   }
 }

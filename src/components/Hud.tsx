@@ -2,6 +2,7 @@ import { releasePointerForOverlay, requestPlay } from '../game/input';
 import { useGameStore } from '../game/store';
 import { useBombLauncherStore } from '../game/weaponAmmo';
 import { selectionInfo } from '../game/items';
+import { inventoryCount } from '../game/inventory';
 import { ItemIcon } from './ItemIcon';
 import { PaintballPalette } from './PaintballPalette';
 import { PlaneTitleEditor } from './PlaneTitleEditor';
@@ -67,6 +68,8 @@ export function Hud() {
   const bombAmmo = useBombLauncherStore((state) => state.ammo);
   const bombReloading = useBombLauncherStore((state) => state.reloadUntil !== null);
   const hotbarSlots = useGameStore((state) => state.hotbarSlots);
+  const itemCounts = useGameStore((state) => state.itemCounts);
+  const apples = useGameStore((state) => state.apples);
   const miningProgress = useGameStore((state) => state.miningProgress);
   const notice = useGameStore((state) => state.notice);
   const backpackOpen = useGameStore((state) => state.backpackOpen);
@@ -189,6 +192,7 @@ export function Hud() {
               >
                 <span className="slot-number">{index === 9 ? '0' : index + 1}</span>
                 {kind !== null && <ItemIcon kind={kind} />}
+                {gameplayMode === 'survival' && kind !== null && inventoryCount(kind, { gameplayMode, itemCounts, apples }) > 1 && <span className="slot-count">{inventoryCount(kind, { gameplayMode, itemCounts, apples })}</span>}
               </button>
             ))}
           </div>
