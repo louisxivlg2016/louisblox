@@ -33,7 +33,7 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     if (cape) part = 'body';
     else if (Math.abs(x) < width * 0.38 && y > floor + height * upperHeadStart || Math.abs(x) < width * headWidth && y > floor + height * headBottom) part = 'head';
     else if (Math.abs(x) > width * 0.25 && y > floor + height * 0.28 && y < floor + height * 0.82) part = `${side}Arm`;
-    else if (legs && Math.abs(x) < width * 0.28 && y < floor + height * (outfit === 'pirate' ? 0.36 : 0.48)) part = y < floor + height * 0.24 ? `${side}LowerLeg` : `${side}Leg`;
+    else if (legs && outfit !== 'princess' && Math.abs(x) < width * 0.28 && y < floor + height * (outfit === 'pirate' ? 0.36 : 0.48)) part = y < floor + height * 0.24 ? `${side}LowerLeg` : `${side}Leg`;
     indices[part].push(a, b, c);
   }
   return { geometry, indices, material: appearance ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair, princessHair, outfit) : material };
