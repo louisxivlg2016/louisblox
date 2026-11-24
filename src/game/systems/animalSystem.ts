@@ -22,6 +22,8 @@ import { interpolateAnimalMovement, isAnimalAuthority, syncAnimalState } from '.
 import { isCollidable } from './collisionSystem';
 import { isDoor } from '../extraBlocks';
 import { replaceVoxel } from '../chunks';
+import { useRemotePlayerStore } from '../multiplayerStore';
+import { playerIdentity } from '../playerIdentity';
 
 type Motion = {
   yaw: number;
@@ -95,6 +97,20 @@ function announceHunger(world: World, entity: Entity, kind: AnimalKind, distance
   if (now - (notices.get(entity) ?? -Infinity) < 20000) return;
   notices.set(entity, now);
   useGameStore.getState().setNotice(translate(`${companionAnimalName(kind)} : J’ai faim ! Clique sur moi avec de la nourriture.`, `${companionAnimalName(kind)}: I am hungry! Click on me with food.`));
+}
+
+function animalOwnerPosition(entity: Entity, localPlayer: Vector3 | undefined, selfId: string, remotePlayers: ReturnType<typeof useRemotePlayerStore.getState>['players'], cache: Map<string, Vector3>) {
+  const ownerId = entity.get(AnimalTame)?.ownerId;
+  if (!ownerId || ownerId === selfId) return localPlayer;
+  const remote = remotePlayers[ownerId];
+  if (!remote) return null;
+  let position = cache.get(ownerId);
+  if (!position) {
+    position = new Vector3();
+    cache.set(ownerId, position);
+  }
+  position.set(remote.x, remote.y, remote.z);
+  return position;
 }
 
 function rememberSafePosition(world: World, entity: Entity, position: Vector3) {
@@ -307,6 +323,9 @@ export function animalSystem(world: World, dt: number) {
   tamingSystem(world, dt);
   const playerEntity = world.queryFirst(Player);
   const player = playerEntity?.get(PlayerPosition);
+  const selfId = playerIdentity();
+  const remotePlayers = useRemotePlayerStore.getState().players;
+  const ownerPositions = new Map<string, Vector3>();
   const health = playerEntity?.get(PlayerHealth);
   const survival = useGameStore.getState().gameplayMode === 'survival';
   const night = isNight(world);
@@ -326,9 +345,10 @@ export function animalSystem(world: World, dt: number) {
   world.query(Animal, AnimalHealth, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, animalHealth, hit, position, motion, mesh], entity) => {
     keepZombieOnNaturalGround(world, animal.kind, position, motion);
     const tamed = isTamedAnimal(entity);
+    const owner = tamed ? animalOwnerPosition(entity, player, selfId, remotePlayers, ownerPositions) : null;
     const hungry = tamed && (entity.get(AnimalTame)?.happiness ?? 100) <= 0;
-    let distanceSquared = player ? position.distanceToSquared(player) : Infinity;
-    if (hungry && player && isOwnTamedAnimal(entity)) announceHunger(world, entity, animal.kind, distanceSquared);
+    let distanceSquared = tamed ? owner ? position.distanceToSquared(owner) : Infinity : player ? position.distanceToSquared(player) : Infinity;
+    if (hungry && owner && isOwnTamedAnimal(entity)) announceHunger(world, entity, animal.kind, distanceSquared);
     if (distanceSquared > 48 * 48 && !tamed) {
       if (mesh.value) mesh.value.visible = false;
       motion.running = false;
@@ -389,19 +409,19 @@ export function animalSystem(world: World, dt: number) {
     const love = entity.get(AnimalLove);
     if (love) love.time = Math.max(0, love.time - stepDt);
     const aggressive = (animal.kind === 'zombie' || animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf') && (useGameStore.getState().gameplayMode !== 'creative' || hit.panic > 0);
-    const defenseTarget = tamed && player && WILD_ANIMALS.has(animal.kind) ? findDefenseTarget(world, entity, player) : null;
+    const defenseTarget = tamed && owner && WILD_ANIMALS.has(animal.kind) ? findDefenseTarget(world, entity, owner) : null;
     const targetPosition = defenseTarget?.get(AnimalPosition);
     const targetDistanceSquared = targetPosition ? position.distanceToSquared(targetPosition) : Infinity;
-    if (tamed && player && !targetPosition && distanceSquared > 30 * 30) {
-      const yaw = Math.atan2(player.x - position.x, player.z - position.z);
-      const x = player.x - Math.sin(yaw) * 2.5;
-      const z = player.z - Math.cos(yaw) * 2.5;
+    if (tamed && owner && !targetPosition && distanceSquared > 30 * 30) {
+      const yaw = Math.atan2(owner.x - position.x, owner.z - position.z);
+      const x = owner.x - Math.sin(yaw) * 2.5;
+      const z = owner.z - Math.cos(yaw) * 2.5;
       if (isLoaded(world, x, z)) {
         const ground = groundAt(world, x, z, position.y + 24);
         if (walkableGround(world, x, z, ground) && bodyClear(world, x, z, ground)) {
           position.set(x, ground, z);
           rememberSafePosition(world, entity, position);
-          distanceSquared = position.distanceToSquared(player);
+          distanceSquared = position.distanceToSquared(owner);
         }
       }
     }
@@ -423,8 +443,8 @@ export function animalSystem(world: World, dt: number) {
         motion.yaw = Math.atan2(player.x - position.x, player.z - position.z);
         motion.turnIn = Math.max(motion.turnIn, 0.5);
       }
-      if (tamed && player && (targetPosition || distanceSquared > 2.8 * 2.8)) {
-        const target = targetPosition ?? player;
+      if (tamed && owner && (targetPosition || distanceSquared > 2.8 * 2.8)) {
+        const target = targetPosition ?? owner;
         const distance = Math.sqrt(targetPosition ? targetDistanceSquared : distanceSquared);
         motion.yaw = Math.atan2(target.x - position.x, target.z - position.z);
         motion.turnIn = Math.max(motion.turnIn, 0.5);
@@ -488,8 +508,8 @@ export function animalSystem(world: World, dt: number) {
       const distanceSquared = dx * dx + dz * dz;
       const away = distanceSquared < 0.0001 ? entity * 2.39 : Math.atan2(dx, dz);
       moveInDirection(world, animal.kind, position, motion, away, 3, stepDt, entity);
-    } else if (tamedOnPlayer && player) {
-      motion.yaw = Math.atan2(position.x - player.x, position.z - player.z);
+    } else if (tamedOnPlayer && owner) {
+      motion.yaw = Math.atan2(position.x - owner.x, position.z - owner.z);
       moveAnimal(world, animal.kind, position, motion, stepDt, entity, 0, 2.4);
     } else if (stayClose) updateAnimalVertical(world, position, motion, stepDt, entity);
     const home = entity.get(AnimalHome);
