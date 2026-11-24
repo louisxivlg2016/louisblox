@@ -23,7 +23,7 @@ function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, 
     const vertical = (y - bounds.min.y) / size.y;
     const horizontal = Math.abs(x) < size.x * 0.4;
     const head = horizontal && vertical > 0.68;
-    const arm = Math.abs(x) > size.x * 0.25 && vertical > (princessHair ? 0.32 : 0.48) && vertical < 0.82;
+    const arm = Math.abs(x) > size.x * 0.25 && vertical < 0.82 && (vertical > 0.48 || Math.abs(x) > size.x * 0.3 && vertical > 0.24);
     const eyes = z * frontSign > 0 && Math.abs(x) > size.x * 0.035 && Math.abs(x) < size.x * 0.14 && vertical > eyeBottom && vertical < eyeTop;
     const eyebrows = z * frontSign > 0 && Math.abs(x) > size.x * 0.025 && Math.abs(x) < size.x * 0.25 && vertical > eyebrowBottom && vertical < eyebrowTop;
     const lowerStrand = princessHair && z * frontSign > 0 && Math.abs(x) > size.x * 0.13 && Math.abs(x) < size.x * 0.33 && vertical > 0.38 && vertical < 0.7;
