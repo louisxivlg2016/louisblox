@@ -42,7 +42,7 @@ export type CreateWorldOptions = {
 };
 
 export function createLobbyOptions(options: CreateWorldOptions, room: string, mode: GameplayMode | null): CreateWorldOptions {
-  return { ...options, name: room.trim().slice(0, 48) || options.name, mode: mode ?? options.mode, multiplayer: true };
+  return { ...options, name: room.trim().slice(0, 48) || options.name, mode: mode ?? options.mode };
 }
 
 const initialWorld = createCustomWorld(DEFAULT_WORLD_SOURCE, 73421);
@@ -107,7 +107,6 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
     setTab(next);
     if (next !== 'code') setCodeFullscreen(false);
     if (next === 'code' || next === 'editor') change('template', 'custom');
-    if (next === 'lobby') change('multiplayer', true);
   };
   const changeSource = (value: string) => {
     setSource(value);
