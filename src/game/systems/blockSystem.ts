@@ -189,7 +189,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       store.setNotice(`${definition.name} pousse encore…`);
       return;
     }
-    store.setItemCount(definition.food, store.itemCounts[definition.food] + definition.yield);
+    changeInventory(definition.food, definition.yield);
     store.setNotice(translate(`${definition.name} récolté : +${definition.yield} dans le sac.`, `${definition.name} harvested: +${definition.yield} in backpack.`));
     if (definition.regrows) {
       replaceVoxel(world, hit, hit.block.kind, undefined, 0);
@@ -204,7 +204,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
 
   if (actions.harvest > 0 && hit.block.kind === BlockKind.Apple) {
     replaceVoxel(world, hit, BlockKind.Leaves);
-    store.collectApple();
+    changeInventory('apple', 1);
     target.visible = false;
     if (mesh) mesh.visible = false;
     return;
