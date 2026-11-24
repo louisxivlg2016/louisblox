@@ -44,11 +44,11 @@ function updateChest(world: World, items: SelectedKind[]) {
 export function depositChest(world: World) {
   const store = useGameStore.getState();
   if (store.container?.type !== 'chest') return;
-  if (store.chestItems.length >= 24) {
+  const item = store.selected;
+  if (!store.chestItems.includes(item) && new Set(store.chestItems).size >= 24) {
     store.setNotice(translate('Ce coffre est plein.', 'This chest is full.'));
     return;
   }
-  const item = store.selected;
   updateChest(world, [...store.chestItems, item]);
   store.setNotice(translate(`${selectionInfo(item).name} déposé dans le coffre.`, `${selectionInfo(item).name} deposited in chest.`));
 }

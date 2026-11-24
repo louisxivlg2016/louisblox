@@ -1,5 +1,6 @@
 import { closeContainer, cookMeat, depositChest, withdrawChest } from '../game/containers';
 import { selectionInfo } from '../game/items';
+import type { SelectedKind } from '../game/items';
 import { MEAT_NAMES } from '../game/meats';
 import type { AnimalKind } from '../game/animals';
 import { useGameStore } from '../game/store';
@@ -14,6 +15,12 @@ export function ContainerPanel() {
   const meat = useGameStore((state) => state.meat);
   const notice = useGameStore((state) => state.notice);
   if (!container) return null;
+  const grouped = new Map<SelectedKind, { count: number; index: number }>();
+  for (const [index, item] of items.entries()) {
+    const current = grouped.get(item);
+    if (current) current.count += 1;
+    else grouped.set(item, { count: 1, index });
+  }
   return (
     <div className="backpack-backdrop">
       <section className="container-panel" aria-label={container.type === 'chest' ? translate('Coffre', 'Chest') : translate('Four', 'Furnace')}>
@@ -26,9 +33,9 @@ export function ContainerPanel() {
             <p className="backpack-label">{translate('24 places · les objets restent dans ce coffre après rechargement', '24 slots · items stay in this chest after reloading')}</p>
             <button className="container-deposit" onClick={() => depositChest(world)}>Deposit: {selectionInfo(selected).name}</button>
             <div className="backpack-blocks">
-              {items.map((item, index) => (
-                <button className="backpack-block" key={`${item}-${index}`} onClick={() => withdrawChest(world, index)} aria-label={translate(`Prendre ${selectionInfo(item).name}`, `Take ${selectionInfo(item).name}`, `Tomar ${selectionInfo(item).name}`)}>
-                  <ItemIcon kind={item} /><span>{selectionInfo(item).name}</span>
+              {[...grouped].map(([item, { count, index }]) => (
+                <button className="backpack-block" key={item} onClick={() => withdrawChest(world, index)} aria-label={translate(`Prendre ${selectionInfo(item).name}`, `Take ${selectionInfo(item).name}`, `Tomar ${selectionInfo(item).name}`)}>
+                  <ItemIcon kind={item} /><span>{selectionInfo(item).name}{count > 1 ? ` ×${count}` : ''}</span>
                 </button>
               ))}
             </div>
