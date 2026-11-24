@@ -254,7 +254,7 @@ export function dismount(world: World) {
   return true;
 }
 
-export function vehicleInteractionSystem(world: World, camera: Camera, interact: number, mountedTargetOnly = false) {
+export function vehicleInteractionSystem(world: World, camera: Camera, interact: number, mountedTargetOnly = false, allowAnimalMount = true) {
   if (interact <= 0) return false;
   const player = world.queryFirst(Player);
   const mount = player?.get(PlayerMount);
@@ -270,6 +270,7 @@ export function vehicleInteractionSystem(world: World, camera: Camera, interact:
   const target = findInteractionTarget(world, camera, 'mount');
   if (!target) return false;
   if (isAnimalMount(target.kind)) {
+    if (!allowAnimalMount) return false;
     if (target.kind === 'horse' && !target.entity.get(HorseRider)?.saddled && useGameStore.getState().selected === 'saddle') return false;
     return mountEntity(world, target.entity, target.kind);
   }

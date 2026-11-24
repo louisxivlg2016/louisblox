@@ -8,11 +8,12 @@ import { groundAt } from '../vehicles';
 import { isWaterBlock, voxelKey } from '../voxel';
 import type { AnimalKind } from '../animals';
 import { spawnChunkZombies } from '../animals';
-import { Animal, AnimalHealth, AnimalHit, AnimalHome, AnimalLove, AnimalMesh, AnimalMotion, AnimalPosition, AnimalRest, CamelLeash, Chunk, HorseRider, Player, PlayerHealth, PlayerPosition, Sleep } from '../traits';
+import { Animal, AnimalHealth, AnimalHit, AnimalHome, AnimalLove, AnimalMesh, AnimalMotion, AnimalPosition, AnimalRest, AnimalTame, CamelLeash, Chunk, HorseRider, Player, PlayerHealth, PlayerPosition, Sleep } from '../traits';
 import { damageAnimal, damagePlayer, killAnimal, removeAnimal } from '../combat';
 import { isNight } from '../dayNight';
 import { useGameStore } from '../store';
-import { findDefenseTarget, isTamedAnimal, tamingSystem, WILD_ANIMALS } from '../taming';
+import { translate } from '../language';
+import { companionAnimalName, findDefenseTarget, isOwnTamedAnimal, isTamedAnimal, tamingSystem, WILD_ANIMALS } from '../taming';
 import { canSeePlayer, canZombieAttackPlayer } from '../hostility';
 import { hasEffect } from '../effects';
 import { alertAnimalSound } from './animalSoundSystem';
@@ -81,6 +82,20 @@ function walkableGround(world: World, x: number, z: number, ground: number) {
 }
 
 const safePositions = new WeakMap<World, Map<Entity, Vector3>>();
+const hungerNotices = new WeakMap<World, Map<Entity, number>>();
+
+function announceHunger(world: World, entity: Entity, kind: AnimalKind, distanceSquared: number) {
+  if (distanceSquared > 4 * 4) return;
+  const now = Date.now();
+  let notices = hungerNotices.get(world);
+  if (!notices) {
+    notices = new Map();
+    hungerNotices.set(world, notices);
+  }
+  if (now - (notices.get(entity) ?? -Infinity) < 20000) return;
+  notices.set(entity, now);
+  useGameStore.getState().setNotice(translate(`${companionAnimalName(kind)} : J’ai faim ! Clique sur moi avec de la nourriture.`, `${companionAnimalName(kind)}: I am hungry! Click on me with food.`));
+}
 
 function rememberSafePosition(world: World, entity: Entity, position: Vector3) {
   let positions = safePositions.get(world);
@@ -311,7 +326,9 @@ export function animalSystem(world: World, dt: number) {
   world.query(Animal, AnimalHealth, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, animalHealth, hit, position, motion, mesh], entity) => {
     keepZombieOnNaturalGround(world, animal.kind, position, motion);
     const tamed = isTamedAnimal(entity);
+    const hungry = tamed && (entity.get(AnimalTame)?.happiness ?? 100) <= 0;
     let distanceSquared = player ? position.distanceToSquared(player) : Infinity;
+    if (hungry && player && isOwnTamedAnimal(entity)) announceHunger(world, entity, animal.kind, distanceSquared);
     if (distanceSquared > 48 * 48 && !tamed) {
       if (mesh.value) mesh.value.visible = false;
       motion.running = false;
@@ -355,7 +372,8 @@ export function animalSystem(world: World, dt: number) {
     }
     if (entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) return;
     const rest = entity.get(AnimalRest);
-    if (tamed && (rest?.sleeping || world.queryFirst(Sleep))) {
+    if (hungry && rest?.sleeping) entity.set(AnimalRest, { sleeping: false, birthRestUntil: null });
+    if (tamed && !hungry && (rest?.sleeping || world.queryFirst(Sleep))) {
       if (rest && !rest.sleeping) entity.set(AnimalRest, { sleeping: true });
       motion.speed = 0;
       motion.running = false;

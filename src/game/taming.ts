@@ -427,7 +427,7 @@ export function tamingSystem(world: World, _dt: number) {
     save(world);
     if (birthsChanged) store.setNotice(translate('Un bébé est né parmi tes animaux apprivoisés !', 'A baby was born among your tamed animals!'));
     else if (growthChanged) store.setNotice(translate('Un bébé est devenu adulte !', 'A baby has grown into an adult!'));
-    else store.setNotice(translate('Tes animaux t’ont donné du lait ou de la laine.', 'Your animals gave you milk or wool.'));
+    else if (giftsChanged) store.setNotice(translate('Tes animaux t’ont donné du lait ou de la laine.', 'Your animals gave you milk or wool.'));
   } else if (positionsChanged && now - (positionSaves.get(world) ?? 0) >= 2000) {
     save(world);
     positionSaves.set(world, now);
