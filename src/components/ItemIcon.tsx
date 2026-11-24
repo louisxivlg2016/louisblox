@@ -1,7 +1,8 @@
 import { getItemMeta, selectionInfo } from '../game/items';
 import type { ItemKind, SelectedKind } from '../game/items';
 import { BlockKind } from '../game/voxel';
-import { isCarpet, isGlass, isSlab, isSmallTrapdoor, isStair, isTrafficSign, slabSource, stairSource } from '../game/extraBlocks';
+import { isCarpet, isGlass, isPainting, isSlab, isSmallTrapdoor, isStair, isTrafficSign, slabSource, stairSource } from '../game/extraBlocks';
+import { drawPainting } from '../game/paintingArt';
 import { getVitrailDesign, getVitrailIcon } from '../game/vitrailDesigns';
 import { brickTexture, texture } from '../game/textures';
 import { isReferenceFood, referenceFoodIcons } from './ReferenceFoodModel';
@@ -44,6 +45,7 @@ const cropIcons: Partial<Record<BlockKind, string>> = {
   [BlockKind.Tomato]: tomatoCropIcon,
 };
 const iconCache = new Map<BlockKind, string>();
+const paintingIconCache = new Map<BlockKind, string>();
 const trafficSignLabels: Partial<Record<BlockKind, { label: string; className?: string }>> = {
   [BlockKind.StopSign]: { label: 'STOP', className: 'stop' },
   [BlockKind.YieldSign]: { label: translate('CÉDEZ', 'YIELD') },
@@ -68,6 +70,18 @@ function blockIcon(kind: BlockKind) {
   return url;
 }
 
+function paintingIcon(kind: BlockKind) {
+  const cached = paintingIconCache.get(kind);
+  if (cached) return cached;
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 192;
+  drawPainting(canvas.getContext('2d')!, kind);
+  const url = canvas.toDataURL();
+  paintingIconCache.set(kind, url);
+  return url;
+}
+
 export function ItemIcon({ kind }: { kind: SelectedKind }) {
   const info = selectionInfo(kind);
   if (typeof kind === 'number' && cropIcons[kind]) return <img className="item-model-icon" src={cropIcons[kind]} alt={info.name} />;
@@ -81,6 +95,7 @@ export function ItemIcon({ kind }: { kind: SelectedKind }) {
   if (kind === BlockKind.ModernCeilingLight) return <span className="item-icon item-modern-ceiling-light" aria-hidden="true"><i /><b /><em /></span>;
   if (kind === BlockKind.Radio) return <img className="item-model-icon item-photo-icon" src={RADIO_ICON_URL} alt={info.name} />;
   if (kind === BlockKind.ParisStreetSign) return <span className="paris-street-sign-icon" aria-hidden="true"><small>4e</small><strong>RUE</strong></span>;
+  if (typeof kind === 'number' && isPainting(kind)) return <img className="item-model-icon item-photo-icon" style={{ objectFit: 'contain' }} src={paintingIcon(kind)} alt={info.name} />;
   if (typeof kind === 'number' && isTrafficSign(kind)) {
     const sign = trafficSignLabels[kind];
     return <span className={`traffic-sign-icon ${sign?.className ?? ''}`} style={{ backgroundColor: info.color }}>{sign?.label}</span>;

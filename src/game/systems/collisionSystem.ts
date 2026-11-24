@@ -1,4 +1,4 @@
-import { facingYaw, isCarpet, isCrop, isDoor, isGrassPlate, isLadder, isRail, isSign, isSlab, isSmallTrapdoor, isStair, isTrapdoor, isUpsideDownStair } from '../extraBlocks';
+import { facingYaw, isCarpet, isCrop, isDoor, isGrassPlate, isLadder, isPainting, isRail, isSign, isSlab, isSmallTrapdoor, isStair, isTrapdoor, isUpsideDownStair } from '../extraBlocks';
 import { BlockKind, cleanSignTextSize, DEFAULT_SIGN_TEXT_SIZE, isWaterBlock, voxelKey } from '../voxel';
 import type { Voxel } from '../voxel';
 import type { CabinDefinition } from '../vehicleTypes';
@@ -13,7 +13,7 @@ const MAX_SUBSTEP = 0.18;
 const overlaps = (minA: number, maxA: number, minB: number, maxB: number) => minA < maxB - EPSILON && maxA > minB + EPSILON;
 
 export function isCollidable(block: Voxel | undefined) {
-  if (!block || isGrassPlate(block) || isCarpet(block.kind) || isWaterBlock(block.kind) || block.kind === BlockKind.Food || block.kind === BlockKind.JungleVine || isCrop(block.kind) || isLadder(block.kind) || isRail(block.kind)) return false;
+  if (!block || isGrassPlate(block) || isCarpet(block.kind) || isPainting(block.kind) || isWaterBlock(block.kind) || block.kind === BlockKind.Food || block.kind === BlockKind.JungleVine || isCrop(block.kind) || isLadder(block.kind) || isRail(block.kind)) return false;
   if (block.kind === BlockKind.OakSapling || block.kind === BlockKind.PineSapling || block.kind === BlockKind.AutumnSapling) return false;
   return !(isDoor(block.kind) || isTrapdoor(block.kind)) || !block.open;
 }

@@ -19,7 +19,7 @@ import { spawnAnimal, spawnChunkAnimals } from './animals';
 import { spawnChunkFish } from './fish';
 import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
-import { hasWaterOpening, isBed, isCarpet, isChest, isCrop, isDoor, isFireBlock, isGrassPlate, isLadder, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
+import { hasWaterOpening, isBed, isCarpet, isChest, isCrop, isDoor, isFireBlock, isGrassPlate, isLadder, isPainting, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
 import { clearFires, extinguishFireAt, spawnFire } from './fireLifecycle';
 import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
 import type { ArmorKind, SelectedKind } from './items';
@@ -717,7 +717,7 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
   if (isCrop(kind) || isGrassPlate({ kind, growth }) || (isStair(kind) || isSlab(kind)) && growth !== undefined) block.growth = growth ?? 3;
   if (isChest(kind)) block.items = [];
   if (isSign(kind)) block.text = kind === BlockKind.ParisStreetSign ? PARIS_STREET_SIGN_TEXT : '';
-  if (isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || isSlab(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind)) block.facing = facing ?? (isBed(kind) || isStair(kind) || isSlab(kind) ? 'south' : 'north');
+  if (isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || isSlab(kind) || isPainting(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind)) block.facing = facing ?? (isBed(kind) || isStair(kind) || isSlab(kind) ? 'south' : 'north');
   if (kind === BlockKind.Food) {
     block.food = food;
     block.meat = meat;

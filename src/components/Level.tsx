@@ -15,7 +15,8 @@ import { CropInstances } from './CropInstances';
 import { HunyuanCropInstances } from './HunyuanCropInstances';
 import { UtilityBlocks } from './UtilityBlocks';
 import { SignBlocks } from './SignBlocks';
-import { isCarpet, isCrop, isDoor, isGlass, isGrassPlate, isSapling, isSign, isSlab, isStair, isTrapdoor, isUpsideDownStair, isUtilityBlock } from '../game/extraBlocks';
+import { PaintingBlocks } from './PaintingBlocks';
+import { isCarpet, isCrop, isDoor, isGlass, isGrassPlate, isPainting, isSapling, isSign, isSlab, isStair, isTrapdoor, isUpsideDownStair, isUtilityBlock } from '../game/extraBlocks';
 import { isPirateObjective } from '../game/pirates';
 import { AppleInstances } from './AppleInstances';
 import { BlockKind, isWaterBlock } from '../game/voxel';
@@ -116,9 +117,10 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
     const cropBlocks: Voxel[] = [];
     const utilityBlocks: Voxel[] = [];
     const signBlocks: Voxel[] = [];
+    const paintingBlocks: Voxel[] = [];
     const vineBlocks: Voxel[] = [];
     const saplingGroups = new Map<BlockKind, Voxel[]>();
-    if (!data) return { geometries: [], candleBlocks, doorBlocks, stairBlocks, slabBlocks, carpetBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups };
+    if (!data) return { geometries: [], candleBlocks, doorBlocks, stairBlocks, slabBlocks, carpetBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, paintingBlocks, vineBlocks, saplingGroups };
     const lookup = createChunkLookup(data.blocks, blockIndex);
     for (const block of data.blocks) {
       const exposed = neighborOffsets.some(([x, y, z]) => {
@@ -147,6 +149,10 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         signBlocks.push(block);
         continue;
       }
+      if (isPainting(block.kind)) {
+        paintingBlocks.push(block);
+        continue;
+      }
       if (isUtilityBlock(block.kind)) {
         if (!isPirateObjective(block.x, block.y, block.z)) utilityBlocks.push(block);
         continue;
@@ -173,9 +179,9 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
         saplingGroups.set(block.kind, group);
       }
     }
-    return { geometries: buildChunkGeometry(data.blocks, blockIndex, lookup), candleBlocks, doorBlocks, stairBlocks, slabBlocks, carpetBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups };
+    return { geometries: buildChunkGeometry(data.blocks, blockIndex, lookup), candleBlocks, doorBlocks, stairBlocks, slabBlocks, carpetBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, paintingBlocks, vineBlocks, saplingGroups };
   }, [data, blockIndex, chunk?.revision]);
-  const { geometries, candleBlocks, doorBlocks, stairBlocks, slabBlocks, carpetBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, vineBlocks, saplingGroups } = view;
+  const { geometries, candleBlocks, doorBlocks, stairBlocks, slabBlocks, carpetBlocks, grassPlateBlocks, cropBlocks, utilityBlocks, signBlocks, paintingBlocks, vineBlocks, saplingGroups } = view;
   useEffect(() => () => {
     for (const { geometry } of geometries) geometry.dispose();
   }, [geometries]);
@@ -198,6 +204,7 @@ const ChunkView = memo(function ChunkView({ entity }: { entity: Entity }) {
       </Suspense>
       <UtilityBlocks blocks={utilityBlocks} blockIndex={blockIndex} />
       <SignBlocks blocks={signBlocks} blockIndex={blockIndex} />
+      <PaintingBlocks blocks={paintingBlocks} blockIndex={blockIndex} />
       <SpecialBlocks kind={BlockKind.Candle} blocks={candleBlocks} />
       <DoorInstances blocks={doorBlocks} />
       {stairBlocks.map((block) => <StairModel key={`${block.x},${block.y},${block.z}`} kind={block.kind} facing={block.facing} upsideDown={isUpsideDownStair(block)} position={[block.x, block.y, block.z]} />)}

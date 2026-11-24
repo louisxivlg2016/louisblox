@@ -13,9 +13,10 @@ import { BlockKind } from '../game/voxel';
 import { ItemModel, isWeaponItem, itemGripOffset } from './ItemModel';
 import { BombModel, CandleModel, CampfireModel } from './SpecialBlocks';
 import { UtilityBlockModel } from './UtilityBlocks';
-import { isCarpet, isSlab, isStair, isUtilityBlock, slabSource, stairSource } from '../game/extraBlocks';
+import { isCarpet, isPainting, isSlab, isStair, isUtilityBlock, slabSource, stairSource } from '../game/extraBlocks';
 import { StairModel } from './StairModel';
 import { SlabModel } from './SlabModel';
+import { PaintingModel } from './PaintingBlocks';
 
 function createSkinTexture(base: string) {
   const canvas = document.createElement('canvas');
@@ -93,6 +94,8 @@ export function Hands() {
           </group>
         ) : isUtilityBlock(selected) ? (
           <group position={[0.46, -0.3, -1]} scale={0.32}><UtilityBlockModel kind={selected} withLight={false} held /></group>
+        ) : isPainting(selected) ? (
+          <group position={[0.46, -0.3, -1]} rotation={[0.08, 0.15, 0]} scale={0.42}><PaintingModel kind={selected} /></group>
         ) : isStair(selected) ? (
           <group position={[0.46, -0.28, -0.86]} rotation={[0.2, 0.55, 0.05]} scale={0.32}><StairModel kind={selected} materials={heldMaterials} renderOrder={11} followPlayer /></group>
         ) : isSlab(selected) ? (

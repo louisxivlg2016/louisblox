@@ -230,6 +230,12 @@ export const EXTRA_BLOCKS = {
   CarpetGreen: 255,
   CarpetRed: 256,
   CarpetBlack: 257,
+  PaintingCastle: 258,
+  PaintingSunset: 259,
+  PaintingKing: 260,
+  PaintingCat: 261,
+  PaintingForest: 262,
+  PaintingAbstract: 263,
 } as const;
 
 export const PARIS_STREET_SIGN_TEXT = '4th arrondissement\nPeace Street';
@@ -247,6 +253,8 @@ export const isMetalTrapdoor = (kind: number) => kind >= EXTRA_BLOCKS.TrapdoorIr
 export const isStair = (kind: number) => kind >= EXTRA_BLOCKS.StairOak && kind <= EXTRA_BLOCKS.StairBedrock;
 export const isSlab = (kind: number) => kind >= EXTRA_BLOCKS.SlabOak && kind <= EXTRA_BLOCKS.SlabGlassBlack;
 export const isCarpet = (kind: number) => kind >= EXTRA_BLOCKS.CarpetWhite && kind <= EXTRA_BLOCKS.CarpetBlack;
+export const PAINTING_KINDS = [EXTRA_BLOCKS.PaintingCastle, EXTRA_BLOCKS.PaintingSunset, EXTRA_BLOCKS.PaintingKing, EXTRA_BLOCKS.PaintingCat, EXTRA_BLOCKS.PaintingForest, EXTRA_BLOCKS.PaintingAbstract] as const;
+export const isPainting = (kind: number) => (PAINTING_KINDS as readonly number[]).includes(kind);
 export const STAIR_SOURCES: Readonly<Partial<Record<ExtraBlockKind, number>>> = {
   [EXTRA_BLOCKS.StairOak]: EXTRA_BLOCKS.OakPlanks,
   [EXTRA_BLOCKS.StairPine]: EXTRA_BLOCKS.PinePlanks,
@@ -449,6 +457,12 @@ const BASE_EXTRA_BLOCK_META: Record<number, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.Lantern]: block('Lanterne de plafond', '#e3aa4d', 0.8),
   [EXTRA_BLOCKS.ModernCeilingLight]: block('Lumière moderne de plafond', '#dff5ff', 0.8),
   [EXTRA_BLOCKS.Radio]: block('Radio musicale', '#d6a84d', 0.8),
+  [EXTRA_BLOCKS.PaintingCastle]: block('Tableau du château', '#678ec4', 0.25),
+  [EXTRA_BLOCKS.PaintingSunset]: block('Tableau du coucher de soleil', '#df8054', 0.25),
+  [EXTRA_BLOCKS.PaintingKing]: block('Portrait royal', '#a7853c', 0.25),
+  [EXTRA_BLOCKS.PaintingCat]: block('Tableau du chat', '#c28c66', 0.25),
+  [EXTRA_BLOCKS.PaintingForest]: block('Tableau de la forêt', '#47724d', 0.25),
+  [EXTRA_BLOCKS.PaintingAbstract]: block('Tableau abstrait', '#9a5ea8', 0.25),
   [EXTRA_BLOCKS.StopSign]: block('Panneau STOP', '#c93d35', 0.35),
   [EXTRA_BLOCKS.YieldSign]: block('Cédez le passage', '#e8e0d5', 0.35),
   [EXTRA_BLOCKS.NoEntrySign]: block('Sens interdit', '#c93d35', 0.35),

@@ -4,7 +4,7 @@ import type { Camera } from 'three';
 import { addVoxel, chunkCoordinate, getBlockIndex, removeVoxel, replaceVoxel, setVoxelFloodSource } from '../chunks';
 import { spawnBomb } from '../bombLifecycle';
 import { spawnSapling } from '../saplingLifecycle';
-import { isBed, isCeilingLight, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isRadio, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, signFacing, slabSource } from '../extraBlocks';
+import { isBed, isCeilingLight, isChest, isCrop, isDoor, isFurnace, isGlass, isLadder, isPainting, isRadio, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, signFacing, slabSource } from '../extraBlocks';
 import { useSignStore } from '../signs';
 import { startSleep } from './sleepSystem';
 import { openChest, openFurnace } from '../containers';
@@ -224,6 +224,10 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         store.setNotice(translate('Cette lumière se fixe au sol ou sous un plafond.', 'This light attaches to the ground or the underside of a ceiling.', 'Esta luz se fija al suelo o debajo de un techo.'));
         return;
       }
+      if (isPainting(kind) && hit.normal.y !== 0) {
+        store.setNotice(translate('Un tableau se pose sur la paroi verticale d’un bloc.', 'A painting must be placed on the vertical side of a block.'));
+        return;
+      }
       if (!hasInventory(kind, store)) {
         store.setNotice(translate('Récolte ou fabrique ce bloc avant de le poser.', 'Gather or craft this block before placing it.'));
         return;
@@ -248,12 +252,12 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         : isLadder(kind) || isSlab(kind)
           ? hit.normal.x === 1 ? 'east' : hit.normal.x === -1 ? 'west' : hit.normal.z === 1 ? 'south' : 'north'
         : isStair(kind) ? Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'east' : 'west' : direction.z > 0 ? 'north' : 'south'
-        : isSign(kind) || isTrafficSign(kind) ? signFacing(direction, hit.normal)
+        : isSign(kind) || isTrafficSign(kind) || isPainting(kind) ? signFacing(direction, hit.normal)
           : kind === BlockKind.TrafficLight
             ? Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'south' : 'north'
             : Math.abs(direction.x) > Math.abs(direction.z) ? direction.x > 0 ? 'west' : 'east' : direction.z > 0 ? 'north' : 'south';
       const orientation = isSlab(kind) ? uprightGlassSlab || extendingWallSlab ? 2 : hit.normal.y === -1 ? 1 : hit.normal.y === 0 ? 2 : 0 : isStair(kind) && hit.normal.y === -1 ? 1 : undefined;
-      const placed = addVoxel(world, x, y, z, kind, orientation, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || isSlab(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
+      const placed = addVoxel(world, x, y, z, kind, orientation, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || isSlab(kind) || isPainting(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
       if (placed) playSound('placeBlock', 0.45);
       if (placed && kind === BlockKind.Water) setVoxelFloodSource(world, placed, true);
       if (placed && store.gameplayMode === 'survival') changeInventory(kind, -1);

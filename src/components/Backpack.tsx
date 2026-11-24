@@ -8,7 +8,7 @@ import { isPaintballGun, WHITE_PAINTBALL_GUN_ID } from '../game/paintball';
 import { BlockKind, HOTBAR_BLOCKS } from '../game/voxel';
 import { world } from '../game/world';
 import { ItemIcon } from './ItemIcon';
-import { CROP_KINDS, isCrop } from '../game/extraBlocks';
+import { CROP_KINDS, isCrop, isPainting, PAINTING_KINDS } from '../game/extraBlocks';
 import { inventoryCount } from '../game/inventory';
 import { CraftingPanel } from './CraftingPanel';
 import { normalizeSearch } from '../game/search';
@@ -26,7 +26,7 @@ export function Backpack() {
   const setHotbarSlot = useGameStore((state) => state.setHotbarSlot);
   const setBackpackItem = useGameStore((state) => state.setBackpackItem);
   const setBackpack = useGameStore((state) => state.setBackpack);
-  const [sections, setSections] = useState({ blocks: true, crops: true, items: true, animals: true, gallery: true });
+  const [sections, setSections] = useState({ blocks: true, crops: true, paintings: true, items: true, animals: true, gallery: true });
   const [galleryCategory, setGalleryCategory] = useState('Tools & Weapons');
   const [gallerySearch, setGallerySearch] = useState('');
   const [animalVersion, setAnimalVersion] = useState(0);
@@ -120,14 +120,17 @@ export function Backpack() {
           <fieldset className="backpack-categories"><legend>{translate('Catégories affichées', 'Visible categories')}</legend>{([
             ['blocks', translate('Blocs', 'Blocks')],
             ['crops', translate('Graines', 'Seeds')],
+            ['paintings', translate('Tableaux', 'Paintings')],
             ['items', translate('Objets', 'Items')],
             ['animals', translate('Animaux', 'Animals')],
             ['gallery', translate('Galerie', 'Gallery')],
           ] as const).map(([key, label]) => <label key={key}><input type="checkbox" checked={sections[key]} onChange={() => toggleSection(key)} /> {label}</label>)}</fieldset>
           {sections.blocks && <><p className="backpack-label">{survival ? translate('Ressources récoltées', 'Gathered resources') : translate('Blocs, portes et trappes', 'Blocks, doors, and trapdoors')}</p>
-          <div className="backpack-blocks">{HOTBAR_BLOCKS.filter((kind) => !isCrop(kind) && matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div></>}
+          <div className="backpack-blocks">{HOTBAR_BLOCKS.filter((kind) => !isCrop(kind) && !isPainting(kind) && matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div></>}
           {sections.crops && <><p className="backpack-label">{translate('Graines et plants · sur herbe ou terre · E pour récolter quand c’est mûr', 'Seeds and crops · on grass or dirt · E to harvest when ripe')}</p>
           <div className="backpack-blocks">{CROP_KINDS.filter((kind) => matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div></>}
+          {sections.paintings && <><p className="backpack-label">{translate('Tableaux décoratifs · choisis un tableau puis pose-le sur la paroi verticale d’un bloc', 'Decorative paintings · choose a painting and place it on the vertical side of a block')}</p>
+          <div className="backpack-blocks" data-painting-category>{PAINTING_KINDS.filter((kind) => matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div></>}
           {sections.items && <><p className="backpack-label">{survival ? translate('Objets fabriqués', 'Crafted items') : translate('Pioches, pelles, épées, armures et équipement · clic gauche pour miner ou utiliser', 'Pickaxes, shovels, swords, armor, and equipment · left click to mine or use')}</p>
           <div className="backpack-blocks">{ITEM_ORDER.filter((kind) => matchesSearch(kind) && (!survival || inventoryCount(kind, inventory) > 0)).map(itemButton)}</div></>}
           {survival && <CraftingPanel />}
