@@ -7,6 +7,7 @@ import { BlockKind, isWaterBlock, voxelKey } from '../voxel';
 import type { VoxelHit } from '../voxel';
 import { damagePlayer } from '../combat';
 import { fireHazardSystem } from '../hazards';
+import { useGameStore } from '../store';
 
 const directions = [
   [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0], [0, -1, 0],
@@ -74,6 +75,8 @@ export function fireSystem(world: World, dt: number) {
       fire.age += dt;
       fire.spreadIn = Math.max(0, fire.spreadIn - dt);
     });
+
+    if (useGameStore.getState().gameplayMode === 'maze') return;
 
     const candidates = fires.flatMap((entity) => {
       const fire = entity.get(Fire);
