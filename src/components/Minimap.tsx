@@ -69,6 +69,7 @@ export function Minimap() {
   const drag = useRef<{ pointerId: number; clientX: number; clientY: number; x: number; z: number; moved: boolean } | null>(null);
   const largeCache = useRef(new Map<string, string>());
   const lastStream = useRef(0);
+  const lastLargeDraw = useRef(0);
   const gameplayMode = useGameStore((state) => state.gameplayMode);
 
   useEffect(() => {
@@ -182,9 +183,16 @@ export function Minimap() {
       if (!dirty) return;
       dirty = false;
       if (canvas.current) draw(canvas.current, MINI_RADIUS, coordinates.current);
-      if (mapOpen && largeCanvas.current) draw(largeCanvas.current, MAP_RADIUS, largeCoordinates.current, true);
+      if (mapOpen && largeCanvas.current && performance.now() - lastLargeDraw.current >= 100) {
+        lastLargeDraw.current = performance.now();
+        draw(largeCanvas.current, MAP_RADIUS, largeCoordinates.current, true);
+      }
     };
-    const unsubscribe = onVoxelEdit(world, () => { dirty = true; largeCache.current.clear(); });
+    const unsubscribe = onVoxelEdit(world, (position) => {
+      dirty = true;
+      const [x, , z] = position.split(',');
+      largeCache.current.delete(`${x},${z}`);
+    });
     const unsubscribeNavigation = useNavigationStore.subscribe(() => { dirty = true; update(); });
     const timer = window.setInterval(() => { dirty = true; update(); }, mapOpen ? 1000 : 500);
     update();
@@ -232,7 +240,7 @@ export function Minimap() {
     useGameStore.getState().setMode('pause');
     setViewCenter(null);
     const player = world.queryFirst(Player)?.get(PlayerPosition);
-    if (player) for (let index = 0; index < 24; index += 1) streamChunks(world, player.x, player.z);
+    if (player) streamChunks(world, player.x, player.z);
     setMapOpen(true);
     releasePointerForOverlay();
   };
@@ -258,7 +266,7 @@ export function Minimap() {
     const now = performance.now();
     if (now - lastStream.current >= 250) {
       lastStream.current = now;
-      for (let index = 0; index < 18; index += 1) streamChunks(world, next.x, next.z);
+      streamChunks(world, next.x, next.z);
     }
   };
   const endMapDrag = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -266,7 +274,7 @@ export function Minimap() {
     if (current?.pointerId !== event.pointerId) return;
     drag.current = null;
     if (current.moved) {
-      for (let index = 0; index < 24; index += 1) streamChunks(world, viewCenter?.x ?? current.x, viewCenter?.z ?? current.z);
+      streamChunks(world, viewCenter?.x ?? current.x, viewCenter?.z ?? current.z);
     } else {
       const rect = event.currentTarget.getBoundingClientRect();
       const scaleX = event.currentTarget.width / rect.width;
@@ -274,7 +282,7 @@ export function Minimap() {
       const x = Math.round(current.x + ((event.clientX - rect.left) * scaleX - event.currentTarget.width / 2) / CELL);
       const z = Math.round(current.z + ((event.clientY - rect.top) * scaleY - event.currentTarget.height / 2) / CELL);
       useNavigationStore.getState().setDestination(x, z);
-      for (let index = 0; index < 24; index += 1) streamChunks(world, x, z);
+      streamChunks(world, x, z);
     }
     event.currentTarget.style.cursor = 'grab';
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
