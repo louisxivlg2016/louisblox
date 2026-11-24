@@ -126,12 +126,12 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
       setSourceDirty(false);
       setDraftNotice('');
       setMessage(translate(`Code exécuté : ${result.blocks.length} bloc${result.blocks.length > 1 ? 's' : ''}. Tu peux maintenant modifier la construction dans l’éditeur.`, `Code executed: ${result.blocks.length} block${result.blocks.length > 1 ? 's' : ''}. You can now edit the construction in the editor.`));
-      return true;
+      return result;
     } catch (error) {
       setSourceDirty(true);
       setMessage(error instanceof Error ? error.message : translate('Le code contient une erreur.', 'The code contains an error.'));
       setTab('code');
-      return false;
+      return null;
     }
   };
   const runCode = () => compileSource(source);
@@ -196,10 +196,11 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
     return saved;
   };
   const submit = (nextOptions = options) => {
+    let compiledWorld: CustomWorldDefinition | undefined;
     if (nextOptions.template === 'custom' && sourceDirty) {
-      setTab('code');
-      setMessage(translate('Exécute d’abord le code modifié pour l’ajouter au monde et au salon.', 'Run the modified code first to add it to the world and room.'));
-      return;
+      const result = compileSource(source);
+      if (!result) return;
+      compiledWorld = result;
     }
     if (!nextOptions.name.trim()) {
       setTab('world');
@@ -217,7 +218,7 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
         return;
       }
     }
-    onCreate({ ...nextOptions, server, customWorld: nextOptions.template === 'custom' ? { version: 1, source, terrain, blocks, ...(infiniteEditor ? { infinite: true } : {}), ...(environment ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}), ...(images.length > 0 ? { images } : {}), ...(characters.length > 0 ? { characters } : {}) } : undefined });
+    onCreate({ ...nextOptions, server, customWorld: nextOptions.template === 'custom' ? compiledWorld ?? { version: 1, source, terrain, blocks, ...(infiniteEditor ? { infinite: true } : {}), ...(environment ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}), ...(images.length > 0 ? { images } : {}), ...(characters.length > 0 ? { characters } : {}) } : undefined });
   };
   const createLobbyRoom = (room: string, mode: GameplayMode | null) => submit(createLobbyOptions(options, room, mode));
   return (
@@ -299,7 +300,7 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
         </div>}
         {tab !== 'lobby' && options.multiplayer && connectionStatus === 'connecting' && <p className="multiplayer-hint" role="status">{translate('Création du monde et connexion au salon…', 'Creating the world and connecting to the room…')}</p>}
         {tab !== 'lobby' && options.multiplayer && connectionError && <p className="multiplayer-error" role="alert">{connectionError}</p>}
-        {tab !== 'lobby' && <div className="create-world-submit"><span>{draftNotice || (options.template === 'custom' ? `${blocks.length} ${translate('blocs', 'blocks', 'bloques')} · ${terrain === 'flat' ? translate('terrain plat', 'flat terrain') : translate('terrain naturel', 'natural terrain')}` : translate('Ton monde sera sauvegardé dans Mes mondes.', 'Your world will be saved in My Worlds.'))}</span><button className="primary-button" type="button" onClick={() => submit()} disabled={options.template === 'custom' && sourceDirty || options.multiplayer && connectionStatus === 'connecting'}>{translate('Créer le monde', 'Create world')}</button></div>}
+        {tab !== 'lobby' && <div className="create-world-submit"><span>{draftNotice || (options.template === 'custom' ? `${blocks.length} ${translate('blocs', 'blocks', 'bloques')} · ${terrain === 'flat' ? translate('terrain plat', 'flat terrain') : translate('terrain naturel', 'natural terrain')}` : translate('Ton monde sera sauvegardé dans Mes mondes.', 'Your world will be saved in My Worlds.'))}</span><button className="primary-button" type="button" onClick={() => submit()} disabled={options.multiplayer && connectionStatus === 'connecting'}>{options.template === 'custom' && sourceDirty ? translate('Exécuter et créer le monde', 'Run and create world') : translate('Créer le monde', 'Create world')}</button></div>}
       </div>
     </MenuDialog>
   );
