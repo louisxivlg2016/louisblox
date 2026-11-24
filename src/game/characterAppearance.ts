@@ -205,6 +205,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   const eyeMask = maskCanvas(geometry, bounds, 'eyes', canvas.width, canvas.height, material.map.flipY, false, frontSign, outfit === 'princess' ? 0.79 : 0.69, outfit === 'princess' ? 0.85 : outfit === 'classic-girl' ? 0.72 : 0.697).getImageData(0, 0, canvas.width, canvas.height).data;
   const eyeAreaMask = maskCanvas(geometry, bounds, 'eyes', canvas.width, canvas.height, material.map.flipY, false, frontSign, outfit === 'princess' ? 0.7 : 0.655, outfit === 'princess' ? 0.87 : 0.697).getImageData(0, 0, canvas.width, canvas.height).data;
   const eyebrowMask = maskCanvas(geometry, bounds, 'eyebrows', canvas.width, canvas.height, material.map.flipY, false, frontSign, 0.69, 0.697, outfit === 'princess' ? 0.84 : 0.68, outfit === 'princess' ? 0.89 : 0.735).getImageData(0, 0, canvas.width, canvas.height).data;
+  for (let index = 0; index < eyebrowMask.length; index += 4) if (eyebrowMask[index + 3] > 0) hairMask[index + 3] = 0;
   const eyeDetails = new Uint8Array(canvas.width * canvas.height);
   const eyeRadius = Math.max(2, Math.round(canvas.width / 85));
   for (let index = 0; index < pixels.data.length; index += 4) {
