@@ -27,8 +27,8 @@ export function PlayerWorlds({ onPlay }: { onPlay: () => void | Promise<void> })
       <div className="community-heading"><div><h2>{translate('Jeux des joueurs', 'Player games')}</h2><p>{translate('Retrouve tes mondes et ceux créés par les autres joueurs.', 'Find your worlds and worlds created by other players.')}</p></div></div>
       <div className="world-library-list">
         {playersWorlds.map((world) => <button className="world-library-entry" key={world.id} data-world-id={world.id} data-mode={world.gameplayMode} onClick={() => join(world)} disabled={pending}>
-          <strong>{world.name}</strong>
-          <small>{world.ownerId === selfId ? translate('Toi', 'You') : world.ownerName} · {GAMEPLAY_MODE_LABELS()[world.gameplayMode]} · {world.players} {translate('joueur', 'player')}{world.players > 1 ? 's' : ''} {translate('en ligne', 'online')}</small>
+          {world.thumbnail && <img className="world-library-thumbnail" src={world.thumbnail} alt="" />}
+          <span className="world-library-details"><strong>{world.name}</strong><small>{world.ownerId === selfId ? translate('Toi', 'You') : world.ownerName} · {GAMEPLAY_MODE_LABELS()[world.gameplayMode]} · {world.players} {translate('joueur', 'player')}{world.players > 1 ? 's' : ''} {translate('en ligne', 'online')}</small></span>
         </button>)}
         {playersWorlds.length === 0 && <p>{translate('Aucun jeu de joueur en ligne pour le moment.', 'No player games online right now.')}</p>}
       </div>

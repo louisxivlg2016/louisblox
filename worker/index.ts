@@ -444,7 +444,7 @@ export class GameRoom extends DurableObject<Env> {
     await directory.fetch('https://directory/world', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: this.worldId ?? attachment?.room ?? 'main-room', name: this.worldName ?? this.worldId ?? attachment?.room ?? 'main-room', ownerId, ownerName: this.publisherName ?? 'Creator', gameplayMode: this.gameplayMode, template: this.worldTemplate, players: this.ctx.getWebSockets().filter((socket) => socket.readyState === 1).length }),
+      body: JSON.stringify({ id: this.worldId ?? attachment?.room ?? 'main-room', name: this.worldName ?? this.worldId ?? attachment?.room ?? 'main-room', ownerId, ownerName: this.publisherName ?? 'Creator', gameplayMode: this.gameplayMode, template: this.worldTemplate, thumbnail: this.worldTemplate === 'custom' ? this.customWorld?.images?.[0]?.url : undefined, players: this.ctx.getWebSockets().filter((socket) => socket.readyState === 1).length }),
     });
   }
 

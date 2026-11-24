@@ -80,7 +80,7 @@ export function parseSocialPlayer(value: unknown): SocialPlayer | null {
   };
 }
 
-type SharedWorld = { id: string; name: string; ownerId: string; ownerName: string; gameplayMode: string; template: string; players: number; updatedAt: number };
+type SharedWorld = { id: string; name: string; ownerId: string; ownerName: string; gameplayMode: string; template: string; thumbnail?: string; players: number; updatedAt: number };
 
 type PendingInvitation = {
   kind: 'friend-request' | 'friend-accept';
@@ -274,6 +274,7 @@ export class PlayerDirectory extends DurableObject<Env> {
         ownerName: typeof data.ownerName === 'string' && data.ownerName.trim() ? data.ownerName.trim().slice(0, 24) : 'Creator',
         gameplayMode: data.gameplayMode,
         template: data.template === 'city-ancient' || data.template === 'city-modern' || data.template === 'custom' ? data.template : 'nature',
+        thumbnail: typeof data.thumbnail === 'string' && data.thumbnail.length <= 200000 && (/^https:\/\/[^\s"']+$/.test(data.thumbnail) || /^data:image\/(?:png|jpeg|gif|webp);base64,[a-z0-9+/=]+$/i.test(data.thumbnail)) ? data.thumbnail : undefined,
         players: typeof data.players === 'number' && Number.isFinite(data.players) ? Math.max(0, Math.floor(data.players)) : 0,
         updatedAt: now,
       };
