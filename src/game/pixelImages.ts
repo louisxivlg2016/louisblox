@@ -30,17 +30,10 @@ export async function fileToPixelDataUrl(file: File, maxSize = 256, scale = 2) {
 export async function captureGamePhoto() {
   const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas canvas');
   if (!canvas || canvas.width === 0 || canvas.height === 0) throw new Error('The game is not ready for a photo.');
-  const bitmap = await createImageBitmap(canvas);
-  const width = 160;
-  const height = Math.max(1, Math.round(width * canvas.height / canvas.width));
-  try {
-    const url = pixelDataUrl(bitmap, width, height, 4);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `louisblox-photo-${new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-')}.png`;
-    link.click();
-    return url;
-  } finally {
-    bitmap.close();
-  }
+  const url = canvas.toDataURL('image/jpeg', 0.95);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `louisblox-photo-${new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-')}.jpg`;
+  link.click();
+  return url;
 }

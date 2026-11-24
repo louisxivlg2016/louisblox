@@ -9,6 +9,10 @@ import { LanguagePanel } from './LanguagePanel';
 import { setAudioPreference, useAudioSettings } from '../game/audio';
 import { useSeasonStore } from '../game/seasons';
 import type { Season } from '../game/seasons';
+import { captureGamePhoto } from '../game/pixelImages';
+import { saveWorld } from '../game/save';
+import { world } from '../game/world';
+import { useGameStore } from '../game/store';
 
 export function SettingsPanel() {
   const audioSettings = useAudioSettings();
@@ -24,6 +28,16 @@ export function SettingsPanel() {
   const notice = useTribeStore((state) => state.notice);
   const tribe = tribes.find((candidate) => candidate.members.some((member) => member.playerId === playerIdentity()));
   const manageTribe = () => useTribeStore.getState().setPanelOpen(true);
+  const takePhoto = async () => {
+    try {
+      const thumbnail = await captureGamePhoto();
+      useGameStore.setState({ worldThumbnail: thumbnail });
+      const saved = saveWorld(world);
+      useGameStore.getState().setNotice(saved ? translate('Photo téléchargée et ajoutée à l’image du monde !', 'Photo downloaded and set as the world image!') : translate('Photo téléchargée, mais la vignette n’a pas pu être sauvegardée.', 'Photo downloaded, but the world image could not be saved.'));
+    } catch {
+      useGameStore.getState().setNotice(translate('Impossible de prendre la photo pour le moment.', 'Unable to take a photo right now.'));
+    }
+  };
   return (
     <div className="settings-panel">
       <LanguagePanel />
@@ -32,6 +46,11 @@ export function SettingsPanel() {
         <h2>{translate('Réglages', 'Settings')}</h2>
         <p>{translate('Retrouve ici les informations du monde et les touches de jeu.', 'Find world information and game controls here.')}</p>
       </div>
+      <section className="settings-tribe" aria-label={translate('Photo du jeu', 'Game photo')}>
+        <h3>{translate('Photo', 'Photo', 'Foto')}</h3>
+        <p>{translate('Prends une photo nette à la résolution affichée dans le jeu.', 'Take a sharp photo at the resolution displayed in the game.')}</p>
+        <button type="button" className="secondary-button" onClick={() => { void takePhoto(); }} aria-label={translate('Prendre une photo du jeu', 'Take a photo of the game')}>{translate('Prendre une photo', 'Take a photo', 'Tomar una foto')}</button>
+      </section>
       <WorldStats />
       <section className="settings-tribe" aria-label={translate('Saison', 'Season', 'Estación')}>
         <h3>{translate('Saison du monde', 'World season', 'Estación del mundo')}</h3>

@@ -17,7 +17,7 @@ const WORLDS_KEY = 'louisblox-worlds-v1';
 const DEFAULT_WORLD_ID = 'main-room';
 
 function validThumbnail(value: unknown): value is string {
-  return typeof value === 'string' && value.length <= 500000 && /^data:image\/png;base64,[a-z0-9+/=]+$/i.test(value);
+  return typeof value === 'string' && value.length <= 2000000 && /^data:image\/(?:png|jpeg);base64,[a-z0-9+/=]+$/i.test(value);
 }
 
 export type WorldMeta = { id: string; name: string; gameplayMode: WorldSave['gameplayMode']; multiplayer?: boolean; thumbnail?: string; updatedAt: number };

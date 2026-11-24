@@ -56,9 +56,6 @@ import { ConstructionPanel } from './ConstructionPanel';
 import { BlueprintControls } from './BlueprintControls';
 import { CompanionPanel } from './CompanionPanel';
 import { useCompanionMenuStore } from '../game/companionMenu';
-import { captureGamePhoto } from '../game/pixelImages';
-import { saveWorld } from '../game/save';
-import { world } from '../game/world';
 
 export function Hud() {
   const language = useLanguageStore((state) => state.language);
@@ -108,16 +105,6 @@ export function Hud() {
     useGameStore.getState().setMode('pause');
     if (document.pointerLockElement) document.exitPointerLock();
   };
-  const takePhoto = async () => {
-    try {
-      const thumbnail = await captureGamePhoto();
-      useGameStore.setState({ worldThumbnail: thumbnail });
-      const saved = saveWorld(world);
-      useGameStore.getState().setNotice(saved ? translate('Photo téléchargée et ajoutée à l’image du monde !', 'Photo downloaded and set as the world image!') : translate('Photo téléchargée, mais la vignette n’a pas pu être sauvegardée.', 'Photo downloaded, but the world image could not be saved.'));
-    } catch {
-      useGameStore.getState().setNotice(translate('Impossible de prendre la photo pour le moment.', 'Unable to take a photo right now.'));
-    }
-  };
   const openShop = () => {
     useGameStore.getState().setShopOpen(true);
     useGameStore.getState().setMode('pause');
@@ -138,7 +125,6 @@ export function Hud() {
       {mode === 'play' && (
         <>
           <div className="crosshair" aria-hidden="true"><i /><b /></div>
-          <button className="screenshot-toggle" type="button" onClick={() => { void takePhoto(); }} aria-label={translate('Prendre une photo pixelisée du jeu', 'Take a pixelated photo of the game')}>{translate('PHOTO', 'PHOTO', 'FOTO')}</button>
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
           {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label={translate('Sac à dos', 'Backpack')}><img src={translate(backpackButtonFrUrl, backpackButtonEnUrl, backpackButtonEsUrl)} alt="" /></button>}
           {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label={translate('Boutique', 'Shop')}><img src={translate(shopButtonFrUrl, shopButtonEnUrl, shopButtonEsUrl)} alt="" /></button>}
