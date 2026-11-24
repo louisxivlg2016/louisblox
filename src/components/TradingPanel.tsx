@@ -57,7 +57,7 @@ export function TradingPanel() {
     close();
   };
   return (
-    <div className="backpack-backdrop">
+    <div className="backpack-backdrop trade-backdrop">
       <section className="book-panel backpack-panel trade-panel" aria-label={translate('Discussion avec le marchand', 'Conversation with trader')}>
         <div className="backpack-header"><h2>{view === 'village' ? translate('Habitant du village', 'Village resident') : view === 'restaurant' ? translate('Restaurant du village', 'Village restaurant') : translate('Marchand ambulant', 'Traveling trader')}</h2><button className="secondary-button" onClick={close}>{translate('Fermer et reprendre', 'Close and resume')}</button></div>
         {view === 'village' ? (
