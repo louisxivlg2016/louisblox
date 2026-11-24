@@ -48,6 +48,7 @@ export type Voxel = {
   items?: import('./items').SelectedKind[];
   text?: string;
   textSize?: number;
+  image?: string;
   facing?: 'north' | 'south' | 'east' | 'west';
   food?: import('./items').SelectedKind;
   meat?: import('./animals').AnimalKind;

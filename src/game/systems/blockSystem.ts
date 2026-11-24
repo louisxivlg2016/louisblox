@@ -10,7 +10,7 @@ import { startSleep } from './sleepSystem';
 import { openChest, openFurnace } from '../containers';
 import { cropDefinition } from '../crops';
 import { pickUpFood } from '../foods';
-import { consumeActions, isMouseDown, stopMining } from '../input';
+import { consumeActions, isMouseDown, releasePointerForOverlay, stopMining } from '../input';
 import { MAX_BUILD_Y, MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
 import { getItemMeta, isSword, isWoodBlock, miningSpeed } from '../items';
@@ -27,6 +27,7 @@ import { dropBlock } from '../droppedItems';
 import { translate } from '../language';
 import { toggleVehicleRadio } from '../radio';
 import { useShopBlock } from '../shops';
+import { useCustomPaintingStore } from '../customPainting';
 
 const direction = new Vector3();
 const origin = new Vector3();
@@ -149,6 +150,11 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   const actions = pendingActions ?? consumeActions();
   if (useGameStore.getState().mode !== 'play' || !hit) return;
   if ((actions.place > 0 || actions.harvest > 0 || (actions.interact ?? 0) > 0) && hit.block.shop && useShopBlock(world, hit.block)) return;
+  if ((actions.place > 0 || actions.harvest > 0) && hit.block.kind === BlockKind.PaintingCustom) {
+    useCustomPaintingStore.getState().openPainting(hit, hit.block.image);
+    releasePointerForOverlay();
+    return;
+  }
   if ((actions.place > 0 || actions.harvest > 0) && isSign(hit.block.kind)) {
     useSignStore.getState().openSign(hit, hit.block.text ?? '', hit.block.kind, hit.block.textSize);
     if (document.pointerLockElement) document.exitPointerLock();
@@ -259,6 +265,10 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       const orientation = isSlab(kind) ? uprightGlassSlab || extendingWallSlab ? 2 : hit.normal.y === -1 ? 1 : hit.normal.y === 0 ? 2 : 0 : isStair(kind) && hit.normal.y === -1 ? 1 : undefined;
       const placed = addVoxel(world, x, y, z, kind, orientation, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || isSlab(kind) || isPainting(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
       if (placed) playSound('placeBlock', 0.45);
+      if (placed && kind === BlockKind.PaintingCustom) {
+        useCustomPaintingStore.getState().openPainting({ x, y, z }, placed.image);
+        releasePointerForOverlay();
+      }
       if (placed && kind === BlockKind.Water) setVoxelFloodSource(world, placed, true);
       if (placed && store.gameplayMode === 'survival') changeInventory(kind, -1);
       if (kind === BlockKind.Tnt) {

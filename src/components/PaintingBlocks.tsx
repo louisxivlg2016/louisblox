@@ -1,17 +1,30 @@
-import { CanvasTexture, DoubleSide, LinearFilter, SRGBColorSpace } from 'three';
+import { CanvasTexture, DoubleSide, LinearFilter, NearestFilter, SRGBColorSpace, TextureLoader } from 'three';
+import type { Texture } from 'three';
 import { BlockKind } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { drawPainting } from '../game/paintingArt';
+import { cleanPaintingImage } from '../game/paintingImage';
 import { facingYaw } from '../game/extraBlocks';
 import { wallMount } from '../game/wallMount';
 import { PixelPart } from './ItemModel';
 import { DecorationCulling } from './DecorationCulling';
 
-const textures = new Map<BlockKind, CanvasTexture>();
+const textures = new Map<string, Texture>();
 
-function paintingTexture(kind: BlockKind) {
-  const cached = textures.get(kind);
+function paintingTexture(kind: BlockKind, image?: string) {
+  const customImage = kind === BlockKind.PaintingCustom ? cleanPaintingImage(image) : undefined;
+  const key = customImage ?? String(kind);
+  const cached = textures.get(key);
   if (cached) return cached;
+  if (customImage) {
+    const texture = new TextureLoader().load(customImage);
+    texture.magFilter = NearestFilter;
+    texture.minFilter = NearestFilter;
+    texture.generateMipmaps = false;
+    texture.colorSpace = SRGBColorSpace;
+    textures.set(key, texture);
+    return texture;
+  }
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 384;
@@ -21,12 +34,12 @@ function paintingTexture(kind: BlockKind) {
   texture.minFilter = LinearFilter;
   texture.generateMipmaps = false;
   texture.colorSpace = SRGBColorSpace;
-  textures.set(kind, texture);
+  textures.set(key, texture);
   return texture;
 }
 
-export function PaintingModel({ kind }: { kind: BlockKind }) {
-  const texture = paintingTexture(kind);
+export function PaintingModel({ kind, image }: { kind: BlockKind; image?: string }) {
+  const texture = paintingTexture(kind, image);
   return (
     <group name={`painting-${kind}`}>
       <PixelPart position={[0, 0, 0]} size={[1, 0.78, 0.08]} color="#5d3c25" />
@@ -45,6 +58,6 @@ export function PaintingModel({ kind }: { kind: BlockKind }) {
 export function PaintingBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIndex: ReadonlyMap<string, Voxel> }) {
   return <DecorationCulling distance={55}>{blocks.map((block) => {
     const mount = wallMount(blockIndex, block, facingYaw(block.facing));
-    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} userData={{ wallMounted: mount.mounted }}><PaintingModel kind={block.kind} /></group>;
+    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} userData={{ wallMounted: mount.mounted }}><PaintingModel kind={block.kind} image={block.image} /></group>;
   })}</DecorationCulling>;
 }

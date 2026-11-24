@@ -33,6 +33,7 @@ import { createMeatInventory } from './meats';
 import { clearPaintSplashAt, normalizePaintballCounts, normalizePaintballGun, restorePaintStrokes } from './paintball';
 import { useGameStore } from './store';
 import { BlockKind, cleanSignTextSize, DEFAULT_SIGN_TEXT_SIZE, isWaterBlock, voxelKey } from './voxel';
+import { cleanPaintingImage } from './paintingImage';
 import type { Voxel, VoxelHit } from './voxel';
 import { canEditAt, newProtection, useProtectionStore } from './protection';
 import type { WorldProtection } from './protection';
@@ -45,7 +46,7 @@ import { translate } from './language';
 import { isSeason, useSeasonStore } from './seasons';
 import { DAY_DURATION } from './dayNight';
 
-export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; textSize?: number; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean; waterlogged?: boolean; floodSource?: boolean; floodDepth?: number; shop?: Voxel['shop']; season?: Voxel['season'] } | null;
+export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; textSize?: number; image?: string; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean; waterlogged?: boolean; floodSource?: boolean; floodDepth?: number; shop?: Voxel['shop']; season?: Voxel['season'] } | null;
 export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: VehicleKind };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
@@ -233,6 +234,7 @@ function blockEdit(block: Voxel): ChunkEdit {
   if (block.facing !== undefined) edit.facing = block.facing;
   if (block.text !== undefined) edit.text = block.text;
   if (block.textSize !== undefined) edit.textSize = block.textSize;
+  if (block.image !== undefined) edit.image = block.image;
   if (block.food !== undefined) edit.food = block.food;
   if (block.meat !== undefined) edit.meat = block.meat;
   if (block.protected === true) edit.protected = true;
@@ -255,6 +257,21 @@ export function setVoxelText(world: World, position: { x: number; y: number; z: 
     if (size === DEFAULT_SIGN_TEXT_SIZE) delete block.textSize;
     else block.textSize = size;
   }
+  const cx = chunkCoordinate(position.x);
+  const cz = chunkCoordinate(position.z);
+  editsFor(state, cx, cz).set(voxelKey(position.x, position.y, position.z), blockEdit(block));
+  recordVoxelEdit(state, cx, cz, position.x, position.y, position.z);
+  return true;
+}
+
+export function setVoxelImage(world: World, position: { x: number; y: number; z: number }, image: string, authoritative = false) {
+  if (!authoritative && !canEditAt(position.x, position.z)) return false;
+  const value = cleanPaintingImage(image);
+  if (!value) return false;
+  const state = stateFor(world);
+  const block = state.blocks.get(voxelKey(position.x, position.y, position.z));
+  if (!block || block.kind !== BlockKind.PaintingCustom) return false;
+  block.image = value;
   const cx = chunkCoordinate(position.x);
   const cz = chunkCoordinate(position.z);
   editsFor(state, cx, cz).set(voxelKey(position.x, position.y, position.z), blockEdit(block));
@@ -341,7 +358,7 @@ export function loadChunk(world: World, cx: number, cz: number) {
       else {
         const [x, y, z] = position.split(',').map(Number);
         const data = typeof kind === 'number' ? { kind, open: false } : kind;
-        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing, text: typeof data.text === 'string' ? data.text.replace(/\r/g, '').slice(0, 120) : undefined, textSize: data.textSize === undefined ? undefined : cleanSignTextSize(data.textSize), food: data.food, meat: data.meat, protected: data.protected, waterlogged: data.waterlogged, floodSource: data.floodSource, floodDepth: data.floodDepth, shop: data.shop, season: data.season });
+        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing, text: typeof data.text === 'string' ? data.text.replace(/\r/g, '').slice(0, 120) : undefined, textSize: data.textSize === undefined ? undefined : cleanSignTextSize(data.textSize), image: cleanPaintingImage(data.image), food: data.food, meat: data.meat, protected: data.protected, waterlogged: data.waterlogged, floodSource: data.floodSource, floodDepth: data.floodDepth, shop: data.shop, season: data.season });
       }
     }
   }
@@ -669,7 +686,8 @@ export function replaceVoxel(world: World, hit: VoxelHit, kind: BlockKind, open?
   if (isChest(kind)) block.items = items ?? block.items ?? [];
   else delete block.items;
   if (facing !== undefined) block.facing = facing;
-  if (!isLadder(kind) && !isDoor(kind) && !isTrapdoor(kind) && !isRail(kind) && !isSign(kind) && !isBed(kind) && !isStair(kind) && !isSlab(kind) && kind !== BlockKind.TrafficLight && !isTrafficSign(kind)) delete block.facing;
+  if (!isLadder(kind) && !isDoor(kind) && !isTrapdoor(kind) && !isRail(kind) && !isSign(kind) && !isBed(kind) && !isStair(kind) && !isSlab(kind) && !isPainting(kind) && kind !== BlockKind.TrafficLight && !isTrafficSign(kind)) delete block.facing;
+  if (kind !== BlockKind.PaintingCustom) delete block.image;
   if (kind === BlockKind.Food) {
     block.food = food;
     block.meat = meat;
@@ -761,6 +779,7 @@ export function applyVoxelEdit(world: World, position: string, edit: ChunkEdit, 
     if (hasWaterOpening(block) || block.waterlogged) setVoxelWaterlogged(world, block, data.waterlogged === true && hasWaterOpening(block), authoritative);
     if (isWaterBlock(data.kind) || block.waterlogged) setVoxelFloodSource(world, block, data.floodSource === true, authoritative);
     if (typeof data.text === 'string') setVoxelText(world, { x, y, z }, data.text, data.textSize ?? DEFAULT_SIGN_TEXT_SIZE, authoritative);
+    if (cleanPaintingImage(data.image)) setVoxelImage(world, { x, y, z }, data.image!, authoritative);
   }
   if (isWaterBlock(data.kind)) clearPaintSplashAt(world, x, y, z);
 }

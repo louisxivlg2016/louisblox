@@ -26,7 +26,9 @@ import { RadioControls } from './RadioControls';
 import { VehiclePassengers } from './VehiclePassengers';
 import { BookPanel } from './BookPanel';
 import { SignPanel } from './SignPanel';
+import { CustomPaintingPanel } from './CustomPaintingPanel';
 import { useSignStore } from '../game/signs';
+import { useCustomPaintingStore } from '../game/customPainting';
 import { SeatChoicePanel } from './SeatChoicePanel';
 import { GameMenu } from './GameMenu';
 import { TeleportPanel, TeleportRequestDialog } from './TeleportRequests';
@@ -76,6 +78,7 @@ export function Hud() {
   const containerOpen = useGameStore((state) => state.container !== null);
   const bookOpen = useGameStore((state) => state.bookOpen);
   const signOpen = useSignStore((state) => state.editing !== null);
+  const paintingOpen = useCustomPaintingStore((state) => state.editing !== null);
   const seatChoice = useGameStore((state) => state.seatChoice);
   const chatOpen = useChatStore((state) => state.open);
   const emoteOpen = useEmoteStore((state) => state.open);
@@ -153,7 +156,7 @@ export function Hud() {
       <PlaneTitleEditor />
       <PoliceTitleEditor />
 
-      {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !constructionOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !chatOpen && !emoteOpen && !tradeOpen && !companionOpen && !homeOpen && !tribeOpen && (
+      {mode !== 'play' && !teamSelection && !teleportRequestOpen && !backpackOpen && !shopOpen && !constructionOpen && !teleportOpen && !containerOpen && !bookOpen && !seatChoice && !signOpen && !paintingOpen && !chatOpen && !emoteOpen && !tradeOpen && !companionOpen && !homeOpen && !tribeOpen && (
         <GameMenu paused={mode === 'pause'} onPlay={requestPlay} onShop={openShop} />
       )}
 
@@ -191,6 +194,7 @@ export function Hud() {
       <ContainerPanel />
       <BookPanel />
       <SignPanel />
+      <CustomPaintingPanel />
       <SeatChoicePanel />
       <TradingPanel />
       <CompanionPanel />

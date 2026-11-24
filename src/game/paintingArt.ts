@@ -154,6 +154,17 @@ export function drawPainting(context: CanvasRenderingContext2D, kind: BlockKind)
     context.fillStyle = '#8db1c1';
     polygon(context, '#8db1c1', [[0, 163], [37, 151], [74, 161], [101, 154], [104, 166], [69, 174], [31, 165], [0, 177]]);
     for (const [x, y, color] of [[23, 153, '#f0d266'], [190, 158, '#e597a7'], [74, 180, '#eee5cf'], [217, 138, '#e6d375']] as const) circle(context, x, y, 3, color);
+  } else if (kind === BlockKind.PaintingCustom) {
+    context.fillStyle = '#f4f0e5';
+    context.fillRect(0, 0, 256, 192);
+    context.strokeStyle = '#a9a294';
+    context.lineWidth = 4;
+    context.setLineDash([12, 9]);
+    context.strokeRect(13, 13, 230, 166);
+    context.setLineDash([]);
+    context.fillStyle = '#b8b0a0';
+    context.fillRect(119, 53, 18, 86);
+    context.fillRect(85, 87, 86, 18);
   } else {
     context.fillStyle = '#eee4d0';
     context.fillRect(0, 0, 256, 192);

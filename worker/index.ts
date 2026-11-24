@@ -6,6 +6,7 @@ import { FootballEngine } from './football';
 import { MazeEngine } from './maze';
 import { isAnimalMount, isVehicleKind } from '../src/game/vehicleTypes';
 import { BlockKind } from '../src/game/voxel';
+import { cleanPaintingImage } from '../src/game/paintingImage';
 import { sanitizeCustomWorld } from '../src/game/worldCode';
 import { generatePirateChunk } from '../src/game/pirates';
 import type { CustomWorldDefinition } from '../src/game/worldCode';
@@ -42,6 +43,7 @@ type VoxelEdit = number | {
   facing?: string;
   text?: string;
   textSize?: number;
+  image?: string;
   food?: string;
   meat?: string;
   protected?: boolean;
@@ -216,6 +218,8 @@ function parseEdits(value: unknown): EditEntry[] | null {
     if (typeof data.facing === 'string' && facings.has(data.facing)) result.facing = data.facing;
     if (typeof data.text === 'string') result.text = data.text.replace(/\r/g, '').slice(0, 120);
     if (typeof data.textSize === 'number' && [15, 20, 30, 60].includes(data.textSize)) result.textSize = data.textSize;
+    const paintingImage = cleanPaintingImage(data.image);
+    if (paintingImage) result.image = paintingImage;
     if (typeof data.food === 'string' && data.food.length > 0 && data.food.length <= 96) result.food = data.food;
     if (typeof data.meat === 'string' && ['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'zombie'].includes(data.meat)) result.meat = data.meat;
     if (data.protected === true) result.protected = true;
