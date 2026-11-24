@@ -57,6 +57,7 @@ export type WorldSave = {
   multiplayer?: boolean;
   template?: import('./worldMode').WorldTemplate;
   customWorld?: import('./worldCode').CustomWorldDefinition;
+  thumbnail?: string;
   seed: number;
   player: { x: number; y: number; z: number; yaw: number; pitch: number; flying: boolean };
   selected: SelectedKind;
@@ -857,6 +858,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     : kind !== null && kind !== 'hand' && (itemCounts[typeof kind === 'number' ? `block_${kind}` : kind] ?? 0) > 0 ? kind : null);
   useGameStore.setState({
     gameplayMode,
+    worldThumbnail: restore?.thumbnail,
     meat: { ...createMeatInventory(), ...restore?.meat },
     selected,
     selectedSlot: Math.max(0, hotbarSlots.indexOf(selected)),

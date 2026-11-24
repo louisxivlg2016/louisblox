@@ -16,7 +16,11 @@ const LEGACY_SAVE_KEY = 'louisblox-save-v1';
 const WORLDS_KEY = 'louisblox-worlds-v1';
 const DEFAULT_WORLD_ID = 'main-room';
 
-export type WorldMeta = { id: string; name: string; gameplayMode: WorldSave['gameplayMode']; multiplayer?: boolean; updatedAt: number };
+function validThumbnail(value: unknown): value is string {
+  return typeof value === 'string' && value.length <= 500000 && /^data:image\/png;base64,[a-z0-9+/=]+$/i.test(value);
+}
+
+export type WorldMeta = { id: string; name: string; gameplayMode: WorldSave['gameplayMode']; multiplayer?: boolean; thumbnail?: string; updatedAt: number };
 export const MAX_WORLDS = 20;
 
 export function isMultiplayerWorld(world: Pick<WorldMeta, 'id' | 'gameplayMode' | 'multiplayer'>) {
@@ -39,7 +43,7 @@ export function readWorldSave(worldId = DEFAULT_WORLD_ID, forLoad = false): Worl
       return null;
     }
     const save = JSON.parse(raw) as WorldSave;
-    const result = save.version === 1 || save.version === 2 || save.version === 3 || save.version === 4 || save.version === 5 ? { ...save, worldId: save.worldId ?? worldId, customWorld: sanitizeCustomWorld(save.customWorld) ?? undefined, revision: revisionOf(save.revision), savedAt: typeof save.savedAt === 'number' ? save.savedAt : 0 } : null;
+    const result = save.version === 1 || save.version === 2 || save.version === 3 || save.version === 4 || save.version === 5 ? { ...save, worldId: save.worldId ?? worldId, customWorld: sanitizeCustomWorld(save.customWorld) ?? undefined, thumbnail: validThumbnail(save.thumbnail) ? save.thumbnail : undefined, revision: revisionOf(save.revision), savedAt: typeof save.savedAt === 'number' ? save.savedAt : 0 } : null;
     if (forLoad) {
       worldRevisions.set(worldId, result?.revision ?? 0);
       revisionWarningShown = false;
@@ -55,12 +59,12 @@ export function listWorlds(): WorldMeta[] {
   let saved: WorldMeta[] = [];
   try {
     const parsed = JSON.parse(localStorage.getItem(WORLDS_KEY) ?? '[]');
-    if (Array.isArray(parsed)) saved = parsed.filter((item) => item && typeof item.id === 'string' && typeof item.name === 'string' && typeof item.updatedAt === 'number');
+    if (Array.isArray(parsed)) saved = parsed.filter((item) => item && typeof item.id === 'string' && typeof item.name === 'string' && typeof item.updatedAt === 'number').map((item) => ({ ...item, thumbnail: validThumbnail(item.thumbnail) ? item.thumbnail : undefined }));
   } catch {
   }
   if (readWorldSave(DEFAULT_WORLD_ID) && !saved.some((world) => world.id === DEFAULT_WORLD_ID)) {
     const mainSave = readWorldSave(DEFAULT_WORLD_ID);
-    saved.push({ id: DEFAULT_WORLD_ID, name: translate('Monde principal', 'Main World'), gameplayMode: mainSave?.gameplayMode, multiplayer: mainSave?.multiplayer, updatedAt: 0 });
+    saved.push({ id: DEFAULT_WORLD_ID, name: translate('Monde principal', 'Main World'), gameplayMode: mainSave?.gameplayMode, multiplayer: mainSave?.multiplayer, thumbnail: mainSave?.thumbnail, updatedAt: 0 });
   }
   try {
     for (let index = 0; index < localStorage.length; index += 1) {
@@ -69,7 +73,7 @@ export function listWorlds(): WorldMeta[] {
       const id = key.slice('louisblox-world-'.length);
       if (saved.some((world) => world.id === id)) continue;
       const save = readWorldSave(id);
-      if (save) saved.push({ id, name: save.worldName?.trim().slice(0, 80) || id, gameplayMode: save.gameplayMode, multiplayer: save.multiplayer, updatedAt: save.savedAt ?? 0 });
+      if (save) saved.push({ id, name: save.worldName?.trim().slice(0, 80) || id, gameplayMode: save.gameplayMode, multiplayer: save.multiplayer, thumbnail: save.thumbnail, updatedAt: save.savedAt ?? 0 });
     }
   } catch {
   }
@@ -109,7 +113,7 @@ export function writeWorldSave(worldId: string, save: WorldSave, name = worldId)
   }
   const revision = localRevision + 1;
   const savedAt = Date.now();
-  const metadata: WorldMeta = { id: worldId, name: name.trim().slice(0, 80) || worldId, gameplayMode: save.gameplayMode, multiplayer: save.multiplayer, updatedAt: savedAt };
+  const metadata: WorldMeta = { id: worldId, name: name.trim().slice(0, 80) || worldId, gameplayMode: save.gameplayMode, multiplayer: save.multiplayer, thumbnail: save.thumbnail, updatedAt: savedAt };
   try {
     localStorage.setItem(worldKey(worldId), JSON.stringify({ ...save, worldId, worldName: metadata.name, revision, savedAt }));
     worldRevisions.set(worldId, revision);
@@ -163,6 +167,7 @@ export function createWorldSave(world: World, store: GameSnapshot = useGameStore
     multiplayer,
     template: store.worldTemplate,
     customWorld: store.customWorld ?? undefined,
+    thumbnail: store.worldThumbnail,
     seed: getWorldSeed(world),
     player: { x: position.x, y: position.y, z: position.z, yaw: state.yaw, pitch: state.pitch, flying: state.flying },
     selected: store.selected,

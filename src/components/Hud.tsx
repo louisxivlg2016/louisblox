@@ -56,6 +56,8 @@ import { BlueprintControls } from './BlueprintControls';
 import { CompanionPanel } from './CompanionPanel';
 import { useCompanionMenuStore } from '../game/companionMenu';
 import { captureGamePhoto } from '../game/pixelImages';
+import { saveWorld } from '../game/save';
+import { world } from '../game/world';
 
 export function Hud() {
   const language = useLanguageStore((state) => state.language);
@@ -105,8 +107,10 @@ export function Hud() {
   };
   const takePhoto = async () => {
     try {
-      await captureGamePhoto();
-      useGameStore.getState().setNotice(translate('Photo pixelisée téléchargée !', 'Pixelated photo downloaded!'));
+      const thumbnail = await captureGamePhoto();
+      useGameStore.setState({ worldThumbnail: thumbnail });
+      const saved = saveWorld(world);
+      useGameStore.getState().setNotice(saved ? translate('Photo téléchargée et ajoutée à l’image du monde !', 'Photo downloaded and set as the world image!') : translate('Photo téléchargée, mais la vignette n’a pas pu être sauvegardée.', 'Photo downloaded, but the world image could not be saved.'));
     } catch {
       useGameStore.getState().setNotice(translate('Impossible de prendre la photo pour le moment.', 'Unable to take a photo right now.'));
     }

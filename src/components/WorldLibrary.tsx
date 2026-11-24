@@ -85,8 +85,8 @@ export function WorldLibrary({ onPlay, onCreateSolo }: { onPlay: () => void | Pr
         {filteredWorlds.map((world) => (
           <div className="world-library-item" key={world.id}>
             <button className="world-library-entry" onClick={() => open(world)} aria-label={translate(`Ouvrir ${world.name}`, `Open ${world.name}`, `Abrir ${world.name}`)} disabled={busy || pending}>
-              <strong>{world.name}</strong>
-              <small>{MODE_NAMES()[world.gameplayMode ?? 'creative']} · {world.updatedAt ? new Date(world.updatedAt).toLocaleDateString(translate('fr-FR', 'en-US', 'es-ES')) : translate('Ancienne sauvegarde', 'Old save')}</small>
+              {world.thumbnail && <img className="world-library-thumbnail" src={world.thumbnail} alt="" />}
+              <span className="world-library-details"><strong>{world.name}</strong><small>{MODE_NAMES()[world.gameplayMode ?? 'creative']} · {world.updatedAt ? new Date(world.updatedAt).toLocaleDateString(translate('fr-FR', 'en-US', 'es-ES')) : translate('Ancienne sauvegarde', 'Old save')}</small></span>
             </button>
             <button type="button" className="world-delete" onClick={() => void remove(world)} disabled={busy || pending} aria-label={translate(`Supprimer ${world.name}`, `Delete ${world.name}`, `Eliminar ${world.name}`)}>{translate('Supprimer', 'Delete')}</button>
           </div>

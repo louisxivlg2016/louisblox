@@ -41,6 +41,7 @@ type GameStore = {
   worldName: string;
   worldTemplate: import('./worldMode').WorldTemplate;
   customWorld: import('./worldCode').CustomWorldDefinition | null;
+  worldThumbnail?: string;
   blockCount: number;
   coins: number;
   apples: number;
@@ -122,6 +123,7 @@ export const useGameStore = create<GameStore>((set) => ({
   gameplayMode: 'creative',
   worldTemplate: 'nature',
   customWorld: null,
+  worldThumbnail: undefined,
   selected: BlockKind.Grass,
   selectedSlot: 0,
   hotbarSlots: [...HOTBAR_BLOCKS.slice(0, 10)],
@@ -227,6 +229,7 @@ export const useGameStore = create<GameStore>((set) => ({
       gameplayMode,
       worldTemplate: gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : template,
       customWorld,
+      worldThumbnail: undefined,
       selected: gameplayMode === 'battle' ? 'pistol_iron' : gameplayMode === 'pirates' ? 'pistol_bomb' : gameplayMode === 'survival' || gameplayMode === 'football' || gameplayMode === 'maze' ? 'hand' : BlockKind.Grass,
       selectedSlot: 0,
       hotbarSlots: gameplayMode === 'battle'

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MenuDialog } from './MenuDialog';
 import { WorldEditor } from './WorldEditor';
 import { MultiplayerLobby } from './MultiplayerLobby';
@@ -85,12 +85,25 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
   const [message, setMessage] = useState(draft ? translate('Ton brouillon a été restauré.', 'Your draft has been restored.') : translate('Exécute le code pour voir le résultat dans l’éditeur.', 'Run the code to see the result in the editor.'));
   const [draftNotice, setDraftNotice] = useState(draft ? translate('Brouillon restauré', 'Draft restored') : '');
   const [insertKind, setInsertKind] = useState<BlockKind>(BlockKind.OakPlanks);
+  const [codeFullscreen, setCodeFullscreen] = useState(false);
+  useEffect(() => {
+    if (!codeFullscreen) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setCodeFullscreen(false);
+    };
+    window.addEventListener('keydown', close, true);
+    return () => window.removeEventListener('keydown', close, true);
+  }, [codeFullscreen]);
   const change = <K extends keyof CreateWorldOptions>(key: K, value: CreateWorldOptions[K]) => {
     setDraftNotice('');
     setOptions((current) => ({ ...current, [key]: value }));
   };
   const openTab = (next: typeof tab) => {
     setTab(next);
+    if (next !== 'code') setCodeFullscreen(false);
     if (next === 'code' || next === 'editor') change('template', 'custom');
     if (next === 'lobby') change('multiplayer', true);
   };
@@ -99,9 +112,9 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
     setSourceDirty(true);
     setDraftNotice('');
   };
-  const runCode = () => {
+  const compileSource = (value: string) => {
     try {
-      const result = createCustomWorld(source, seedFromName(options.name), (x, z) => heightAt(x, z, seedFromName(options.name)), infiniteEditor);
+      const result = createCustomWorld(value, seedFromName(options.name), (x, z) => heightAt(x, z, seedFromName(options.name)), infiniteEditor);
       setTerrain(result.terrain);
       setBlocks(result.blocks);
       setEnvironment(result.environment);
@@ -113,11 +126,13 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
       setMessage(translate(`Code exécuté : ${result.blocks.length} bloc${result.blocks.length > 1 ? 's' : ''}. Tu peux maintenant modifier la construction dans l’éditeur.`, `Code executed: ${result.blocks.length} block${result.blocks.length > 1 ? 's' : ''}. You can now edit the construction in the editor.`));
       return true;
     } catch (error) {
+      setSourceDirty(true);
       setMessage(error instanceof Error ? error.message : translate('Le code contient une erreur.', 'The code contains an error.'));
       setTab('code');
       return false;
     }
   };
+  const runCode = () => compileSource(source);
   const resetCode = () => {
     if ((source.trim() || blocks.length > 0) && !window.confirm(translate('Effacer le code et tous les blocs de l’éditeur ? Le brouillon déjà sauvegardé sera conservé tant que tu ne cliques pas sur Sauvegarder.', 'Clear the code and every block in the editor? The saved draft will be kept until you click Save.'))) return;
     setSource('');
@@ -155,8 +170,9 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
       context.drawImage(bitmap, 0, 0, 32, 32);
       bitmap.close();
       const url = canvas.toDataURL('image/png');
-      changeSource(`${source.trimEnd()}\nimage(0, 3, 0, "${url}", 4, 4);`);
-      setMessage(translate('Image convertie en pixel art et ajoutée au code. Exécute le code pour la voir.', 'Image converted to pixel art and added to the code. Run the code to see it.'));
+      const nextSource = `${source.trimEnd()}\nimage(0, 3, 0, "${url}", 4, 4);`;
+      setSource(nextSource);
+      if (compileSource(nextSource)) setMessage(translate('Image ajoutée au monde. Tu peux maintenant le créer.', 'Image added to the world. You can now create it.'));
     } catch {
       setMessage(translate('Impossible de lire cette image.', 'Unable to read this image.'));
     }
@@ -236,11 +252,11 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
           <MultiplayerLobby onPlay={() => { onClose(); return onPlay(); }} onCreateRoom={createLobbyRoom} createLabel={translate('Créer ton salon', 'Create your room')} showWhenDisabled idPrefix="create-world" />
         </div>}
         {tab === 'code' && <div id="create-panel-code" role="tabpanel" aria-labelledby="create-tab-code" className="world-code-workspace">
-          <div className="world-code-editor">
+          <div className={`world-code-editor ${codeFullscreen ? 'fullscreen' : ''}`}>
             <fieldset className="world-code-sharing"><legend>{translate('Mode de jeu', 'Game mode')}</legend><label><input type="radio" name="world-code-sharing" checked={!options.multiplayer} onChange={() => change('multiplayer', false)} /> {translate('Solo', 'Solo', 'Un jugador')}</label><label><input type="radio" name="world-code-sharing" checked={options.multiplayer} onChange={() => change('multiplayer', true)} /> {translate('Multijoueur', 'Multiplayer', 'Multijugador')}</label></fieldset>
             <label htmlFor="world-code">{translate('JavaScript simplifié et sécurisé', 'Simplified and secure JavaScript')}</label>
             <textarea id="world-code" value={source} onChange={(event) => changeSource(event.target.value)} maxLength={CUSTOM_WORLD_MAX_SOURCE} spellCheck={false} autoCapitalize="off" autoCorrect="off" aria-describedby="world-code-message" placeholder={translate('Écris ton code ici depuis zéro…', 'Write your code here from scratch…')} />
-            <div className="world-code-actions"><button type="button" className="primary-button" onClick={runCode}>{translate('Exécuter le code', 'Run code')}</button><button type="button" className="secondary-button" onClick={resetCode}>{translate('Partir de zéro', 'Start over')}</button><button type="button" className="secondary-button" onClick={() => loadExample(DEFAULT_WORLD_SOURCE)}>{translate('Exemple', 'Example')}</button><button type="button" className="secondary-button" onClick={() => { setSource(worldCodeFromBlocks({ terrain, blocks, environment, spawns, images, characters })); setSourceDirty(false); setDraftNotice(''); setMessage(translate('Le code correspond maintenant à la construction de l’éditeur.', 'The code now matches the editor construction.')); }}>{translate('Construction → code', 'Build → code')}</button><label className="secondary-button world-code-image-upload">{translate('Ajouter une image', 'Add an image')}<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void addImage(file); event.currentTarget.value = ''; }} /></label></div>
+            <div className="world-code-actions"><button type="button" className="primary-button" onClick={runCode}>{translate('Exécuter le code', 'Run code')}</button><button type="button" className="secondary-button" onClick={resetCode}>{translate('Partir de zéro', 'Start over')}</button><button type="button" className="secondary-button" onClick={() => loadExample(DEFAULT_WORLD_SOURCE)}>{translate('Exemple', 'Example')}</button><button type="button" className="secondary-button" onClick={() => { setSource(worldCodeFromBlocks({ terrain, blocks, environment, spawns, images, characters })); setSourceDirty(false); setDraftNotice(''); setMessage(translate('Le code correspond maintenant à la construction de l’éditeur.', 'The code now matches the editor construction.')); }}>{translate('Construction → code', 'Build → code')}</button><button type="button" className="secondary-button world-code-fullscreen-toggle" aria-pressed={codeFullscreen} onClick={() => setCodeFullscreen((value) => !value)}>{codeFullscreen ? translate('Quitter le plein écran', 'Exit fullscreen') : translate('Plein écran', 'Fullscreen')}</button><label className="secondary-button world-code-image-upload">{translate('Ajouter une image', 'Add an image')}<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void addImage(file); event.currentTarget.value = ''; }} /></label></div>
             <div className="world-code-examples"><span>{translate('Exemples complets à charger', 'Complete examples to load')}</span><div>{WORLD_CODE_EXAMPLES().map((example) => <button type="button" className="secondary-button" key={example.label} onClick={() => loadExample(example.source)}>{example.label}</button>)}</div></div>
             <p id="world-code-message" className={sourceDirty || message.startsWith('Line') ? 'world-code-message warning' : 'world-code-message'} role="status">{sourceDirty ? translate('Code modifié : exécute-le avant de créer le monde. ', 'Code changed: run it before creating the world. ') : ''}{message}</p>
           </div>
