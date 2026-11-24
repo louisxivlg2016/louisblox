@@ -8,6 +8,7 @@ import { cropDefinition } from './crops';
 import { isCrop, isSapling, signFacing } from './extraBlocks';
 import { GALLERY_ITEMS, GALLERY_ITEM_MAP, isGalleryItem } from './galleryCatalog';
 import { getItemMeta, isAnimalPoison } from './items';
+import { changeInventory } from './inventory';
 import type { GalleryItemId } from './items';
 import { SEA_LEVEL } from './levels';
 import { spawnSapling } from './saplingLifecycle';
@@ -201,7 +202,7 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
       if (!isWaterBlock(blocks.get(voxelKey(waterX, waterY, waterZ))?.kind)) continue;
       const caughtFish = GALLERY_ITEMS.find((item) => item.name === 'Caught Fish')?.id;
       if (!caughtFish) return true;
-      store.setItemCount(caughtFish, (store.itemCounts[caughtFish] ?? 0) + 1);
+      changeInventory(caughtFish, 1);
       store.setNotice(translate('Poisson pêché ! Il est dans ton sac et peut être mangé.', 'Fish caught! It is in your backpack and can be eaten.'));
       return true;
     }
@@ -212,7 +213,7 @@ export function useGalleryItem(world: World, selected: GalleryItemId, origin: Ve
     if (meta.name === 'Empty Bottle') {
       if (isWaterBlock(hit?.block.kind)) {
         const bottle = GALLERY_ITEMS.find((item) => item.name === 'Water Bottle');
-        if (bottle) store.setItemCount(bottle.id, (store.itemCounts[bottle.id] ?? 0) + 1);
+        if (bottle) changeInventory(bottle.id, 1);
         if (store.gameplayMode === 'survival') store.setItemCount(selected, (store.itemCounts[selected] ?? 1) - 1);
         store.setNotice('Bouteille remplie avec de l’eau.');
       } else store.setNotice(translate('Vise de l’eau avec la bouteille vide pour la remplir.', 'Aim at water with the empty bottle to fill it.'));

@@ -34,8 +34,8 @@ function changeHeldBucket(from: 'bucket' | 'water_bucket', to: 'bucket' | 'water
   const slot = store.hotbarSlots.indexOf(from);
   const replaceHeld = store.gameplayMode !== 'survival' || (store.itemCounts[from] ?? 0) === 1;
   if (store.gameplayMode === 'survival') {
-    store.setItemCount(from, (store.itemCounts[from] ?? 0) - 1);
-    store.setItemCount(to, (store.itemCounts[to] ?? 0) + 1);
+    changeInventory(from, -1);
+    changeInventory(to, 1);
   }
   if (!replaceHeld) return;
   if (slot >= 0) store.setHotbarSlot(slot, to);

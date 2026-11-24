@@ -58,8 +58,10 @@ export function pickUpFood(world: World, hit: VoxelHit) {
   removeVoxel(world, hit);
   if (getBlockIndex(world).has(voxelKey(hit.x, hit.y, hit.z))) return false;
   const store = useGameStore.getState();
-  if (meat) store.collectMeat(meat);
-  else if (food === 'apple') changeInventory('apple', 1);
+  if (meat) {
+    store.collectMeat(meat);
+    changeInventory(meat === 'chicken' || meat === 'duck' ? 'raw_chicken' : 'raw_meat', 1);
+  } else if (food === 'apple') changeInventory('apple', 1);
   else if (food !== undefined && isSelectedKind(food)) changeInventory(food, 1);
   const name = meat ? MEAT_NAMES()[meat] : food !== undefined && isSelectedKind(food) ? selectionInfo(food).name : translate('Nourriture', 'Food');
   store.setNotice(translate(`${name} récupéré.`, `${name} collected.`));

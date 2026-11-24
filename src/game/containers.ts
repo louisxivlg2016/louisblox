@@ -5,6 +5,7 @@ import { requestPlay } from './input';
 import { selectionInfo } from './items';
 import type { SelectedKind } from './items';
 import { useGameStore } from './store';
+import { changeInventory } from './inventory';
 import { voxelKey } from './voxel';
 import type { VoxelHit } from './voxel';
 import { translate } from './language';
@@ -59,10 +60,11 @@ export function withdrawChest(world: World, index: number) {
   const item = store.chestItems[index];
   if (item === undefined) return;
   const items = store.chestItems.filter((_, itemIndex) => itemIndex !== index);
-  const slot = store.hotbarSlots[store.selectedSlot] === store.selected ? store.selectedSlot : Math.max(0, store.hotbarSlots.indexOf(store.selected));
-  store.setHotbarSlot(slot, item);
+  const existingSlot = store.hotbarSlots.indexOf(item);
+  const slot = existingSlot >= 0 ? existingSlot : store.hotbarSlots.findIndex((kind) => kind === null);
+  changeInventory(item, 1);
   updateChest(world, items);
-  store.setNotice(translate(`${selectionInfo(item).name} ajouté à la case ${slot === 9 ? '0' : slot + 1}.`, `${selectionInfo(item).name} added to slot ${slot === 9 ? '0' : slot + 1}.`));
+  store.setNotice(slot >= 0 ? translate(`${selectionInfo(item).name} ajouté à la case ${slot === 9 ? '0' : slot + 1}.`, `${selectionInfo(item).name} added to slot ${slot === 9 ? '0' : slot + 1}.`) : translate(`${selectionInfo(item).name} ajouté au sac.`, `${selectionInfo(item).name} added to backpack.`));
 }
 
 export function cookMeat(kind: AnimalKind) {
@@ -72,6 +74,6 @@ export function cookMeat(kind: AnimalKind) {
     return;
   }
   store.discardMeat(kind);
-  store.setItemCount('cooked_meat', store.itemCounts.cooked_meat + 1);
+  changeInventory('cooked_meat', 1);
   store.setNotice(translate('Viande cuite ajoutée au sac. Elle rend 4 vies.', 'Cooked meat added to backpack. It restores 4 lives.'));
 }

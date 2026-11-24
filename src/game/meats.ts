@@ -44,5 +44,5 @@ export const MEAT_COLORS: Record<AnimalKind, string> = {
 };
 
 export function createMeatInventory(): Record<AnimalKind, number> {
-  return Object.fromEntries((Object.keys(MEAT_NAMES) as AnimalKind[]).map((kind) => [kind, 0])) as Record<AnimalKind, number>;
+  return Object.fromEntries((Object.keys(MEAT_NAMES()) as AnimalKind[]).map((kind) => [kind, 0])) as Record<AnimalKind, number>;
 }

@@ -2,6 +2,7 @@ import type { World } from 'koota';
 import { useEatingStore } from './eating';
 import { useGameStore } from './store';
 import { Player, PlayerHealth } from './traits';
+import { changeInventory } from './inventory';
 
 export function receiveAppleGift(world: World, value: unknown) {
   if (!value || typeof value !== 'object') return;
@@ -13,7 +14,7 @@ export function receiveAppleGift(world: World, value: unknown) {
   const store = useGameStore.getState();
   const name = data.name.trim();
   if (health.value >= health.max) {
-    store.collectApple();
+    changeInventory('apple', 1);
     store.setNotice(`${name} t’a offert une pomme. Elle est dans ton sac.`);
     return;
   }
