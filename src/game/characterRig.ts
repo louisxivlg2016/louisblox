@@ -63,7 +63,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   const height = bounds.max.y - bounds.min.y;
   const floor = bounds.min.y;
   const pieces: Array<ReturnType<typeof splitGeometry>> = [];
-  const colorAppearance = outfit === 'classic-girl' || outfit === 'classic-boy' ? appearance : undefined;
+  const colorAppearance = appearance;
   scene.traverse((object) => {
     if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, true, bounds, colorAppearance, outfit === 'louis15', outfit === 'princess' || outfit === 'classic-girl', outfit));
   });
@@ -94,8 +94,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
           (parent ?? root).add(pivot);
           rig[part] = pivot;
         }
-        const legSeparation = part.endsWith('Leg') ? side * width * 0.03 : 0;
-        subset.translate(-pivotX + legSeparation, -pivotY, 0);
+        subset.translate(-pivotX, -pivotY, 0);
         pivot.add(mesh);
       }
     }
