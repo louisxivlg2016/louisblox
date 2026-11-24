@@ -9,41 +9,18 @@ import { TrafficSignModel } from './TrafficSigns';
 import { DecorationCulling } from './DecorationCulling';
 import { wallMount } from '../game/wallMount';
 import { ParisStreetSignModel } from './ParisStreetSign';
+import { ChestGlb, FurnaceGlb } from './StorageModels';
 
-const fire = new MeshBasicMaterial({ color: '#ff9a32' });
 const lanternGlow = new MeshBasicMaterial({ color: '#ffd47a' });
 const modernLightGlow = new MeshBasicMaterial({ color: '#e6f8ff' });
 const radioScreenGlow = new MeshBasicMaterial({ color: '#66e6dc' });
 
-export function FurnaceModel() {
-  return (
-    <group>
-      <PixelPart position={[0, 0.46, 0]} size={[0.92, 0.92, 0.9]} color="#666c72" />
-      <PixelPart position={[0, 0.94, 0]} size={[0.96, 0.08, 0.94]} color="#81888d" />
-      <PixelPart position={[0, 0.38, -0.461]} size={[0.62, 0.44, 0.035]} color="#292e34" />
-      <PixelPart position={[0, 0.38, -0.485]} size={[0.46, 0.29, 0.02]} color="#131a20" />
-      <mesh position={[0, 0.33, -0.502]} material={fire}><boxGeometry args={[0.34, 0.16, 0.025]} /></mesh>
-      <PixelPart position={[0, 0.72, -0.466]} size={[0.55, 0.08, 0.025]} color="#353d44" />
-      <PixelPart position={[0, 0.82, -0.466]} size={[0.55, 0.06, 0.025]} color="#353d44" />
-      <PixelPart position={[-0.38, 0.4, -0.485]} size={[0.08, 0.5, 0.04]} color="#899096" />
-      <PixelPart position={[0.38, 0.4, -0.485]} size={[0.08, 0.5, 0.04]} color="#899096" />
-    </group>
-  );
+export function FurnaceModel({ variant = 0 }: { variant?: number }) {
+  return <Suspense fallback={null}><FurnaceGlb variant={variant} /></Suspense>;
 }
 
-export function ChestModel() {
-  return (
-    <group>
-      <PixelPart position={[0, 0.28, 0]} size={[0.9, 0.55, 0.8]} color="#9b6836" />
-      <PixelPart position={[0, 0.69, 0]} size={[0.94, 0.27, 0.84]} color="#b07b3f" />
-      <PixelPart position={[0, 0.55, -0.42]} size={[0.92, 0.08, 0.05]} color="#5f4127" />
-      <PixelPart position={[-0.3, 0.42, -0.425]} size={[0.09, 0.8, 0.05]} color="#5c6061" />
-      <PixelPart position={[0.3, 0.42, -0.425]} size={[0.09, 0.8, 0.05]} color="#5c6061" />
-      <PixelPart position={[0, 0.46, -0.465]} size={[0.16, 0.22, 0.09]} color="#d1ae56" />
-      <PixelPart position={[0, 0.46, -0.52]} size={[0.06, 0.09, 0.03]} color="#5b4930" />
-      <PixelPart position={[0, 0.83, 0]} size={[0.9, 0.045, 0.8]} color="#c08c4c" />
-    </group>
-  );
+export function ChestModel({ variant = 0 }: { variant?: number }) {
+  return <Suspense fallback={null}><ChestGlb variant={variant} /></Suspense>;
 }
 
 export function LadderModel() {
@@ -166,8 +143,8 @@ export function RadioModel({ withLight = true }: { withLight?: boolean }) {
   );
 }
 
-export function UtilityBlockModel({ kind, withLight = true, held = false, wallMounted = false, floor = false }: { kind: BlockKind; withLight?: boolean; held?: boolean; wallMounted?: boolean; floor?: boolean }) {
-  return kind === BlockKind.Radio ? <RadioModel withLight={withLight} /> : kind === BlockKind.Lantern ? <LanternModel withLight={withLight} floor={floor} /> : kind === BlockKind.ModernCeilingLight ? <ModernCeilingLightModel withLight={withLight} /> : kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel held={held} /> : isTrafficSign(kind) ? <Suspense fallback={null}><TrafficSignModel kind={kind} held={held} wallMounted={wallMounted} /></Suspense> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel /> : kind === BlockKind.Chest ? <ChestModel /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
+export function UtilityBlockModel({ kind, withLight = true, held = false, wallMounted = false, floor = false, variant = 0 }: { kind: BlockKind; withLight?: boolean; held?: boolean; wallMounted?: boolean; floor?: boolean; variant?: number }) {
+  return kind === BlockKind.Radio ? <RadioModel withLight={withLight} /> : kind === BlockKind.Lantern ? <LanternModel withLight={withLight} floor={floor} /> : kind === BlockKind.ModernCeilingLight ? <ModernCeilingLightModel withLight={withLight} /> : kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel held={held} /> : isTrafficSign(kind) ? <Suspense fallback={null}><TrafficSignModel kind={kind} held={held} wallMounted={wallMounted} /></Suspense> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel variant={variant} /> : kind === BlockKind.Chest ? <ChestModel variant={variant} /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
 }
 
 export function UtilityBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIndex: ReadonlyMap<string, Voxel> }) {
@@ -180,6 +157,6 @@ export function UtilityBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIn
       : oriented ? facingYaw(block.facing) : 0;
     const mount = isTrafficSign(block.kind) ? wallMount(blockIndex, block, rotation) : { rotation, offset: 0, mounted: false };
     const floor = block.kind === BlockKind.Lantern && blockIndex.has(voxelKey(block.x, block.y - 1, block.z));
-    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y - 0.5, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} scale={isTrafficSign(block.kind) ? 0.6 : 1} userData={{ wallMounted: mount.mounted }}><UtilityBlockModel kind={block.kind} wallMounted={mount.mounted} floor={floor} /></group>;
+    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y - 0.5, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} scale={isTrafficSign(block.kind) ? 0.6 : 1} userData={{ wallMounted: mount.mounted }}><UtilityBlockModel kind={block.kind} wallMounted={mount.mounted} floor={floor} variant={block.kind === BlockKind.Furnace ? Math.abs(block.x + block.y + block.z) % 3 : block.kind === BlockKind.Chest ? Math.abs(block.x + block.y + block.z) % 2 : 0} /></group>;
   })}</DecorationCulling>;
 }
