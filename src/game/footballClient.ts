@@ -5,7 +5,7 @@ import type { Camera } from 'three';
 import { consumeFootballAction, stopMining } from './input';
 import { useBattleStore, respawnAtBase } from './battle';
 import { useGameStore } from './store';
-import { useRemotePlayerStore } from './multiplayerStore';
+import { useMultiplayerStore, useRemotePlayerStore } from './multiplayerStore';
 import { Player, PlayerPosition, PlayerState } from './traits';
 import { world } from './world';
 import { playWhistle, playSound } from './audio';
@@ -151,6 +151,22 @@ export function footballBounds() {
   return { ...bounds, minX: -16, maxX: 16 };
 }
 
+function updateSoloFootball(world: World) {
+  if (socket || useMultiplayerStore.getState().enabled) return;
+  const game = useFootballStore.getState();
+  if (game.phase === 'waiting') {
+    useBattleStore.setState({ team: 'red', localPlayerId: 'solo', ready: true });
+    respawnAtBase(world, 'red');
+    playWhistle('short');
+    useFootballStore.setState({ phase: 'countdown', phaseUntil: Date.now() + 3000, endsAt: Date.now() + 300000, notice: translate('Coup d’envoi dans 3 secondes', 'Kickoff in 3 seconds'), whistleToken: game.whistleToken + 1 });
+    return;
+  }
+  if (game.phase === 'countdown' && Date.now() >= game.phaseUntil) {
+    playWhistle('short');
+    useFootballStore.setState({ phase: 'running', notice: translate('Jouez !', 'Play!'), whistleToken: game.whistleToken + 1 });
+  }
+}
+
 const direction = new Vector3();
 const origin = new Vector3();
 const toward = new Vector3();
@@ -159,6 +175,7 @@ const cooldowns = new WeakMap<World, number>();
 export function footballControlSystem(world: World, camera: Camera, dt: number, taps: number, actions = { place: 0, harvest: 0 }) {
   if (useGameStore.getState().gameplayMode !== 'football') return false;
   stopMining();
+  updateSoloFootball(world);
   const cooldown = Math.max(0, (cooldowns.get(world) ?? 0) - dt);
   cooldowns.set(world, cooldown);
   if (cooldown > 0 || isFootballFrozen() || !canPlayFootballBall()) return true;

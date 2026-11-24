@@ -37,7 +37,7 @@ export function FootballHud() {
   useEffect(() => {
     if (gameplayMode === 'football' && winner) releasePointerForOverlay();
   }, [gameplayMode, winner]);
-  if (gameplayMode !== 'football' || !enabled) return null;
+  if (gameplayMode !== 'football') return null;
   const selectTeam = (next: 'red' | 'blue' | 'auto') => {
     if (chooseBattleTeam(next)) void requestPlay();
   };
