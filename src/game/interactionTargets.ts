@@ -39,7 +39,7 @@ export function findInteractionTarget(world: World, camera: Camera, interaction:
       if (hit) {
         closest = hit.distance;
         result = { entity, kind, distance: hit.distance };
-      } else if (kind === 'trader') {
+      } else if (kind === 'trader' || kind === 'horse' || kind === 'camel') {
         const center = new Box3().setFromObject(mesh).getCenter(new Vector3());
         const offset = center.sub(origin);
         const forward = offset.dot(direction);

@@ -254,12 +254,19 @@ export function dismount(world: World) {
   return true;
 }
 
-export function vehicleInteractionSystem(world: World, camera: Camera, interact: number) {
+export function vehicleInteractionSystem(world: World, camera: Camera, interact: number, mountedTargetOnly = false) {
   if (interact <= 0) return false;
   const player = world.queryFirst(Player);
   const mount = player?.get(PlayerMount);
   if (!player || !mount) return false;
-  if (mount.vehicle) return dismount(world);
+  if (mount.vehicle) {
+    if (mountedTargetOnly) {
+      const target = findInteractionTarget(world, camera, 'mount');
+      if (!target || target.entity !== mount.vehicle) return false;
+    }
+    return dismount(world);
+  }
+  if (mountedTargetOnly) return false;
   const target = findInteractionTarget(world, camera, 'mount');
   if (!target) return false;
   if (isAnimalMount(target.kind)) {
