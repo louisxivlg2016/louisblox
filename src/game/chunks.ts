@@ -822,11 +822,12 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   initTaming(world);
   const restorePosition = restore !== null && restore.version >= 2;
   const gameplayMode = restore?.gameplayMode ?? (restore ? 'creative' : useGameStore.getState().gameplayMode);
+  if (gameplayMode === 'maze') edits.clear();
   const city = worldTemplate === 'city-ancient' || worldTemplate === 'city-modern';
   const legacyCitySignSpawn = city && restore !== null && Math.hypot(restore.player.x, restore.player.z) < 1;
-  const spawn = restore && restorePosition && !legacyCitySignSpawn
+  const spawn = gameplayMode === 'maze' ? mazePlaygroundSpawn(0) : restore && restorePosition && !legacyCitySignSpawn
     ? { x: restore.player.x, y: restore.player.y, z: restore.player.z }
-    : gameplayMode === 'pirates' ? pirateSpawn('red') : gameplayMode === 'football' ? footballSpawn(null) : gameplayMode === 'maze' ? mazePlaygroundSpawn(0) : gameplayMode === 'battle' ? battleSpawn(null) : city ? { ...CITY_SPAWN } : worldTemplate === 'custom' ? customWorldSpawn(customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, seed), seed) : safeSpawnAt(0, 0, seed);
+    : gameplayMode === 'pirates' ? pirateSpawn('red') : gameplayMode === 'football' ? footballSpawn(null) : gameplayMode === 'battle' ? battleSpawn(null) : city ? { ...CITY_SPAWN } : worldTemplate === 'custom' ? customWorldSpawn(customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, seed), seed) : safeSpawnAt(0, 0, seed);
   world.spawn(
     Player,
     PlayerBody(),
@@ -837,9 +838,9 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     PlayerPosition(new Vector3(spawn.x, spawn.y, spawn.z)),
     PlayerVelocity(),
     PlayerState({
-      yaw: restore && restorePosition ? restore.player.yaw : Math.atan2(3, 8),
-      pitch: restore && restorePosition ? restore.player.pitch : -0.15,
-      flying: restore?.player.flying ?? false,
+      yaw: gameplayMode === 'maze' ? 0 : restore && restorePosition ? restore.player.yaw : Math.atan2(3, 8),
+      pitch: gameplayMode === 'maze' ? -0.15 : restore && restorePosition ? restore.player.pitch : -0.15,
+      flying: gameplayMode === 'maze' ? false : restore?.player.flying ?? false,
     }),
   );
   world.spawn(BlockTarget(), TargetMesh());

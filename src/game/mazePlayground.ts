@@ -35,21 +35,21 @@ function generateMazeVariant(cx: number, cz: number, course: number): GeneratedC
   const firstLava = 145 + course % 3;
   const secondLava = 122 - course % 4;
   const bands = [[firstLava, firstLava + 4], [secondLava, secondLava + 5], ...(course % 4 === 0 ? [[134, 137]] : [])];
-  const inLava = (z: number) => bands.some(([start, end]) => z >= start && z <= end);
+  const inLava = (z: number) => z < 152 && bands.some(([start, end]) => z >= start && z <= end);
 
   for (let x = cx * CHUNK_SIZE; x < (cx + 1) * CHUNK_SIZE; x += 1) for (let z = cz * CHUNK_SIZE; z < (cz + 1) * CHUNK_SIZE; z += 1) {
     if (Math.abs(x - MAZE_PLAYGROUND_CENTER.x) > 36 || Math.abs(z - MAZE_PLAYGROUND_CENTER.z) > 36) continue;
     put(x, 7, z, BlockKind.Stone);
-    put(x, 8, z, BlockKind.ForestGrass);
+    put(x, 8, z, x >= 119 && x <= 137 ? BlockKind.Stone : BlockKind.ForestGrass);
     if (Math.abs(x - MAZE_PLAYGROUND_CENTER.x) === 35 || Math.abs(z - MAZE_PLAYGROUND_CENTER.z) === 35) for (let y = 9; y <= 11; y += 1) put(x, y, z, BlockKind.Stone);
     if (inLava(z) && x >= 119 && x <= 137) put(x, 8, z, BlockKind.Wildfire);
+    if (x >= 119 && x <= 137 && z >= 152 && z <= 160) put(x, 8, z, z % 2 === 0 ? BlockKind.ConcreteWhite : BlockKind.ConcreteLightBlue);
     if (x >= 120 && x <= 136 && z <= 99) put(x, 8, z, pathColor);
   }
 
-  for (const [start, end] of bands) for (let z = start - 1; z <= end + 1; z += 1) {
+  for (const [start, end] of bands) for (let z = start - 1; z <= end + 1; z += 2) {
     const x = lanes.get(z)!;
-    put(x, 9, z, pathColor);
-    put(x + 1, 9, z, course % 2 === 0 ? pathColor : BlockKind.OakPlanks);
+    for (let dx = -1; dx <= 1; dx += 1) put(x + dx, 9, z, dx === 0 ? pathColor : BlockKind.ConcreteLightBlue);
   }
 
   for (const z of [143 - course % 5, 120 + course % 3]) {
