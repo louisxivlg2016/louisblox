@@ -143,6 +143,26 @@ export class MazeEngine {
       void this.room.save();
       return;
     }
+    if (this.phase === 'waiting') {
+      this.phase = 'ready';
+      this.phaseUntil = now + 1500;
+      this.notice = 'Ready? Take your places!';
+      this.spawnAll();
+      this.whistle();
+      this.update();
+      void this.room.save();
+      return;
+    }
+    if (this.phase === 'ready' && now >= this.phaseUntil) {
+      this.phase = 'countdown';
+      this.phaseUntil = now + 3000;
+      this.notice = '3… 2… 1…';
+      this.spawnAll();
+      this.whistle();
+      this.update();
+      void this.room.save();
+      return;
+    }
     if (this.phase === 'countdown' && now >= this.phaseUntil) {
       this.phase = 'running';
       this.startedAt = now;

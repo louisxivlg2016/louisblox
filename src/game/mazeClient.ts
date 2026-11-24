@@ -168,7 +168,12 @@ export function mazeControlSystem(_world: World) {
       const spawn = mazeSpawn(0);
       for (let index = 0; index < 12; index += 1) streamChunks(_world, spawn.x, spawn.z);
       respawnAtBase(_world, null, spawn);
-      useMazeStore.setState({ phase: 'waiting', notice: translate('Labyrinthe débloqué · prépare-toi pour la course', 'Maze unlocked · get ready for the race'), spawn, overview: false });
+      useMazeStore.setState({ phase: 'ready', phaseUntil: Date.now() + 1500, notice: translate('Prépare-toi pour le départ', 'Get ready for the start'), spawn, overview: false });
+      return true;
+    }
+    if (state.phase === 'ready' && Date.now() >= state.phaseUntil) {
+      playWhistle('short');
+      useMazeStore.setState({ phase: 'countdown', phaseUntil: Date.now() + 3000, notice: translate('3… 2… 1…', '3… 2… 1…') });
       return true;
     }
     if (state.phase === 'countdown' && Date.now() >= state.phaseUntil) {
@@ -188,7 +193,7 @@ export function mazeControlSystem(_world: World) {
       for (let index = 0; index < 12; index += 1) streamChunks(_world, spawn.x, spawn.z);
       respawnAtBase(_world, null, spawn);
       _world.queryFirst(Player)?.set(PlayerState, { yaw: 0, pitch: 0 });
-      useMazeStore.setState({ phase: final || course < 99 ? 'finished' : 'waiting', winner: 'solo', winnerName: useMultiplayerStore.getState().playerName, finishMs: Date.now() - current.startedAt, notice: final ? translate('Les 100 parcours sont terminés !', 'All 100 courses complete!') : course === 99 ? translate('Niveau final · le Labyrinthe', 'Final level · the Maze') : translate(`Parcours ${course + 1}/100 débloqué`, `Course ${course + 1}/100 unlocked`), whistleToken: current.whistleToken + 1, spawn, overview: false });
+      useMazeStore.setState({ phase: final || course < 99 ? 'finished' : 'ready', phaseUntil: final || course < 99 ? 0 : Date.now() + 1500, winner: 'solo', winnerName: useMultiplayerStore.getState().playerName, finishMs: Date.now() - current.startedAt, notice: final ? translate('Les 100 parcours sont terminés !', 'All 100 courses complete!') : course === 99 ? translate('Niveau final · le Labyrinthe', 'Final level · the Maze') : translate(`Parcours ${course + 1}/100 débloqué`, `Course ${course + 1}/100 unlocked`), whistleToken: current.whistleToken + 1, spawn, overview: false });
     }
   }
   stopMining();
