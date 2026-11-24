@@ -122,7 +122,7 @@ export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number
     }),
     AnimalMesh(),
   );
-  if ('tree' in site && site.tree) entity.add(AnimalHome({ x: site.x, y: site.y - 0.51, z: site.z, radius: 1.25 }));
+  entity.add(AnimalHome({ x: site.x, y: site.y - 0.51, z: site.z, radius: 'tree' in site && site.tree ? 1.25 : 0 }));
   applyTameState(world, entity);
   return entity;
 }

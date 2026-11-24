@@ -2,7 +2,7 @@ import type { Entity, World } from 'koota';
 import { Mesh, Vector3 } from 'three';
 import { chunkCoordinate, getBlockIndex, getWorldSeed, isChunkLoaded } from '../chunks';
 import { isCrop } from '../extraBlocks';
-import { heightAt, MIN_WORLD_Y } from '../levels';
+import { biomeAt, heightAt, MIN_WORLD_Y } from '../levels';
 import { turnToward } from '../rotation';
 import { groundAt } from '../vehicles';
 import { isWaterBlock, voxelKey } from '../voxel';
@@ -90,7 +90,7 @@ function rememberSafePosition(world: World, entity: Entity, position: Vector3) {
 
 function recoverSafePosition(world: World, kind: AnimalKind, position: Vector3, entity: Entity) {
   const saved = safePositions.get(world)?.get(entity);
-  if (!saved || saved.distanceToSquared(position) < 0.0001 || !isLoaded(world, saved.x, saved.z)) return false;
+  if (!saved || saved.distanceToSquared(position) < 0.0001 || !withinHomeBiome(world, entity, saved.x, saved.z) || !isLoaded(world, saved.x, saved.z)) return false;
   const ground = groundAt(world, saved.x, saved.z, saved.y + 0.2);
   if (kind === 'zombie' && ground > heightAt(Math.round(saved.x), Math.round(saved.z), getWorldSeed(world)) + 1.05) return false;
   if (!walkableGround(world, saved.x, saved.z, ground) || !bodyClear(world, saved.x, saved.z, ground)) return false;
@@ -104,7 +104,7 @@ function rescueAnimal(world: World, kind: AnimalKind, position: Vector3, entity:
   for (const [dx, dz] of offsets) {
     const x = position.x + dx * direction;
     const z = position.z + dz * direction;
-    if (!isLoaded(world, x, z)) continue;
+    if (!withinHomeBiome(world, entity, x, z) || !isLoaded(world, x, z)) continue;
     const ground = groundAt(world, x, z, position.y + 2.2);
     if (kind === 'zombie' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) continue;
     if (!walkableGround(world, x, z, ground) || ground > position.y + 2.2 || position.y - ground > 4 || !bodyClear(world, x, z, ground)) continue;
@@ -142,9 +142,17 @@ function updateAnimalVertical(world: World, position: Vector3, motion: Motion, d
   return true;
 }
 
+function withinHomeBiome(world: World, entity: Entity, x: number, z: number) {
+  const home = entity.get(AnimalHome);
+  if (!home || isTamedAnimal(entity)) return true;
+  const seed = getWorldSeed(world);
+  return biomeAt(home.x, home.z, seed) === biomeAt(x, z, seed);
+}
+
 function moveInDirection(world: World, kind: AnimalKind, position: Vector3, motion: Motion, yaw: number, speed: number, dt: number, entity: Entity) {
   const x = position.x + Math.sin(yaw) * speed * dt;
   const z = position.z + Math.cos(yaw) * speed * dt;
+  if (!withinHomeBiome(world, entity, x, z)) return false;
   if (!isLoaded(world, x, z)) return false;
   openBearDoor(world, x, position.y, z, kind);
   const ground = groundAt(world, x, z, position.y + MAX_CLIMB_RISE + 0.05);
@@ -232,7 +240,7 @@ function separateZombieFromPlayer(world: World, position: Vector3, motion: Motio
     const angle = away + index * Math.PI / 4;
     const x = player.x + Math.sin(angle) * 1.55;
     const z = player.z + Math.cos(angle) * 1.55;
-    if (!isLoaded(world, x, z)) continue;
+    if (!withinHomeBiome(world, entity, x, z) || !isLoaded(world, x, z)) continue;
     const ground = groundAt(world, x, z, player.y + MAX_CLIMB_RISE);
     if (ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) continue;
     if (!walkableGround(world, x, z, ground) || !bodyClear(world, x, z, ground)) continue;
@@ -452,7 +460,7 @@ export function animalSystem(world: World, dt: number) {
     if (zombieTooClose && player) {
       motion.yaw = Math.atan2(position.x - player.x, position.z - player.z);
       moveAnimal(world, animal.kind, position, motion, stepDt, entity, 0, 2.4);
-    } else if (home && !tamed) {
+    } else if (home && home.radius > 0 && !tamed) {
       const angle = entity * 0.73 + motion.phase * 0.3;
       const radius = Math.min(0.75, home.radius);
       const dx = home.x + Math.sin(angle) * radius - position.x;
