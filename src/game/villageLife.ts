@@ -4,12 +4,15 @@ import { getBlockIndex, getWorldSeed } from './chunks';
 import { getFireSources, nearestFire } from './hazards';
 import { groundAt } from './vehicles';
 import { isDoor } from './extraBlocks';
-import { Environment, Trader, TraderMesh, TraderPosition } from './traits';
+import { Environment, Player, PlayerPosition, Trader, TraderMesh, TraderPosition } from './traits';
+import { nightIndex } from './dayNight';
 import { replaceVoxel } from './chunks';
 import { restaurantAt, tradeCityAt, villageBeds } from './villages';
 import { openRestaurant, useTradeStore } from './trading';
 import { useGameStore } from './store';
 import { translate } from './language';
+
+const watchWarnings = new Map<Entity, number>();
 
 function wake(world: World, entity: Entity) {
   const trader = entity.get(Trader);
@@ -69,6 +72,18 @@ export function updateVillageSleep(world: World, entity: Entity, dt: number, tal
   if (!night) {
     if (trader.sleeping) wake(world, entity);
     return false;
+  }
+  if (trader.watchman) {
+    const player = world.queryFirst(Player)?.get(PlayerPosition);
+    if (useGameStore.getState().gameplayMode !== 'survival' || !player || position.distanceToSquared(player) >= 64) return false;
+    const warningNight = nightIndex(world);
+    if (watchWarnings.get(entity) !== warningNight) {
+      watchWarnings.set(entity, warningNight);
+      useGameStore.getState().setNotice(translate('Veilleur : Va te coucher ! Les zombies rendent la nuit dangereuse.', 'Watchman: Go to sleep! Zombies make the night dangerous.'));
+    }
+    entity.set(Trader, { walking: false, targetX: position.x, targetZ: position.z });
+    if (mesh) mesh.rotation.y = Math.atan2(player.x - position.x, player.z - position.z);
+    return true;
   }
   if (!trader.villager && !trader.restaurantInvited) {
     entity.set(Trader, { restaurantInvited: true, walking: false });

@@ -207,7 +207,7 @@ export function spawnVillageResidents(world: World, cx: number, cz: number, seed
     if (isTraderDead(x, z)) continue;
     const bed = beds[index];
     residents.push(world.spawn(
-      Trader({ homeX: x, homeZ: z, targetX: x, targetZ: z, villager: true, phase: (x * 0.7 + z * 0.3) % (Math.PI * 2), bedX: bed?.x ?? null, bedY: bed?.y ?? null, bedZ: bed?.z ?? null }),
+      Trader({ homeX: x, homeZ: z, targetX: x, targetZ: z, villager: true, phase: (x * 0.7 + z * 0.3) % (Math.PI * 2), bedX: bed?.x ?? null, bedY: bed?.y ?? null, bedZ: bed?.z ?? null, watchman: index === 0 }),
       TraderPosition(new Vector3(x, heightAt(x, z, seed) + 0.5, z)),
       TraderMesh(),
     ));
