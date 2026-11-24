@@ -70,7 +70,10 @@ function openBearDoor(world: World, x: number, feetY: number, z: number, kind: A
 }
 
 const MAX_CLIMB_RISE = 4;
+const TAMED_MAX_CLIMB_RISE = 24;
 const MAX_WALK_DOWN = 4.05;
+
+const climbRise = (entity: Entity) => isTamedAnimal(entity) ? TAMED_MAX_CLIMB_RISE : MAX_CLIMB_RISE;
 
 function walkableGround(world: World, x: number, z: number, ground: number) {
   const block = blockAt(world, x, ground - 0.5, z);
@@ -107,7 +110,7 @@ function rescueAnimal(world: World, kind: AnimalKind, position: Vector3, entity:
     if (!withinHomeBiome(world, entity, x, z) || !isLoaded(world, x, z)) continue;
     const ground = groundAt(world, x, z, position.y + 2.2);
     if (kind === 'zombie' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) continue;
-    if (!walkableGround(world, x, z, ground) || ground > position.y + 2.2 || position.y - ground > 4 || !bodyClear(world, x, z, ground)) continue;
+    if (!walkableGround(world, x, z, ground) || ground > position.y + climbRise(entity) || position.y - ground > 4 || !bodyClear(world, x, z, ground)) continue;
     position.set(x, ground, z);
     return true;
   }
@@ -155,14 +158,16 @@ function moveInDirection(world: World, kind: AnimalKind, position: Vector3, moti
   if (!withinHomeBiome(world, entity, x, z)) return false;
   if (!isLoaded(world, x, z)) return false;
   openBearDoor(world, x, position.y, z, kind);
-  const ground = groundAt(world, x, z, position.y + MAX_CLIMB_RISE + 0.05);
+  const ground = groundAt(world, x, z, position.y + climbRise(entity) + 0.05);
   if (kind === 'zombie' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) return false;
-  if (!walkableGround(world, x, z, ground) || ground > position.y + MAX_CLIMB_RISE || (position.y - ground > MAX_WALK_DOWN && motion.grounded) || !bodyClear(world, x, z, ground)) return false;
+  if (!walkableGround(world, x, z, ground) || ground > position.y + climbRise(entity) || (position.y - ground > MAX_WALK_DOWN && motion.grounded) || !bodyClear(world, x, z, ground)) return false;
   position.x = x;
   position.z = z;
   if (motion.grounded && ground > position.y) {
-    if (ground - position.y > 1.05) return false;
-    position.y = ground;
+    if (ground - position.y > 1.05) {
+      if (!isTamedAnimal(entity)) return false;
+      motion.climbTarget = ground;
+    } else position.y = ground;
   }
   if (!updateAnimalVertical(world, position, motion, dt, entity)) return false;
   motion.yaw = yaw;
