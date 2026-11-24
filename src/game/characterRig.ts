@@ -22,13 +22,16 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     const c = index?.getX(offset + 2) ?? offset + 2;
     const x = (position.getX(a) + position.getX(b) + position.getX(c)) / 3;
     const y = (position.getY(a) + position.getY(b) + position.getY(c)) / 3;
+    const z = (position.getZ(a) + position.getZ(b) + position.getZ(c)) / 3;
     const side = x < 0 ? 'left' : 'right';
     let part: Part = 'body';
     const keepShouldersWithHead = outfit === 'knight' || outfit === 'louis14' || outfit === 'trader';
     const headWidth = keepShouldersWithHead ? 0.38 : 0.28;
     const headBottom = 0.68;
     const upperHeadStart = outfit === 'classic-girl' || outfit === 'classic-boy' ? 0.9 : 0.82;
-    if (Math.abs(x) < width * 0.38 && y > floor + height * upperHeadStart || Math.abs(x) < width * headWidth && y > floor + height * headBottom) part = 'head';
+    const cape = (outfit === 'king' || outfit === 'louis14') && z < bounds.min.z + (bounds.max.z - bounds.min.z) * 0.32 && y < floor + height * 0.75;
+    if (cape) part = 'body';
+    else if (Math.abs(x) < width * 0.38 && y > floor + height * upperHeadStart || Math.abs(x) < width * headWidth && y > floor + height * headBottom) part = 'head';
     else if (Math.abs(x) > width * 0.25 && y > floor + height * 0.28 && y < floor + height * 0.82) part = `${side}Arm`;
     else if (legs && Math.abs(x) < width * 0.28 && y < floor + height * (outfit === 'pirate' ? 0.36 : 0.48)) part = y < floor + height * 0.24 ? `${side}LowerLeg` : `${side}Leg`;
     indices[part].push(a, b, c);
