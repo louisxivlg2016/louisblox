@@ -75,7 +75,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const pitch = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, state.pitch - mouse.y * 0.004 - edge.y * dt * 3.2));
   const flightToggles = consumeFlightToggle();
   const canDoubleJump = hasEffect('doubleJump') && !state.grounded && !state.flying && (airJumps.get(world) ?? 0) < 1;
-  const flying = !['pirates', 'football', 'maze'].includes(useGameStore.getState().gameplayMode) && useGameStore.getState().selected !== 'parachute' && !canDoubleJump && flightToggles % 2 === 1 ? !state.flying : state.flying;
+  const flying = ['pirates', 'football', 'maze', 'survival'].includes(useGameStore.getState().gameplayMode) ? false : useGameStore.getState().selected !== 'parachute' && !canDoubleJump && flightToggles % 2 === 1 ? !state.flying : state.flying;
   if (health && health.value <= 0 && entity.get(PlayerMount)?.vehicle) dismount(world);
 
   const mount = entity.get(PlayerMount);

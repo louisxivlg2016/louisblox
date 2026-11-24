@@ -63,6 +63,7 @@ export function TouchControls() {
   const joystick = useRef<HTMLDivElement>(null);
   const knob = useRef<HTMLDivElement>(null);
   const football = useGameStore((state) => state.gameplayMode === 'football');
+  const survival = useGameStore((state) => state.gameplayMode === 'survival');
   const riding = useGameStore((state) => state.riding);
   const plane = riding === 'plane';
   const pilot = useGameStore((state) => state.ridingRole === 'driver');
@@ -128,8 +129,8 @@ export function TouchControls() {
       <div className={plane ? 'touch-actions plane-touch-actions' : 'touch-actions'}>
         {cannon && <CannonFireButton />}
         {!plane && <>
-          <HoldButton code="Space" label={translate('Sauter', 'Jump')} onDoubleTap={requestFlightToggle} />
-          <button
+          <HoldButton code="Space" label={translate('Sauter', 'Jump')} onDoubleTap={survival ? undefined : requestFlightToggle} />
+          {!survival && <button
             className="touch-button touch-flight"
             onPointerDown={(event) => {
               event.preventDefault();
@@ -138,7 +139,7 @@ export function TouchControls() {
             }}
           >
             Flight: {flying ? 'ON' : 'OFF'}
-          </button>
+          </button>}
           <HoldButton code="KeyN" label={translate('Bas', 'Down')} />
         </>}
         {plane && pilot && <>
