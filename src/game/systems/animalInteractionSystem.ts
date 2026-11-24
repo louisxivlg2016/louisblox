@@ -6,7 +6,8 @@ import { animalFoodNotice, canFeedAnimal, feedAnimal, isOwnTamedAnimal, isTamedA
 import { reportAnimalTame } from '../animalSync';
 import { useGameStore } from '../store';
 import { getItemMeta } from '../items';
-import { Player, PlayerPosition } from '../traits';
+import { AnimalMesh, AnimalRest, Player, PlayerPosition } from '../traits';
+import { isNight } from '../dayNight';
 import { useCompanionMenuStore } from '../companionMenu';
 import { releasePointerForOverlay } from '../input';
 import { translate } from '../language';
@@ -25,6 +26,18 @@ export function animalInteractionSystem(world: World, camera: Camera, interact: 
   camera.getWorldDirection(direction);
   const target = findAnimalTarget(world, origin, direction, 5.5);
   if (!target || target.health <= 0) return false;
+  const rest = target.entity.get(AnimalRest);
+  if (rest?.sleeping) {
+    if (isNight(world)) {
+      useGameStore.getState().setNotice(translate('Cet animal dort. Reviens le réveiller le matin.', 'This animal is sleeping. Come back to wake it in the morning.'));
+      return true;
+    }
+    target.entity.set(AnimalRest, { sleeping: false });
+    const mesh = target.entity.get(AnimalMesh)?.value;
+    if (mesh) mesh.rotation.z = 0;
+    useGameStore.getState().setNotice(translate('Ton animal est réveillé !', 'Your animal is awake!'));
+    return true;
+  }
   if (isTamedAnimal(target.entity) && !canFeedAnimal(target.kind, selected)) {
     if (!isOwnTamedAnimal(target.entity)) {
       useGameStore.getState().setNotice(translate('Cet animal appartient déjà à un autre joueur.', 'This animal already belongs to another player.', 'Este animal ya pertenece a otro jugador.'));
