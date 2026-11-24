@@ -310,8 +310,9 @@ export function animalSystem(world: World, dt: number) {
 
   world.query(Animal, AnimalHealth, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, animalHealth, hit, position, motion, mesh], entity) => {
     keepZombieOnNaturalGround(world, animal.kind, position, motion);
-    const distanceSquared = player ? position.distanceToSquared(player) : Infinity;
-    if (distanceSquared > 48 * 48) {
+    const tamed = isTamedAnimal(entity);
+    let distanceSquared = player ? position.distanceToSquared(player) : Infinity;
+    if (distanceSquared > 48 * 48 && !tamed) {
       if (mesh.value) mesh.value.visible = false;
       motion.running = false;
       motion.speed = 0;
@@ -344,7 +345,6 @@ export function animalSystem(world: World, dt: number) {
       if (hit.deathIn <= 0) removeAnimal(world, entity);
       return;
     }
-    const tamed = isTamedAnimal(entity);
     const fire = nearestFire(fires, position, 6, tamed);
     const leash = entity.get(CamelLeash);
     if (leash && !fire) return;
@@ -374,6 +374,19 @@ export function animalSystem(world: World, dt: number) {
     const defenseTarget = tamed && player && WILD_ANIMALS.has(animal.kind) ? findDefenseTarget(world, entity, player) : null;
     const targetPosition = defenseTarget?.get(AnimalPosition);
     const targetDistanceSquared = targetPosition ? position.distanceToSquared(targetPosition) : Infinity;
+    if (tamed && player && !targetPosition && distanceSquared > 30 * 30) {
+      const yaw = Math.atan2(player.x - position.x, player.z - position.z);
+      const x = player.x - Math.sin(yaw) * 2.5;
+      const z = player.z - Math.cos(yaw) * 2.5;
+      if (isLoaded(world, x, z)) {
+        const ground = groundAt(world, x, z, position.y + 24);
+        if (walkableGround(world, x, z, ground) && bodyClear(world, x, z, ground)) {
+          position.set(x, ground, z);
+          rememberSafePosition(world, entity, position);
+          distanceSquared = position.distanceToSquared(player);
+        }
+      }
+    }
     motion.sightIn -= stepDt;
     if (fire) {
       motion.hunting = false;
@@ -397,7 +410,7 @@ export function animalSystem(world: World, dt: number) {
         const distance = Math.sqrt(targetPosition ? targetDistanceSquared : distanceSquared);
         motion.yaw = Math.atan2(target.x - position.x, target.z - position.z);
         motion.turnIn = Math.max(motion.turnIn, 0.5);
-        motion.speed = targetPosition ? 3.5 : distance > 10 ? 5.5 : distance > 5 ? 3.5 : 2.4;
+        motion.speed = targetPosition ? 8 : distance > 18 ? 14 : distance > 8 ? 9 : 4.5;
       }
     }
     if (!fire && defenseTarget && targetDistanceSquared < 2.2 * 2.2 && hit.attackIn <= 0) {
