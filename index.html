@@ -1071,6 +1071,15 @@
       .world-code-insert .block-swatch { width: 30px; height: 30px; }
       .world-code-insert code { flex: 1; min-width: 100px; overflow-wrap: anywhere; }
       .world-code-insert button { width: 100%; margin: 0; }
+      .world-editor-panel { display: grid; gap: 14px; }
+      .editor-world-sharing { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px; color: #fff; background: linear-gradient(135deg, #244b70, #26344c); border: 2px solid #75b9eb; box-shadow: 0 4px 14px rgba(0, 0, 0, .25); }
+      .editor-world-sharing-copy { display: grid; gap: 5px; }
+      .editor-world-sharing-copy strong { color: #fff4b0; font-size: 16px; }
+      .editor-world-sharing-copy span { color: #e5f2ff; font-size: 12px; line-height: 1.5; }
+      .editor-world-sharing-options { display: grid; grid-template-columns: repeat(2, minmax(130px, 1fr)); flex: 0 0 auto; gap: 10px; }
+      .editor-world-sharing-options button { min-width: 0; min-height: 52px; padding: 12px 18px; color: #e5f2ff; font-size: 14px; font-weight: 800; background: #162536; border: 2px solid #6d86a3; cursor: pointer; }
+      .editor-world-sharing-options button.selected { color: #fff; background: #526647; border-color: #d7e6ca; box-shadow: 0 0 0 2px rgba(215, 230, 202, .18); }
+      .editor-world-sharing-options .editor-multiplayer-option.selected { background: #287fb8; border-color: #bfe7ff; box-shadow: 0 0 0 2px rgba(191, 231, 255, .22); }
       .world-editor { display: grid; grid-template-columns: 430px minmax(0, 1fr); gap: 16px; }
       .world-editor-palette { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px; align-items: start; min-width: 0; }
       .world-editor-palette > label { display: grid; grid-column: 1 / -1; gap: 7px; font-size: 12px; }
@@ -1106,6 +1115,8 @@
       .world-editor-coordinates .text-button { min-height: 38px; color: #edb6a6; background: transparent; border: 0; cursor: pointer; }
       .world-editor-status { margin: 10px 0 0; color: #b7d8b0; font-size: 11px; line-height: 1.5; }
       @media (max-width: 800px) {
+        .editor-world-sharing { align-items: stretch; flex-direction: column; }
+        .editor-world-sharing-options { width: 100%; }
         .world-code-workspace, .world-editor { grid-template-columns: 1fr; }
         .world-code-editor textarea { min-height: 300px; }
         .world-editor-palette { display: block; }
