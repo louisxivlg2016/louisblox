@@ -2,11 +2,11 @@ import type { World } from 'koota';
 import { Vector3 } from 'three';
 import type { Camera } from 'three';
 import { findAnimalTarget } from '../combat';
-import { animalFoodNotice, canFeedAnimal, feedAnimal, isOwnTamedAnimal, isTamedAnimal } from '../taming';
+import { animalFoodNotice, canFeedAnimal, feedAnimal, isOwnTamedAnimal, isTamedAnimal, wakeTamedAnimal } from '../taming';
 import { reportAnimalTame } from '../animalSync';
 import { useGameStore } from '../store';
 import { getItemMeta } from '../items';
-import { AnimalMesh, AnimalRest, Player, PlayerPosition } from '../traits';
+import { AnimalRest, Player, PlayerPosition } from '../traits';
 import { isNight } from '../dayNight';
 import { useCompanionMenuStore } from '../companionMenu';
 import { releasePointerForOverlay } from '../input';
@@ -20,7 +20,6 @@ export function animalInteractionSystem(world: World, camera: Camera, interact: 
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   const selected = useGameStore.getState().selected;
   if (!player) return false;
-  if (typeof selected === 'string' && ['sword', 'bow', 'gun'].includes(getItemMeta(selected).category)) return false;
   origin.copy(player);
   origin.y += 1.62;
   camera.getWorldDirection(direction);
@@ -28,16 +27,19 @@ export function animalInteractionSystem(world: World, camera: Camera, interact: 
   if (!target || target.health <= 0) return false;
   const rest = target.entity.get(AnimalRest);
   if (rest?.sleeping) {
+    if (!isOwnTamedAnimal(target.entity)) {
+      useGameStore.getState().setNotice(translate('Cet animal appartient déjà à un autre joueur.', 'This animal already belongs to another player.', 'Este animal ya pertenece a otro jugador.'));
+      return true;
+    }
     if (isNight(world)) {
       useGameStore.getState().setNotice(translate('Cet animal dort. Reviens le réveiller le matin.', 'This animal is sleeping. Come back to wake it in the morning.'));
       return true;
     }
-    target.entity.set(AnimalRest, { sleeping: false });
-    const mesh = target.entity.get(AnimalMesh)?.value;
-    if (mesh) mesh.rotation.z = 0;
+    wakeTamedAnimal(world, target.entity);
     useGameStore.getState().setNotice(translate('Ton animal est réveillé !', 'Your animal is awake!'));
     return true;
   }
+  if (typeof selected === 'string' && ['sword', 'bow', 'gun'].includes(getItemMeta(selected).category)) return false;
   if (isTamedAnimal(target.entity) && !canFeedAnimal(target.kind, selected)) {
     if (!isOwnTamedAnimal(target.entity)) {
       useGameStore.getState().setNotice(translate('Cet animal appartient déjà à un autre joueur.', 'This animal already belongs to another player.', 'Este animal ya pertenece a otro jugador.'));
