@@ -700,6 +700,10 @@ export class GameRoom extends DurableObject<Env> {
     });
   }
 
+  private isAnimalAuthority(playerId: string) {
+    return this.players().map((player) => player.playerId).sort()[0] === playerId;
+  }
+
   private broadcast(message: unknown, sender?: WebSocket) {
     const payload = JSON.stringify(message);
     for (const ws of this.ctx.getWebSockets()) {
@@ -1343,20 +1347,22 @@ export class GameRoom extends DurableObject<Env> {
       const animals = parseAnimalSnapshots([(data as { animal?: unknown }).animal]);
       const animal = animals?.[0];
       if (!animal || (animal.health as number) <= 0 || this.deadAnimals.has(animal.id as string) || this.storedAnimals.has(animal.id as string)) return;
-      if (type === 'animal-tame') {
-        const attachment = this.attachment(ws);
-        const id = animal.id as string;
-        const existingOwner = this.animalOwners.get(id);
+      const attachment = this.attachment(ws);
+      const id = animal.id as string;
+      const existingOwner = this.animalOwners.get(id);
+      if (type === 'animal-tame' || animal.tamed === true || existingOwner !== undefined) {
         if (animal.tamed !== true || !attachment || animal.ownerId !== attachment.playerId || existingOwner && existingOwner !== attachment.playerId) return;
         const isNewOwner = existingOwner === undefined;
         this.animalOwners.set(id, attachment.playerId);
-        animal.ownerId = attachment.playerId;
-        this.broadcast({ type: 'animal-spawn', animal });
+        animal.ownerId = existingOwner ?? attachment.playerId;
+        this.broadcast({ type: 'animal-spawn', animal }, type === 'animal-tame' ? undefined : ws);
         if (isNewOwner) await this.saveWorld();
       } else this.broadcast({ type: 'animal-spawn', animal }, ws);
       return;
     }
     if (type === 'animal-state') {
+      const attachment = this.attachment(ws);
+      if (!attachment || !this.isAnimalAuthority(attachment.playerId)) return;
       const animals = parseAnimalSnapshots((data as { animals?: unknown }).animals);
       if (animals) {
         let ownersChanged = false;
@@ -1364,12 +1370,13 @@ export class GameRoom extends DurableObject<Env> {
         for (const animal of living) {
           const id = animal.id as string;
           const ownerId = this.animalOwners.get(id);
-          if (animal.tamed === true && ownerId) animal.ownerId = ownerId;
-          else if (animal.tamed === true && animal.ownerId) {
+          if (ownerId) {
+            animal.tamed = true;
+            animal.ownerId = ownerId;
+          } else if (animal.tamed === true && animal.ownerId) {
             this.animalOwners.set(id, animal.ownerId as string);
             ownersChanged = true;
           }
-          if (animal.tamed !== true && this.animalOwners.delete(id)) ownersChanged = true;
         }
         if (living.length > 0) this.broadcast({ type: 'animal-state', animals: living }, ws);
         if (ownersChanged) await this.saveWorld();

@@ -111,18 +111,20 @@ export function applyTameState(world: World, entity: Entity, state?: Partial<Tam
   const kind = entity.get(Animal)?.kind;
   if (!id || !kind) return;
   const saved = records.get(world)!;
+  const existing = saved.get(id);
+  if (existing?.ownerId && state?.ownerId && existing.ownerId !== state.ownerId) return;
+  if (existing && state?.tamed === false) return;
   if (state?.tamed === false) {
     const changed = saved.delete(id) || entity.has(AnimalTame);
     entity.remove(AnimalTame);
     if (changed) save(world);
     return;
   }
-  const existing = saved.get(id);
   if (!existing && !state?.tamed) return;
   const record: TameRecord = {
     id,
     kind,
-    ownerId: state?.ownerId ?? existing?.ownerId,
+    ownerId: existing?.ownerId ?? state?.ownerId,
     tamedAt: state?.tamedAt ?? existing?.tamedAt ?? currentDay(world) * 1200,
     giftDay: state?.giftDay ?? existing?.giftDay ?? currentDay(world),
     baby: state?.baby ?? existing?.baby ?? false,
