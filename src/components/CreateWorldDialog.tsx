@@ -31,6 +31,7 @@ export type CreateWorldOptions = {
   mode: GameplayMode;
   template: WorldTemplate;
   multiplayer: boolean;
+  server?: string;
   canBreak: boolean;
   canPlace: boolean;
   allowDestructiveFire: boolean;
@@ -70,6 +71,7 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
   useLanguageStore((state) => state.language);
   const connectionStatus = useMultiplayerStore((state) => state.status);
   const connectionError = useMultiplayerStore((state) => state.error);
+  const savedServer = useMultiplayerStore((state) => state.server);
   const [draft] = useState(readEditorDraft);
   const [options, setOptions] = useState<CreateWorldOptions>({ name: draft?.name ?? translate('Mon aventure', 'My Adventure'), mode: 'creative', template: draft ? 'custom' : 'nature', multiplayer: initialMultiplayer ?? useMultiplayerStore.getState().enabled, canBreak: true, canPlace: true, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true });
   const [tab, setTab] = useState<'world' | 'lobby' | 'code' | 'editor'>(draft ? 'editor' : 'world');
@@ -204,7 +206,18 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
       setMessage(translate('Donne un nom à ton monde avant de continuer.', 'Name your world before continuing.'));
       return;
     }
-    onCreate({ ...nextOptions, customWorld: nextOptions.template === 'custom' ? { version: 1, source, terrain, blocks, ...(infiniteEditor ? { infinite: true } : {}), ...(environment ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}), ...(images.length > 0 ? { images } : {}), ...(characters.length > 0 ? { characters } : {}) } : undefined });
+    const server = (nextOptions.server ?? savedServer).trim();
+    if (nextOptions.multiplayer && server) {
+      try {
+        const url = new URL(server);
+        if (url.protocol !== 'ws:' && url.protocol !== 'wss:') throw new Error('Protocol');
+      } catch {
+        setTab('code');
+        setMessage(translate('Le serveur doit commencer par ws:// ou wss://.', 'The server must start with ws:// or wss://.'));
+        return;
+      }
+    }
+    onCreate({ ...nextOptions, server, customWorld: nextOptions.template === 'custom' ? { version: 1, source, terrain, blocks, ...(infiniteEditor ? { infinite: true } : {}), ...(environment ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}), ...(images.length > 0 ? { images } : {}), ...(characters.length > 0 ? { characters } : {}) } : undefined });
   };
   const createLobbyRoom = (room: string, mode: GameplayMode | null) => submit(createLobbyOptions(options, room, mode));
   return (
@@ -253,10 +266,13 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
         </div>}
         {tab === 'code' && <div id="create-panel-code" role="tabpanel" aria-labelledby="create-tab-code" className="world-code-workspace">
           <div className={`world-code-editor ${codeFullscreen ? 'fullscreen' : ''}`}>
-            <fieldset className="world-code-sharing"><legend>{translate('Mode de jeu', 'Game mode')}</legend><label><input type="radio" name="world-code-sharing" checked={!options.multiplayer} onChange={() => change('multiplayer', false)} /> {translate('Solo', 'Solo', 'Un jugador')}</label><label><input type="radio" name="world-code-sharing" checked={options.multiplayer} onChange={() => change('multiplayer', true)} /> {translate('Multijoueur', 'Multiplayer', 'Multijugador')}</label></fieldset>
+            <div className="world-code-controls">
+              <fieldset className="world-code-sharing"><legend>{translate('Mode de jeu', 'Game mode')}</legend><label><input type="radio" name="world-code-sharing" checked={!options.multiplayer} onChange={() => change('multiplayer', false)} /> {translate('Solo', 'Solo', 'Un jugador')}</label><label><input type="radio" name="world-code-sharing" checked={options.multiplayer} onChange={() => change('multiplayer', true)} /> {translate('Multijoueur', 'Multiplayer', 'Multijugador')}</label></fieldset>
+              {options.multiplayer && <div className="world-code-server"><label htmlFor="world-code-server">{translate('Serveur personnalisé', 'Custom server', 'Servidor personalizado')}</label><input id="world-code-server" value={options.server ?? savedServer} onChange={(event) => change('server', event.target.value)} placeholder="wss://…workers.dev/ws" autoCapitalize="none" autoCorrect="off" spellCheck={false} /><small>{translate('Indique ton serveur ws:// ou wss://, ou vide ce champ pour utiliser la connexion automatique.', 'Enter your ws:// or wss:// server, or clear this field to use the automatic connection.')}</small></div>}
+              <div className="world-code-actions"><button type="button" className="primary-button" onClick={runCode}>{translate('Exécuter le code', 'Run code')}</button><button type="button" className="secondary-button" onClick={resetCode}>{translate('Partir de zéro', 'Start over')}</button><button type="button" className="secondary-button" onClick={() => loadExample(DEFAULT_WORLD_SOURCE)}>{translate('Exemple', 'Example')}</button><button type="button" className="secondary-button" onClick={() => { setSource(worldCodeFromBlocks({ terrain, blocks, environment, spawns, images, characters })); setSourceDirty(false); setDraftNotice(''); setMessage(translate('Le code correspond maintenant à la construction de l’éditeur.', 'The code now matches the editor construction.')); }}>{translate('Construction → code', 'Build → code')}</button><button type="button" className="secondary-button world-code-fullscreen-toggle" aria-pressed={codeFullscreen} onClick={() => setCodeFullscreen((value) => !value)}>{codeFullscreen ? translate('Quitter le plein écran', 'Exit fullscreen') : translate('Plein écran', 'Fullscreen')}</button><label className="secondary-button world-code-image-upload">{translate('Ajouter une image', 'Add an image')}<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void addImage(file); event.currentTarget.value = ''; }} /></label></div>
+            </div>
             <label htmlFor="world-code">{translate('JavaScript simplifié et sécurisé', 'Simplified and secure JavaScript')}</label>
             <textarea id="world-code" value={source} onChange={(event) => changeSource(event.target.value)} maxLength={CUSTOM_WORLD_MAX_SOURCE} spellCheck={false} autoCapitalize="off" autoCorrect="off" aria-describedby="world-code-message" placeholder={translate('Écris ton code ici depuis zéro…', 'Write your code here from scratch…')} />
-            <div className="world-code-actions"><button type="button" className="primary-button" onClick={runCode}>{translate('Exécuter le code', 'Run code')}</button><button type="button" className="secondary-button" onClick={resetCode}>{translate('Partir de zéro', 'Start over')}</button><button type="button" className="secondary-button" onClick={() => loadExample(DEFAULT_WORLD_SOURCE)}>{translate('Exemple', 'Example')}</button><button type="button" className="secondary-button" onClick={() => { setSource(worldCodeFromBlocks({ terrain, blocks, environment, spawns, images, characters })); setSourceDirty(false); setDraftNotice(''); setMessage(translate('Le code correspond maintenant à la construction de l’éditeur.', 'The code now matches the editor construction.')); }}>{translate('Construction → code', 'Build → code')}</button><button type="button" className="secondary-button world-code-fullscreen-toggle" aria-pressed={codeFullscreen} onClick={() => setCodeFullscreen((value) => !value)}>{codeFullscreen ? translate('Quitter le plein écran', 'Exit fullscreen') : translate('Plein écran', 'Fullscreen')}</button><label className="secondary-button world-code-image-upload">{translate('Ajouter une image', 'Add an image')}<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void addImage(file); event.currentTarget.value = ''; }} /></label></div>
             <div className="world-code-examples"><span>{translate('Exemples complets à charger', 'Complete examples to load')}</span><div>{WORLD_CODE_EXAMPLES().map((example) => <button type="button" className="secondary-button" key={example.label} onClick={() => loadExample(example.source)}>{example.label}</button>)}</div></div>
             <p id="world-code-message" className={sourceDirty || message.startsWith('Line') ? 'world-code-message warning' : 'world-code-message'} role="status">{sourceDirty ? translate('Code modifié : exécute-le avant de créer le monde. ', 'Code changed: run it before creating the world. ') : ''}{message}</p>
           </div>

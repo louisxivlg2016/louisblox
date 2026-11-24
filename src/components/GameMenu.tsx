@@ -155,7 +155,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
       const minigameRoom = `salon-${crypto.randomUUID().slice(0, 8)}`;
       setPendingWorld(minigameRoom);
       regenerate(gameplayMode, minigameRoom);
-      configure({ playerName: useMultiplayerStore.getState().playerName, room: minigameRoom, server: useMultiplayerStore.getState().server });
+      configure({ playerName: useMultiplayerStore.getState().playerName, room: minigameRoom, server: options?.server ?? useMultiplayerStore.getState().server });
       return;
     }
     const template = options?.template ?? (gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : 'nature');
@@ -169,7 +169,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     if (shared) useGameStore.setState({ worldName });
     if (shared) {
       setPendingWorld(worldId);
-      configure({ playerName: useMultiplayerStore.getState().playerName, room: worldId, server: useMultiplayerStore.getState().server });
+      configure({ playerName: useMultiplayerStore.getState().playerName, room: worldId, server: options?.server ?? useMultiplayerStore.getState().server });
     } else {
       setCreateOpen(false);
       void onPlay();
