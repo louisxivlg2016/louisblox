@@ -54,6 +54,7 @@ export type Voxel = {
   protected?: boolean;
   waterlogged?: boolean;
   floodSource?: boolean;
+  floodDepth?: number;
   shop?: { action: 'buy' | 'sell' | 'earn' | 'gift' | 'heal' | 'teleport' | 'effect' | 'checkpoint' | 'message' | 'trap' | 'bomb' | 'firework' | 'day' | 'night' | 'weather' | 'spawn'; item?: import('./items').SelectedKind; count?: number; price?: number; destination?: { x: number; y: number; z: number }; effect?: 'speed' | 'jump' | 'invisibility'; weather?: 'clear' | 'rain' | 'snow'; animal?: import('./animals').AnimalKind };
   season?: import('./seasons').Season;
 };

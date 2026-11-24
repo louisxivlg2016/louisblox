@@ -45,7 +45,7 @@ import { translate } from './language';
 import { isSeason, useSeasonStore } from './seasons';
 import { DAY_DURATION } from './dayNight';
 
-export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; textSize?: number; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean; waterlogged?: boolean; floodSource?: boolean; shop?: Voxel['shop']; season?: Voxel['season'] } | null;
+export type ChunkEdit = BlockKind | { kind: BlockKind; open?: boolean; growth?: number; items?: SelectedKind[]; facing?: Voxel['facing']; text?: string; textSize?: number; food?: SelectedKind; meat?: import('./animals').AnimalKind; protected?: boolean; waterlogged?: boolean; floodSource?: boolean; floodDepth?: number; shop?: Voxel['shop']; season?: Voxel['season'] } | null;
 export type SavedCar = { id?: string; x: number; y: number; z: number; yaw: number; color: string; kind?: VehicleKind };
 export type SavedHorse = { x: number; y: number; z: number };
 export type WorldSave = {
@@ -238,6 +238,7 @@ function blockEdit(block: Voxel): ChunkEdit {
   if (block.protected === true) edit.protected = true;
   if (block.waterlogged === true) edit.waterlogged = true;
   if (block.floodSource === true) edit.floodSource = true;
+  if (block.floodDepth !== undefined) edit.floodDepth = block.floodDepth;
   if (block.shop !== undefined) edit.shop = block.shop;
   if (block.season !== undefined) edit.season = block.season;
   return Object.keys(edit).length === 1 ? block.kind : edit;
@@ -340,7 +341,7 @@ export function loadChunk(world: World, cx: number, cz: number) {
       else {
         const [x, y, z] = position.split(',').map(Number);
         const data = typeof kind === 'number' ? { kind, open: false } : kind;
-        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing, text: typeof data.text === 'string' ? data.text.replace(/\r/g, '').slice(0, 120) : undefined, textSize: data.textSize === undefined ? undefined : cleanSignTextSize(data.textSize), food: data.food, meat: data.meat, protected: data.protected, waterlogged: data.waterlogged, floodSource: data.floodSource, shop: data.shop, season: data.season });
+        blockMap.set(position, { x, y, z, kind: data.kind, open: data.open, growth: data.growth, items: data.items, facing: data.facing, text: typeof data.text === 'string' ? data.text.replace(/\r/g, '').slice(0, 120) : undefined, textSize: data.textSize === undefined ? undefined : cleanSignTextSize(data.textSize), food: data.food, meat: data.meat, protected: data.protected, waterlogged: data.waterlogged, floodSource: data.floodSource, floodDepth: data.floodDepth, shop: data.shop, season: data.season });
       }
     }
   }

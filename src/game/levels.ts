@@ -179,7 +179,7 @@ export function generateChunk(cx: number, cz: number, seed = 73421): GeneratedCh
     const treePart = kind === BlockKind.Wood || kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves || kind === BlockKind.JungleVine || kind === BlockKind.Apple;
     if (treePart && biomeAt(x, z, seed) === 'winter' && heightAt(x, z, seed) > 14) return;
     const key = voxelKey(x, y, z);
-    if (overwrite || !blocks.has(key)) blocks.set(key, { x, y, z, kind, ...(growth !== undefined ? { growth } : {}) });
+    if (overwrite || !blocks.has(key)) blocks.set(key, { x, y, z, kind, ...(growth !== undefined ? { growth } : {}), ...(kind === BlockKind.Water ? { floodSource: true } : {}) });
   };
 
   for (let x = minX; x < maxX; x += 1) {
