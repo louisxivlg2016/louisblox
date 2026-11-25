@@ -5,6 +5,7 @@ import { PAINTING_IMAGE_SIZE, pixelatePaintingFile } from '../game/paintingImage
 import { world } from '../game/world';
 import { translate } from '../game/language';
 import { DrawingCanvas } from './DrawingCanvas';
+import { setVoxelImage } from '../game/chunks';
 
 export function CustomPaintingPanel() {
   const editing = useCustomPaintingStore((state) => state.editing);
@@ -46,11 +47,14 @@ export function CustomPaintingPanel() {
           <button type="button" className="secondary-button" onClick={close}>{translate('Fermer', 'Close')}</button>
         </div>
         {editing.drawing ? <>
-          <DrawingCanvas initialImage={editing.image} onSave={(image) => {
+          <DrawingCanvas initialImage={editing.image} onChange={(image) => {
+            if (!setVoxelImage(world, editing, image)) setError(translate('Impossible d’enregistrer ce dessin.', 'Unable to save this drawing.'));
+          }} onSave={(image) => {
             setError('');
             if (saveCustomPainting(world, editing, image)) void requestPlay();
             else setError(translate('Impossible d’enregistrer ce dessin.', 'Unable to save this drawing.'));
           }} />
+          <p className="boutique-hint">{translate('Ton dessin est enregistré automatiquement à chaque trait, même quand tu fermes le tableau.', 'Your drawing is saved automatically after every stroke, even when you close the painting.')}</p>
           {error && <p role="alert" className="boutique-hint">{error}</p>}
         </> : <form onSubmit={(event) => {
           event.preventDefault();

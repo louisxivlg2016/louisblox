@@ -24,7 +24,7 @@ function blankCanvas(canvas: HTMLCanvasElement) {
   context.fillRect(0, 0, WIDTH, HEIGHT);
 }
 
-export function DrawingCanvas({ initialImage, onSave }: { initialImage?: string; onSave: (image: string) => void }) {
+export function DrawingCanvas({ initialImage, onSave, onChange }: { initialImage?: string; onSave: (image: string) => void; onChange?: (image: string) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const startRef = useRef<Point>({ x: 0, y: 0 });
@@ -142,6 +142,7 @@ export function DrawingCanvas({ initialImage, onSave }: { initialImage?: string;
     drawingRef.current = false;
     shapeSnapshotRef.current = undefined;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    onChange?.(event.currentTarget.toDataURL('image/png'));
   };
 
   const undo = () => {
@@ -149,12 +150,14 @@ export function DrawingCanvas({ initialImage, onSave }: { initialImage?: string;
     if (!snapshot || !canvasRef.current) return;
     canvasRef.current.getContext('2d')!.putImageData(snapshot, 0, 0);
     setHistoryLength(historyRef.current.length);
+    onChange?.(canvasRef.current.toDataURL('image/png'));
   };
 
   const clear = () => {
     if (!canvasRef.current) return;
     remember();
     blankCanvas(canvasRef.current);
+    onChange?.(canvasRef.current.toDataURL('image/png'));
   };
 
   const toolButton = (id: Tool, label: string) => (
