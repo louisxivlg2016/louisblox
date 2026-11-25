@@ -8,7 +8,7 @@ import { useBattleStore, respawnAtBase } from './battle';
 import { Player, PlayerBody, PlayerPosition, PlayerVelocity } from './traits';
 import { HEIST_DEPOSIT, HEIST_ENTRIES, HEIST_GUARD_SPAWN, HEIST_HIDEOUT, HEIST_LOOT, HEIST_PRISON_SPAWN, HEIST_TUNNEL_EXIT } from './heistCity';
 import type { HeistEntry, HeistLoot } from './heistCity';
-import { addVoxel, getBlockIndex, removeVoxel, replaceVoxel } from './chunks';
+import { addVoxel, getBlockIndex, loadChunk, removeVoxel, replaceVoxel } from './chunks';
 import { BlockKind, raycastVoxel, voxelKey } from './voxel';
 import { isDoor, isTrapdoor } from './extraBlocks';
 import { translate } from './language';
@@ -142,6 +142,13 @@ function nearestEntry(world: KootaWorld, position: Vector3) {
   const opened = openedEntries.get(world);
   return HEIST_ENTRIES.find((entry) => !opened?.has(entry.id) && Math.hypot(position.x - entry.x, position.y - entry.y, position.z - entry.z) <= 3);
 }
+const preloadedTunnels = new WeakSet<KootaWorld>();
+export function preloadHeistTunnel(world: KootaWorld) {
+  if (preloadedTunnels.has(world)) return;
+  for (let cx = -2; cx <= 3; cx += 1) for (let cz = 1; cz <= 3; cz += 1) loadChunk(world, cx, cz);
+  preloadedTunnels.add(world);
+}
+
 function restoreTunnel(world: KootaWorld) {
   const now = Date.now();
   const last = tunnelResets.get(world) ?? 0;
@@ -324,6 +331,7 @@ export function heistControlSystem(world: KootaWorld, camera: Camera, actions: {
   if (!player) return true;
   updateHeistBot(world, dt, current, player);
   keepGuardsOutsideHideout(world, current.role);
+  preloadHeistTunnel(world);
   restoreTunnel(world);
   const pressedGrapple = isDown('KeyG');
   if (pressedGrapple && !grappleDown.get(world)) useGrapple(world, camera);
@@ -419,6 +427,7 @@ export function receiveHeistState(value: unknown) {
   });
 }
 export function receiveHeistPrison() {
+  preloadHeistTunnel(world);
   loadout('thief', true);
   respawnAtBase(world, null, HEIST_PRISON_SPAWN);
 }
