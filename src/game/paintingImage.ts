@@ -1,6 +1,6 @@
 const PNG_PREFIX = 'data:image/png;base64,';
-export const PAINTING_IMAGE_SIZE = 64;
-export const MAX_PAINTING_IMAGE_LENGTH = 200000;
+export const PAINTING_IMAGE_SIZE = 128;
+export const MAX_PAINTING_IMAGE_LENGTH = 500000;
 
 export function cleanPaintingImage(value: unknown) {
   if (typeof value !== 'string' || value.length > MAX_PAINTING_IMAGE_LENGTH || !value.startsWith(PNG_PREFIX)) return undefined;
@@ -16,7 +16,8 @@ export async function pixelatePaintingFile(file: File) {
     canvas.width = PAINTING_IMAGE_SIZE;
     canvas.height = PAINTING_IMAGE_SIZE;
     const context = canvas.getContext('2d')!;
-    context.imageSmoothingEnabled = false;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
     context.drawImage(bitmap, 0, 0, PAINTING_IMAGE_SIZE, PAINTING_IMAGE_SIZE);
     return canvas.toDataURL('image/png');
   } finally {
