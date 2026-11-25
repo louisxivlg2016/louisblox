@@ -37,6 +37,9 @@ export const isWaterBlock = (kind: number | undefined) => kind === BlockKind.Wat
 export const SIGN_TEXT_SIZES = [15, 20, 30, 60] as const;
 export const DEFAULT_SIGN_TEXT_SIZE = 20;
 export const cleanSignTextSize = (value: unknown) => typeof value === 'number' && (SIGN_TEXT_SIZES as readonly number[]).includes(value) ? value : DEFAULT_SIGN_TEXT_SIZE;
+export const MIN_PAINTING_SIZE = 0.5;
+export const MAX_PAINTING_SIZE = 4;
+export const cleanPaintingSize = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? Math.max(MIN_PAINTING_SIZE, Math.min(MAX_PAINTING_SIZE, Math.round(value * 2) / 2)) : 1;
 
 export type Voxel = {
   x: number;
@@ -49,6 +52,7 @@ export type Voxel = {
   text?: string;
   textSize?: number;
   image?: string;
+  paintingSize?: number;
   facing?: 'north' | 'south' | 'east' | 'west';
   food?: import('./items').SelectedKind;
   meat?: import('./animals').AnimalKind;

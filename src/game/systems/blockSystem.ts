@@ -161,8 +161,9 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   const actions = pendingActions ?? consumeActions();
   if (useGameStore.getState().mode !== 'play' || !hit) return;
   if ((actions.place > 0 || actions.harvest > 0 || (actions.interact ?? 0) > 0) && hit.block.shop && useShopBlock(world, hit.block)) return;
-  if ((actions.place > 0 || actions.harvest > 0) && (hit.block.kind === BlockKind.PaintingCustom || hit.block.kind === BlockKind.DrawingPainting)) {
-    useCustomPaintingStore.getState().openPainting(hit, hit.block.image, hit.block.kind === BlockKind.DrawingPainting);
+  if ((actions.place > 0 || actions.harvest > 0) && isPainting(hit.block.kind)) {
+    const custom = hit.block.kind === BlockKind.PaintingCustom || hit.block.kind === BlockKind.DrawingPainting;
+    useCustomPaintingStore.getState().openPainting(hit, hit.block.image, hit.block.kind === BlockKind.DrawingPainting, hit.block.paintingSize, custom);
     releasePointerForOverlay();
     return;
   }

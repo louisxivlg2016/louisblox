@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { requestPlay } from '../game/input';
-import { saveCustomPainting, useCustomPaintingStore } from '../game/customPainting';
+import { changePaintingSize, saveCustomPainting, useCustomPaintingStore } from '../game/customPainting';
 import { PAINTING_IMAGE_SIZE, pixelatePaintingFile } from '../game/paintingImage';
 import { world } from '../game/world';
 import { translate } from '../game/language';
 import { DrawingCanvas } from './DrawingCanvas';
 import { setVoxelImage } from '../game/chunks';
+import { MAX_PAINTING_SIZE, MIN_PAINTING_SIZE } from '../game/voxel';
 
 export function CustomPaintingPanel() {
   const editing = useCustomPaintingStore((state) => state.editing);
@@ -43,10 +44,15 @@ export function CustomPaintingPanel() {
     <div className="backpack-backdrop">
       <section className="book-panel backpack-panel" role="dialog" aria-modal="true" aria-label={translate('Personnaliser le tableau', 'Customize painting')} data-custom-painting-dialog>
         <div className="backpack-header">
-          <h2>{editing.drawing ? translate('Tableau à dessiner', 'Drawing painting') : translate('Tableau personnalisé', 'Custom painting')}</h2>
+          <h2>{!editing.custom ? translate('Tableau', 'Painting') : editing.drawing ? translate('Tableau à dessiner', 'Drawing painting') : translate('Tableau personnalisé', 'Custom painting')}</h2>
           <button type="button" className="secondary-button" onClick={close}>{translate('Fermer', 'Close')}</button>
         </div>
-        {editing.drawing ? <>
+        <div data-painting-size style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, margin: '16px 0' }}>
+          <button type="button" className="secondary-button" data-painting-smaller aria-label={translate('Rétrécir le tableau', 'Make painting smaller')} disabled={editing.size <= MIN_PAINTING_SIZE} onClick={() => { if (!changePaintingSize(world, editing, editing.size - 0.5)) setError(translate('Impossible de changer la taille.', 'Unable to resize the painting.')); }} style={{ width: 52, minHeight: 44, margin: 0, fontSize: 24 }}>−</button>
+          <strong>{translate(`Taille : ${editing.size} ×`, `Size: ${editing.size} ×`)}</strong>
+          <button type="button" className="secondary-button" data-painting-larger aria-label={translate('Agrandir le tableau', 'Make painting larger')} disabled={editing.size >= MAX_PAINTING_SIZE} onClick={() => { if (!changePaintingSize(world, editing, editing.size + 0.5)) setError(translate('Impossible de changer la taille.', 'Unable to resize the painting.')); }} style={{ width: 52, minHeight: 44, margin: 0, fontSize: 24 }}>+</button>
+        </div>
+        {!editing.custom ? <p className="boutique-hint">{translate('Utilise − et + pour choisir la taille du tableau. Elle est enregistrée automatiquement.', 'Use − and + to choose the painting size. It is saved automatically.')}</p> : editing.drawing ? <>
           <DrawingCanvas initialImage={editing.image} onChange={(image) => {
             if (!setVoxelImage(world, editing, image)) setError(translate('Impossible d’enregistrer ce dessin.', 'Unable to save this drawing.'));
           }} onSave={(image) => {

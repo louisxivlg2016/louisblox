@@ -1,6 +1,6 @@
 import { CanvasTexture, DoubleSide, LinearFilter, NearestFilter, SRGBColorSpace, TextureLoader } from 'three';
 import type { Texture } from 'three';
-import { BlockKind } from '../game/voxel';
+import { BlockKind, cleanPaintingSize } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { drawPainting } from '../game/paintingArt';
 import { cleanPaintingImage } from '../game/paintingImage';
@@ -38,10 +38,10 @@ function paintingTexture(kind: BlockKind, image?: string) {
   return texture;
 }
 
-export function PaintingModel({ kind, image }: { kind: BlockKind; image?: string }) {
+export function PaintingModel({ kind, image, size = 1 }: { kind: BlockKind; image?: string; size?: number }) {
   const texture = paintingTexture(kind, image);
   return (
-    <group name={`painting-${kind}`}>
+    <group name={`painting-${kind}`} scale={cleanPaintingSize(size)}>
       <PixelPart position={[0, 0, 0]} size={[1, 0.78, 0.08]} color="#5d3c25" />
       <mesh name="painting-canvas" position={[0, 0, 0.046]}>
         <planeGeometry args={[0.88, 0.64]} />
@@ -58,6 +58,6 @@ export function PaintingModel({ kind, image }: { kind: BlockKind; image?: string
 export function PaintingBlocks({ blocks, blockIndex }: { blocks: Voxel[]; blockIndex: ReadonlyMap<string, Voxel> }) {
   return <DecorationCulling distance={55}>{blocks.map((block) => {
     const mount = wallMount(blockIndex, block, facingYaw(block.facing));
-    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} userData={{ wallMounted: mount.mounted }}><PaintingModel kind={block.kind} image={block.image} /></group>;
+    return <group key={`${block.x},${block.y},${block.z}`} position={[block.x - Math.sin(mount.rotation) * mount.offset, block.y, block.z - Math.cos(mount.rotation) * mount.offset]} rotation={[0, mount.rotation, 0]} userData={{ wallMounted: mount.mounted }}><PaintingModel kind={block.kind} image={block.image} size={block.paintingSize} /></group>;
   })}</DecorationCulling>;
 }

@@ -46,6 +46,7 @@ type VoxelEdit = number | {
   text?: string;
   textSize?: number;
   image?: string;
+  paintingSize?: number;
   food?: string;
   meat?: string;
   protected?: boolean;
@@ -223,6 +224,7 @@ function parseEdits(value: unknown): EditEntry[] | null {
     if (typeof data.textSize === 'number' && [15, 20, 30, 60].includes(data.textSize)) result.textSize = data.textSize;
     const paintingImage = cleanPaintingImage(data.image);
     if (paintingImage) result.image = paintingImage;
+    if (typeof data.paintingSize === 'number' && Number.isFinite(data.paintingSize) && data.paintingSize >= 0.5 && data.paintingSize <= 4 && Number.isInteger(data.paintingSize * 2)) result.paintingSize = data.paintingSize;
     if (typeof data.food === 'string' && data.food.length > 0 && data.food.length <= 96) result.food = data.food;
     if (typeof data.meat === 'string' && ['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'zombie'].includes(data.meat)) result.meat = data.meat;
     if (data.protected === true) result.protected = true;
