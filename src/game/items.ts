@@ -52,7 +52,7 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   bucket: item('Seau vide', '#a8b5bc', 'resource', { shape: 'bucket' }),
   water_bucket: item('Seau plein d’eau', '#359bd5', 'resource', { shape: 'water_bucket' }),
   empty_bucket: item('Seau toujours vide', '#a8b5bc', 'resource', { shape: 'bucket' }),
-  paint_cleaning_bucket: item('Seau effaceur de peinture', '#db87a7', 'resource', { shape: 'paint_cleaning_bucket' }),
+  paint_cleaning_bucket: item('seau qui eface tous la peinture', '#db87a7', 'resource', { shape: 'paint_cleaning_bucket' }),
   sword_wood: item('Épée en bois', '#b98a53', 'sword', { cooldown: 0.35 }),
   sword_stone: item('Épée en pierre', '#92999e', 'sword', { cooldown: 0.35 }),
   sword_iron: item('Épée en fer', '#e0e8eb', 'sword', { cooldown: 0.32 }),
