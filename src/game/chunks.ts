@@ -377,7 +377,7 @@ export function loadChunk(world: World, cx: number, cz: number) {
   const data = entity.get(ChunkData)!;
   data.blocks = [...blockMap.values()];
   data.water = generated.water;
-  state.depths.set(key, data.blocks.reduce((minimum, block) => block.y > MIN_WORLD_Y ? Math.min(minimum, block.y) : minimum, MAX_BUILD_Y));
+  state.depths.set(key, data.blocks.reduce((minimum, block) => block.y > MIN_WORLD_Y && block.kind !== BlockKind.Bedrock ? Math.min(minimum, block.y) : minimum, MAX_BUILD_Y));
   state.chunks.set(key, entity);
 
   for (const block of data.blocks) {

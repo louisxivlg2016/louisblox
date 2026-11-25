@@ -1,6 +1,6 @@
 import type { World } from 'koota';
 import { consumeFlightToggle, consumeLook, getEdgeLook, getTouchMovement, isDown } from '../input';
-import { getBlockIndex } from '../chunks';
+import { chunkCoordinate, ensureChunkDepth, getBlockIndex } from '../chunks';
 import { MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
 import { getSwimState, swimVerticalVelocity } from '../swimming';
@@ -160,6 +160,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     airJumps.set(world, 1);
   } else velocity.y -= GRAVITY * dt;
 
+  if (!flying && velocity.y < 0) ensureChunkDepth(world, chunkCoordinate(position.x), chunkCoordinate(position.z), position.y);
   const next = { ...position };
   const movement = moveVoxelCharacter(blocks, next, {
     x: velocity.x * dt,
