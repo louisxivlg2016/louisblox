@@ -202,6 +202,13 @@ export function generateHeistChunk(cx: number, cz: number, seed = 0): GeneratedC
   for (const x of [-8, 8]) sewerZ(blocks, -50, 50, x);
   for (let x = -50; x <= 50; x += 1) for (const z of [-8, 8]) if (x % 3 !== 0) put(blocks, x, 2, z, BlockKind.CalmWater, false);
 
+  for (const [x, y, z, text] of [
+    [-42, 10, 50, 'REPAIRE DES VOLEURS'],
+    [-35, 10, -17, 'BIJOUTERIE'],
+    [0, 10, -18, 'MUSEE'],
+    [35, 10, -10, 'GRANDE BANQUE\nCOFFRE-FORT'],
+    [38, 10, 48, 'PRISON\nTUNNEL D’ÉVASION'],
+  ] as const) put(blocks, x, y, z, BlockKind.Sign, true, 'south').text = text;
   for (const loot of HEIST_LOOT) put(blocks, loot.x, loot.y, loot.z, BlockKind.Chest);
   const unique = [...new Map(blocks.map((block) => [voxelKey(block.x, block.y, block.z), block])).values()];
   return { blocks: unique.filter((block) => Math.floor(block.x / CHUNK_SIZE) === cx && Math.floor(block.z / CHUNK_SIZE) === cz), water: [] };

@@ -78,8 +78,7 @@ export class HeistEngine {
 
   chooseRole(player: PlayerAttachment, requested: unknown): Role | null {
     if (this.room.mode() !== 'heist' || this.phase === 'finished') return null;
-    if (requested === 'thief' || requested === 'guard') return requested;
-    if (requested !== 'auto' && requested !== undefined) return null;
+    if (requested !== 'thief' && requested !== 'guard' && requested !== 'auto' && requested !== undefined) return null;
     let thieves = 0;
     let guards = 0;
     for (const { attachment } of this.room.players()) {
@@ -87,7 +86,9 @@ export class HeistEngine {
       if (this.roles.get(attachment.playerId) === 'thief') thieves += 1;
       if (this.roles.get(attachment.playerId) === 'guard') guards += 1;
     }
-    return thieves < guards * 2 ? 'thief' : 'guard';
+    if (requested === 'thief' && thieves >= 5 || requested === 'guard' && guards >= 5) return null;
+    if (requested === 'thief' || requested === 'guard') return requested;
+    return thieves <= guards ? 'thief' : 'guard';
   }
 
   private target(targetId: unknown) {
@@ -189,6 +190,14 @@ export class HeistEngine {
         this.update();
         void this.room.save();
       }
+      return true;
+    }
+    if (data.type === 'heist-bot-arrest' && role === 'thief' && this.room.players().length === 1) {
+      this.prison.add(player.playerId);
+      this.carried.set(player.playerId, 0);
+      socket.send(JSON.stringify({ type: 'heist-prison', position: HEIST_PRISON_SPAWN }));
+      this.checkVictory();
+      this.update();
       return true;
     }
     if (data.type === 'heist-arrest' && role === 'guard') {

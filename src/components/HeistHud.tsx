@@ -7,6 +7,8 @@ import { BlockKind } from '../game/voxel';
 export function HeistHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   const role = useHeistStore((state) => state.role);
+  const roles = useHeistStore((state) => state.roles);
+  const botEnabled = useHeistStore((state) => state.bot.enabled);
   const phase = useHeistStore((state) => state.phase);
   const endsAt = useHeistStore((state) => state.endsAt);
   const score = useHeistStore((state) => state.score);
@@ -23,7 +25,9 @@ export function HeistHud() {
   if (gameplayMode !== 'heist') return null;
   const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
   const time = `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`;
-  const imprisoned = localId !== null && prison.includes(localId);
+  const imprisoned = prison.includes(localId ?? '');
+  const thieves = Object.values(roles).filter((entry) => entry === 'thief').length || (role === 'thief' ? 1 : 0);
+  const guards = (Object.values(roles).filter((entry) => entry === 'guard').length || (role === 'guard' ? 1 : 0)) + (botEnabled ? 1 : 0);
   return (
     <>
       {!role && <div className="backpack-backdrop"><section className="book-panel heist-role-panel"><h2>{translate('Choisis ton équipe', 'Choose your team')}</h2><button className="primary-button" onClick={() => chooseHeistRole('thief')}>{translate('Voleur · braquer et s’évader', 'Thief · rob and escape')}</button><button className="primary-button" onClick={() => chooseHeistRole('guard')}>{translate('Gardien · arrêter les voleurs', 'Guard · arrest thieves')}</button></section></div>}
@@ -32,6 +36,7 @@ export function HeistHud() {
         <span>{translate(`Butin ${score}/10 000`, `Loot ${score}/10,000`)}</span>
         {carried > 0 && <span>{translate(`Dans ton dos : ${carried}`, `On your back: ${carried}`)}</span>}
         <small>{role === 'guard' ? translate('Gardien', 'Guard') : translate('Voleur', 'Thief')} · {coins} {translate('pièces', 'coins')}</small>
+        <small>{translate(`Voleurs ${Math.min(5, thieves)}/5 · Gardiens ${Math.min(5, guards)}/5`, `Thieves ${Math.min(5, thieves)}/5 · Guards ${Math.min(5, guards)}/5`)}</small>
         {role === 'thief' && grappleReadyAt > Date.now() && <small>{translate(`Grappin ${Math.ceil((grappleReadyAt - Date.now()) / 1000)} s`, `Grapple ${Math.ceil((grappleReadyAt - Date.now()) / 1000)} s`)}</small>}
         {role === 'guard' && taserReadyAt > Date.now() && <small>{translate(`Taser ${Math.ceil((taserReadyAt - Date.now()) / 1000)} s`, `Taser ${Math.ceil((taserReadyAt - Date.now()) / 1000)} s`)}</small>}
         {role === 'guard' && alarmPosition && alarmUntil > Date.now() && <small>{translate(`ALARME · X ${Math.round(alarmPosition.x)} · Z ${Math.round(alarmPosition.z)}`, `ALARM · X ${Math.round(alarmPosition.x)} · Z ${Math.round(alarmPosition.z)}`)}</small>}
