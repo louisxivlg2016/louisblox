@@ -56,7 +56,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       cameraSystem(world, camera, dt);
       const footballHandled = footballControlSystem(world, camera, dt, actions.tap, actions) || mazeControlSystem(world);
       const heistHandled = heistControlSystem(world, camera, actions, dt);
-      const deliveryHandled = deliveryControlSystem(world, camera);
+      const deliveryHandled = deliveryControlSystem(world, camera, actions);
       const skyfallHandled = skyfallControlSystem(world, dt);
       const planetHandled = planetControlSystem(world);
       const deepHandled = deepControlSystem(world, dt, actions);

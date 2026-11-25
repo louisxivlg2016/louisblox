@@ -6,8 +6,10 @@ import { useGameStore } from './store';
 import { Player, PlayerPosition } from './traits';
 import { DELIVERY_POINTS, DELIVERY_START } from './deliveryCity';
 import { useEffectStore } from './effects';
-import { getBlockIndex } from './chunks';
+import { getBlockIndex, replaceVoxel } from './chunks';
 import { moveVoxelCharacter } from './systems/collisionSystem';
+import { raycastVoxel } from './voxel';
+import { isDoor, isTrapdoor } from './extraBlocks';
 import { isDown, releasePointerForOverlay } from './input';
 import { respawnAtBase } from './battle';
 import { world } from './world';
@@ -19,7 +21,7 @@ export function clearDelivery() { useDeliveryStore.setState({ ...initial }); }
 const direction = new Vector3();
 const grappleDown = new WeakMap<World, boolean>();
 
-export function deliveryControlSystem(world: World, camera: Camera) {
+export function deliveryControlSystem(world: World, camera: Camera, actions: { place: number; harvest: number; tap: number; interact: number } = { place: 0, harvest: 0, tap: 0, interact: 0 }) {
   if (useGameStore.getState().gameplayMode !== 'delivery') return false;
   let state = useDeliveryStore.getState();
   if (state.phase === 'waiting') {
@@ -34,6 +36,18 @@ export function deliveryControlSystem(world: World, camera: Camera) {
   }
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player || state.phase !== 'running') return true;
+  if (actions.place > 0 || actions.harvest > 0 || actions.tap > 0 || actions.interact > 0) {
+    const origin = player.clone();
+    origin.y += 1.62;
+    camera.getWorldDirection(direction);
+    const hit = raycastVoxel(getBlockIndex(world), origin, direction, 4, true);
+    if (hit && (isDoor(hit.block.kind) || isTrapdoor(hit.block.kind))) {
+      for (let y = hit.y - 2; y <= hit.y + 2; y += 1) {
+        const block = getBlockIndex(world).get(`${hit.x},${y},${hit.z}`);
+        if (block?.kind === hit.block.kind) replaceVoxel(world, { block, x: hit.x, y, z: hit.z, normal: hit.normal, distance: hit.distance }, block.kind, !hit.block.open, undefined, undefined, undefined, undefined, undefined, undefined, true);
+      }
+    }
+  }
   const point = DELIVERY_POINTS[state.index];
   if (point && Math.hypot(player.x - point.x, player.y - point.y, player.z - point.z) <= 2.5) {
     const index = state.index + 1;

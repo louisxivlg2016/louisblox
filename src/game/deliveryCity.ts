@@ -43,7 +43,7 @@ function house(blocks: Voxel[], cx: number, cz: number, x: number, z: number, he
   put(blocks, cx, cz, x + 2, roofY + 2, z - 2, BlockKind.GrayBrick);
   put(blocks, cx, cz, x, roofY + 1, z, BlockKind.Chest);
   if (name) {
-    const sign = put(blocks, cx, cz, x, 10, z + 6, BlockKind.Sign, true, 'south');
+    const sign = put(blocks, cx, cz, x, 12, z + 6, BlockKind.Sign, true, 'south');
     if (sign) sign.text = name;
   }
   for (let step = 0; step < 3; step += 1) put(blocks, cx, cz, x - 2, roofY + 1 + step, z + 4 + step, BlockKind.OakPlanks);
@@ -86,7 +86,7 @@ export function generateDeliveryChunk(cx: number, cz: number): GeneratedChunk {
   for (let x = -1; x <= 1; x += 1) for (let y = 8; y <= 10; y += 1) put(blocks, cx, cz, x, y, 7, BlockKind.DoorRed, true, 'north');
   for (let y = 8; y <= 16; y += 1) put(blocks, cx, cz, 5, y, 0, BlockKind.Ladder, true, 'west');
   put(blocks, cx, cz, 0, 8, 3, BlockKind.Chest);
-  const postSign = put(blocks, cx, cz, 0, 10, 8, BlockKind.Sign, true, 'south');
+  const postSign = put(blocks, cx, cz, 0, 12, 8, BlockKind.Sign, true, 'south');
   if (postSign) postSign.text = 'POSTE CENTRALE\nCOLIS';
   for (const [x, z] of [[-20, -20], [20, -20], [-20, 20], [20, 20]] as const) {
     for (let y = 8; y <= 11; y += 1) put(blocks, cx, cz, x, y, z, BlockKind.Wood);
