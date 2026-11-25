@@ -4,7 +4,7 @@ import type { World } from 'koota';
 import { Vector3 } from 'three';
 import { useGameStore } from './store';
 import { Player, PlayerPosition } from './traits';
-import { HEIST_DELIVERY_POINTS, HEIST_DELIVERY_START } from './heistCity';
+import { DELIVERY_POINTS, DELIVERY_START } from './deliveryCity';
 import { useEffectStore } from './effects';
 import { getBlockIndex } from './chunks';
 import { moveVoxelCharacter } from './systems/collisionSystem';
@@ -23,7 +23,7 @@ export function deliveryControlSystem(world: World, camera: Camera) {
   if (useGameStore.getState().gameplayMode !== 'delivery') return false;
   let state = useDeliveryStore.getState();
   if (state.phase === 'waiting') {
-    respawnAtBase(world, null, HEIST_DELIVERY_START);
+    respawnAtBase(world, null, DELIVERY_START);
     useEffectStore.getState().activate('speed', 1e9);
     useDeliveryStore.setState({ phase: 'running', startedAt: Date.now() });
     state = useDeliveryStore.getState();
@@ -34,7 +34,7 @@ export function deliveryControlSystem(world: World, camera: Camera) {
   }
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player || state.phase !== 'running') return true;
-  const point = HEIST_DELIVERY_POINTS[state.index];
+  const point = DELIVERY_POINTS[state.index];
   if (point && Math.hypot(player.x - point.x, player.y - point.y, player.z - point.z) <= 2.5) {
     const index = state.index + 1;
     const coins = state.coins + 500;
@@ -44,8 +44,8 @@ export function deliveryControlSystem(world: World, camera: Camera) {
       useGameStore.getState().setNotice(translate('Double saut débloqué !', 'Double jump unlocked!'));
     }
     if (index === 3) useGameStore.getState().setNotice(translate('Grappin débloqué · G pour l’utiliser !', 'Grapple unlocked · press G to use it!'));
-    useDeliveryStore.setState({ index, coins, phase: index >= HEIST_DELIVERY_POINTS.length ? 'finished' : 'running' });
-    if (index >= HEIST_DELIVERY_POINTS.length) releasePointerForOverlay();
+    useDeliveryStore.setState({ index, coins, phase: index >= DELIVERY_POINTS.length ? 'finished' : 'running' });
+    if (index >= DELIVERY_POINTS.length) releasePointerForOverlay();
   }
   const grapple = isDown('KeyG');
   if (grapple && !grappleDown.get(world) && state.index >= 3 && state.grappleReadyAt <= Date.now()) {

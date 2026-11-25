@@ -9,14 +9,6 @@ export const HEIST_DEPOSIT = { x: -42, y: 8, z: 42 };
 export const HEIST_PRISON_SPAWN = { x: 30, y: 8.51, z: 34 };
 export const HEIST_GUARD_SPAWN = { x: 38, y: 8.51, z: 25 };
 export const HEIST_TUNNEL_EXIT = { x: -27, y: 8.51, z: 42 };
-export const HEIST_DELIVERY_START = { x: -42, y: 16.51, z: 42 };
-export const HEIST_DELIVERY_POINTS = [
-  { x: -35, y: 16, z: -25, name: 'Bijouterie' },
-  { x: 0, y: 20, z: -30, name: 'Musée' },
-  { x: 35, y: 22, z: -25, name: 'Grande Banque' },
-  { x: -42, y: 16, z: 42, name: 'Repaire' },
-] as const;
-
 export type HeistLoot = { id: string; building: 'jewelry' | 'museum' | 'bank'; name: string; value: number; x: number; y: number; z: number };
 export const HEIST_LOOT: HeistLoot[] = [
   { id: 'diamonds-1', building: 'jewelry', name: 'Sac de diamants 1', value: 500, x: -40, y: 8, z: -25 },
