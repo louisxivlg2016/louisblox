@@ -4,7 +4,8 @@ import type { Camera } from 'three';
 import { findAnimalTarget } from '../combat';
 import { addVoxel, getBlockIndex } from '../chunks';
 import { consumeActions, isDown, isMouseButtonDown } from '../input';
-import { getItemMeta } from '../items';
+import { getItemMeta, storedAnimalIdFromSelection } from '../items';
+import { releaseStoredAnimal } from '../taming';
 import { isGalleryItem } from '../galleryCatalog';
 import { hasWaterOpening } from '../extraBlocks';
 import { useGalleryItem, useShears } from '../galleryActions';
@@ -94,13 +95,18 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
   const meta = getItemMeta(selected);
   const actions = pendingActions ?? consumeActions();
   const interact = actions.place + actions.harvest + actions.tap;
+  const storedAnimalId = storedAnimalIdFromSelection(selected);
+  if (storedAnimalId) {
+    if (interact > 0) void releaseStoredAnimal(world, storedAnimalId);
+    return true;
+  }
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return false;
   origin.copy(player);
   origin.y += 1.62;
   camera.getWorldDirection(direction);
 
-  if (useFood(world, selected, origin, direction, interact)) return true;
+  if (useFood(world, selected as Parameters<typeof useFood>[1], origin, direction, interact)) return true;
   if (meta.shape === 'shears' && interact > 0) return useShears(world, origin, direction);
   if (selected === 'paint_cleaning_bucket' && interact > 0) {
     const removed = clearAllPaint(world);

@@ -21,7 +21,7 @@ import { spawnBomb } from './bombLifecycle';
 import { spawnSapling } from './saplingLifecycle';
 import { hasWaterOpening, isBed, isCarpet, isChest, isCrop, isDoor, isFireBlock, isGrassPlate, isLadder, isPainting, isRail, isSapling, isSign, isSlab, isStair, isTrafficSign, isTrapdoor, PARIS_STREET_SIGN_TEXT } from './extraBlocks';
 import { clearFires, extinguishFireAt, spawnFire } from './fireLifecycle';
-import { DEFAULT_ITEM_COUNTS, isSelectedKind } from './items';
+import { DEFAULT_ITEM_COUNTS, isSelectedKind, storedAnimalIdFromSelection } from './items';
 import type { ArmorKind, SelectedKind } from './items';
 import {
   Animal, AnimalPosition, Fish, MeatDrop, Bomb, Explosion, Sapling, BlockTarget, Chunk, ChunkData,
@@ -876,7 +876,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   const selected = gameplayMode === 'survival' && restoredSelection !== 'hand'
     && (itemCounts[typeof restoredSelection === 'number' ? `block_${restoredSelection}` : restoredSelection] ?? 0) <= 0 ? 'hand' : restoredSelection;
   const hotbarSlots = sports ? ['hand', ...Array(9).fill(null)] as Array<SelectedKind | null> : hotbar.map((kind, index) => gameplayMode !== 'survival' ? kind ?? BlockKind.Grass : index === 0 ? 'hand'
-    : kind !== null && kind !== 'hand' && (itemCounts[typeof kind === 'number' ? `block_${kind}` : kind] ?? 0) > 0 ? kind : null);
+    : kind !== null && kind !== 'hand' && (storedAnimalIdFromSelection(kind) !== null || (itemCounts[typeof kind === 'number' ? `block_${kind}` : kind] ?? 0) > 0) ? kind : null);
   useGameStore.setState({
     gameplayMode,
     worldThumbnail: restore?.thumbnail,

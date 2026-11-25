@@ -1,5 +1,7 @@
-import { getItemMeta, selectionInfo } from '../game/items';
-import type { ItemKind, SelectedKind } from '../game/items';
+import { getItemMeta, selectionInfo, storedAnimalIdFromSelection } from '../game/items';
+import { companionAnimalName, storedAnimals } from '../game/taming';
+import { world } from '../game/world';
+import type { GalleryItemId, ItemKind, SelectedKind } from '../game/items';
 import { BlockKind } from '../game/voxel';
 import { isCarpet, isGlass, isPainting, isSlab, isSmallTrapdoor, isStair, isTrafficSign, slabSource, stairSource } from '../game/extraBlocks';
 import { drawPainting } from '../game/paintingArt';
@@ -84,8 +86,14 @@ function paintingIcon(kind: BlockKind) {
 
 export function ItemIcon({ kind }: { kind: SelectedKind }) {
   const info = selectionInfo(kind);
+  const storedId = storedAnimalIdFromSelection(kind);
+  if (storedId) {
+    const animal = storedAnimals(world).find((candidate) => candidate.id === storedId);
+    const name = animal ? companionAnimalName(animal.kind) : info.name;
+    return <span className="stored-animal-icon" title={name}><strong>{name.slice(0, 1)}</strong><small>{name}</small></span>;
+  }
   if (typeof kind === 'number' && cropIcons[kind]) return <img className="item-model-icon" src={cropIcons[kind]} alt={info.name} />;
-  if (typeof kind !== 'number' && isReferenceFood(kind)) return <img className="item-model-icon" style={kind === 'cake' ? { transform: 'scale(1.25)' } : undefined} src={referenceFoodIcons[kind]} alt={info.name} />;
+  if (typeof kind !== 'number' && isReferenceFood(kind as ItemKind | GalleryItemId)) return <img className="item-model-icon" style={kind === 'cake' ? { transform: 'scale(1.25)' } : undefined} src={referenceFoodIcons[kind as keyof typeof referenceFoodIcons]} alt={info.name} />;
   if (kind === BlockKind.Tnt) return <img className="tnt-icon" src={tntUrl} alt="" />;
   if (kind === BlockKind.Wildfire) return <img className="tnt-icon red-fire-icon" src={redFireUrl} alt="" />;
   if (kind === BlockKind.TrafficLight) return <img className="tnt-icon traffic-light-icon" src={trafficLightUrl} alt="" />;

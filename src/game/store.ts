@@ -3,7 +3,7 @@ import type { MountKind, VehicleKind } from './vehicleTypes';
 import type { AnimalKind } from './animals';
 import type { ArmorKind, ItemKind, SelectedKind } from './items';
 import type { GalleryItemId } from './galleryCatalog';
-import { DEFAULT_ITEM_COUNTS } from './items';
+import { DEFAULT_ITEM_COUNTS, storedAnimalIdFromSelection } from './items';
 import type { Biome } from './levels';
 import { createMeatInventory } from './meats';
 import { BlockKind, HOTBAR_BLOCKS } from './voxel';
@@ -161,7 +161,7 @@ export const useGameStore = create<GameStore>((set) => ({
   selectBlock: (selected, slot) => set((state) => {
     selected = normalizePaintballGun(selected);
     const key = typeof selected === 'number' ? `block_${selected}` : selected;
-    if (state.gameplayMode === 'survival' && selected !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: translate('Récolte et fabrique cet objet avant de l’utiliser.', 'Gather and craft this item before using it.') };
+    if (state.gameplayMode === 'survival' && selected !== 'hand' && !storedAnimalIdFromSelection(selected) && (state.itemCounts[key] ?? 0) <= 0) return { notice: translate('Récolte et fabrique cet objet avant de l’utiliser.', 'Gather and craft this item before using it.') };
     const matchingSlot = slot !== undefined && state.hotbarSlots[slot] === selected ? slot : state.hotbarSlots.indexOf(selected);
     return { selected, selectedSlot: matchingSlot >= 0 ? matchingSlot : state.selectedSlot };
   }),

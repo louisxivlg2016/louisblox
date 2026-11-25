@@ -19,7 +19,14 @@ export type ItemKind =
   | 'cheese_slice' | 'cheese_wheel' | 'milk' | 'wool'
   | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb' | 'rifle_auto' | 'rifle_flintlock'
   | 'car_red' | 'car_blue' | 'plane' | 'train' | 'metro' | 'boat' | 'jeep' | 'police_car' | 'firetruck' | 'carriage' | 'cannon' | 'saddle' | 'parachute';
-export type SelectedKind = BlockKind | ItemKind | GalleryItemId;
+export type StoredAnimalItem = `stored_animal_${string}`;
+export type SelectedKind = BlockKind | ItemKind | GalleryItemId | StoredAnimalItem;
+
+const STORED_ANIMAL_PREFIX = 'stored_animal_';
+export const storedAnimalSelection = (id: string): StoredAnimalItem => `${STORED_ANIMAL_PREFIX}${id}`;
+export function storedAnimalIdFromSelection(value: unknown) {
+  return typeof value === 'string' && value.startsWith(STORED_ANIMAL_PREFIX) && value.length > STORED_ANIMAL_PREFIX.length ? value.slice(STORED_ANIMAL_PREFIX.length) : null;
+}
 export type ItemMeta = {
   name: string;
   color: string;
@@ -140,7 +147,8 @@ export function isAnimalPoison(kind: SelectedKind) {
   return kind === 'gallery_potions_poison_potion' || kind === 'gallery_potions_splash_poison_potion';
 }
 
-export function getItemMeta(kind: ItemKind | GalleryItemId): ItemMeta {
+export function getItemMeta(kind: ItemKind | GalleryItemId | StoredAnimalItem): ItemMeta {
+  if (storedAnimalIdFromSelection(kind)) return { name: 'Animal rangé', color: '#96a6ac', category: 'resource', shape: 'spawn_orb' };
   if (isGalleryItem(kind)) {
     const item = GALLERY_ITEM_MAP[kind];
     const name = item.name.toLowerCase();
@@ -163,7 +171,7 @@ export function getItemMeta(kind: ItemKind | GalleryItemId): ItemMeta {
       efficiency: toolEfficiency(name),
     };
   }
-  return { ...ITEM_META[kind], name: localizedItemName(ITEM_META[kind].name) };
+  return { ...ITEM_META[kind as ItemKind], name: localizedItemName(ITEM_META[kind as ItemKind].name) };
 }
 
 export function selectionInfo(kind: SelectedKind) {
@@ -172,7 +180,7 @@ export function selectionInfo(kind: SelectedKind) {
 
 export function isSelectedKind(value: unknown): value is SelectedKind {
   return (typeof value === 'number' && Number.isInteger(value) && value in BLOCK_INFO)
-    || (typeof value === 'string' && (value in ITEM_META || isGalleryItem(value)));
+    || (typeof value === 'string' && (value in ITEM_META || isGalleryItem(value) || storedAnimalIdFromSelection(value) !== null));
 }
 
 export function isSword(kind: SelectedKind) {

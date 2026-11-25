@@ -1,11 +1,13 @@
 import { getItemMeta } from './items';
-import type { GalleryItemId, ItemKind } from './items';
+import type { GalleryItemId, ItemKind, StoredAnimalItem } from './items';
 
-export function firearmYaw(_kind: ItemKind | GalleryItemId) {
+type HandheldItem = ItemKind | GalleryItemId | StoredAnimalItem;
+
+export function firearmYaw(_kind: HandheldItem) {
   return 0;
 }
 
-export function heldWeaponYaw(kind: ItemKind | GalleryItemId, fullCharacter: boolean) {
+export function heldWeaponYaw(kind: HandheldItem, fullCharacter: boolean) {
   const weapon = ['sword', 'bow', 'gun', 'pickaxe', 'shovel'].includes(getItemMeta(kind).category) || kind === 'extinguisher' || getItemMeta(kind).shape === 'shears';
   return firearmYaw(kind) + (fullCharacter && weapon ? Math.PI : 0);
 }

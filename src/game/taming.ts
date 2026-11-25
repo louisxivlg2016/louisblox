@@ -3,6 +3,7 @@ import type { Vector3 } from 'three';
 import { Animal, AnimalHealth, AnimalId, AnimalLove, AnimalMesh, AnimalMotion, AnimalRest, AnimalTame, AnimalPosition, CamelLeash, Environment, Player, PlayerMount, PlayerPosition } from './traits';
 import type { AnimalKind } from './animals';
 import type { SelectedKind } from './items';
+import { storedAnimalSelection } from './items';
 import { useGameStore } from './store';
 import { dismount, groundAt } from './vehicles';
 import { animalHitByPlayer } from './combat';
@@ -213,7 +214,16 @@ export async function storeTamedAnimal(world: World, entity: Entity) {
   const { reportAnimalStorage } = await import('./animalSync');
   reportAnimalStorage(entity, true);
   setAnimalStoredState(world, id, true);
-  useGameStore.getState().setNotice(translate(`${companionAnimalName(record.kind)} est rangé dans ton sac.`, `${companionAnimalName(record.kind)} is stored in your backpack.`));
+  const selection = storedAnimalSelection(id);
+  const store = useGameStore.getState();
+  const existingSlot = store.hotbarSlots.indexOf(selection);
+  const slot = existingSlot >= 0 ? existingSlot : store.hotbarSlots.findIndex((kind) => kind === null);
+  if (slot >= 0) {
+    const hotbarSlots = [...store.hotbarSlots];
+    hotbarSlots[slot] = selection;
+    useGameStore.setState({ hotbarSlots });
+  }
+  store.setNotice(slot >= 0 ? translate(`${companionAnimalName(record.kind)} est rangé dans la case ${slot === 9 ? '0' : slot + 1}.`, `${companionAnimalName(record.kind)} is stored in slot ${slot === 9 ? '0' : slot + 1}.`) : translate(`${companionAnimalName(record.kind)} est rangé dans ton sac.`, `${companionAnimalName(record.kind)} is stored in your backpack.`));
   return true;
 }
 
@@ -238,6 +248,12 @@ export async function releaseStoredAnimal(world: World, id: string) {
   entity.get(AnimalPosition)!.set(x, y, z);
   const { reportAnimalStorage } = await import('./animalSync');
   reportAnimalStorage(entity, false);
+  const selection = storedAnimalSelection(id);
+  useGameStore.setState((state) => ({
+    hotbarSlots: state.hotbarSlots.map((slot) => slot === selection ? null : slot),
+    selected: state.selected === selection ? 'hand' : state.selected,
+    selectedSlot: state.selected === selection ? 0 : state.selectedSlot,
+  }));
   useGameStore.getState().setNotice(translate(`${companionAnimalName(record.kind)} est sorti du sac.`, `${companionAnimalName(record.kind)} is out of the backpack.`));
   return entity;
 }
@@ -264,7 +280,7 @@ function consumeFood(selected: SelectedKind) {
   const store = useGameStore.getState();
   if (store.gameplayMode !== 'survival' || typeof selected === 'number') return;
   if (selected === 'apple') store.discardApple();
-  else store.setItemCount(selected, (store.itemCounts[selected] ?? 0) - 1);
+  else store.setItemCount(selected as Parameters<typeof store.setItemCount>[0], (store.itemCounts[selected] ?? 0) - 1);
 }
 
 export function wakeTamedAnimal(world: World, entity: Entity) {

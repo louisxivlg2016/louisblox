@@ -8,7 +8,7 @@ import { MEAT_COLORS } from '../game/meats';
 import type { AnimalKind } from '../game/animals';
 import { getItemMeta } from '../game/items';
 import { isGalleryItem } from '../game/galleryCatalog';
-import type { GalleryItemId, ItemKind } from '../game/items';
+import type { GalleryItemId, ItemKind, StoredAnimalItem } from '../game/items';
 import { BayonetRifleWithFallback } from './BayonetRifleGlb';
 import { WeaponWithFallback } from './WeaponGlb';
 import { isPaintballGun } from '../game/paintball';
@@ -20,7 +20,8 @@ import { VehicleAssetModel } from './VehicleAssetModel';
 import { AppleGlb } from './AppleGlb';
 import type { VehicleKind } from '../game/vehicleTypes';
 
-type ModelProps = { kind: ItemKind | GalleryItemId; held?: boolean; flipWeapons?: boolean };
+type ModelKind = ItemKind | GalleryItemId | StoredAnimalItem;
+type ModelProps = { kind: ModelKind; held?: boolean; flipWeapons?: boolean };
 type PartProps = { position: [number, number, number]; size: [number, number, number]; color: string; rotation?: [number, number, number] };
 
 export function PixelPart({ position, size, color, rotation }: PartProps) {
@@ -569,11 +570,11 @@ function GalleryModel({ kind }: { kind: GalleryItemId }) {
   return <GalleryGenericModel shape={shape} color={meta.color} />;
 }
 
-export function isWeaponItem(kind: ItemKind | GalleryItemId | number) {
+export function isWeaponItem(kind: ModelKind | number) {
   return typeof kind === 'string' && ['sword', 'bow', 'gun'].includes(getItemMeta(kind).category);
 }
 
-export function heldItemPosition(kind: ItemKind | GalleryItemId | number, fullCharacter: boolean): [number, number, number] {
+export function heldItemPosition(kind: ModelKind | number, fullCharacter: boolean): [number, number, number] {
   if (isWeaponItem(kind)) {
     const offset = typeof kind === 'number' ? 0 : itemGripOffset(kind) * 0.72;
     const raised = typeof kind === 'string' && getItemMeta(kind).category === 'sword' ? 0.08 : -0.24;
@@ -582,7 +583,7 @@ export function heldItemPosition(kind: ItemKind | GalleryItemId | number, fullCh
   return fullCharacter ? [0.1, -0.1, 0.5] : [0.15, -0.68, -0.42];
 }
 
-export function itemGripOffset(kind: ItemKind | GalleryItemId) {
+export function itemGripOffset(kind: ModelKind) {
   const meta = getItemMeta(kind);
   if (meta.category === 'sword' || meta.shape === 'sword') return 0.28;
   if (meta.shape === 'dagger') return 0.18;
@@ -612,8 +613,8 @@ export function ItemModel({ kind, held = false, flipWeapons = false }: ModelProp
   else if (meta.category === 'sword') model = <SwordModel color={meta.color} />;
   else if (meta.category === 'bow') model = <BowModel crossbow={kind === 'crossbow'} />;
   else if (meta.category === 'gun') model = kind === 'rifle_flintlock' ? <FlintlockModel /> : <GunModel color={meta.color} bomb={kind === 'pistol_bomb'} rifle={kind === 'rifle_auto'} />;
-  else if (meta.category === 'pickaxe' || meta.category === 'shovel') model = <ToolModel kind={kind} />;
-  else if (meta.category === 'food') model = <FoodModel kind={kind} />;
+  else if (meta.category === 'pickaxe' || meta.category === 'shovel') model = <ToolModel kind={kind as ItemKind | GalleryItemId} />;
+  else if (meta.category === 'food') model = <FoodModel kind={kind as ItemKind | GalleryItemId} />;
   else if (meta.category === 'armor') model = <ArmorModel color={meta.color} />;
   else if (meta.category === 'saddle') model = <SaddleModel />;
   else if (meta.shape === 'boat' || meta.shape === 'hovercraft') model = <BoatModel color={meta.color} hovercraft={meta.shape === 'hovercraft'} />;

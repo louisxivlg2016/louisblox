@@ -1,5 +1,6 @@
 import type { BlockKind } from './voxel';
 import type { SelectedKind } from './items';
+import { storedAnimalIdFromSelection } from './items';
 import type { GameplayMode } from './worldMode';
 import { useGameStore } from './store';
 
@@ -23,7 +24,7 @@ export function sellableInventoryCount(kind: SelectedKind, state: InventoryState
 }
 
 export function hasInventory(kind: SelectedKind, state: InventoryState) {
-  return state.gameplayMode !== 'survival' || kind === 'hand' || inventoryCount(kind, state) > 0;
+  return storedAnimalIdFromSelection(kind) !== null || state.gameplayMode !== 'survival' || kind === 'hand' || inventoryCount(kind, state) > 0;
 }
 
 export function changeInventory(kind: SelectedKind, amount: number) {
