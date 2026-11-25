@@ -81,7 +81,7 @@ function useBucket(world: World, filled: boolean, origin: Vector3, direction: Ve
   return true;
 }
 
-export function itemSystem(world: World, camera: Camera, dt: number, pendingActions?: { place: number; harvest: number; tap: number }) {
+export function itemSystem(world: World, camera: Camera, dt: number, pendingActions?: { place: number; harvest: number; tap: number; interact?: number }) {
   updateBombLauncher();
   const cooldown = Math.max(0, (cooldowns.get(world) ?? 0) - dt);
   cooldowns.set(world, cooldown);
@@ -94,7 +94,7 @@ export function itemSystem(world: World, camera: Camera, dt: number, pendingActi
   if (typeof selected === 'number') return false;
   const meta = getItemMeta(selected);
   const actions = pendingActions ?? consumeActions();
-  const interact = actions.place + actions.harvest + actions.tap;
+  const interact = actions.place + actions.harvest + actions.tap + (actions.interact ?? 0);
   const storedAnimalId = storedAnimalIdFromSelection(selected);
   if (storedAnimalId) {
     if (interact > 0) void releaseStoredAnimal(world, storedAnimalId);
