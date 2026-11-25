@@ -27,11 +27,21 @@ export function WorldLibrary({ onPlay, onCreateSolo }: { onPlay: () => void | Pr
 
   useEffect(() => setWorlds(listWorlds()), [worldId]);
   useEffect(() => {
-    if (pending && status === 'online' && worldReady) {
+    if (!pending) return;
+    if (status === 'online' && worldReady) {
       setPending(false);
       void onPlay();
+      return;
     }
-  }, [pending, status, worldReady, onPlay]);
+    if (status === 'error') {
+      setPending(false);
+      setEnabled(false);
+      const notice = translate('Le serveur multijoueur est indisponible. Monde ouvert hors ligne ; tes constructions sont sauvegardées.', 'The multiplayer server is unavailable. World opened offline; your builds are saved.');
+      setMessage(notice);
+      useGameStore.getState().setNotice(notice);
+      window.setTimeout(onPlay, 120);
+    }
+  }, [pending, status, worldReady, onPlay, setEnabled]);
 
   const open = (world: WorldMeta) => {
     const multiplayer = isMultiplayerWorld(world);
