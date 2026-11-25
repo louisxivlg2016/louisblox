@@ -84,7 +84,13 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
     return;
   }
   if (store.blockCount !== allBlocks.size) store.setBlockCount(allBlocks.size);
-  const hit = miningTarget(blocks, raycastVoxel(blocks, origin, direction, 6, store.gameplayMode === 'pirates' || typeof store.selected === 'number' || store.selected === 'bucket' || store.selected === 'empty_bucket'), target, isMouseDown(0));
+  let hit = miningTarget(blocks, raycastVoxel(blocks, origin, direction, 6, store.gameplayMode === 'pirates' || typeof store.selected === 'number' || store.selected === 'bucket' || store.selected === 'empty_bucket'), target, isMouseDown(0));
+  if (store.gameplayMode === 'heist' && hit && isBed(hit.block.kind)) {
+    const below = blocks.get(voxelKey(hit.x, hit.y - 1, hit.z));
+    if (below?.kind === BlockKind.Dirt && below.protected !== true) hit = { ...hit, block: below, y: below.y, normal: { x: 0, y: 1, z: 0 } };
+  }
+  const blockAbove = store.gameplayMode === 'heist' && hit?.block.kind === BlockKind.Dirt ? blocks.get(voxelKey(hit.x, hit.y + 1, hit.z)) : undefined;
+  const prisonBed = blockAbove && isBed(blockAbove.kind) ? blockAbove : undefined;
 
   target.visible = hit !== null;
   if (hit) {
@@ -130,6 +136,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       if (kind === BlockKind.Food) pickUpFood(world, hit);
       else {
         removeVoxel(world, hit);
+        if (prisonBed) removeVoxel(world, { block: prisonBed, x: prisonBed.x, y: prisonBed.y, z: prisonBed.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, true);
         if (store.gameplayMode === 'planet') onPlanetMined(kind);
         if (store.gameplayMode === 'roleplay') onRoleplayMined(kind, hit.x, hit.y, hit.z);
         if (store.gameplayMode === 'heist') {

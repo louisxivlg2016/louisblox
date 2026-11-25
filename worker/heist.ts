@@ -113,7 +113,7 @@ export class HeistEngine {
       return;
     }
     const thieves = this.room.players().filter(({ attachment }) => this.roles.get(attachment.playerId) === 'thief');
-    const allInPrison = this.phase === 'running' && thieves.length > 0 && thieves.every(({ attachment }) => this.prison.has(attachment.playerId));
+    const allInPrison = this.phase === 'running' && thieves.length > 1 && thieves.every(({ attachment }) => this.prison.has(attachment.playerId));
     if (!allInPrison) this.prisonSince = 0;
     else {
       if (!this.prisonSince) this.prisonSince = now;

@@ -176,7 +176,7 @@ export function generateHeistChunk(cx: number, cz: number, seed = 0): GeneratedC
 
   const chestCandidates: Array<[number, number, number]> = [[29, 2, 44], [33, 2, 49], [38, 2, 46], [40, 2, 51]];
   const hiddenChest = chestCandidates[Math.floor(hash(0, 0, seed) * chestCandidates.length) % chestCandidates.length];
-  for (let x = 24; x <= 41; x += 1) for (let z = 41; z <= 52; z += 1) {
+  for (let x = 24; x <= 45; x += 1) for (let z = 34; z <= 52; z += 1) {
     put(blocks, x, 0, z, BlockKind.Bedrock);
     put(blocks, x, 4, z, BlockKind.Stone);
     for (let y = 1; y <= 3; y += 1) {
@@ -184,6 +184,7 @@ export function generateHeistChunk(cx: number, cz: number, seed = 0): GeneratedC
       put(blocks, x, y, z, value === 0 ? BlockKind.Bedrock : value <= 2 ? BlockKind.Sand : BlockKind.Dirt, value === 0);
     }
   }
+  for (const [cellX, cellZ] of [[31, 34], [37, 34], [43, 34], [31, 42], [37, 42], [43, 42]] as const) for (let y = 1; y <= 4; y += 1) put(blocks, cellX, y, cellZ, BlockKind.Dirt, false);
   put(blocks, hiddenChest[0], hiddenChest[1], hiddenChest[2], BlockKind.Chest, false).items = ['pickaxe_stone'];
   for (let y = 1; y <= 3; y += 1) put(blocks, 24, y, 47, BlockKind.GrayBrick, false);
   put(blocks, 23, 2, 47, BlockKind.JungleVine, false, 'east');

@@ -154,11 +154,21 @@ function restoreTunnel(world: KootaWorld) {
   const last = tunnelResets.get(world) ?? 0;
   if (now - last < 60000) return;
   tunnelResets.set(world, now);
-  for (let x = 24; x <= 41; x += 1) for (let z = 41; z <= 52; z += 1) for (let y = 1; y <= 3; y += 1) {
+  for (let x = 24; x <= 45; x += 1) for (let z = 34; z <= 52; z += 1) for (let y = 1; y <= 3; y += 1) {
     const existing = getBlockIndex(world).get(voxelKey(x, y, z));
     if (existing?.protected) continue;
     const value = ((x * 13 + z * 7 + y * 31) % 10 + 10) % 10;
     addVoxel(world, x, y, z, value <= 2 ? BlockKind.Sand : BlockKind.Dirt, undefined, undefined, 0, undefined, undefined, false, true);
+  }
+  for (let y = 2; y <= 3; y += 1) {
+    const block = getBlockIndex(world).get(voxelKey(24, y, 47));
+    if (block) replaceVoxel(world, { block, x: 24, y, z: 47, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, BlockKind.GrayBrick, undefined, undefined, undefined, undefined, undefined, undefined, false, true);
+    else addVoxel(world, 24, y, 47, BlockKind.GrayBrick, undefined, undefined, 0, undefined, undefined, false, true);
+  }
+  for (const [x, z] of [[31, 34], [37, 34], [43, 34], [31, 42], [37, 42], [43, 42]] as const) for (let y = 1; y <= 4; y += 1) {
+    const block = getBlockIndex(world).get(voxelKey(x, y, z));
+    if (block) replaceVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, BlockKind.Dirt, undefined, undefined, undefined, undefined, undefined, undefined, false, true);
+    else addVoxel(world, x, y, z, BlockKind.Dirt, undefined, undefined, 0, undefined, undefined, false, true);
   }
 }
 function useGrapple(world: KootaWorld, camera: Camera) {
@@ -273,7 +283,6 @@ const botWaypoints = [
   { x: 0, y: 8.51, z: -12 },
   { x: -35, y: 8.51, z: -10 },
 ];
-const botPrisonSince = new WeakMap<KootaWorld, number>();
 
 function updateHeistBot(world: KootaWorld, dt: number, current: typeof initial, player: Vector3) {
   const enabled = singleHuman() && current.role === 'thief' && current.phase !== 'finished';
@@ -313,11 +322,6 @@ function updateHeistBot(world: KootaWorld, dt: number, current: typeof initial, 
     } else useGameStore.getState().setNotice(translate('Menottes du gardien bot · 1/2', 'Guard bot handcuffs · 1/2'));
   }
   useHeistStore.setState({ bot: { enabled: true, x: position.x, y: position.y, z: position.z, yaw: Math.atan2(dx, dz), waypoint, hits, nextArrestAt } });
-  if (current.phase === 'running' && useHeistStore.getState().prison.includes(id)) {
-    const since = botPrisonSince.get(world) ?? Date.now();
-    botPrisonSince.set(world, since);
-    if (Date.now() - since >= 5000) useHeistStore.setState({ phase: 'finished', winner: 'guards' });
-  } else botPrisonSince.delete(world);
 }
 
 export function heistControlSystem(world: KootaWorld, camera: Camera, actions: { place: number; harvest: number; tap: number; interact: number }, dt = 0.05) {
