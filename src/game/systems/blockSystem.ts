@@ -28,7 +28,7 @@ import { translate } from '../language';
 import { toggleVehicleRadio } from '../radio';
 import { useShopBlock } from '../shops';
 import { useCustomPaintingStore } from '../customPainting';
-import { heistMiningDuration } from '../heistClient';
+import { collapseHeistGravel, consumeHeistGadget, hasHeistGadget, heistMiningDuration, notifyHeistAlarm } from '../heistClient';
 
 const direction = new Vector3();
 const origin = new Vector3();
@@ -108,7 +108,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       target.miningProgress = 0;
     }
     target.miningProgress += dt;
-    const miningDuration = store.gameplayMode === 'heist' && hit.y <= 6 && hit.x >= 24 && hit.x <= 45 && hit.z >= 35 && hit.z <= 52 ? heistMiningDuration(kind, store.selected) : store.gameplayMode === 'creative' ? 0.18 : BLOCK_HARDNESS[kind] / (miningSpeed(store.selected, kind) * miningMultiplier());
+    const miningDuration = store.gameplayMode === 'heist' ? heistMiningDuration(kind, store.selected, hit) : store.gameplayMode === 'creative' ? 0.18 : BLOCK_HARDNESS[kind] / (miningSpeed(store.selected, kind) * miningMultiplier());
     const progress = Math.min(1, target.miningProgress / miningDuration);
     if (Math.abs(store.miningProgress - progress) >= 0.01) store.setMiningProgress(progress);
 
@@ -127,6 +127,10 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       if (kind === BlockKind.Food) pickUpFood(world, hit);
       else {
         removeVoxel(world, hit);
+        if (store.gameplayMode === 'heist') {
+          if (kind === BlockKind.Glass && hit.x >= -46 && hit.x <= -25 && hit.z >= -34 && hit.z <= -17) notifyHeistAlarm(hit);
+          if (kind === BlockKind.Sand) collapseHeistGravel(world, hit);
+        }
         if (store.gameplayMode === 'survival') {
           dropBlock(world, hit.block);
           const sapling = kind === BlockKind.Leaves || kind === BlockKind.JungleLeaves ? BlockKind.OakSapling : kind === BlockKind.PineLeaves ? BlockKind.PineSapling : kind === BlockKind.AutumnLeaves ? BlockKind.AutumnSapling : null;
@@ -228,6 +232,10 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
 
     if (inBounds && (replacingWater || !blocks.has(voxelKey(x, y, z))) && !intersectsPlayer(x, y, z, player)) {
       if (typeof kind !== 'number') return;
+      if (store.gameplayMode === 'heist' && (kind === BlockKind.Ladder || kind === BlockKind.Tnt) && !hasHeistGadget(kind)) {
+        store.setNotice(translate('Achète ce gadget dans la boutique de braquage.', 'Buy this gadget from the heist shop.'));
+        return;
+      }
       if (kind === BlockKind.Lantern && hit.normal.y === 0 || kind === BlockKind.ModernCeilingLight && hit.normal.y !== -1) {
         store.setNotice(translate('Cette lumière se fixe au sol ou sous un plafond.', 'This light attaches to the ground or the underside of a ceiling.', 'Esta luz se fija al suelo o debajo de un techo.'));
         return;
@@ -267,6 +275,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       const orientation = isSlab(kind) ? uprightGlassSlab || extendingWallSlab ? 2 : hit.normal.y === -1 ? 1 : hit.normal.y === 0 ? 2 : 0 : isStair(kind) && hit.normal.y === -1 ? 1 : undefined;
       const placed = addVoxel(world, x, y, z, kind, orientation, isLadder(kind) || isDoor(kind) || isTrapdoor(kind) || isRail(kind) || isSign(kind) || isBed(kind) || isStair(kind) || isSlab(kind) || isPainting(kind) || kind === BlockKind.TrafficLight || isTrafficSign(kind) ? facing : undefined);
       if (placed) playSound('placeBlock', 0.45);
+      if (placed && store.gameplayMode === 'heist' && (kind === BlockKind.Ladder || kind === BlockKind.Tnt)) consumeHeistGadget(kind);
       if (placed && (kind === BlockKind.PaintingCustom || kind === BlockKind.DrawingPainting)) {
         useCustomPaintingStore.getState().openPainting({ x, y, z }, placed.image, kind === BlockKind.DrawingPainting);
         releasePointerForOverlay();

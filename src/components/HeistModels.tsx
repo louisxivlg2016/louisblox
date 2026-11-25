@@ -40,6 +40,8 @@ export function HeistLoot() {
         <group key={loot.id} name={`heist-loot-${loot.id}`} position={[loot.x, loot.y - 0.45, loot.z]}><GoldBagModel /></group>
       ))}
       {traps.map((trap) => <group key={`${trap.x},${trap.y},${trap.z}`} position={[trap.x, trap.y - 0.45, trap.z]}><PixelPart position={[0, 0, 0]} size={[0.9, 0.08, 0.9]} color="#6b5b78" /></group>)}
+      {[-35, -33, -31, -29].map((z) => <mesh key={z} name="museum-laser" position={[0, 9, z]}><boxGeometry args={[21, 0.045, 0.045]} /><meshBasicMaterial color="#ff2638" toneMapped={false} /></mesh>)}
+      {[31, 39].map((x) => <group key={x} name="bank-motion-detector" position={[x, 10.5, -13]}><PixelPart position={[0, 0, 0]} size={[0.35, 0.35, 0.35]} color="#252b32" /><PixelPart position={[0, 0, 0.2]} size={[0.18, 0.18, 0.08]} color="#ff2638" /></group>)}
     </>
   );
 }

@@ -3,6 +3,7 @@ import { useWorld } from 'koota/react';
 import { streamChunks } from '../game/chunks';
 import { consumeActions } from '../game/input';
 import { useGameStore } from '../game/store';
+import { BlockKind } from '../game/voxel';
 import { recordPlaytime } from '../game/profile';
 import { animalCombatSystem } from '../game/systems/animalCombatSystem';
 import { animalSystem } from '../game/systems/animalSystem';
@@ -79,7 +80,9 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       waterSystem(world, dt);
       sleepSystem(world, dt);
       if (effectSystem(world, dt)) invalidate();
-      const remainingActions = sleeping || modeHandled || animalHandled || vehicleHandled || tradeHandled || itemHandled ? { place: 0, harvest: 0 } : actions;
+      const selected = useGameStore.getState().selected;
+      const heistBlockActions = heistHandled && (selected === BlockKind.Ladder || selected === BlockKind.Tnt);
+      const remainingActions = sleeping || modeHandled && !heistBlockActions || animalHandled || vehicleHandled || tradeHandled || itemHandled ? { place: 0, harvest: 0 } : actions;
       blockSystem(world, camera, dt, footballHandled || animalTarget || vehicleTarget || sleeping, remainingActions);
     } else {
       cameraSystem(world, camera, delta);

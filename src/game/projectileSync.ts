@@ -2,6 +2,7 @@ import type { Entity, World } from 'koota';
 import { Vector3 } from 'three';
 import { Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition, Projectile, ProjectileMesh, ProjectilePosition, ProjectileVelocity } from './traits';
 import { spawnPaintSplash, spawnPaintStroke } from './paintball';
+import { useGameStore } from './store';
 
 export type ProjectileSnapshot = {
   id: string;
@@ -155,7 +156,7 @@ export function applyProjectileRemoval(world: World, projectileId: string, explo
       if (projectile?.remote && projectile.id === projectileId) entity.destroy();
     }
     if (explosion) {
-      const duration = explosion.effect === 'smoke' ? 12 : explosion.effect === 'firework' ? 1.8 : 0.45;
+      const duration = explosion.effect === 'smoke' ? useGameStore.getState().gameplayMode === 'heist' ? 6 : 12 : explosion.effect === 'firework' ? 1.8 : 0.45;
       world.spawn(
         Explosion({ time: duration, maxTime: duration, effect: explosion.effect, color: explosion.color }),
         ExplosionPosition(new Vector3(explosion.x, explosion.y, explosion.z)),

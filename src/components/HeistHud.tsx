@@ -17,6 +17,7 @@ export function HeistHud() {
   const alarmUntil = useHeistStore((state) => state.alarmUntil);
   const alarmPosition = useHeistStore((state) => state.alarmPosition);
   const grappleReadyAt = useHeistStore((state) => state.grappleReadyAt);
+  const taserReadyAt = useHeistStore((state) => state.taserReadyAt);
   const localId = useBattleStore((state) => state.localPlayerId);
   const shopOpen = useGameStore((state) => state.shopOpen);
   if (gameplayMode !== 'heist') return null;
@@ -27,17 +28,19 @@ export function HeistHud() {
     <>
       {!role && <div className="backpack-backdrop"><section className="book-panel heist-role-panel"><h2>{translate('Choisis ton équipe', 'Choose your team')}</h2><button className="primary-button" onClick={() => chooseHeistRole('thief')}>{translate('Voleur · braquer et s’évader', 'Thief · rob and escape')}</button><button className="primary-button" onClick={() => chooseHeistRole('guard')}>{translate('Gardien · arrêter les voleurs', 'Guard · arrest thieves')}</button></section></div>}
       <div className="heist-hud" data-heist-hud>
-        <strong>{phase === 'prep' ? translate('Préparation', 'Preparation') : time}</strong>
+        <strong>{phase === 'prep' ? `${translate('Préparation', 'Preparation')} · ${time}` : time}</strong>
         <span>{translate(`Butin ${score}/10 000`, `Loot ${score}/10,000`)}</span>
         {carried > 0 && <span>{translate(`Dans ton dos : ${carried}`, `On your back: ${carried}`)}</span>}
         <small>{role === 'guard' ? translate('Gardien', 'Guard') : translate('Voleur', 'Thief')} · {coins} {translate('pièces', 'coins')}</small>
         {role === 'thief' && grappleReadyAt > Date.now() && <small>{translate(`Grappin ${Math.ceil((grappleReadyAt - Date.now()) / 1000)} s`, `Grapple ${Math.ceil((grappleReadyAt - Date.now()) / 1000)} s`)}</small>}
+        {role === 'guard' && taserReadyAt > Date.now() && <small>{translate(`Taser ${Math.ceil((taserReadyAt - Date.now()) / 1000)} s`, `Taser ${Math.ceil((taserReadyAt - Date.now()) / 1000)} s`)}</small>}
         {role === 'guard' && alarmPosition && alarmUntil > Date.now() && <small>{translate(`ALARME · X ${Math.round(alarmPosition.x)} · Z ${Math.round(alarmPosition.z)}`, `ALARM · X ${Math.round(alarmPosition.x)} · Z ${Math.round(alarmPosition.z)}`)}</small>}
       </div>
       {imprisoned && <div className="heist-prison-hint">{translate('En prison · creuse sous le lit avec la pioche en bois, traverse le tunnel et prends l’échelle de sortie.', 'In prison · dig under the bed with the wooden pickaxe, cross the tunnel and take the exit ladder.')}</div>}
       {winner && <div className="battle-death"><strong>{winner === 'thieves' ? translate('Les voleurs ont gagné !', 'The thieves won!') : translate('Les gardiens ont gagné !', 'The guards won!')}</strong></div>}
       {shopOpen && <section className="heist-shop"><h3>{translate('Gadgets de Braquage', 'Heist Gadgets')}</h3>
         {role === 'thief' ? <>
+          <button onClick={() => buyHeistItem(BlockKind.Ladder, 300)}>{translate('Échelles ×4 · 300', 'Ladders ×4 · 300')}</button>
           <button onClick={() => buyHeistItem('grappling_hook', 1200)}>{translate('Grappin · 1 200', 'Grapple · 1,200')}</button>
           <button onClick={() => buyHeistItem('gallery_projectiles_smoke_grenade', 400)}>{translate('Fumigène · 400', 'Smoke grenade · 400')}</button>
           <button onClick={() => buyHeistItem(BlockKind.Tnt, 800)}>{translate('Dynamite · 800', 'Dynamite · 800')}</button>

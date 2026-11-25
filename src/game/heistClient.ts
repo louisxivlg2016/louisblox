@@ -5,19 +5,22 @@ import { Vector3 } from 'three';
 import { useGameStore } from './store';
 import { useMultiplayerStore, useRemotePlayerStore } from './multiplayerStore';
 import { useBattleStore, respawnAtBase } from './battle';
-import { Player, PlayerPosition } from './traits';
-import { HEIST_DEPOSIT, HEIST_HIDEOUT, HEIST_LOOT, HEIST_PRISON_SPAWN, HEIST_TUNNEL_EXIT } from './heistCity';
-import type { HeistLoot } from './heistCity';
-import { addVoxel, getBlockIndex } from './chunks';
-import { BlockKind, raycastVoxel } from './voxel';
+import { Player, PlayerBody, PlayerPosition, PlayerVelocity } from './traits';
+import { HEIST_DEPOSIT, HEIST_ENTRIES, HEIST_GUARD_SPAWN, HEIST_HIDEOUT, HEIST_LOOT, HEIST_PRISON_SPAWN, HEIST_TUNNEL_EXIT } from './heistCity';
+import type { HeistEntry, HeistLoot } from './heistCity';
+import { addVoxel, getBlockIndex, removeVoxel } from './chunks';
+import { BlockKind, voxelKey } from './voxel';
 import { translate } from './language';
 import { isDown } from './input';
 import { moveVoxelCharacter } from './systems/collisionSystem';
+import { fireProjectile } from './systems/projectileSystem';
 import { world } from './world';
+import type { SelectedKind } from './items';
 
 export type HeistRole = 'thief' | 'guard';
 type HeistPhase = 'prep' | 'running' | 'finished';
 type Trap = { x: number; y: number; z: number };
+type Gadget = 'grappling_hook' | 'gallery_projectiles_smoke_grenade' | 'taser' | 'heist_trap' | typeof BlockKind.Tnt | typeof BlockKind.Ladder;
 
 const initial = {
   role: null as HeistRole | null,
@@ -34,39 +37,64 @@ const initial = {
   alarmUntil: 0,
   alarmPosition: null as { x: number; y: number; z: number } | null,
   slowUntil: 0,
+  taserUntil: 0,
+  taserReadyAt: 0,
   grappleReadyAt: 0,
   smokeUntil: 0,
+  gadgets: {} as Record<string, number>,
   traps: [] as Trap[],
 };
-export const useHeistStore = create<typeof initial>(() => ({ ...initial, roles: {}, lootRespawns: {}, carriedLootIds: [], prison: [], traps: [] }));
+export const useHeistStore = create<typeof initial>(() => ({ ...initial, roles: {}, lootRespawns: {}, carriedLootIds: [], prison: [], gadgets: {}, traps: [] }));
 let socket: WebSocket | null = null;
 export function setHeistSocket(next: WebSocket | null) { socket = next; }
 export function clearHeist() {
   socket = null;
-  useHeistStore.setState({ ...initial, roles: {}, lootRespawns: {}, carriedLootIds: [], prison: [], traps: [] });
+  useHeistStore.setState({ ...initial, roles: {}, lootRespawns: {}, carriedLootIds: [], prison: [], gadgets: {}, traps: [] });
 }
 function send(message: unknown) {
   if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
 }
 function localId() { return useBattleStore.getState().localPlayerId ?? ''; }
 function offline() { return socket?.readyState !== WebSocket.OPEN; }
+function gadgetCount(kind: Gadget) { return useHeistStore.getState().gadgets[String(kind)] ?? 0; }
+export function hasHeistGadget(kind: Gadget) { return gadgetCount(kind) > 0; }
+export function consumeHeistGadget(kind: Gadget, amount = 1) {
+  const gadgets = { ...useHeistStore.getState().gadgets };
+  const count = Math.max(0, (gadgets[String(kind)] ?? 0) - amount);
+  if (count) gadgets[String(kind)] = count;
+  else delete gadgets[String(kind)];
+  useHeistStore.setState({ gadgets });
+}
 function loadout(role: HeistRole, prison = false) {
-  const slots = prison
-    ? ['hand', 'pickaxe_wood', null, null, null, null, null, null, null, null]
+  const base: Array<SelectedKind | null> = prison
+    ? ['hand', 'pickaxe_wood']
     : role === 'guard'
-      ? ['handcuffs', 'taser', 'heist_trap', 'security_key', null, null, null, null, null, null]
-      : ['pickaxe_wood', 'grappling_hook', 'gallery_projectiles_smoke_grenade', BlockKind.Tnt, null, null, null, null, null, null];
-  useGameStore.setState({ hotbarSlots: slots as import('./items').SelectedKind[], selected: prison ? 'pickaxe_wood' : (slots as import('./items').SelectedKind[])[0]!, selectedSlot: prison ? 1 : 0 });
+      ? ['handcuffs', 'security_key']
+      : ['pickaxe_wood'];
+  if (!prison) {
+    for (const [key, count] of Object.entries(useHeistStore.getState().gadgets)) {
+      if (count <= 0) continue;
+      const kind = String(Number(key)) === key ? Number(key) as SelectedKind : key as SelectedKind;
+      if (!base.includes(kind)) base.push(kind);
+    }
+  }
+  const slots = [...base, ...Array<SelectedKind | null>(10).fill(null)].slice(0, 10);
+  const selected = prison ? 'pickaxe_wood' : slots[0]!;
+  useGameStore.setState({ hotbarSlots: slots, selected, selectedSlot: prison ? 1 : 0 });
 }
 export function chooseHeistRole(role: HeistRole) {
   if (offline()) {
     useHeistStore.setState({ role, endsAt: Date.now() + 30000 });
     loadout(role);
-    respawnAtBase(world, null, HEIST_HIDEOUT);
+    respawnAtBase(world, null, role === 'guard' ? HEIST_GUARD_SPAWN : HEIST_HIDEOUT);
   } else send({ type: 'heist-team', role });
   useGameStore.getState().setMode('play');
 }
 
+export function notifyHeistAlarm(position: { x: number; y: number; z: number }) {
+  useHeistStore.setState({ alarmUntil: Date.now() + 10000, alarmPosition: { ...position } });
+  send({ type: 'heist-alarm', position });
+}
 function collectLoot(loot: HeistLoot) {
   const state = useHeistStore.getState();
   if (state.carried > 0) {
@@ -96,6 +124,8 @@ function release() {
 }
 
 const openings = new WeakMap<KootaWorld, { id: string; since: number; duration: number }>();
+const entryOpenings = new WeakMap<KootaWorld, { id: string; since: number; duration: number }>();
+const openedEntries = new WeakMap<KootaWorld, Set<string>>();
 const deposits = new WeakMap<KootaWorld, number>();
 const tunnelResets = new WeakMap<KootaWorld, number>();
 const grappleDown = new WeakMap<KootaWorld, boolean>();
@@ -105,21 +135,25 @@ function nearestLoot(position: Vector3) {
   const respawns = useHeistStore.getState().lootRespawns;
   return HEIST_LOOT.find((loot) => (respawns[loot.id] ?? 0) <= Date.now() && Math.hypot(position.x - loot.x, position.y - loot.y, position.z - loot.z) <= 3);
 }
+function nearestEntry(world: KootaWorld, position: Vector3) {
+  const opened = openedEntries.get(world);
+  return HEIST_ENTRIES.find((entry) => !opened?.has(entry.id) && Math.hypot(position.x - entry.x, position.y - entry.y, position.z - entry.z) <= 3);
+}
 function restoreTunnel(world: KootaWorld) {
   const now = Date.now();
   const last = tunnelResets.get(world) ?? 0;
   if (now - last < 60000) return;
   tunnelResets.set(world, now);
-  for (let x = 24; x <= 42; x += 1) for (let z = 40; z <= 52; z += 1) for (let y = 1; y <= 3; y += 1) {
-    const pillar = x % 7 === 0 && z % 5 === 0;
-    if (pillar) continue;
-    const gravel = (x * 13 + z * 7) % 10 < 2;
-    addVoxel(world, x, y, z, gravel ? BlockKind.Sand : BlockKind.Dirt, undefined, undefined, 0, undefined, undefined, false, true);
+  for (let x = 24; x <= 41; x += 1) for (let z = 41; z <= 52; z += 1) for (let y = 1; y <= 3; y += 1) {
+    const existing = getBlockIndex(world).get(voxelKey(x, y, z));
+    if (existing?.protected) continue;
+    const value = ((x * 13 + z * 7 + y * 31) % 10 + 10) % 10;
+    addVoxel(world, x, y, z, value <= 2 ? BlockKind.Sand : BlockKind.Dirt, undefined, undefined, 0, undefined, undefined, false, true);
   }
 }
 function useGrapple(world: KootaWorld, camera: Camera) {
   const state = useHeistStore.getState();
-  if (state.role !== 'thief' || state.grappleReadyAt > Date.now() || state.prison.includes(localId())) return;
+  if (state.role !== 'thief' || state.grappleReadyAt > Date.now() || state.prison.includes(localId()) || !hasHeistGadget('grappling_hook')) return;
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return;
   camera.getWorldDirection(direction);
@@ -127,11 +161,83 @@ function useGrapple(world: KootaWorld, camera: Camera) {
   useHeistStore.setState({ grappleReadyAt: Date.now() + 15000 });
   useGameStore.getState().setNotice(translate('Grappin utilisé · recharge 15 secondes.', 'Grapple used · 15-second cooldown.'));
 }
-function nearestThief(position: Vector3) {
+function nearestThief(position: Vector3, maxDistance = 3) {
   const roles = useHeistStore.getState().roles;
   return Object.entries(useRemotePlayerStore.getState().players)
-    .filter(([id, state]) => roles[id] === 'thief' && Math.hypot(position.x - state.x, position.y - state.y, position.z - state.z) <= 3)
+    .filter(([id, state]) => roles[id] === 'thief' && Math.hypot(position.x - state.x, position.y - state.y, position.z - state.z) <= maxDistance)
     .sort((a, b) => Math.hypot(position.x - a[1].x, position.y - a[1].y, position.z - a[1].z) - Math.hypot(position.x - b[1].x, position.y - b[1].y, position.z - b[1].z))[0]?.[0];
+}
+function openEntry(world: KootaWorld, entry: HeistEntry) {
+  const opened = openedEntries.get(world) ?? new Set<string>();
+  opened.add(entry.id);
+  openedEntries.set(world, opened);
+  const blocks = getBlockIndex(world);
+  for (const position of entry.blocks) {
+    const block = blocks.get(voxelKey(position.x, position.y, position.z));
+    if (block) removeVoxel(world, { block, ...position, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, true);
+  }
+  if (entry.requiresTnt) consumeHeistGadget(BlockKind.Tnt);
+  if (entry.destination) {
+    const player = world.queryFirst(Player);
+    const position = player?.get(PlayerPosition);
+    if (position) {
+      position.set(entry.destination.x, entry.destination.y, entry.destination.z);
+      player!.get(PlayerBody)!.value!.setNextKinematicTranslation(position);
+    }
+  }
+  useGameStore.getState().setNotice(translate(`${entry.name} ouvert.`, `${entry.name} opened.`));
+}
+function updateEntries(world: KootaWorld, player: Vector3, role: HeistRole | null, selected: SelectedKind, actions: { place: number; harvest: number; tap: number; interact: number }) {
+  const entry = nearestEntry(world, player);
+  const current = entryOpenings.get(world);
+  if (!entry || !role) {
+    if (current) entryOpenings.delete(world);
+    return;
+  }
+  const activated = actions.harvest > 0 || actions.interact > 0 || actions.tap > 0;
+  if (role === 'guard') {
+    if (activated && selected === 'security_key') openEntry(world, entry);
+    else if (activated) useGameStore.getState().setNotice(translate('Utilise la clé de sécurité pour ouvrir cette porte.', 'Use the security key to open this door.'));
+    return;
+  }
+  if (entry.requiresTnt && (selected !== BlockKind.Tnt || !hasHeistGadget(BlockKind.Tnt))) {
+    if (activated) useGameStore.getState().setNotice(translate('Il faut une dynamite pour ouvrir ce mur.', 'You need dynamite to open this wall.'));
+    return;
+  }
+  if (activated && current?.id !== entry.id) {
+    entryOpenings.set(world, { id: entry.id, since: Date.now(), duration: entry.duration });
+    if (entry.alarm) notifyHeistAlarm(player);
+  }
+  const opening = entryOpenings.get(world);
+  if (!opening || opening.id !== entry.id) return;
+  const elapsed = Date.now() - opening.since;
+  if (elapsed >= opening.duration) {
+    openEntry(world, entry);
+    entryOpenings.delete(world);
+  } else useGameStore.getState().setNotice(translate(`${entry.name} · ${Math.ceil((opening.duration - elapsed) / 1000)} s`, `${entry.name} · ${Math.ceil((opening.duration - elapsed) / 1000)} s`));
+}
+function keepGuardsOutsideHideout(world: KootaWorld, role: HeistRole | null) {
+  if (role !== 'guard') return;
+  const entity = world.queryFirst(Player);
+  const player = entity?.get(PlayerPosition);
+  if (!player || player.x < -50 || player.x > -35 || player.z < 34 || player.z > 49 || player.y > 17) return;
+  const sides = [
+    { distance: Math.abs(player.x + 50), axis: 'x' as const, value: -50.6 },
+    { distance: Math.abs(player.x + 35), axis: 'x' as const, value: -34.4 },
+    { distance: Math.abs(player.z - 34), axis: 'z' as const, value: 33.4 },
+    { distance: Math.abs(player.z - 49), axis: 'z' as const, value: 49.6 },
+  ].sort((a, b) => a.distance - b.distance);
+  const side = sides[0];
+  player[side.axis] = side.value;
+  entity?.get(PlayerVelocity)?.set(0, 0, 0);
+  entity!.get(PlayerBody)!.value!.setNextKinematicTranslation(player);
+  useGameStore.getState().setNotice(translate('Zone sûre des voleurs : les gardiens ne peuvent pas entrer.', 'Thief safe zone: guards cannot enter.'));
+}
+function useSmoke(world: KootaWorld, camera: Camera, player: Vector3) {
+  if (!hasHeistGadget('gallery_projectiles_smoke_grenade')) return;
+  camera.getWorldDirection(direction);
+  fireProjectile(world, player.clone().add(new Vector3(0, 1.62, 0)), direction, 'bomb', 0, undefined, 'smoke');
+  consumeHeistGadget('gallery_projectiles_smoke_grenade');
 }
 
 export function heistControlSystem(world: KootaWorld, camera: Camera, actions: { place: number; harvest: number; tap: number; interact: number }) {
@@ -139,20 +245,27 @@ export function heistControlSystem(world: KootaWorld, camera: Camera, actions: {
   const state = useHeistStore.getState();
   if (!state.role && offline()) chooseHeistRole('thief');
   const current = useHeistStore.getState();
-  if (current.phase === 'prep' && Date.now() >= current.endsAt) useHeistStore.setState({ phase: 'running' });
-  if (current.phase !== 'finished' && current.phase !== 'prep' && Date.now() >= current.endsAt) useHeistStore.setState({ phase: 'finished', winner: 'guards' });
+  if (current.phase === 'prep' && Date.now() >= current.endsAt) useHeistStore.setState({ phase: 'running', endsAt: Date.now() + 600000 });
+  else if (current.phase === 'running' && Date.now() >= current.endsAt) useHeistStore.setState({ phase: 'finished', winner: 'guards' });
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return true;
+  keepGuardsOutsideHideout(world, current.role);
   restoreTunnel(world);
   const pressedGrapple = isDown('KeyG');
   if (pressedGrapple && !grappleDown.get(world)) useGrapple(world, camera);
   grappleDown.set(world, pressedGrapple);
 
   if (current.role === 'thief' && current.phase === 'running') {
+    updateEntries(world, player, current.role, useGameStore.getState().selected, actions);
     const openingLoot = nearestLoot(player);
     const opening = openings.get(world);
     if (openingLoot) {
-      if (opening?.id !== openingLoot.id && (actions.harvest > 0 || actions.interact > 0 || actions.tap > 0)) openings.set(world, { id: openingLoot.id, since: Date.now(), duration: openingLoot.building === 'bank' ? 15000 : openingLoot.building === 'museum' ? 5000 : 3000 });
+      if (opening?.id !== openingLoot.id && (actions.harvest > 0 || actions.interact > 0 || actions.tap > 0)) {
+        const duration = openingLoot.building === 'bank' ? 15000 : openingLoot.building === 'museum' ? 5000 : 3000;
+        openings.set(world, { id: openingLoot.id, since: Date.now(), duration });
+        send({ type: 'heist-loot-start', id: openingLoot.id });
+        if (openingLoot.building === 'bank') notifyHeistAlarm(player);
+      }
       const currentOpening = openings.get(world);
       if (currentOpening && Date.now() - currentOpening.since >= currentOpening.duration) {
         collectLoot(openingLoot);
@@ -161,7 +274,10 @@ export function heistControlSystem(world: KootaWorld, camera: Camera, actions: {
     } else if (opening) openings.delete(world);
     if (Math.hypot(player.x - HEIST_DEPOSIT.x, player.y - HEIST_DEPOSIT.y, player.z - HEIST_DEPOSIT.z) <= 2.5 && current.carried > 0) {
       const since = deposits.get(world) ?? Date.now();
-      deposits.set(world, since);
+      if (!deposits.has(world)) {
+        deposits.set(world, since);
+        send({ type: 'heist-deposit-start' });
+      }
       if (Date.now() - since >= 2000) {
         deposit();
         deposits.delete(world);
@@ -169,27 +285,36 @@ export function heistControlSystem(world: KootaWorld, camera: Camera, actions: {
     } else deposits.delete(world);
     if (current.prison.includes(localId()) && Math.hypot(player.x - HEIST_TUNNEL_EXIT.x, player.y - HEIST_TUNNEL_EXIT.y, player.z - HEIST_TUNNEL_EXIT.z) <= 3) release();
     if (Math.abs(player.y - 9) <= 1 && Math.abs(player.x) <= 10 && [-35, -33, -31, -29].some((z) => Math.abs(player.z - z) < 0.55)) {
-      if (current.alarmUntil < Date.now()) useGameStore.getState().setNotice(translate('Laser déclenché ! Les gardiens voient ta position.', 'Laser triggered! Guards can see your position.'));
-      useHeistStore.setState({ alarmUntil: Date.now() + 10000, alarmPosition: { x: player.x, y: player.y, z: player.z } });
+      if (current.alarmUntil < Date.now()) notifyHeistAlarm(player);
     }
+    if (player.x >= 30 && player.x <= 40 && player.z >= -16 && player.z <= -12 && player.y >= 8 && player.y <= 11 && current.alarmUntil < Date.now()) notifyHeistAlarm(player);
     for (const trap of current.traps) {
       if (Math.hypot(player.x - trap.x, player.y - trap.y, player.z - trap.z) < 1.2) useHeistStore.setState({ slowUntil: Date.now() + 4000 });
     }
   }
-  if (current.role === 'guard' && (actions.harvest > 0 || actions.interact > 0 || actions.tap > 0)) {
-    const target = nearestThief(player);
-    if (target && useGameStore.getState().selected === 'handcuffs') send({ type: 'heist-arrest', targetId: target });
-    if (target && useGameStore.getState().selected === 'taser') send({ type: 'heist-taser', targetId: target });
-    if (useGameStore.getState().selected === 'heist_trap') {
-      useHeistStore.setState({ traps: [...current.traps.filter((trap) => Math.hypot(player.x - trap.x, player.z - trap.z) > 1), { x: Math.round(player.x), y: Math.round(player.y), z: Math.round(player.z) }] });
-      useGameStore.getState().setNotice(translate('Bloc piège placé.', 'Trap block placed.'));
+  if (current.role === 'guard') {
+    updateEntries(world, player, current.role, useGameStore.getState().selected, actions);
+    if (actions.harvest > 0 || actions.interact > 0 || actions.tap > 0) {
+      const target = nearestThief(player);
+      if (target && useGameStore.getState().selected === 'handcuffs') send({ type: 'heist-arrest', targetId: target });
+      if (target && useGameStore.getState().selected === 'taser' && current.taserReadyAt <= Date.now()) {
+        useHeistStore.setState({ taserReadyAt: Date.now() + 20000 });
+        send({ type: 'heist-taser', targetId: target });
+      }
+      if (useGameStore.getState().selected === 'heist_trap' && hasHeistGadget('heist_trap')) {
+        useHeistStore.setState({ traps: [...current.traps.filter((trap) => Math.hypot(player.x - trap.x, player.z - trap.z) > 1), { x: Math.round(player.x), y: Math.round(player.y), z: Math.round(player.z) }] });
+        consumeHeistGadget('heist_trap');
+        useGameStore.getState().setNotice(translate('Bloc piège placé.', 'Trap block placed.'));
+      }
     }
   }
+  if (current.role === 'thief' && actions.place > 0 && useGameStore.getState().selected === 'gallery_projectiles_smoke_grenade') useSmoke(world, camera, player);
   return true;
 }
 
 export function heistMovementMultiplier() {
   const state = useHeistStore.getState();
+  if (state.taserUntil > Date.now()) return 0;
   return (state.carried >= 1500 ? 0.85 : 1) * (state.slowUntil > Date.now() ? 0.5 : 1);
 }
 
@@ -203,6 +328,7 @@ export function receiveHeistState(value: unknown) {
   const previous = useHeistStore.getState();
   const role = roles[localId()] ?? previous.role;
   if (role && role !== previous.role) loadout(role, prison.includes(localId()));
+  const alarmPosition = data.alarmPosition && typeof data.alarmPosition === 'object' ? data.alarmPosition as { x: number; y: number; z: number } : previous.alarmPosition;
   useHeistStore.setState({
     role,
     roles,
@@ -213,6 +339,8 @@ export function receiveHeistState(value: unknown) {
     lootRespawns,
     prison,
     winner: data.winner === 'thieves' || data.winner === 'guards' ? data.winner : null,
+    alarmUntil: typeof data.alarmUntil === 'number' ? data.alarmUntil : previous.alarmUntil,
+    alarmPosition,
   });
 }
 export function receiveHeistPrison() {
@@ -222,27 +350,22 @@ export function receiveHeistPrison() {
 export function receiveHeistRelease() {
   release();
 }
-
 export function receiveHeistTaser() {
-  useHeistStore.setState({ slowUntil: Date.now() + 2500 });
+  useHeistStore.setState({ taserUntil: Date.now() + 2500 });
   useGameStore.getState().setNotice(translate('Taser · immobilisé pendant 2,5 secondes.', 'Taser · immobilized for 2.5 seconds.'));
 }
 
-export function buyHeistItem(kind: 'grappling_hook' | 'gallery_projectiles_smoke_grenade' | 'taser' | 'heist_trap' | typeof BlockKind.Tnt, price: number) {
+export function buyHeistItem(kind: Gadget, price: number) {
   const state = useHeistStore.getState();
   if (state.coins < price) {
     useGameStore.getState().setNotice(translate(`Il te manque ${price - state.coins} pièces.`, `You need ${price - state.coins} more coins.`));
     return;
   }
-  const game = useGameStore.getState();
-  const slot = game.hotbarSlots.indexOf(kind) >= 0 ? game.hotbarSlots.indexOf(kind) : game.hotbarSlots.findIndex((item) => item === null);
-  if (slot < 0) {
-    game.setNotice(translate('Aucune case vide.', 'No empty slot.'));
-    return;
-  }
-  game.setHotbarSlot(slot, kind);
-  useHeistStore.setState({ coins: state.coins - price });
-  game.setNotice(translate('Gadget acheté et placé dans une case.', 'Gadget purchased and placed in a slot.'));
+  const quantity = kind === BlockKind.Ladder ? 4 : kind === 'heist_trap' ? 3 : 1;
+  const gadgets = { ...state.gadgets, [String(kind)]: gadgetCount(kind) + quantity };
+  useHeistStore.setState({ coins: state.coins - price, gadgets });
+  if (state.role) loadout(state.role);
+  useGameStore.getState().setNotice(translate(`${quantity > 1 ? `${quantity} objets ajoutés` : 'Gadget ajouté'} dans ta barre rapide.`, `${quantity > 1 ? `${quantity} items added` : 'Gadget added'} to your hotbar.`));
 }
 
 export function useHeistRadar() {
@@ -250,7 +373,7 @@ export function useHeistRadar() {
   if (state.role !== 'guard' || state.coins < 700) return;
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return;
-  const target = nearestThief(player);
+  const target = nearestThief(player, Number.POSITIVE_INFINITY);
   if (!target) {
     useGameStore.getState().setNotice(translate('Aucun voleur à proximité.', 'No thief nearby.'));
     return;
@@ -259,9 +382,20 @@ export function useHeistRadar() {
   useHeistStore.setState({ coins: state.coins - 700, alarmUntil: Date.now() + 5000, alarmPosition: { x: remote.x, y: remote.y, z: remote.z } });
 }
 
-export function heistMiningDuration(kind: BlockKind, selected: import('./items').SelectedKind) {
+export function heistMiningDuration(kind: BlockKind, selected: SelectedKind, position?: { x: number; y: number; z: number }) {
   if (selected === 'pickaxe_stone') return 0.5;
-  if (kind === BlockKind.Dirt) return 2;
-  if (kind === BlockKind.Sand || kind === BlockKind.GrayBrick) return 3;
+  if (kind === BlockKind.Glass) return 0.18;
+  if (kind === BlockKind.TrapdoorIron) return 4;
+  if (kind === BlockKind.Dirt) return (position?.y ?? 1) >= 4 ? 4 : 2;
+  if (kind === BlockKind.Sand) return 2;
+  if (kind === BlockKind.GrayBrick) return 3;
   return 4;
+}
+
+export function collapseHeistGravel(world: KootaWorld, position: { x: number; y: number; z: number }) {
+  if (position.x < 24 || position.x > 41 || position.z < 41 || position.z > 52 || position.y >= 3) return;
+  const above = getBlockIndex(world).get(voxelKey(position.x, position.y + 1, position.z));
+  if (above?.kind !== BlockKind.Sand) return;
+  removeVoxel(world, { block: above, x: above.x, y: above.y, z: above.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, true);
+  addVoxel(world, position.x, position.y, position.z, BlockKind.Sand, undefined, undefined, 0, undefined, undefined, false, true);
 }

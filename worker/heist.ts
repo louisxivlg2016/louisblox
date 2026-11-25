@@ -1,4 +1,4 @@
-import { HEIST_LOOT, HEIST_PRISON_SPAWN } from '../src/game/heistCity';
+import { HEIST_DEPOSIT, HEIST_LOOT, HEIST_PRISON_SPAWN, HEIST_TUNNEL_EXIT } from '../src/game/heistCity';
 import type { PlayerAttachment } from './index';
 
 type Role = 'thief' | 'guard';
@@ -10,18 +10,26 @@ type HeistRoom = {
   save: () => Promise<void>;
 };
 
+const PREPARATION_MS = 30000;
+const ROUND_MS = 600000;
+
 export class HeistEngine {
   private roles = new Map<string, Role>();
   private carried = new Map<string, number>();
   private lootRespawns = new Map<string, number>();
   private prison = new Set<string>();
   private arrestHits = new Map<string, number>();
+  private lootOpenings = new Map<string, { id: string; since: number }>();
+  private depositStarts = new Map<string, number>();
+  private taserReady = new Map<string, number>();
   private score = 0;
   private phase: 'prep' | 'running' | 'finished' = 'prep';
-  private endsAt = Date.now() + 30000;
+  private endsAt = Date.now() + PREPARATION_MS;
   private winner: 'thieves' | 'guards' | null = null;
   private prisonSince = 0;
   private syncAt = 0;
+  private alarmUntil = 0;
+  private alarmPosition: { x: number; y: number; z: number } | null = null;
 
   constructor(private room: HeistRoom) {}
 
@@ -31,11 +39,16 @@ export class HeistEngine {
     this.lootRespawns.clear();
     this.prison.clear();
     this.arrestHits.clear();
+    this.lootOpenings.clear();
+    this.depositStarts.clear();
+    this.taserReady.clear();
     this.score = 0;
     this.phase = 'prep';
-    this.endsAt = Date.now() + 30000;
+    this.endsAt = Date.now() + PREPARATION_MS;
     this.winner = null;
     this.prisonSince = 0;
+    this.alarmUntil = 0;
+    this.alarmPosition = null;
   }
 
   restore(value: unknown) {
@@ -47,7 +60,7 @@ export class HeistEngine {
     this.prison = new Set(state.prison ?? []);
     this.score = state.score ?? 0;
     this.phase = state.phase ?? 'prep';
-    this.endsAt = state.endsAt ?? Date.now() + 30000;
+    this.endsAt = state.endsAt ?? Date.now() + PREPARATION_MS;
     this.winner = state.winner ?? null;
   }
 
@@ -56,7 +69,7 @@ export class HeistEngine {
   }
 
   message() {
-    return { type: 'heist-state', roles: Object.fromEntries(this.roles), carried: Object.fromEntries(this.carried), lootRespawns: Object.fromEntries(this.lootRespawns), prison: [...this.prison], score: this.score, phase: this.phase, endsAt: this.endsAt, winner: this.winner };
+    return { type: 'heist-state', roles: Object.fromEntries(this.roles), carried: Object.fromEntries(this.carried), lootRespawns: Object.fromEntries(this.lootRespawns), prison: [...this.prison], score: this.score, phase: this.phase, endsAt: this.endsAt, winner: this.winner, alarmUntil: this.alarmUntil, alarmPosition: this.alarmPosition };
   }
 
   private update() {
@@ -84,7 +97,10 @@ export class HeistEngine {
   private checkVictory() {
     if (this.phase === 'finished') return;
     const now = Date.now();
-    if (this.phase === 'prep' && now >= this.endsAt) this.phase = 'running';
+    if (this.phase === 'prep' && now >= this.endsAt) {
+      this.phase = 'running';
+      this.endsAt = now + ROUND_MS;
+    }
     if (this.score >= 10000) {
       this.phase = 'finished';
       this.winner = 'thieves';
@@ -96,7 +112,7 @@ export class HeistEngine {
       return;
     }
     const thieves = this.room.players().filter(({ attachment }) => this.roles.get(attachment.playerId) === 'thief');
-    const allInPrison = thieves.length > 0 && thieves.every(({ attachment }) => this.prison.has(attachment.playerId));
+    const allInPrison = this.phase === 'running' && thieves.length > 0 && thieves.every(({ attachment }) => this.prison.has(attachment.playerId));
     if (!allInPrison) this.prisonSince = 0;
     else {
       if (!this.prisonSince) this.prisonSince = now;
@@ -118,6 +134,12 @@ export class HeistEngine {
     }
   }
 
+  private triggerAlarm(position: { x: number; y: number; z: number }) {
+    this.alarmUntil = Date.now() + 10000;
+    this.alarmPosition = position;
+    this.update();
+  }
+
   handle(socket: WebSocket, player: PlayerAttachment, data: Record<string, unknown>) {
     if (this.room.mode() !== 'heist' || typeof data.type !== 'string' || !data.type.startsWith('heist-')) return false;
     this.checkVictory();
@@ -129,17 +151,38 @@ export class HeistEngine {
       return true;
     }
     const role = this.roles.get(player.playerId);
+    if (data.type === 'heist-alarm' && role === 'thief' && data.position && typeof data.position === 'object') {
+      const position = data.position as Record<string, unknown>;
+      if (['x', 'y', 'z'].every((key) => typeof position[key] === 'number' && Number.isFinite(position[key]))) this.triggerAlarm({ x: position.x as number, y: position.y as number, z: position.z as number });
+      return true;
+    }
+    if (data.type === 'heist-loot-start' && role === 'thief' && !this.prison.has(player.playerId)) {
+      const loot = HEIST_LOOT.find((entry) => entry.id === data.id);
+      if (!loot || (this.lootRespawns.get(loot.id) ?? 0) > Date.now() || !player.state || Math.hypot(player.state.x - loot.x, player.state.y - loot.y, player.state.z - loot.z) > 4) return true;
+      this.lootOpenings.set(player.playerId, { id: loot.id, since: Date.now() });
+      if (loot.building === 'bank') this.triggerAlarm({ x: player.state.x, y: player.state.y, z: player.state.z });
+      return true;
+    }
     if (data.type === 'heist-loot' && role === 'thief' && !this.prison.has(player.playerId)) {
       const loot = HEIST_LOOT.find((entry) => entry.id === data.id);
-      if (!loot || (this.lootRespawns.get(loot.id) ?? 0) > Date.now() || (this.carried.get(player.playerId) ?? 0) > 0 || !player.state || Math.hypot(player.state.x - loot.x, player.state.y - loot.y, player.state.z - loot.z) > 4) return true;
+      const opening = this.lootOpenings.get(player.playerId);
+      const duration = loot?.building === 'bank' ? 15000 : loot?.building === 'museum' ? 5000 : 3000;
+      if (!loot || opening?.id !== loot.id || Date.now() - opening.since < duration || (this.lootRespawns.get(loot.id) ?? 0) > Date.now() || (this.carried.get(player.playerId) ?? 0) > 0 || !player.state || Math.hypot(player.state.x - loot.x, player.state.y - loot.y, player.state.z - loot.z) > 4) return true;
+      this.lootOpenings.delete(player.playerId);
       this.carried.set(player.playerId, loot.value);
       this.lootRespawns.set(loot.id, Date.now() + 120000);
       this.update();
       return true;
     }
-    if (data.type === 'heist-deposit' && role === 'thief') {
+    if (data.type === 'heist-deposit-start' && role === 'thief' && player.state && Math.hypot(player.state.x - HEIST_DEPOSIT.x, player.state.y - HEIST_DEPOSIT.y, player.state.z - HEIST_DEPOSIT.z) <= 3) {
+      this.depositStarts.set(player.playerId, Date.now());
+      return true;
+    }
+    if (data.type === 'heist-deposit' && role === 'thief' && !this.prison.has(player.playerId) && player.state && Math.hypot(player.state.x - HEIST_DEPOSIT.x, player.state.y - HEIST_DEPOSIT.y, player.state.z - HEIST_DEPOSIT.z) <= 3) {
+      const started = this.depositStarts.get(player.playerId) ?? 0;
       const value = this.carried.get(player.playerId) ?? 0;
-      if (value > 0) {
+      if (value > 0 && Date.now() - started >= 2000) {
+        this.depositStarts.delete(player.playerId);
         this.score += value;
         this.carried.set(player.playerId, 0);
         this.checkVictory();
@@ -167,11 +210,13 @@ export class HeistEngine {
     }
     if (data.type === 'heist-taser' && role === 'guard') {
       const target = this.target(data.targetId);
-      if (!target || this.roles.get(target.attachment.playerId) !== 'thief') return true;
+      const now = Date.now();
+      if (!target || this.roles.get(target.attachment.playerId) !== 'thief' || !target.attachment.state || !player.state || (this.taserReady.get(player.playerId) ?? 0) > now || Math.hypot(player.state.x - target.attachment.state.x, player.state.y - target.attachment.state.y, player.state.z - target.attachment.state.z) > 8) return true;
+      this.taserReady.set(player.playerId, now + 20000);
       target.socket.send(JSON.stringify({ type: 'heist-taser' }));
       return true;
     }
-    if (data.type === 'heist-release' && role === 'thief') {
+    if (data.type === 'heist-release' && role === 'thief' && player.state && Math.hypot(player.state.x - HEIST_TUNNEL_EXIT.x, player.state.y - HEIST_TUNNEL_EXIT.y, player.state.z - HEIST_TUNNEL_EXIT.z) <= 4) {
       this.prison.delete(player.playerId);
       this.update();
       return true;

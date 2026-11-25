@@ -4,6 +4,7 @@ import { useQuery } from 'koota/react';
 import type { Entity } from 'koota';
 import { AdditiveBlending, BoxGeometry, CanvasTexture, Color, InstancedMesh, LinearFilter, LinearMipmapLinearFilter, Matrix4, MeshBasicMaterial, Quaternion, SphereGeometry, SRGBColorSpace, Vector3 } from 'three';
 import { Explosion, ExplosionMaterial, ExplosionMesh, ExplosionPosition } from '../game/traits';
+import { useGameStore } from '../game/store';
 
 function createBrushTexture() {
   const canvas = document.createElement('canvas');
@@ -96,6 +97,7 @@ function EffectView({ entity }: { entity: Entity }) {
   const material = useMemo(() => new MeshBasicMaterial({ color: explosion.effect === 'smoke' ? '#7b838a' : explosion.color ?? '#ffffff', transparent: true, opacity: 1, depthWrite: false, toneMapped: false, blending: explosion.effect === 'firework' ? AdditiveBlending : undefined }), [explosion.effect, explosion.color]);
   const accentMaterial = useMemo(() => new MeshBasicMaterial({ color: '#fff2b3', transparent: true, opacity: 0.85, depthWrite: false, toneMapped: false, blending: AdditiveBlending }), []);
   const count = explosion.effect === 'smoke' ? 32 : 120;
+  const smokeScale = explosion.effect === 'smoke' && useGameStore.getState().gameplayMode === 'heist' ? 0.55 : 1;
   const directions = useMemo(() => Array.from({ length: count }, (_, index) => {
     if (explosion.effect === 'firework' && index % 4 === 0) {
       const angle = index / 4 / Math.floor(count / 4) * Math.PI * 2;
@@ -124,12 +126,12 @@ function EffectView({ entity }: { entity: Entity }) {
     group.current?.children.forEach((child, index) => {
       const direction = directions[index];
       if (!direction) return;
-      const distance = explosion.effect === 'smoke' ? 2.6 : 10;
+      const distance = explosion.effect === 'smoke' ? 2.6 * smokeScale : 10;
       child.position.copy(direction).multiplyScalar(progress * distance);
       child.quaternion.setFromUnitVectors(effectUp, direction);
       if (explosion.effect === 'smoke') child.position.y += progress * 1.1;
       else child.position.y -= progress * progress * 3.2;
-      child.scale.setScalar(explosion.effect === 'smoke' ? 0.35 + progress * 2.2 : Math.max(0.035, 0.22 * (1 - progress * 0.55)));
+      child.scale.setScalar(explosion.effect === 'smoke' ? (0.35 + progress * 2.2) * smokeScale : Math.max(0.035, 0.22 * (1 - progress * 0.55)));
     });
   });
   return (
