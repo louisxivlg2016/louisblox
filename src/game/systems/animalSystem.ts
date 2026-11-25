@@ -1,6 +1,6 @@
 import type { Entity, World } from 'koota';
 import { Mesh, Vector3 } from 'three';
-import { chunkCoordinate, getBlockIndex, getWorldSeed, isChunkLoaded } from '../chunks';
+import { chunkCoordinate, getBlockIndex, getWorldSeed, isChunkLoaded, loadChunk } from '../chunks';
 import { isCrop } from '../extraBlocks';
 import { biomeAt, heightAt, MIN_WORLD_Y } from '../levels';
 import { turnToward } from '../rotation';
@@ -416,13 +416,16 @@ export function animalSystem(world: World, dt: number) {
       const yaw = Math.atan2(owner.x - position.x, owner.z - position.z);
       const x = owner.x - Math.sin(yaw) * 2.5;
       const z = owner.z - Math.cos(yaw) * 2.5;
-      if (isLoaded(world, x, z)) {
-        const ground = groundAt(world, x, z, position.y + 24);
-        if (walkableGround(world, x, z, ground) && bodyClear(world, x, z, ground)) {
-          position.set(x, ground, z);
-          rememberSafePosition(world, entity, position);
-          distanceSquared = position.distanceToSquared(owner);
-        }
+      for (const [dx, dz] of [[0, 0], [1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5], [2.5, 2.5], [-2.5, -2.5]] as const) {
+        const candidateX = x + dx;
+        const candidateZ = z + dz;
+        if (!isLoaded(world, candidateX, candidateZ)) loadChunk(world, chunkCoordinate(candidateX), chunkCoordinate(candidateZ));
+        const ground = groundAt(world, candidateX, candidateZ, owner.y + 24);
+        if (!walkableGround(world, candidateX, candidateZ, ground) || !bodyClear(world, candidateX, candidateZ, ground)) continue;
+        position.set(candidateX, ground, candidateZ);
+        rememberSafePosition(world, entity, position);
+        distanceSquared = position.distanceToSquared(owner);
+        break;
       }
     }
     motion.sightIn -= stepDt;
