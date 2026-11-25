@@ -586,10 +586,10 @@ export function heldItemPosition(kind: ModelKind | number, fullCharacter: boolea
 
 export function itemGripOffset(kind: ModelKind) {
   const meta = getItemMeta(kind);
-  if (meta.category === 'sword' || meta.shape === 'sword') return 0.55;
-  if (meta.shape === 'dagger') return 0.4;
-  if (meta.category === 'bow' || meta.shape === 'staff') return 0.38;
-  if (meta.category === 'gun' || meta.shape === 'gun' || meta.shape === 'rpg') return -0.08;
+  if (meta.category === 'sword' || meta.shape === 'sword') return 0.38;
+  if (meta.shape === 'dagger') return 0.25;
+  if (meta.category === 'bow' || meta.shape === 'staff') return 0.13;
+  if (meta.category === 'gun' || meta.shape === 'gun' || meta.shape === 'rpg') return 0.13;
   if (meta.category === 'pickaxe' || meta.category === 'shovel' || meta.shape === 'pickaxe' || meta.shape === 'spade') return -0.05;
   return 0;
 }
