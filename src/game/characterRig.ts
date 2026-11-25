@@ -71,7 +71,18 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   const pieces: Array<ReturnType<typeof splitGeometry>> = [];
   const colorAppearance = appearance;
   scene.traverse((object) => {
-    if (object instanceof Mesh && !Array.isArray(object.material)) pieces.push(splitGeometry(object.geometry, object.matrixWorld, object.material, width, height, floor, true, bounds, colorAppearance, outfit === 'louis15', outfit === 'princess' || outfit === 'classic-girl', outfit));
+    if (!(object instanceof Mesh)) return;
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    for (const [materialIndex, material] of materials.entries()) {
+      let geometry = object.geometry;
+      const groups = geometry.groups.filter((group: { start: number; count: number; materialIndex?: number }) => group.materialIndex === materialIndex);
+      if (materials.length > 1 && groups.length > 0 && geometry.index) {
+        const indices: number[] = [];
+        for (const group of groups) for (let offset = group.start; offset < group.start + group.count; offset += 1) indices.push(geometry.index.getX(offset));
+        geometry = geometry.clone().setIndex(indices);
+      }
+      pieces.push(splitGeometry(geometry, object.matrixWorld, material, width, height, floor, true, bounds, colorAppearance, outfit === 'louis15', outfit === 'princess' || outfit === 'classic-girl', outfit));
+    }
   });
   const root = new Group();
   const rig: Rig = {};
@@ -96,6 +107,12 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
           pivot = new Group();
           pivot.name = names[part];
           pivot.position.set(lowerLeg ? 0 : pivotX, lowerLeg ? -height * 0.24 : pivotY, 0);
+          if (lowerLeg) {
+            const cover = new Mesh(new BoxGeometry(width * 0.18, height * 0.12, (bounds.max.z - bounds.min.z) * 0.28), piece.material);
+            cover.name = 'knee-cover';
+            cover.position.y = height * 0.18 - pivotY;
+            pivot.add(cover);
+          }
           const parent = lowerLeg ? part.startsWith('left') ? rig.leftLeg : rig.rightLeg : undefined;
           (parent ?? root).add(pivot);
           rig[part] = pivot;
