@@ -6,16 +6,16 @@ import { useGameStore } from './store';
 import { translate } from './language';
 
 type PaintingPosition = { x: number; y: number; z: number };
-type PaintingEditor = PaintingPosition & { image?: string };
+type PaintingEditor = PaintingPosition & { image?: string; drawing?: boolean };
 
 export const useCustomPaintingStore = create<{
   editing: PaintingEditor | null;
-  openPainting: (position: PaintingPosition, image?: string) => void;
+  openPainting: (position: PaintingPosition, image?: string, drawing?: boolean) => void;
   closePainting: () => void;
 }>((set) => ({
   editing: null,
-  openPainting: (position, image) => {
-    set({ editing: { ...position, image: cleanPaintingImage(image) } });
+  openPainting: (position, image, drawing = false) => {
+    set({ editing: { ...position, image: cleanPaintingImage(image), drawing } });
     useGameStore.getState().setMode('pause');
   },
   closePainting: () => set({ editing: null }),

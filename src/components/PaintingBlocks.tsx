@@ -12,26 +12,26 @@ import { DecorationCulling } from './DecorationCulling';
 const textures = new Map<string, Texture>();
 
 function paintingTexture(kind: BlockKind, image?: string) {
-  const customImage = kind === BlockKind.PaintingCustom ? cleanPaintingImage(image) : undefined;
-  const key = customImage ?? String(kind);
+  const customImage = kind === BlockKind.PaintingCustom || kind === BlockKind.DrawingPainting ? cleanPaintingImage(image) : undefined;
+  const key = customImage ? `${kind}:${customImage}` : String(kind);
   const cached = textures.get(key);
   if (cached) return cached;
   if (customImage) {
     const texture = new TextureLoader().load(customImage);
-    texture.magFilter = NearestFilter;
-    texture.minFilter = NearestFilter;
+    texture.magFilter = kind === BlockKind.DrawingPainting ? NearestFilter : LinearFilter;
+    texture.minFilter = kind === BlockKind.DrawingPainting ? NearestFilter : LinearFilter;
     texture.generateMipmaps = false;
     texture.colorSpace = SRGBColorSpace;
     textures.set(key, texture);
     return texture;
   }
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 384;
+  canvas.width = 96;
+  canvas.height = 72;
   drawPainting(canvas.getContext('2d')!, kind);
   const texture = new CanvasTexture(canvas);
-  texture.magFilter = LinearFilter;
-  texture.minFilter = LinearFilter;
+  texture.magFilter = NearestFilter;
+  texture.minFilter = NearestFilter;
   texture.generateMipmaps = false;
   texture.colorSpace = SRGBColorSpace;
   textures.set(key, texture);

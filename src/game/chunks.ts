@@ -272,7 +272,7 @@ export function setVoxelImage(world: World, position: { x: number; y: number; z:
   if (!value) return false;
   const state = stateFor(world);
   const block = state.blocks.get(voxelKey(position.x, position.y, position.z));
-  if (!block || block.kind !== BlockKind.PaintingCustom) return false;
+  if (!block || block.kind !== BlockKind.PaintingCustom && block.kind !== BlockKind.DrawingPainting) return false;
   block.image = value;
   const cx = chunkCoordinate(position.x);
   const cz = chunkCoordinate(position.z);

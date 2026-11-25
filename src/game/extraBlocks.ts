@@ -239,6 +239,7 @@ export const EXTRA_BLOCKS = {
   PaintingCustom: 264,
   SafeChest: 265,
   KitchenFurnace: 266,
+  DrawingPainting: 267,
 } as const;
 
 export const PARIS_STREET_SIGN_TEXT = '4th arrondissement\nPeace Street';
@@ -256,7 +257,7 @@ export const isMetalTrapdoor = (kind: number) => kind >= EXTRA_BLOCKS.TrapdoorIr
 export const isStair = (kind: number) => kind >= EXTRA_BLOCKS.StairOak && kind <= EXTRA_BLOCKS.StairBedrock;
 export const isSlab = (kind: number) => kind >= EXTRA_BLOCKS.SlabOak && kind <= EXTRA_BLOCKS.SlabGlassBlack;
 export const isCarpet = (kind: number) => kind >= EXTRA_BLOCKS.CarpetWhite && kind <= EXTRA_BLOCKS.CarpetBlack;
-export const PAINTING_KINDS = [EXTRA_BLOCKS.PaintingCastle, EXTRA_BLOCKS.PaintingSunset, EXTRA_BLOCKS.PaintingKing, EXTRA_BLOCKS.PaintingCat, EXTRA_BLOCKS.PaintingForest, EXTRA_BLOCKS.PaintingAbstract, EXTRA_BLOCKS.PaintingCustom] as const;
+export const PAINTING_KINDS = [EXTRA_BLOCKS.PaintingCastle, EXTRA_BLOCKS.PaintingSunset, EXTRA_BLOCKS.PaintingKing, EXTRA_BLOCKS.PaintingCat, EXTRA_BLOCKS.PaintingForest, EXTRA_BLOCKS.PaintingAbstract, EXTRA_BLOCKS.PaintingCustom, EXTRA_BLOCKS.DrawingPainting] as const;
 export const isPainting = (kind: number) => (PAINTING_KINDS as readonly number[]).includes(kind);
 export const STAIR_SOURCES: Readonly<Partial<Record<ExtraBlockKind, number>>> = {
   [EXTRA_BLOCKS.StairOak]: EXTRA_BLOCKS.OakPlanks,
@@ -469,6 +470,7 @@ const BASE_EXTRA_BLOCK_META: Record<number, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.PaintingCustom]: block('Tableau vide à personnaliser', '#eee8d8', 0.25),
   [EXTRA_BLOCKS.SafeChest]: block('Coffre-fort', '#666c72', 2.5),
   [EXTRA_BLOCKS.KitchenFurnace]: block('Four de cuisine', '#666c72', 2.5),
+  [EXTRA_BLOCKS.DrawingPainting]: block('Tableau à dessiner', '#eee8d8', 0.25),
   [EXTRA_BLOCKS.StopSign]: block('Panneau STOP', '#c93d35', 0.35),
   [EXTRA_BLOCKS.YieldSign]: block('Cédez le passage', '#e8e0d5', 0.35),
   [EXTRA_BLOCKS.NoEntrySign]: block('Sens interdit', '#c93d35', 0.35),

@@ -154,6 +154,19 @@ export function drawPainting(context: CanvasRenderingContext2D, kind: BlockKind)
     context.fillStyle = '#8db1c1';
     polygon(context, '#8db1c1', [[0, 163], [37, 151], [74, 161], [101, 154], [104, 166], [69, 174], [31, 165], [0, 177]]);
     for (const [x, y, color] of [[23, 153, '#f0d266'], [190, 158, '#e597a7'], [74, 180, '#eee5cf'], [217, 138, '#e6d375']] as const) circle(context, x, y, 3, color);
+  } else if (kind === BlockKind.DrawingPainting) {
+    context.fillStyle = '#fffdf5';
+    context.fillRect(0, 0, 256, 192);
+    for (const [x, y, color] of [[51, 45, '#db5548'], [86, 45, '#e6b93f'], [121, 45, '#55a873'], [156, 45, '#518ac1'], [191, 45, '#9a65a5']] as const) {
+      context.fillStyle = color;
+      context.fillRect(x - 11, y - 11, 22, 22);
+    }
+    polygon(context, '#d7a36d', [[83, 146], [160, 69], [179, 88], [102, 165]]);
+    polygon(context, '#f1d19b', [[83, 146], [102, 165], [68, 180]]);
+    polygon(context, '#3e4749', [[68, 180], [74, 163], [85, 174]]);
+    context.fillStyle = '#4c83a4';
+    context.fillRect(153, 62, 35, 13);
+    context.fillRect(160, 75, 13, 24);
   } else if (kind === BlockKind.PaintingCustom) {
     context.fillStyle = '#f4f0e5';
     context.fillRect(0, 0, 256, 192);

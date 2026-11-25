@@ -1,6 +1,6 @@
 const PNG_PREFIX = 'data:image/png;base64,';
-export const PAINTING_IMAGE_SIZE = 32;
-export const MAX_PAINTING_IMAGE_LENGTH = 20000;
+export const PAINTING_IMAGE_SIZE = 64;
+export const MAX_PAINTING_IMAGE_LENGTH = 200000;
 
 export function cleanPaintingImage(value: unknown) {
   if (typeof value !== 'string' || value.length > MAX_PAINTING_IMAGE_LENGTH || !value.startsWith(PNG_PREFIX)) return undefined;

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { requestPlay } from '../game/input';
 import { saveCustomPainting, useCustomPaintingStore } from '../game/customPainting';
-import { pixelatePaintingFile } from '../game/paintingImage';
+import { PAINTING_IMAGE_SIZE, pixelatePaintingFile } from '../game/paintingImage';
 import { world } from '../game/world';
 import { translate } from '../game/language';
+import { DrawingCanvas } from './DrawingCanvas';
 
 export function CustomPaintingPanel() {
   const editing = useCustomPaintingStore((state) => state.editing);
@@ -41,17 +42,24 @@ export function CustomPaintingPanel() {
     <div className="backpack-backdrop">
       <section className="book-panel backpack-panel" role="dialog" aria-modal="true" aria-label={translate('Personnaliser le tableau', 'Customize painting')} data-custom-painting-dialog>
         <div className="backpack-header">
-          <h2>{translate('Tableau personnalisé', 'Custom painting')}</h2>
+          <h2>{editing.drawing ? translate('Tableau à dessiner', 'Drawing painting') : translate('Tableau personnalisé', 'Custom painting')}</h2>
           <button type="button" className="secondary-button" onClick={close}>{translate('Fermer', 'Close')}</button>
         </div>
-        <form onSubmit={(event) => {
+        {editing.drawing ? <>
+          <DrawingCanvas initialImage={editing.image} onSave={(image) => {
+            setError('');
+            if (saveCustomPainting(world, editing, image)) void requestPlay();
+            else setError(translate('Impossible d’enregistrer ce dessin.', 'Unable to save this drawing.'));
+          }} />
+          {error && <p role="alert" className="boutique-hint">{error}</p>}
+        </> : <form onSubmit={(event) => {
           event.preventDefault();
           if (!preview || busy) return;
           if (saveCustomPainting(world, editing, preview)) void requestPlay();
           else setError(translate('Impossible d’enregistrer cette image.', 'Unable to save this image.'));
         }}>
           <div style={{ display: 'grid', placeItems: 'center', minHeight: 210, marginBottom: 16, background: '#18281f', border: '2px solid #70836d' }}>
-            {preview ? <img data-painting-preview src={preview} alt={translate('Aperçu pixelisé du tableau', 'Pixelated painting preview')} width={256} height={192} style={{ imageRendering: 'pixelated', objectFit: 'fill', maxWidth: '100%' }} /> : <span style={{ color: '#d9e3d4', fontSize: 64, lineHeight: 1 }} aria-hidden="true">+</span>}
+            {preview ? <img data-painting-preview src={preview} alt={translate('Aperçu du tableau', 'Painting preview')} width={256} height={192} style={{ imageRendering: 'auto', objectFit: 'fill', maxWidth: '100%' }} /> : <span style={{ color: '#d9e3d4', fontSize: 64, lineHeight: 1 }} aria-hidden="true">+</span>}
           </div>
           <label className="secondary-button" style={{ display: 'block', textAlign: 'center', cursor: 'pointer' }}>
             {busy ? translate('Conversion en pixels…', 'Converting to pixels…') : translate('Ajouter une image', 'Add an image')}
@@ -61,10 +69,10 @@ export function CustomPaintingPanel() {
               void addImage(file);
             }} style={{ display: 'none' }} />
           </label>
-          <p className="boutique-hint">{translate('Ton image est réduite à 32 × 32 pixels, comme les images des modes de jeu. Elle est conservée avec le tableau.', 'Your image is reduced to 32 × 32 pixels, like game mode images. It is saved with the painting.')}</p>
+          <p className="boutique-hint">{translate(`Ton image est réduite à ${PAINTING_IMAGE_SIZE} × ${PAINTING_IMAGE_SIZE} pixels pour rester légère, sans devenir trop pixelisée. Elle est conservée avec le tableau.`, `Your image is reduced to ${PAINTING_IMAGE_SIZE} × ${PAINTING_IMAGE_SIZE} pixels to keep it light without becoming too pixelated. It is saved with the painting.`)}</p>
           {error && <p role="alert" className="boutique-hint">{error}</p>}
           <button type="submit" className="primary-button" data-save-painting disabled={!preview || busy}>{translate('Enregistrer le tableau', 'Save painting')}</button>
-        </form>
+        </form>}
       </section>
     </div>
   );
