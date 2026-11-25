@@ -572,13 +572,13 @@ function GalleryModel({ kind }: { kind: GalleryItemId }) {
 }
 
 export function isWeaponItem(kind: ModelKind | number) {
-  return typeof kind === 'string' && ['sword', 'bow', 'gun'].includes(getItemMeta(kind).category);
+  return typeof kind === 'string' && ['sword', 'bow', 'gun', 'pickaxe', 'shovel'].includes(getItemMeta(kind).category);
 }
 
 export function heldItemPosition(kind: ModelKind | number, fullCharacter: boolean): [number, number, number] {
   if (isWeaponItem(kind)) {
     const offset = typeof kind === 'number' ? 0 : itemGripOffset(kind) * 0.72;
-    const raised = typeof kind === 'string' && getItemMeta(kind).category === 'sword' ? 0.08 : -0.24;
+    const raised = typeof kind === 'string' && getItemMeta(kind).category === 'sword' ? -0.08 : -0.24;
     return fullCharacter ? [0, -offset + raised, 0] : [0.05, -0.82 - offset, -0.12];
   }
   return fullCharacter ? [0.1, -0.1, 0.5] : [0.15, -0.68, -0.42];
@@ -586,11 +586,11 @@ export function heldItemPosition(kind: ModelKind | number, fullCharacter: boolea
 
 export function itemGripOffset(kind: ModelKind) {
   const meta = getItemMeta(kind);
-  if (meta.category === 'sword' || meta.shape === 'sword') return 0.28;
-  if (meta.shape === 'dagger') return 0.18;
-  if (meta.category === 'bow' || meta.shape === 'staff') return 0.18;
-  if (meta.category === 'gun' || meta.shape === 'gun' || meta.shape === 'rpg') return -0.32;
-  if (meta.category === 'pickaxe' || meta.category === 'shovel' || meta.shape === 'pickaxe' || meta.shape === 'spade') return -0.27;
+  if (meta.category === 'sword' || meta.shape === 'sword') return 0.55;
+  if (meta.shape === 'dagger') return 0.4;
+  if (meta.category === 'bow' || meta.shape === 'staff') return 0.38;
+  if (meta.category === 'gun' || meta.shape === 'gun' || meta.shape === 'rpg') return -0.08;
+  if (meta.category === 'pickaxe' || meta.category === 'shovel' || meta.shape === 'pickaxe' || meta.shape === 'spade') return -0.05;
   return 0;
 }
 
