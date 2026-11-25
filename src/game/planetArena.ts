@@ -18,13 +18,11 @@ function put(blocks: Voxel[], cx: number, cz: number, x: number, y: number, z: n
 }
 
 function planet(blocks: Voxel[], cx: number, cz: number, center: { x: number; y: number; z: number; radius: number }, surface: BlockKind, subsurface: BlockKind) {
-  for (let depth = 0; depth < center.radius; depth += 1) {
-    const radius = Math.max(1, center.radius - depth);
-    const y = center.y - depth;
-    for (let x = center.x - radius; x <= center.x + radius; x += 1) for (let z = center.z - radius; z <= center.z + radius; z += 1) {
-      if (Math.hypot(x - center.x, z - center.z) > radius + 0.25) continue;
-      put(blocks, cx, cz, x, y, z, depth === 0 ? surface : subsurface, depth > 1);
-    }
+  for (let dx = -center.radius; dx <= center.radius; dx += 1) for (let dz = -center.radius; dz <= center.radius; dz += 1) for (let dy = -center.radius; dy <= center.radius; dy += 1) {
+    const distance = dx * dx + dz * dz + dy * dy;
+    if (distance > center.radius * center.radius) continue;
+    const shell = distance >= (center.radius - 1) * (center.radius - 1);
+    put(blocks, cx, cz, center.x + dx, center.y + dy, center.z + dz, shell ? surface : subsurface, !shell);
   }
 }
 
