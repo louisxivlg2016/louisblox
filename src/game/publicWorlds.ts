@@ -34,7 +34,7 @@ export async function listPublicWorlds(): Promise<PublicWorld[]> {
       ownerId: world.ownerId,
       ownerName: world.ownerName,
       gameplayMode: world.gameplayMode,
-      template: world.template === 'city-ancient' || world.template === 'city-modern' || world.template === 'custom' ? world.template : 'nature',
+      template: world.template === 'city-ancient' || world.template === 'city-modern' || world.template === 'custom' || world.template === 'fortress' ? world.template : 'nature',
       thumbnail: typeof world.thumbnail === 'string' && world.thumbnail.length <= 200000 && (/^https:\/\/[^\s"']+$/.test(world.thumbnail) || /^data:image\/(?:png|jpeg|gif|webp);base64,[a-z0-9+/=]+$/i.test(world.thumbnail)) ? world.thumbnail : undefined,
       players: typeof world.players === 'number' ? world.players : 0,
       updatedAt: typeof world.updatedAt === 'number' ? world.updatedAt : 0,

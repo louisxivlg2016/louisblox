@@ -1,7 +1,7 @@
 import { translate } from './language';
 
 export type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern' | 'pirates' | 'football' | 'maze' | 'heist' | 'delivery' | 'skyfall' | 'planet' | 'deep-dive' | 'roleplay';
-export type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern' | 'custom';
+export type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern' | 'custom' | 'fortress';
 
 export const isCityMode = (mode: GameplayMode) => mode === 'city-ancient' || mode === 'city-modern';
 export const isMinigameMode = (mode: GameplayMode) => mode === 'battle' || mode === 'pirates' || mode === 'football' || mode === 'maze' || mode === 'heist' || mode === 'delivery' || mode === 'skyfall' || mode === 'planet' || mode === 'deep-dive' || mode === 'roleplay';

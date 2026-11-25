@@ -54,7 +54,7 @@ type VoxelEdit = number | {
 } | null;
 type EditEntry = [string, VoxelEdit];
 type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern' | 'pirates' | 'football' | 'maze' | 'heist' | 'delivery' | 'skyfall' | 'planet' | 'deep-dive' | 'roleplay';
-type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern' | 'custom';
+type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern' | 'custom' | 'fortress';
 type BattleTeam = 'red' | 'blue' | `solo:${string}`;
 
 function soloSpawn() {
@@ -62,7 +62,7 @@ function soloSpawn() {
   const radius = 11 + Math.random() * 8;
   return { x: Math.round(Math.cos(angle) * radius * 10) / 10, y: 8.51, z: Math.round(Math.sin(angle) * radius * 10) / 10 };
 }
-type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; canBreak?: boolean; canPlace?: boolean; allowDestructiveFire?: boolean; allowCampfire?: boolean; allowFloodingWater?: boolean; allowCalmWater?: boolean; bannedPlayerIds?: string[]; bannedPlayerNames?: Record<string, string> };
+type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; allowedPlayersOnly?: boolean; canBreak?: boolean; canPlace?: boolean; allowDestructiveFire?: boolean; allowCampfire?: boolean; allowFloodingWater?: boolean; allowCalmWater?: boolean; bannedPlayerIds?: string[]; bannedPlayerNames?: Record<string, string> };
 type TribeHome = { x: number; y: number; z: number; yaw: number; pitch: number };
 type Tribe = { id: string; name: string; ownerId: string; members: Array<{ playerId: string; name: string }>; home?: TribeHome };
 type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; worldName?: string; template?: WorldTemplate; customWorld?: CustomWorldDefinition; protection?: WorldProtection; tribes?: Tribe[]; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']>; heist?: ReturnType<HeistEngine['snapshot']>; deadAnimals?: string[]; deadTraders?: string[]; deathWorldId?: string; animalOwners?: Array<[string, string]>; storedAnimals?: string[] };
@@ -331,6 +331,7 @@ function parseWorldProtection(value: unknown, ownerId: string): WorldProtection 
     radius: 500,
     enabled: data.enabled,
     allowedPlayerIds: [...new Set([ownerId, ...data.allowedPlayerIds])].slice(0, 50),
+    allowedPlayersOnly: data.allowedPlayersOnly === true,
     canBreak: data.canBreak === true,
     canPlace: data.canPlace === true,
     allowDestructiveFire: data.allowDestructiveFire !== false,
@@ -630,6 +631,7 @@ export class GameRoom extends DurableObject<Env> {
     const requestedPlayerId = params.get('playerId');
     const playerId = requestedPlayerId && /^[0-9a-f-]{36}$/.test(requestedPlayerId) ? requestedPlayerId : crypto.randomUUID();
     if (this.protection?.bannedPlayerIds?.includes(playerId)) return new Response('Banned from this world', { status: 403, headers: corsHeaders });
+    if (this.protection?.allowedPlayersOnly && this.protection.ownerId !== playerId && !this.protection.allowedPlayerIds.includes(playerId)) return new Response('World entry restricted to selected players', { status: 403, headers: corsHeaders });
     const room = params.get('room')?.slice(0, 48) || 'main-room';
     const name = params.get('name')?.trim().slice(0, 24) || 'Player';
     const character = params.get('character') === 'girl' ? 'girl' : 'boy';
@@ -1214,7 +1216,7 @@ export class GameRoom extends DurableObject<Env> {
         const mode = (data as { gameplayMode?: unknown }).gameplayMode;
         this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' || mode === 'pirates' || mode === 'football' || mode === 'maze' || mode === 'heist' || mode === 'delivery' || mode === 'skyfall' || mode === 'planet' || mode === 'deep-dive' || mode === 'roleplay' ? mode : 'creative';
         const template = (data as { template?: unknown }).template;
-        this.worldTemplate = template === 'city-ancient' || template === 'city-modern' || template === 'custom' ? template : 'nature';
+        this.worldTemplate = template === 'city-ancient' || template === 'city-modern' || template === 'custom' || template === 'fortress' ? template : 'nature';
         if (this.worldTemplate === 'custom') {
           const customWorld = sanitizeCustomWorld((data as { customWorld?: unknown }).customWorld);
           if (!customWorld) return;

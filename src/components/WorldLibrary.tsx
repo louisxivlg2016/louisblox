@@ -4,6 +4,9 @@ import type { WorldMeta } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
 import { removeWorld } from '../game/deleteWorld';
+import { listPublicWorlds } from '../game/publicWorlds';
+import type { PublicWorld } from '../game/publicWorlds';
+import { playerIdentity } from '../game/playerIdentity';
 
 import { GAMEPLAY_MODE_LABELS } from '../game/worldMode';
 import { translate } from '../game/language';
@@ -12,6 +15,7 @@ const MODE_NAMES = GAMEPLAY_MODE_LABELS;
 
 export function WorldLibrary({ onPlay, onCreateSolo }: { onPlay: () => void | Promise<void>; onCreateSolo: () => void }) {
   const [worlds, setWorlds] = useState<WorldMeta[]>([]);
+  const [publicWorlds, setPublicWorlds] = useState<PublicWorld[]>([]);
   const [pending, setPending] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -26,6 +30,13 @@ export function WorldLibrary({ onPlay, onCreateSolo }: { onPlay: () => void | Pr
   const setEnabled = useMultiplayerStore((state) => state.setEnabled);
 
   useEffect(() => setWorlds(listWorlds()), [worldId]);
+  useEffect(() => {
+    let active = true;
+    const load = () => listPublicWorlds().then((items) => { if (active) setPublicWorlds(items); }).catch(() => { if (active) setPublicWorlds([]); });
+    void load();
+    const timer = window.setInterval(load, 15000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [status]);
   useEffect(() => {
     if (!pending) return;
     if (status === 'online' && worldReady) {
@@ -70,9 +81,12 @@ export function WorldLibrary({ onPlay, onCreateSolo }: { onPlay: () => void | Pr
       setBusy(false);
     }
   };
-  const filteredWorlds = worlds.filter((world) => isMultiplayerWorld(world) === (category === 'multiplayer'));
-  const soloCount = worlds.filter((world) => !isMultiplayerWorld(world)).length;
-  const multiplayerCount = worlds.length - soloCount;
+  const localIds = new Set(worlds.map((world) => world.id));
+  const ownPublic = publicWorlds.filter((world) => world.ownerId === playerIdentity() && !localIds.has(world.id)).map((world): WorldMeta => ({ id: world.id, name: world.name, gameplayMode: world.gameplayMode, multiplayer: true, thumbnail: world.thumbnail, updatedAt: world.updatedAt }));
+  const allWorlds = [...worlds, ...ownPublic];
+  const filteredWorlds = allWorlds.filter((world) => isMultiplayerWorld(world) === (category === 'multiplayer'));
+  const soloCount = allWorlds.filter((world) => !isMultiplayerWorld(world)).length;
+  const multiplayerCount = allWorlds.length - soloCount;
 
   if (category === null) return (
     <section id="mes-mondes" className="world-library world-library-start">

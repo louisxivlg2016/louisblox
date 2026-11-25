@@ -12,6 +12,7 @@ export type WorldProtection = {
   radius: 500;
   enabled: boolean;
   allowedPlayerIds: string[];
+  allowedPlayersOnly?: boolean;
   canBreak?: boolean;
   canPlace?: boolean;
   allowDestructiveFire?: boolean;
@@ -37,7 +38,7 @@ export function setProtectionSocket(next: WebSocket | null) {
 }
 
 export function newProtection(ownerId = playerIdentity()): WorldProtection {
-  return { ownerId, centerX: 0, centerZ: 0, radius: 500, enabled: true, allowedPlayerIds: [ownerId], canBreak: false, canPlace: false, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true, bannedPlayerIds: [] };
+  return { ownerId, centerX: 0, centerZ: 0, radius: 500, enabled: true, allowedPlayerIds: [ownerId], allowedPlayersOnly: false, canBreak: false, canPlace: false, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true, bannedPlayerIds: [] };
 }
 
 export function isWorldProtection(value: unknown): value is WorldProtection {
@@ -48,6 +49,7 @@ export function isWorldProtection(value: unknown): value is WorldProtection {
     && typeof data.centerZ === 'number' && Number.isFinite(data.centerZ)
     && data.radius === 500 && typeof data.enabled === 'boolean'
     && Array.isArray(data.allowedPlayerIds) && data.allowedPlayerIds.every((id) => typeof id === 'string' && id.length > 0 && id.length <= 80)
+    && (data.allowedPlayersOnly === undefined || typeof data.allowedPlayersOnly === 'boolean')
     && (data.canBreak === undefined || typeof data.canBreak === 'boolean')
     && (data.canPlace === undefined || typeof data.canPlace === 'boolean')
     && (data.allowDestructiveFire === undefined || typeof data.allowDestructiveFire === 'boolean')
@@ -67,13 +69,14 @@ export function canManageProtection() {
   return Boolean(protection && protection.ownerId === playerIdentity());
 }
 
-export function updateProtection(change: { enabled?: boolean; allowedPlayerIds?: string[]; canBreak?: boolean; canPlace?: boolean; allowDestructiveFire?: boolean; allowCampfire?: boolean; allowFloodingWater?: boolean; allowCalmWater?: boolean; bannedPlayerIds?: string[] }) {
+export function updateProtection(change: { enabled?: boolean; allowedPlayerIds?: string[]; allowedPlayersOnly?: boolean; canBreak?: boolean; canPlace?: boolean; allowDestructiveFire?: boolean; allowCampfire?: boolean; allowFloodingWater?: boolean; allowCalmWater?: boolean; bannedPlayerIds?: string[] }) {
   const current = useProtectionStore.getState().protection;
   if (!current || !canManageProtection()) return false;
   const protection: WorldProtection = {
     ...current,
     enabled: change.enabled ?? current.enabled,
     allowedPlayerIds: [...new Set([current.ownerId, ...(change.allowedPlayerIds ?? current.allowedPlayerIds)])].slice(0, 50),
+    allowedPlayersOnly: change.allowedPlayersOnly ?? current.allowedPlayersOnly ?? false,
     canBreak: change.canBreak ?? current.canBreak ?? false,
     canPlace: change.canPlace ?? current.canPlace ?? false,
     allowDestructiveFire: change.allowDestructiveFire ?? current.allowDestructiveFire !== false,

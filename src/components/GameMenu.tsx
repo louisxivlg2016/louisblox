@@ -4,7 +4,7 @@ import { newProtection, useProtectionStore } from '../game/protection';
 import { canCreateWorld, MAX_WORLDS, readWorldSave } from '../game/save';
 import { normalizeRoomId, useMultiplayerStore } from '../game/multiplayerStore';
 import { isMinigameMode, isMultiplayerOnlyMode } from '../game/worldMode';
-import type { GameplayMode } from '../game/worldMode';
+import type { GameplayMode, WorldTemplate } from '../game/worldMode';
 import piratesUrl from '../../assets/menu/pirates.webp';
 import piratesEsUrl from '../../assets/menu/spanish/modo-pirates.webp';
 import footballFrUrl from '../../assets/menu/football.webp';
@@ -57,7 +57,9 @@ import { LanguagePanel } from './LanguagePanel';
 import { PlayerWorlds } from './PlayerWorlds';
 
 type ModeCard = {
+  id?: string;
   mode: GameplayMode;
+  template?: WorldTemplate;
   image: string;
   alt: string;
   name: string;
@@ -72,7 +74,8 @@ const MODE_CARDS = (): ModeCard[] => [
   { mode: 'survival', image: translate(survivalFrUrl, survivalEnUrl, survivalEsUrl), alt: translate('Zombie du mode Survie', 'Survival mode zombie'), name: translate('Survie', 'Survival'), description: (enabled) => enabled ? translate('Monde public avec tous les joueurs', 'Public world with every player') : translate('Nouveau monde solo à mains nues', 'New solo world with bare hands'), tag: (enabled) => enabled ? translate('Multijoueur', 'Multiplayer') : 'Solo' },
   { mode: 'creative', image: translate(creativeFrUrl, creativeEnUrl, creativeEsUrl), alt: translate('Monde du mode Créatif', 'Creative mode world'), name: translate('Créatif', 'Creative'), tagClass: 'creative', description: (enabled) => enabled ? translate('Monde public avec tous les joueurs', 'Public world with every player') : translate('Nouveau monde solo avec tous les objets', 'New solo world with every item'), tag: (enabled) => enabled ? translate('Multijoueur', 'Multiplayer') : 'Solo' },
   { mode: 'battle', image: translate(battleFrUrl, battleEnUrl, battleEsUrl), alt: translate('Monde Combat du mode Bataille', 'Combat mode arena'), name: translate('Bataille', 'Combat'), className: 'battle-card', multiplayer: true, description: () => translate('Arène limitée · Rouge, Bleu ou chacun son équipe', 'Limited arena · Red, Blue, or free-for-all'), tag: () => translate('1 joueur = 1 équipe possible', 'One player can be a team') },
-  { mode: 'pirates', image: translate(piratesUrl, piratesUrl, piratesEsUrl), alt: translate('Bataille navale du mode Pirates', 'Pirate naval battle'), name: translate('Pirates', 'Pirates', 'Piratas'), className: 'battle-card pirates-card', multiplayer: true, description: () => translate('Deux navires, un trésor à détruire et des abordages en équipe', 'Two ships, a treasure to destroy, and team boarding'), tag: () => translate('Combat naval', 'Naval combat') },
+  { id: 'pirates-ships', mode: 'pirates', image: translate(piratesUrl, piratesUrl, piratesEsUrl), alt: translate('Bataille navale du mode Pirates', 'Pirate naval battle'), name: translate('Pirates', 'Pirates', 'Piratas'), className: 'battle-card pirates-card', multiplayer: true, description: () => translate('Deux navires, un trésor à détruire et des abordages en équipe', 'Two ships, a treasure to destroy, and team boarding'), tag: () => translate('Combat naval', 'Naval combat') },
+  { id: 'pirates-fortress', mode: 'pirates', template: 'fortress', image: translate(piratesUrl, piratesUrl, piratesEsUrl), alt: translate('Forteresses du mode Pirates', 'Pirate fortresses'), name: translate('Forteresse des Pirates', 'Pirate Fortress'), className: 'battle-card pirates-card', multiplayer: true, description: () => translate('Deux forteresses à attaquer avec remparts, tours et trésors', 'Two fortresses to attack with walls, towers and treasures'), tag: () => translate('Siège des forts', 'Fortress siege') },
   { mode: 'football', image: translate(footballFrUrl, footballEnUrl, footballEsUrl), alt: translate('Stade et ballon du mode Football', 'Football stadium and ball'), name: 'Football', className: 'battle-card football-card', multiplayer: true, description: () => translate('Match de 5 minutes, cartons, corners, penaltys et hors-jeu', 'Five-minute match, cards, corners, penalties, and offside'), tag: () => translate('Rouge contre Bleu', 'Red versus Blue') },
   { mode: 'maze', image: translate(mazeFrUrl, mazeEnUrl, mazeEsUrl), alt: translate('Parcours d’obstacles du mode Labyrinthe', 'Maze obstacle courses'), name: translate('100 Parcours Labyrinthe', '100 Maze Courses'), className: 'battle-card maze-card', description: () => translate('100 parcours d’obstacles différents avec lave et labyrinthe', '100 different obstacle courses with lava and maze'), tag: () => translate('100 parcours', '100 courses') },
   { mode: 'heist', image: translate(heistFrUrl, heistEnUrl, heistEsUrl), alt: translate('Ville sécurisée du mode Braquage', 'Secured city heist'), name: translate('Braquage & Évasion', 'Heist & Escape'), className: 'battle-card', description: () => translate('Voleurs contre gardiens · braquage, prison et tunnel d’évasion', 'Thieves versus guards · robbery, prison and escape tunnel'), tag: () => translate('Équipes et évasion', 'Teams and escape') },
@@ -175,7 +178,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
       requestRoomMode(gameplayMode);
       const minigameRoom = `salon-${crypto.randomUUID().slice(0, 8)}`;
       setPendingWorld(minigameRoom);
-      regenerate(gameplayMode, minigameRoom);
+      regenerate(gameplayMode, minigameRoom, options?.template);
       configure({ playerName: useMultiplayerStore.getState().playerName, room: minigameRoom, server: options?.server ?? useMultiplayerStore.getState().server });
       return;
     }
@@ -196,7 +199,11 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
       void onPlay();
     }
   };
-  const openJoinMode = (mode: GameplayMode) => {
+  const openJoinMode = (mode: GameplayMode, card?: ModeCard) => {
+    if (card?.template) {
+      create(mode, false, { name: card.name, mode, template: card.template, multiplayer: enabled, canBreak: true, canPlace: true, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true });
+      return;
+    }
     if (!enabled) {
       create(mode, false);
       return;
@@ -227,8 +234,8 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
             {MODE_CARDS().map((card) => {
               const playerCount = modePlayerCounts[card.mode] ?? 0;
               return (
-                <div className="world-card-shell" key={card.mode}>
-                  <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode)} disabled={pendingWorld !== null}>
+                <div className="world-card-shell" key={card.id ?? card.mode}>
+                  <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode, card)} disabled={pendingWorld !== null}>
                     <img src={card.image} alt={card.alt} />
                     <span className="world-card-label"><strong>{card.name}</strong></span>
                     <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{card.tag(enabled)}</span>

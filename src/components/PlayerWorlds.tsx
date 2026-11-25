@@ -21,7 +21,7 @@ export function PlayerWorlds({ onPlay }: { onPlay: () => void | Promise<void> })
     return () => { active = false; window.clearInterval(timer); };
   }, [status]);
 
-  const playersWorlds = worlds.slice(0, 12);
+  const playersWorlds = worlds.filter((world) => world.ownerId !== selfId).slice(0, 12);
   return (
     <section className="community-worlds player-worlds" aria-label={translate('Jeux des joueurs', 'Player games')}>
       <div className="community-heading"><div><h2>{translate('Jeux des joueurs', 'Player games')}</h2><p>{translate('Retrouve tes mondes et ceux créés par les autres joueurs.', 'Find your worlds and worlds created by other players.')}</p></div></div>

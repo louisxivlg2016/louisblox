@@ -21,6 +21,7 @@ export function ProtectionPanel() {
       <h3>{translate('Protection du territoire', 'Territory protection')}</h3>
       <p>{translate('Zone d’1 km × 1 km autour du centre du monde, propriété de', '1 km × 1 km area around the world center, owned by')} {owner}.</p>
       <label className="protection-option"><input type="checkbox" checked={protection.enabled} disabled={!manage} onChange={(event) => updateProtection({ enabled: event.target.checked })} /> {translate('Activer la protection', 'Enable protection')}</label>
+      {manage && <label className="protection-option"><input type="checkbox" checked={protection.allowedPlayersOnly === true} onChange={(event) => updateProtection({ allowedPlayersOnly: event.target.checked })} /> {translate('Seulement les joueurs cochés peuvent entrer dans mon monde', 'Only selected players can enter my world')}</label>}
       {manage && (
         <>
           <label className="protection-option"><input type="checkbox" checked={protection.canBreak === true} onChange={(event) => updateProtection({ canBreak: event.target.checked })} /> {translate('Les autres joueurs peuvent casser des blocs', 'Other players can break blocks')}</label>
@@ -43,7 +44,7 @@ export function ProtectionPanel() {
                     checked={protection.allowedPlayerIds.includes(playerId)}
                     onChange={(event) => updateProtection({ allowedPlayerIds: event.target.checked ? [...protection.allowedPlayerIds, playerId] : protection.allowedPlayerIds.filter((id) => id !== playerId) })}
                   />
-                  <span>{name} · {translate('construire et détruire', 'build and break')}</span>
+                  <span>{name} · {protection.allowedPlayersOnly ? translate('entrer et construire', 'enter and build') : translate('construire et détruire', 'build and break')}</span>
                 </label>
                 <button type="button" className="secondary-button" onClick={() => { if (window.confirm(translate(`Exclure ${name} de ce monde ? Tu pourras le réadmettre ensuite.`, `Ban ${name} from this world? You can readmit them later.`))) banPlayer(playerId); }}>{translate('Exclure', 'Ban')}</button>
               </div>

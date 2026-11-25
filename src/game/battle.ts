@@ -8,6 +8,7 @@ import { world } from './world';
 import { dismount } from './vehicles';
 import { useEffectStore } from './effects';
 import { pirateSpawn } from './pirates';
+import { pirateFortressSpawn } from './pirateFortress';
 import { footballSpawn } from './footballArena';
 
 export type BattleHitKind = 'bullet' | 'rifle' | 'arrow' | 'bomb' | 'melee';
@@ -68,7 +69,7 @@ export function clearBattle() {
   useBattleStore.getState().clear();
 }
 
-export function respawnAtBase(world: World, team: BattleTeam | null, position = useGameStore.getState().gameplayMode === 'pirates' ? pirateSpawn(team === 'blue' ? 'blue' : 'red') : useGameStore.getState().gameplayMode === 'football' ? footballSpawn(team === 'blue' ? 'blue' : 'red') : battleSpawn(team)) {
+export function respawnAtBase(world: World, team: BattleTeam | null, position = useGameStore.getState().gameplayMode === 'pirates' ? useGameStore.getState().worldTemplate === 'fortress' ? pirateFortressSpawn(team === 'blue' ? 'blue' : 'red') : pirateSpawn(team === 'blue' ? 'blue' : 'red') : useGameStore.getState().gameplayMode === 'football' ? footballSpawn(team === 'blue' ? 'blue' : 'red') : battleSpawn(team)) {
   const player = world.queryFirst(Player);
   if (!player) return;
   useEffectStore.getState().reset();
