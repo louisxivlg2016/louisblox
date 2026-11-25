@@ -265,9 +265,15 @@
         border-radius: 8px;
       }
       .touch-button:active { background: rgba(105, 151, 77, 0.92); transform: translateY(2px); }
-      .world-clock { position: absolute; top: 18px; left: 18px; z-index: 12; display: flex; align-items: baseline; gap: 8px; pointer-events: none; padding: 7px 10px; color: #f4f7df; background: rgba(24, 42, 29, .9); border: 2px solid #71885e; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+      .world-clock { position: absolute; top: 18px; left: 18px; z-index: 12; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; pointer-events: none; padding: 7px 10px; color: #f4f7df; background: rgba(24, 42, 29, .9); border: 2px solid #71885e; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
       .world-clock strong { font-size: 17px; letter-spacing: 1px; }
       .world-clock span { color: #d8e5ca; font-size: 11px; }
+      .world-clock-icon { display: block; width: 20px; height: 20px; flex: none; }
+      .world-clock > span[data-clock-period-icon], .world-clock > span[data-weather-icon] { display: flex; align-items: center; }
+      .world-weather-icon { width: 22px; height: 22px; }
+      .world-calendar { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 9px; width: 100%; padding-top: 4px; border-top: 1px solid rgba(216,229,202,.3); }
+      .world-season { display: inline-flex; align-items: center; gap: 4px; }
+      .world-season .world-clock-icon { width: 16px; height: 16px; }
       .world-clock.night { background: rgba(28, 36, 64, .92); border-color: #7180a8; }
       .world-clock.evening { background: rgba(69, 45, 32, .92); border-color: #a8845e; }
       @media (pointer: coarse) { .world-clock { top: 8px; left: 8px; padding: 5px 8px; } .world-clock strong { font-size: 14px; } .world-clock span { font-size: 9px; } }

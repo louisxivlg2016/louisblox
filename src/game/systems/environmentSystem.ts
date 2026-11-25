@@ -75,6 +75,7 @@ export function environmentSystem(world: World, delta: number, camera: Camera) {
       dayProgress: environment.dayProgress,
       weather: environment.weather,
       biome: environment.biome,
+      elapsed: environment.elapsed,
     });
   }
 }

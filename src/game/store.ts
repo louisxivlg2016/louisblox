@@ -16,7 +16,7 @@ import { translate } from './language';
 export type GameMode = 'menu' | 'play' | 'pause';
 export type WeatherKind = 'clear' | 'rain' | 'snow';
 type Coordinates = { x: number; y: number; z: number };
-type EnvironmentSnapshot = { dayProgress: number; biome: Biome; weather: WeatherKind };
+type EnvironmentSnapshot = { dayProgress: number; biome: Biome; weather: WeatherKind; elapsed: number };
 
 type GameStore = {
   mode: GameMode;
@@ -153,7 +153,7 @@ export const useGameStore = create<GameStore>((set) => ({
   shopOpen: false,
   bookOpen: false,
   coordinates: { x: 0, y: 8, z: 0 },
-  environment: { dayProgress: 0.38, biome: 'prairie', weather: 'clear' },
+  environment: { dayProgress: 0.38, biome: 'prairie', weather: 'clear', elapsed: 0 },
   checkpoint: null,
   setCheckpoint: (checkpoint) => set({ checkpoint }),
   setMode: (mode) => set({ mode }),
