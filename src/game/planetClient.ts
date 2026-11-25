@@ -46,7 +46,7 @@ export function onPlanetMined(kind: BlockKind) {
   ensurePlanet();
   const state = usePlanetStore.getState();
   const bonus = kind === BlockKind.DiamondOre ? 50 : kind === BlockKind.GoldOre ? 25 : kind === BlockKind.IronOre ? 15 : kind === BlockKind.CoalOre ? 10 : 5;
-  const resource = kind === BlockKind.CoalOre || kind === BlockKind.IronOre || kind === BlockKind.GoldOre || kind === BlockKind.DiamondOre ? kind : BlockKind.Stone;
+  const resource = kind;
   usePlanetStore.setState({ mined: state.mined + 1, coins: state.coins + bonus });
   changeInventory(resource, 1);
   if (state.mined % 3 === 0) changeInventory(BlockKind.OakPlanks, 1);
