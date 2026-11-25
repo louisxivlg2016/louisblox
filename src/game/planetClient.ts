@@ -93,7 +93,7 @@ export function planetControlSystem(world: World) {
   ensurePlanet();
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return true;
-  if (player.y < -20) {
+  if (player.y < 3) {
     respawnAtBase(world, null, PLANET_SPAWN);
     useGameStore.getState().setNotice(translate('Chute dans l’espace · retour sur la planète mère.', 'Fell into space · returned to the home planet.'));
   }
