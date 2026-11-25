@@ -72,20 +72,20 @@ function clear(blocks: Voxel[], x: number, y: number, z: number) {
   if (index >= 0) blocks.splice(index, 1);
 }
 
-function building(blocks: Voxel[], centerX: number, centerZ: number, width: number, depth: number, height: number, wall: BlockKind, roof: BlockKind) {
+function building(blocks: Voxel[], centerX: number, centerZ: number, width: number, depth: number, height: number, wall: BlockKind, roof: BlockKind, protectedWalls = false) {
   const x1 = centerX - Math.floor(width / 2);
   const x2 = x1 + width - 1;
   const z1 = centerZ - Math.floor(depth / 2);
   const z2 = z1 + depth - 1;
   for (let x = x1; x <= x2; x += 1) for (let z = z1; z <= z2; z += 1) {
-    put(blocks, x, 7, z, BlockKind.OakPlanks);
-    put(blocks, x, 7 + height + 1, z, roof);
+    put(blocks, x, 7, z, BlockKind.OakPlanks, protectedWalls);
+    put(blocks, x, 7 + height + 1, z, roof, protectedWalls);
     const edge = x === x1 || x === x2 || z === z1 || z === z2;
     if (!edge) continue;
     for (let y = 8; y <= 7 + height; y += 1) {
       const door = z === z2 && Math.abs(x - centerX) <= 1 && y <= 10;
       const window = y >= 10 && y <= 11 && (x + z) % 4 === 0;
-      if (!door) put(blocks, x, y, z, window ? BlockKind.Glass : wall, !window);
+      if (!door) put(blocks, x, y, z, window ? BlockKind.Glass : wall, protectedWalls && !window);
     }
   }
   for (let x = centerX - 1; x <= centerX + 1; x += 1) for (let y = 8; y <= 10; y += 1) put(blocks, x, y, z2, BlockKind.DoorBlack, true, 'north');
@@ -128,7 +128,7 @@ export function generateHeistChunk(cx: number, cz: number, seed = 0): GeneratedC
   for (let x = cx * CHUNK_SIZE; x < (cx + 1) * CHUNK_SIZE; x += 1) for (let z = cz * CHUNK_SIZE; z < (cz + 1) * CHUNK_SIZE; z += 1) {
     if (x < -HEIST_CITY_LIMIT || x >= HEIST_CITY_LIMIT || z < -HEIST_CITY_LIMIT || z >= HEIST_CITY_LIMIT) continue;
     const road = roadDistance(x) <= 3 || roadDistance(z) <= 3;
-    put(blocks, x, 7, z, road ? BlockKind.ConcreteGray : BlockKind.ConcreteLightGray);
+    put(blocks, x, 7, z, road ? BlockKind.ConcreteGray : BlockKind.ConcreteLightGray, false);
     const boundary = x === -HEIST_CITY_LIMIT || x === HEIST_CITY_LIMIT - 1 || z === -HEIST_CITY_LIMIT || z === HEIST_CITY_LIMIT - 1;
     if (boundary) for (let y = 8; y <= 27; y += 1) put(blocks, x, y, z, BlockKind.Bedrock);
     if (!boundary && road && (roadDistance(x) === 0 || roadDistance(z) === 0) && (x + z) % 4 === 0) put(blocks, x, 8, z, BlockKind.CarpetWhite, false);
@@ -148,6 +148,7 @@ export function generateHeistChunk(cx: number, cz: number, seed = 0): GeneratedC
   put(blocks, -35, 8, -25, BlockKind.CarpetRed, false);
 
   building(blocks, 0, -30, 28, 24, 12, BlockKind.WhiteBrick, BlockKind.ConcreteGray);
+  for (let x = -1; x <= 1; x += 1) for (let y = 8; y <= 10; y += 1) put(blocks, x, y, -19, BlockKind.WhiteBrick, false);
   for (let x = -13; x <= 12; x += 1) for (let z = -41; z <= -20; z += 1) if (!(x === 0 && z === -41)) put(blocks, x, 13, z, BlockKind.OakPlanks);
   ladder(blocks, 0, -41, 8, 20);
   put(blocks, 0, 20, -41, BlockKind.TrapdoorIron, false);
@@ -171,7 +172,7 @@ export function generateHeistChunk(cx: number, cz: number, seed = 0): GeneratedC
   for (let y = 2; y <= 4; y += 1) put(blocks, 35, y, -15, BlockKind.GrayBrick, false);
   sewerZ(blocks, -15, -8, 35);
 
-  building(blocks, 38, 38, 24, 20, 5, BlockKind.Bedrock, BlockKind.Bedrock);
+  building(blocks, 38, 38, 24, 20, 5, BlockKind.Bedrock, BlockKind.Bedrock, true);
   for (const [cellX, cellZ] of [[31, 34], [37, 34], [43, 34], [31, 42], [37, 42], [43, 42]] as const) {
     for (let x = cellX - 2; x <= cellX + 1; x += 1) for (let z = cellZ - 2; z <= cellZ + 1; z += 1) {
       if (x !== cellX - 2 && x !== cellX + 1 && z !== cellZ - 2 && z !== cellZ + 1) continue;

@@ -8,8 +8,9 @@ import { useBattleStore, respawnAtBase } from './battle';
 import { Player, PlayerBody, PlayerPosition, PlayerVelocity } from './traits';
 import { HEIST_DEPOSIT, HEIST_ENTRIES, HEIST_GUARD_SPAWN, HEIST_HIDEOUT, HEIST_LOOT, HEIST_PRISON_SPAWN, HEIST_TUNNEL_EXIT } from './heistCity';
 import type { HeistEntry, HeistLoot } from './heistCity';
-import { addVoxel, getBlockIndex, removeVoxel } from './chunks';
-import { BlockKind, voxelKey } from './voxel';
+import { addVoxel, getBlockIndex, removeVoxel, replaceVoxel } from './chunks';
+import { BlockKind, raycastVoxel, voxelKey } from './voxel';
+import { isDoor, isTrapdoor } from './extraBlocks';
 import { translate } from './language';
 import { isDown } from './input';
 import { moveVoxelCharacter } from './systems/collisionSystem';
@@ -176,7 +177,10 @@ function openEntry(world: KootaWorld, entry: HeistEntry) {
   const blocks = getBlockIndex(world);
   for (const position of entry.blocks) {
     const block = blocks.get(voxelKey(position.x, position.y, position.z));
-    if (block) removeVoxel(world, { block, ...position, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, true);
+    if (!block) continue;
+    const hit = { block, ...position, normal: { x: 0, y: 1, z: 0 }, distance: 0 };
+    if (isDoor(block.kind) || isTrapdoor(block.kind)) replaceVoxel(world, hit, block.kind, true, undefined, undefined, undefined, undefined, undefined, undefined, true);
+    else removeVoxel(world, hit, true);
   }
   if (entry.requiresTnt) consumeHeistGadget(BlockKind.Tnt);
   if (entry.destination) {
@@ -189,6 +193,17 @@ function openEntry(world: KootaWorld, entry: HeistEntry) {
   }
   useGameStore.getState().setNotice(translate(`${entry.name} ouvert.`, `${entry.name} opened.`));
 }
+function toggleDoor(world: KootaWorld, camera: Camera, player: Vector3, actions: { place: number; harvest: number; tap: number; interact: number }) {
+  if (actions.harvest <= 0 && actions.interact <= 0 && actions.tap <= 0) return;
+  const origin = player.clone();
+  origin.y += 1.62;
+  camera.getWorldDirection(direction);
+  const hit = raycastVoxel(getBlockIndex(world), origin, direction, 4, true);
+  if (!hit || !isDoor(hit.block.kind) && !isTrapdoor(hit.block.kind)) return;
+  if (HEIST_ENTRIES.some((entry) => entry.blocks.some((position) => position.x === hit.x && position.y === hit.y && position.z === hit.z))) return;
+  replaceVoxel(world, hit, hit.block.kind, !hit.block.open, undefined, undefined, undefined, undefined, undefined, undefined, true);
+}
+
 function updateEntries(world: KootaWorld, player: Vector3, role: HeistRole | null, selected: SelectedKind, actions: { place: number; harvest: number; tap: number; interact: number }) {
   const entry = nearestEntry(world, player);
   const current = entryOpenings.get(world);
@@ -243,7 +258,7 @@ function useSmoke(world: KootaWorld, camera: Camera, player: Vector3) {
 }
 
 function singleHuman() {
-  return !useMultiplayerStore.getState().enabled || Object.keys(useRemotePlayerStore.getState().players).length === 0;
+  return Object.keys(useRemotePlayerStore.getState().players).length === 0;
 }
 const botWaypoints = [
   { x: 38, y: 8.51, z: 25 },
@@ -313,6 +328,7 @@ export function heistControlSystem(world: KootaWorld, camera: Camera, actions: {
   const pressedGrapple = isDown('KeyG');
   if (pressedGrapple && !grappleDown.get(world)) useGrapple(world, camera);
   grappleDown.set(world, pressedGrapple);
+  toggleDoor(world, camera, player, actions);
 
   if (current.role === 'thief' && current.phase === 'running') {
     updateEntries(world, player, current.role, useGameStore.getState().selected, actions);
