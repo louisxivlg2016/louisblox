@@ -1,4 +1,4 @@
-import { Box3, BoxGeometry, BufferGeometry, CapsuleGeometry, CylinderGeometry, Group, MathUtils, Mesh, Vector3 } from 'three';
+import { Box3, BoxGeometry, BufferGeometry, CapsuleGeometry, CylinderGeometry, Group, MathUtils, Mesh, MeshLambertMaterial, Vector3 } from 'three';
 import type { Material, Object3D } from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { animalMaterial } from './animalTextures';
@@ -43,7 +43,7 @@ function addPrincessHair(root: Group, width: number, height: number, depth: numb
   const hair = new Group();
   hair.name = 'princess-back-hair';
   hair.position.y = offsetY;
-  const material = animalMaterial(hairColor ?? '#5a321c');
+  const material = new MeshLambertMaterial({ color: hairColor ?? '#5a321c' });
   const back = new Mesh(new CapsuleGeometry(width * 0.12, height * 0.18, 6, 12), material);
   back.scale.set(1.35, 1, 0.65);
   back.position.set(0, floor + height * 0.76, -depth * 0.55);
