@@ -30,6 +30,23 @@ export function GoldBagModel() {
   return <ScaledModel url={goldBagUrl} height={0.65} />;
 }
 
+function DiamondBagModel() {
+  return <group>
+    <PixelPart position={[0, 0.18, 0]} size={[0.58, 0.4, 0.42]} color="#284760" />
+    <PixelPart position={[0, 0.43, 0]} size={[0.42, 0.12, 0.3]} color="#d6a94d" />
+    {[[-0.16, 0.58, 0], [0.08, 0.62, 0.08], [0.2, 0.55, -0.08]].map((position, index) => <PixelPart key={index} position={position as [number, number, number]} size={[0.2, 0.2, 0.2]} color="#67e6f2" />)}
+  </group>;
+}
+
+function CrownModel() {
+  return <group>
+    <PixelPart position={[0, 0.12, 0]} size={[0.72, 0.22, 0.52]} color="#e6b938" />
+    <PixelPart position={[0, 0.26, 0]} size={[0.64, 0.12, 0.46]} color="#f5d968" />
+    {[-0.27, -0.09, 0.09, 0.27].map((x, index) => <group key={x}><PixelPart position={[x, 0.48, 0]} size={[0.13, 0.48, 0.13]} color="#e6b938" /><PixelPart position={[x, 0.72, 0]} size={[0.18, 0.16, 0.18]} color={index % 2 === 0 ? '#d73f54' : '#4a87d8'} /></group>)}
+    <PixelPart position={[0, 0.3, 0.25]} size={[0.16, 0.16, 0.08]} color="#d73f54" />
+  </group>;
+}
+
 export function HeistGuardBot() {
   const bot = useHeistStore((state) => state.bot);
   if (!bot.enabled) return null;
@@ -52,8 +69,10 @@ export function HeistLoot() {
   const now = Date.now();
   return (
     <>
-      {HEIST_LOOT.filter((loot) => (respawns[loot.id] ?? 0) <= now).map((loot) => (
-        <group key={loot.id} name={`heist-loot-${loot.id}`} position={[loot.x, loot.y - 0.45, loot.z]}><GoldBagModel /></group>
+      {HEIST_LOOT.filter((loot) => !loot.id.startsWith('painting-') && (respawns[loot.id] ?? 0) <= now).map((loot) => (
+        <group key={loot.id} name={`heist-loot-${loot.id}`} position={[loot.x, loot.id === 'crown' ? loot.y - 0.05 : loot.y - 0.45, loot.z]}>
+          {loot.id === 'crown' ? <CrownModel /> : loot.building === 'jewelry' ? <DiamondBagModel /> : <GoldBagModel />}
+        </group>
       ))}
       {traps.map((trap) => <group key={`${trap.x},${trap.y},${trap.z}`} position={[trap.x, trap.y - 0.45, trap.z]}><PixelPart position={[0, 0, 0]} size={[0.9, 0.08, 0.9]} color="#6b5b78" /></group>)}
       <HeistGuardBot />

@@ -23,9 +23,9 @@ export const HEIST_LOOT: HeistLoot[] = [
   { id: 'diamonds-2', building: 'jewelry', name: 'Sac de diamants 2', value: 500, x: -35, y: 8, z: -25 },
   { id: 'diamonds-3', building: 'jewelry', name: 'Sac de diamants 3', value: 500, x: -30, y: 8, z: -25 },
   { id: 'crown', building: 'museum', name: 'Couronne royale', value: 2000, x: 0, y: 8, z: -30 },
-  { id: 'painting-1', building: 'museum', name: 'Tableau 1', value: 500, x: -10, y: 9, z: -30 },
-  { id: 'painting-2', building: 'museum', name: 'Tableau 2', value: 500, x: 10, y: 9, z: -30 },
-  { id: 'painting-3', building: 'museum', name: 'Tableau 3', value: 500, x: 0, y: 14, z: -30 },
+  { id: 'painting-1', building: 'museum', name: 'Tableau 1', value: 500, x: -13, y: 10, z: -30 },
+  { id: 'painting-2', building: 'museum', name: 'Tableau 2', value: 500, x: 12, y: 10, z: -30 },
+  { id: 'painting-3', building: 'museum', name: 'Tableau 3', value: 500, x: 0, y: 14, z: -41 },
   { id: 'gold-1', building: 'bank', name: 'Sac d’or 1', value: 1500, x: 30, y: 4, z: -25 },
   { id: 'gold-2', building: 'bank', name: 'Sac d’or 2', value: 1500, x: 35, y: 4, z: -25 },
   { id: 'gold-3', building: 'bank', name: 'Sac d’or 3', value: 1500, x: 40, y: 4, z: -25 },
@@ -210,7 +210,39 @@ export function generateHeistChunk(cx: number, cz: number, seed = 0): GeneratedC
     [35, 10, -10, 'GRANDE BANQUE\nCOFFRE-FORT'],
     [38, 10, 48, 'PRISON\nTUNNEL D’ÉVASION'],
   ] as const) put(blocks, x, y, z, BlockKind.Sign, true, 'south').text = text;
-  for (const loot of HEIST_LOOT) put(blocks, loot.x, loot.y, loot.z, BlockKind.Chest);
+  for (const diamond of HEIST_LOOT.filter((loot) => loot.building === 'jewelry')) {
+    put(blocks, diamond.x - 1, 8, diamond.z, BlockKind.Glass, false);
+    put(blocks, diamond.x + 1, 8, diamond.z, BlockKind.Glass, false);
+    put(blocks, diamond.x, 8, diamond.z + 1, BlockKind.Glass, false);
+    put(blocks, diamond.x, 9, diamond.z, BlockKind.Glass, false);
+    put(blocks, diamond.x, 7, diamond.z, BlockKind.ConcreteBlack);
+  }
+  for (const x of [-42, -28]) for (const z of [-30, -20]) put(blocks, x, 12, z, BlockKind.ModernCeilingLight);
+  for (const [x, z] of [[-8, -26], [8, -26], [-8, -35], [8, -35]] as const) {
+    put(blocks, x, 8, z, BlockKind.StairOak, true, 'north');
+    put(blocks, x, 9, z + 1, BlockKind.OakPlanks);
+  }
+  put(blocks, 0, 7, -30, BlockKind.ConcreteBlack);
+  for (const [x, z] of [[-11, -25], [11, -25], [-11, -36], [11, -36]] as const) put(blocks, x, 17, z, BlockKind.ModernCeilingLight);
+
+  for (let x = 29; x <= 41; x += 3) put(blocks, x, 8, -15, BlockKind.GrayBrick);
+  for (const [x, z] of [[25, -25], [32, -20], [42, -32]] as const) {
+    put(blocks, x, 15, z, BlockKind.OakPlanks);
+    put(blocks, x + 1, 15, z, BlockKind.StairOak, true, 'west');
+    put(blocks, x, 16, z + 1, BlockKind.ModernCeilingLight);
+  }
+  for (const [x, z] of [[27, -30], [27, -22], [43, -30], [43, -22], [31, -34], [39, -34]] as const) {
+    put(blocks, x, 3, z, BlockKind.SafeChest);
+    put(blocks, x, 4, z, BlockKind.SafeChest);
+  }
+  for (const x of [30, 40]) put(blocks, x, 12, -13, BlockKind.ModernCeilingLight);
+
+  for (const loot of HEIST_LOOT) {
+    if (loot.id === 'painting-1') put(blocks, loot.x, loot.y, loot.z, BlockKind.PaintingCastle, true, 'east');
+    else if (loot.id === 'painting-2') put(blocks, loot.x, loot.y, loot.z, BlockKind.PaintingForest, true, 'west');
+    else if (loot.id === 'painting-3') put(blocks, loot.x, loot.y, loot.z, BlockKind.PaintingKing, true, 'south');
+    else if (loot.id !== 'crown') put(blocks, loot.x, loot.y, loot.z, BlockKind.Chest);
+  }
   const unique = [...new Map(blocks.map((block) => [voxelKey(block.x, block.y, block.z), block])).values()];
   return { blocks: unique.filter((block) => Math.floor(block.x / CHUNK_SIZE) === cx && Math.floor(block.z / CHUNK_SIZE) === cz), water: [] };
 }
