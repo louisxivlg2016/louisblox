@@ -154,7 +154,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   if (state.grounded) airJumps.set(world, 0);
   if (flying) velocity.y = (Number(spaceDown) - Number(isDown('KeyN'))) * FLY_SPEED;
   else if (parachuting) velocity.y = -4.5;
-  else if (onLadder) velocity.y = spaceDown ? 3.8 : isDown('KeyN') ? gameplaySpeed === 'heist' ? -7 : -2.8 : Math.max(velocity.y, gameplaySpeed === 'heist' ? -2.5 : -0.8);
+  else if (onLadder) velocity.y = spaceDown ? 3.8 : isDown('KeyN') ? -7 : Math.max(velocity.y, -2.5);
   else if (inWater) velocity.y = swimVerticalVelocity(swimming, velocity.y, isDown('KeyN'), spaceDown, position.y);
   else if (state.grounded && spaceDown) velocity.y = JUMP_SPEED * jumpMultiplier();
   else if (spacePressed && hasEffect('doubleJump') && (airJumps.get(world) ?? 0) < 1) {
