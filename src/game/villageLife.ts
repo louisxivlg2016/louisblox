@@ -10,9 +10,11 @@ import { replaceVoxel } from './chunks';
 import { restaurantAt, tradeCityAt, villageBeds } from './villages';
 import { openRestaurant, useTradeStore } from './trading';
 import { useGameStore } from './store';
+import { findPath, walkableGround } from './systems/traderNavigation';
 import { translate } from './language';
 
 const watchWarnings = new Map<Entity, number>();
+const sleepPaths = new Map<Entity, { key: string; points: Array<{ x: number; y: number; z: number }> }>();
 
 function wake(world: World, entity: Entity) {
   const trader = entity.get(Trader);
@@ -98,15 +100,47 @@ export function updateVillageSleep(world: World, entity: Entity, dt: number, tal
   const doorReached = trader.bedDoorReached || doorDistance <= 1.2;
   if (doorReached && !trader.bedDoorReached) entity.set(Trader, { bedDoorReached: true });
   const targetZ = position.z > trader.bedZ + 1 && !doorReached ? trader.bedZ + 3 : trader.bedZ + 0.55;
-  const dx = trader.bedX - position.x;
-  const dz = targetZ - position.z;
+  let dx = trader.bedX - position.x;
+  let dz = targetZ - position.z;
   if (Math.hypot(dx, dz) > 0.24) {
     openDoors(world, position);
-    const distance = Math.hypot(dx, dz);
-    const step = Math.min(distance, dt * 1.25);
-    const nextX = position.x + dx / distance * step;
-    const nextZ = position.z + dz / distance * step;
-    const ground = Math.max(groundAt(world, nextX, nextZ, position.y + 2.05), trader.bedY - 0.5);
+    const pathKey = `${trader.bedX},${targetZ}`;
+    let path = sleepPaths.get(entity);
+    if (path?.key !== pathKey) {
+      sleepPaths.delete(entity);
+      path = undefined;
+    }
+    if (path && Math.hypot(path.points[0].x - position.x, path.points[0].z - position.z) < 0.16) {
+      path.points.shift();
+      if (path.points.length === 0) {
+        sleepPaths.delete(entity);
+        path = undefined;
+      }
+    }
+    let distance = Math.hypot(dx, dz);
+    let step = Math.min(distance, dt * 1.25);
+    let nextX = position.x + dx / distance * step;
+    let nextZ = position.z + dz / distance * step;
+    let ground = walkableGround(world, nextX, nextZ, position.y);
+    if (ground === null) {
+      if (!path) {
+        const points = findPath(world, position, trader.bedX, targetZ, false);
+        if (points && points.length > 0) {
+          path = { key: pathKey, points };
+          sleepPaths.set(entity, path);
+        }
+      }
+      if (path) {
+        const waypoint = path.points[0];
+        dx = waypoint.x - position.x;
+        dz = waypoint.z - position.z;
+        distance = Math.hypot(dx, dz);
+        step = Math.min(distance, dt * 1.25);
+        nextX = position.x + dx / distance * step;
+        nextZ = position.z + dz / distance * step;
+        ground = walkableGround(world, nextX, nextZ, position.y);
+      }
+    }
     if (ground !== null) {
       position.set(nextX, ground, nextZ);
       if (mesh) {
@@ -116,9 +150,10 @@ export function updateVillageSleep(world: World, entity: Entity, dt: number, tal
       }
     }
     if (trader.sleeping) entity.set(Trader, { sleeping: false });
-    entity.set(Trader, { walking: true });
+    entity.set(Trader, { walking: ground !== null });
     return true;
   }
+  sleepPaths.delete(entity);
   position.set(trader.bedX, trader.bedY + 0.42, trader.bedZ + 0.55);
   if (!trader.sleeping || trader.walking) entity.set(Trader, { sleeping: true, walking: false });
   if (mesh) {
