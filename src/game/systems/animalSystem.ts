@@ -126,7 +126,7 @@ function recoverSafePosition(world: World, kind: AnimalKind, position: Vector3, 
   const saved = safePositions.get(world)?.get(entity);
   if (!saved || saved.distanceToSquared(position) < 0.0001 || !withinHomeBiome(world, entity, saved.x, saved.z) || !isLoaded(world, saved.x, saved.z)) return false;
   const ground = groundAt(world, saved.x, saved.z, saved.y + 0.2);
-  if (kind === 'zombie' && ground > heightAt(Math.round(saved.x), Math.round(saved.z), getWorldSeed(world)) + 1.05) return false;
+  if (kind === 'zombie' && useGameStore.getState().gameplayMode !== 'planet' && ground > heightAt(Math.round(saved.x), Math.round(saved.z), getWorldSeed(world)) + 1.05) return false;
   if (!walkableGround(world, saved.x, saved.z, ground) || !bodyClear(world, saved.x, saved.z, ground)) return false;
   position.set(saved.x, ground, saved.z);
   return true;
@@ -140,7 +140,7 @@ function rescueAnimal(world: World, kind: AnimalKind, position: Vector3, entity:
     const z = position.z + dz * direction;
     if (!withinHomeBiome(world, entity, x, z) || !isLoaded(world, x, z)) continue;
     const ground = groundAt(world, x, z, position.y + 2.2);
-    if (kind === 'zombie' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) continue;
+    if (kind === 'zombie' && useGameStore.getState().gameplayMode !== 'planet' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) continue;
     if (!walkableGround(world, x, z, ground) || ground > position.y + climbRise(entity) || position.y - ground > 4 || !bodyClear(world, x, z, ground)) continue;
     position.set(x, ground, z);
     return true;
@@ -190,7 +190,7 @@ function moveInDirection(world: World, kind: AnimalKind, position: Vector3, moti
   if (!isLoaded(world, x, z)) return false;
   openBearDoor(world, x, position.y, z, kind);
   const ground = groundAt(world, x, z, position.y + climbRise(entity) + 0.05);
-  if (kind === 'zombie' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) return false;
+  if (kind === 'zombie' && useGameStore.getState().gameplayMode !== 'planet' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) return false;
   if (!walkableGround(world, x, z, ground) || ground > position.y + climbRise(entity) || (position.y - ground > MAX_WALK_DOWN && motion.grounded) || !bodyClear(world, x, z, ground)) return false;
   position.x = x;
   position.z = z;
@@ -222,7 +222,7 @@ function moveAroundObstacle(world: World, kind: AnimalKind, position: Vector3, m
 }
 
 function keepZombieOnNaturalGround(world: World, kind: AnimalKind, position: Vector3, motion: Motion) {
-  if (kind !== 'zombie') return;
+  if (kind !== 'zombie' || useGameStore.getState().gameplayMode === 'planet') return;
   const naturalGround = heightAt(Math.round(position.x), Math.round(position.z), getWorldSeed(world)) + 0.5;
   const ground = groundAt(world, position.x, position.z, position.y + MAX_CLIMB_RISE + 0.05);
   if (ground <= naturalGround + 1.05) return;
@@ -236,7 +236,7 @@ function keepZombieOnNaturalGround(world: World, kind: AnimalKind, position: Vec
 
 function moveAnimalStep(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0, speedOverride?: number) {
   keepZombieOnNaturalGround(world, kind, position, motion);
-  const naturalGround = kind === 'zombie' ? heightAt(Math.round(position.x), Math.round(position.z), getWorldSeed(world)) + 0.5 : null;
+  const naturalGround = kind === 'zombie' && useGameStore.getState().gameplayMode !== 'planet' ? heightAt(Math.round(position.x), Math.round(position.z), getWorldSeed(world)) + 0.5 : null;
   if (!isLoaded(world, position.x, position.z) && !recoverSafePosition(world, kind, position, entity) && !rescueAnimal(world, kind, position, entity)) return true;
   if (motion.climbTarget === null && !bodyClear(world, position.x, position.z, position.y)) {
     const ground = groundAt(world, position.x, position.z, position.y + MAX_CLIMB_RISE + 0.05);

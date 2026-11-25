@@ -101,11 +101,11 @@ function hash(x: number, z: number, seed: number) {
   return ((value ^ (value >>> 16)) >>> 0) / 4294967295;
 }
 
-export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number, z: number, seed: number, id = `${kind}:${x}:${z}`) {
+export function spawnAnimal(world: World, kind: AnimalKind, x: number, y: number, z: number, seed: number, id = `${kind}:${x}:${z}`, fixedPosition = false) {
   if (isAnimalDead(id) || isAnimalStored(world, id)) return null;
   const existing = world.query(Animal, AnimalId).find((entity) => entity.get(AnimalId) === id);
   if (existing) return existing;
-  const site = kind === 'duck' ? { x, y, z } : kind === 'monkey' ? monkeyTreeSpawn(world, x, z, seed) : safeRoamSpawn(x, z, seed);
+  const site = fixedPosition ? { x, y: y + 0.51, z } : kind === 'duck' ? { x, y, z } : kind === 'monkey' ? monkeyTreeSpawn(world, x, z, seed) : safeRoamSpawn(x, z, seed);
   const yaw = hash(x, z, seed + 41) * Math.PI * 2;
   const entity = world.spawn(
     Animal({ kind }),

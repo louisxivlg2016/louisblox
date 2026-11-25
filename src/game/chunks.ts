@@ -14,6 +14,8 @@ import { generateHeistChunk, HEIST_HIDEOUT } from './heistCity';
 import { DELIVERY_START, generateDeliveryChunk } from './deliveryCity';
 import { generateSkyfallChunk, SKYFALL_SPAWN } from './skyfallArena';
 import { generatePlanetChunk, PLANET_SPAWN } from './planetArena';
+import { generateZombiePlanetChunk, ZOMBIE_PLANET_SPAWN } from './zombiePlanetArena';
+import { ensurePlanetUniverse, getPlanetUniverse } from './planetUniverse';
 import { generateDeepChunk, DEEP_SPAWN } from './deepArena';
 import { generateRoleplayChunk, ROLEPLAY_SPAWN } from './roleplayCity';
 import { mazePlaygroundSpawn } from './mazePlayground';
@@ -352,7 +354,8 @@ export function loadChunk(world: World, cx: number, cz: number) {
   const battle = mode === 'battle';
   const customWorld = template === 'custom' ? useGameStore.getState().customWorld : null;
   const cached = state.chunkCache.get(key);
-  const generated = cached ?? (mode === 'pirates' && template === 'fortress' ? generatePirateFortressChunk(cx, cz) : mode === 'pirates' ? generatePirateChunk(cx, cz) : mode === 'football' ? generateFootballChunk(cx, cz) : mode === 'maze' ? generateMazeChunk(cx, cz) : mode === 'heist' ? generateHeistChunk(cx, cz, state.seed) : mode === 'delivery' ? generateDeliveryChunk(cx, cz) : mode === 'skyfall' ? generateSkyfallChunk(cx, cz) : mode === 'planet' ? generatePlanetChunk(cx, cz) : mode === 'deep-dive' ? generateDeepChunk(cx, cz) : mode === 'roleplay' ? generateRoleplayChunk(cx, cz) : battle ? generateBattleChunk(cx, cz) : template === 'custom' ? generateCustomChunk(cx, cz, state.seed, customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, state.seed)) : template === 'city-ancient' || template === 'city-modern' ? generateCityChunk(cx, cz, state.seed, template === 'city-modern') : generateChunk(cx, cz, state.seed));
+  if (mode === 'planet') ensurePlanetUniverse(useGameStore.getState().worldId);
+  const generated = cached ?? (mode === 'pirates' && template === 'fortress' ? generatePirateFortressChunk(cx, cz) : mode === 'pirates' ? generatePirateChunk(cx, cz) : mode === 'football' ? generateFootballChunk(cx, cz) : mode === 'maze' ? generateMazeChunk(cx, cz) : mode === 'heist' ? generateHeistChunk(cx, cz, state.seed) : mode === 'delivery' ? generateDeliveryChunk(cx, cz) : mode === 'skyfall' ? generateSkyfallChunk(cx, cz) : mode === 'planet' && getPlanetUniverse() === 'zombie' ? generateZombiePlanetChunk(cx, cz) : mode === 'planet' ? generatePlanetChunk(cx, cz) : mode === 'deep-dive' ? generateDeepChunk(cx, cz) : mode === 'roleplay' ? generateRoleplayChunk(cx, cz) : battle ? generateBattleChunk(cx, cz) : template === 'custom' ? generateCustomChunk(cx, cz, state.seed, customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, state.seed)) : template === 'city-ancient' || template === 'city-modern' ? generateCityChunk(cx, cz, state.seed, template === 'city-modern') : generateChunk(cx, cz, state.seed));
   if (!cached && !isMinigameMode(mode) && !isCityMode(mode) && template !== 'custom') {
     generated.blocks = removeVillageTrees(generated.blocks, cx, cz, state.seed);
     generated.blocks.push(...generateVillageBlocks(cx, cz, state.seed));
@@ -854,7 +857,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   const legacyCitySignSpawn = city && restore !== null && Math.hypot(restore.player.x, restore.player.z) < 1;
   const spawn = gameplayMode === 'maze' ? mazePlaygroundSpawn(0) : restore && restorePosition && !legacyCitySignSpawn
     ? { x: restore.player.x, y: restore.player.y, z: restore.player.z }
-    : gameplayMode === 'heist' ? { ...HEIST_HIDEOUT } : gameplayMode === 'delivery' ? { ...DELIVERY_START } : gameplayMode === 'skyfall' ? { ...SKYFALL_SPAWN } : gameplayMode === 'planet' ? { ...PLANET_SPAWN } : gameplayMode === 'deep-dive' ? { ...DEEP_SPAWN } : gameplayMode === 'roleplay' ? { ...ROLEPLAY_SPAWN } : gameplayMode === 'pirates' ? worldTemplate === 'fortress' ? pirateFortressSpawn('red') : pirateSpawn('red') : gameplayMode === 'football' ? footballSpawn(null) : gameplayMode === 'battle' ? battleSpawn(null) : city ? { ...CITY_SPAWN } : worldTemplate === 'custom' ? customWorldSpawn(customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, seed), seed) : safeSpawnAt(0, 0, seed);
+    : gameplayMode === 'heist' ? { ...HEIST_HIDEOUT } : gameplayMode === 'delivery' ? { ...DELIVERY_START } : gameplayMode === 'skyfall' ? { ...SKYFALL_SPAWN } : gameplayMode === 'planet' ? getPlanetUniverse() === 'zombie' ? { ...ZOMBIE_PLANET_SPAWN } : { ...PLANET_SPAWN } : gameplayMode === 'deep-dive' ? { ...DEEP_SPAWN } : gameplayMode === 'roleplay' ? { ...ROLEPLAY_SPAWN } : gameplayMode === 'pirates' ? worldTemplate === 'fortress' ? pirateFortressSpawn('red') : pirateSpawn('red') : gameplayMode === 'football' ? footballSpawn(null) : gameplayMode === 'battle' ? battleSpawn(null) : city ? { ...CITY_SPAWN } : worldTemplate === 'custom' ? customWorldSpawn(customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, seed), seed) : safeSpawnAt(0, 0, seed);
   world.spawn(
     Player,
     PlayerBody(),

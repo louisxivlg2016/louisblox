@@ -58,7 +58,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const heistHandled = heistControlSystem(world, camera, actions, dt);
       const deliveryHandled = deliveryControlSystem(world, camera, actions);
       const skyfallHandled = skyfallControlSystem(world, dt);
-      const planetHandled = planetControlSystem(world);
+      const planetHandled = planetControlSystem(world, camera, dt, actions);
       const deepHandled = deepControlSystem(world, dt, actions);
       const roleplayHandled = roleplayControlSystem(world, actions);
       const modeHandled = footballHandled || heistHandled || deliveryHandled || skyfallHandled || planetHandled || deepHandled || roleplayHandled;

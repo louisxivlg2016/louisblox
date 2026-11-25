@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useGameStore } from '../game/store';
-import { usePlanetStore, buyPlanetTool, buildPlanetRocket } from '../game/planetClient';
+import { usePlanetStore, buyPlanetTool, buildPlanetRocket, travelPlanetUniverse } from '../game/planetClient';
+import { startCityBuild, usePlanetPeopleStore } from '../game/planetPeople';
 import { useDeepStore, deepMaxOxygen, buyDeepGear, sellDeepFindings } from '../game/deepClient';
 import { useRoleplayStore, chooseRoleplayJob, performRoleplayWork, roleplayHome } from '../game/roleplayClient';
 import type { RoleplayJob } from '../game/roleplayClient';
@@ -14,11 +16,16 @@ export function PlanetHud() {
   const tool = usePlanetStore((state) => state.tool);
   const rocket = usePlanetStore((state) => state.rocket);
   const biome = usePlanetStore((state) => state.biome);
+  const universe = usePlanetStore((state) => state.universe);
+  const girlRescued = usePlanetPeopleStore((state) => state.girlRescued);
+  const cityBuilt = usePlanetPeopleStore((state) => state.cityBuilt);
+  const [command, setCommand] = useState('maison');
   if (gameplayMode !== 'planet') return null;
   const nextCost = tool === 0 ? 50 : tool === 1 ? 150 : 400;
   return <>
-    <div className="heist-hud" data-planet-hud><strong>{biome}</strong><span>{translate(`${mined} blocs minés · ${coins} pièces`, `${mined} blocks mined · ${coins} coins`)}</span><small>{translate(`Pioche niveau ${tool} · ${rocket ? 'Fusée construite' : 'Fusée à construire'}`, `Pickaxe level ${tool} · ${rocket ? 'Rocket built' : 'Rocket to build'}`)}</small></div>
+    <div className="heist-hud" data-planet-hud style={{ pointerEvents: 'auto' }}><strong>{biome}</strong><span>{translate(`${mined} blocs minés · ${coins} pièces`, `${mined} blocks mined · ${coins} coins`)}</span><small>{translate(`Pioche niveau ${tool} · ${rocket ? 'Fusée construite' : 'Fusée à construire'}`, `Pickaxe level ${tool} · ${rocket ? 'Rocket built' : 'Rocket to build'}`)}</small>{rocket && <button type="button" data-planet-travel onClick={() => travelPlanetUniverse(world, universe === 'zombie' ? 'home' : 'zombie')}>{universe === 'zombie' ? translate('Retour à la planète mère', 'Return to home planet') : translate('Voler vers l’univers zombie', 'Fly to the zombie universe')}</button>}</div>
     {shopOpen && <section className="heist-shop" data-planet-shop><h3>{translate('Atelier spatial', 'Space workshop')}</h3>{tool < 3 && <button disabled={coins < nextCost} onClick={() => buyPlanetTool(tool + 1)}>{translate(`Améliorer la pioche · ${nextCost}`, `Upgrade pickaxe · ${nextCost}`)}</button>}<button disabled={rocket} onClick={() => buildPlanetRocket(world)}>{rocket ? translate('Fusée construite', 'Rocket built') : translate('Construire la fusée', 'Build rocket')}</button><small>{translate('Fusée : 40 blocs minés, 30 pierres, 15 fers et 8 ors.', 'Rocket: 40 blocks, 30 stone, 15 iron and 8 gold.')}</small></section>}
+    {shopOpen && <section className="heist-shop" data-city-panel style={{ left: 18, right: 'auto' }}><h3>{translate('Construire avec la fille', 'Build with the girl')}</h3><small>{girlRescued ? translate(`${cityBuilt} blocs posés par la fille`, `${cityBuilt} blocks placed by the girl`) : translate('Sauve d’abord la fille avec ton arme.', 'Rescue the girl with your weapon first.')}</small><form onSubmit={(event) => { event.preventDefault(); startCityBuild(world, command); }}><input data-city-command aria-label={translate('Que veux-tu construire ?', 'What do you want to build?')} value={command} onChange={(event) => setCommand(event.target.value)} placeholder={translate('maison, route, tour, mur, ville', 'house, road, tower, wall, city')} /><button type="submit" className="primary-button" data-build-city>{translate('Construire', 'Build')}</button></form></section>}
   </>;
 }
 

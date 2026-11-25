@@ -5,6 +5,7 @@ import { clearHeist, receiveHeistPrison, receiveHeistState, receiveHeistTaser, s
 import { clearDelivery } from './deliveryClient';
 import { clearSkyfall } from './skyfallClient';
 import { clearPlanet } from './planetClient';
+import { clearPlanetPeople } from './planetPeople';
 import { clearDeep } from './deepClient';
 import { clearRoleplay } from './roleplayClient';
 
@@ -23,6 +24,7 @@ export function clearMinigames() {
   clearDelivery();
   clearSkyfall();
   clearPlanet();
+  clearPlanetPeople();
   clearDeep();
   clearRoleplay();
 }

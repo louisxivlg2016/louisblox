@@ -38,6 +38,9 @@ import { ConstructionGuide } from './ConstructionGuide';
 import { CustomWorldObjects } from './CustomWorldObjects';
 import { HeistLoot } from './HeistModels';
 import { SkyfallBlocks } from './SkyfallBlocks';
+import { PlanetPeople } from './PlanetPeople';
+import { pendingPlanetTravelSave } from '../game/planetClient';
+import { ensurePlanetUniverse } from '../game/planetUniverse';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -128,7 +131,9 @@ export function Game() {
   const setOutfit = useCharacterStore((state) => state.setOutfit);
   const [level, setLevel] = useState<import('../game/levels').LevelData | null>(null);
   useLayoutEffect(() => {
-    setLevel(loadLevel(world, generation, readWorldSave(worldId, true)));
+    if (gameplayMode === 'planet') ensurePlanetUniverse(worldId);
+    const saved = gameplayMode === 'planet' ? pendingPlanetTravelSave(worldId) : null;
+    setLevel(loadLevel(world, generation, saved ?? readWorldSave(worldId, true)));
     saveWorld(world);
   }, [world, generation, worldId]);
   useEffect(() => setMusicMode(gameplayMode), [gameplayMode]);
@@ -167,6 +172,7 @@ export function Game() {
         <Level key={`level-${generation}`} />
         {gameplayMode === 'heist' && <HeistLoot />}
         {gameplayMode === 'skyfall' && <SkyfallBlocks />}
+        {gameplayMode === 'planet' && <PlanetPeople />}
         <PirateWorld key={`pirate-world-${generation}`} />
         <PlayerView key={`player-${generation}`} />
         <TargetHighlight key={`target-${generation}`} />
