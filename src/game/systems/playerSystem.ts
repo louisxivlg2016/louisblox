@@ -166,7 +166,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     x: velocity.x * dt,
     y: velocity.y * dt,
     z: velocity.z * dt,
-  }, state.grounded && !flying && !inWater && !onLadder);
+  }, state.grounded && !flying && !onLadder);
   const grounded = movement.grounded;
   const nextFlying = flying && grounded && isDown('KeyN') ? false : flying;
   if (movement.stepped) velocity.y = 0;

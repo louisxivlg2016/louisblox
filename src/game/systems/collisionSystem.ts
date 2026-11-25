@@ -157,7 +157,7 @@ export function moveVoxelCharacter(
     const horizontalHit = hitX || hitZ;
     let climbed = false;
 
-    if (canStep && y <= 0 && horizontalHit) {
+    if (canStep && horizontalHit) {
       const candidateHeights = [...new Set([start.y + 0.18 + EPSILON, Math.round((start.y - 0.5) * 2) / 2 + 1 + EPSILON, Math.round(start.y - 0.5) + 1.5 + EPSILON])];
       for (const candidateY of candidateHeights) {
         const candidate = { ...start, y: candidateY };
