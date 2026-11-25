@@ -18,7 +18,7 @@ import { isJoinOnlyRoom } from '../game/roomJoin';
 import { useCharacterStore } from '../game/characterStore';
 import { isProfileAvatarKind, useAvatarStore } from '../game/avatar';
 import type { ProfileAvatarKind } from '../game/avatar';
-import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep, Vehicle } from '../game/traits';
+import { AnimalId, AnimalMotion, AnimalPosition, Chunk, Player, PlayerBody, PlayerHealth, PlayerMesh, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep, Vehicle } from '../game/traits';
 import { getItemMeta } from '../game/items';
 import { ItemModel, PixelPart, heldItemPosition } from './ItemModel';
 import { blockGeometry, blockMaterials } from '../game/textures';
@@ -60,6 +60,7 @@ import { applyAnimalDeath, applyDeathSnapshot, applyTraderDeath, isDeathId, setD
 import { onDroppedItemSync, receiveDroppedItem, setDroppedItemSocket } from '../game/droppedItemSync';
 import { translate } from '../game/language';
 import { syncSharedRadioPlayback, useRadioStore } from '../game/radio';
+import { isPirateEliminated } from '../game/piratesClient';
 
 type ServerMessage = {
   type?: unknown;
@@ -142,7 +143,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
 
   useFrame((_, delta) => {
     if (!group.current) return;
-    group.current.visible = !state.effects?.includes('invisibility');
+    group.current.visible = state.dead !== true && !state.effects?.includes('invisibility');
     const amount = 1 - Math.exp(-delta * 14);
     const seatedHeight = state.mounted && !isAnimalMount(state.vehicleKind) ? state.vehicleKind === 'car' ? 0.55 : 0.7 : 0;
     const lyingHeight = !state.mounted && state.emote === 'lie' ? 0.18 : 0;
@@ -175,7 +176,8 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
       headRef.current.rotation.x = canRotateHead(outfit) ? hasFullCharacter(outfit, wig) ? -state.pitch : state.pitch : 0;
       if (outfit === 'soldier') headRef.current.rotation.z = 0;
     }
-    updateBattleTargetPose(playerId, group.current.position, group.current.rotation.y, group.current.rotation.x < -Math.PI / 4);
+    if (state.dead) removeBattleTargetPose(playerId);
+    else updateBattleTargetPose(playerId, group.current.position, group.current.rotation.y, group.current.rotation.x < -Math.PI / 4);
   });
 
   const headContent = (
@@ -205,7 +207,7 @@ function RemoteAvatar({ playerId, name, state, character, outfit, wig, appearanc
   );
 
   return (
-    <group ref={group} position={[state.x, state.y, state.z]}>
+    <group ref={group} name={`remote-player-${playerId}`} position={[state.x, state.y, state.z]}>
       <PlayerNameTag name={name} playerId={playerId} />
       {!hasFullCharacter(outfit, wig) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit character={character} outfit={outfit} wig={wig} color={current.clothingColor} moving={state.moving} airborne={state.airborne} remote seated={state.mounted} emote={state.emote} head={headContent} headRef={headRef} appearance={current} avatar={avatar} />
@@ -819,6 +821,7 @@ export function MultiplayerConnection() {
       const entity = world.queryFirst(Player);
       const position = entity?.get(PlayerPosition);
       const playerState = entity?.get(PlayerState);
+      const health = entity?.get(PlayerHealth);
       const velocity = entity?.get(PlayerVelocity);
       const mounted = entity?.get(PlayerMount)?.vehicle;
       const horse = isAnimalMount(entity?.get(PlayerMount)?.kind) && mounted
@@ -827,7 +830,7 @@ export function MultiplayerConnection() {
       if (!position || !playerState) return;
       const moving = Boolean(!mounted && playerState.grounded && !playerState.flying && velocity && Math.hypot(velocity.x, velocity.z) > 0.1);
       const airborne = Boolean(!playerState.grounded || playerState.flying || (velocity && Math.abs(velocity.y) > 2));
-      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, bodyYaw: entity?.get(PlayerMesh)?.value?.rotation.y, pitch: playerState.pitch, flying: playerState.flying, moving, airborne, parachuting: playerState.parachuting, hasParachute: useGameStore.getState().hotbarSlots.includes('parachute') || (useGameStore.getState().itemCounts.parachute ?? 0) > 0, mounted: Boolean(mounted), mountRole: entity?.get(PlayerMount)?.role, vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: world.queryFirst(Sleep) ? 'lie' : useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
+      const state: PlayerSnapshot = { ...position, yaw: playerState.yaw, bodyYaw: entity?.get(PlayerMesh)?.value?.rotation.y, pitch: playerState.pitch, flying: playerState.flying, dead: (health?.value ?? 10) <= 0 || useBattleStore.getState().deadUntil > Date.now() || isPirateEliminated(), moving, airborne, parachuting: playerState.parachuting, hasParachute: useGameStore.getState().hotbarSlots.includes('parachute') || (useGameStore.getState().itemCounts.parachute ?? 0) > 0, mounted: Boolean(mounted), mountRole: entity?.get(PlayerMount)?.role, vehicleKind: entity?.get(PlayerMount)?.kind ?? undefined, vehicleId: mounted?.get(Vehicle)?.id || undefined, horse, emote: world.queryFirst(Sleep) ? 'lie' : useEmoteStore.getState().current, selected: useGameStore.getState().selected, effects: activeEffectKeys() };
       current.send(JSON.stringify({ type: 'state', state }));
     }, 50);
 

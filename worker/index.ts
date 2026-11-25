@@ -21,6 +21,7 @@ export type PlayerState = {
   bodyYaw?: number;
   pitch: number;
   flying: boolean;
+  dead?: boolean;
   moving: boolean;
   airborne?: boolean;
   parachuting?: boolean;
@@ -174,6 +175,7 @@ function parseState(value: unknown): PlayerState | null {
     bodyYaw: typeof state.bodyYaw === 'number' && Number.isFinite(state.bodyYaw) ? state.bodyYaw : undefined,
     pitch: state.pitch as number,
     flying: state.flying === true,
+    dead: state.dead === true,
     moving: state.moving === true,
     airborne: state.airborne === true,
     parachuting: state.parachuting === true,
@@ -988,9 +990,11 @@ export class GameRoom extends DurableObject<Env> {
       });
       const position = target.team === 'red' ? { x: -16, y: 8.51, z: 0 } : target.team === 'blue' ? { x: 16, y: 8.51, z: 0 } : soloSpawn();
       target.state.effects = [];
+      target.state.dead = true;
       target.regenerationNextAt = undefined;
       target.poisonNextAt = undefined;
       targetSocket.serializeAttachment(target);
+      this.broadcast({ type: 'state', playerId: targetId, state: target.state });
       targetSocket.send(JSON.stringify({ type: 'battle-respawn', team: target.team, position }));
       this.broadcastBattleState();
       return;
