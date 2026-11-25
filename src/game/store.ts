@@ -7,6 +7,7 @@ import { DEFAULT_ITEM_COUNTS, storedAnimalIdFromSelection } from './items';
 import type { Biome } from './levels';
 import { createMeatInventory } from './meats';
 import { BlockKind, HOTBAR_BLOCKS } from './voxel';
+import { allowsBackpack } from './worldMode';
 import type { GameplayMode } from './worldMode';
 import { PIRATE_KITS } from './pirates';
 import { normalizePaintballGun } from './paintball';
@@ -215,7 +216,7 @@ export const useGameStore = create<GameStore>((set) => ({
   setFlying: (flying) => set({ flying }),
   setLives: (lives) => set({ lives }),
   toggleCamera: () => set((state) => ({ cameraMode: state.cameraMode === 'first' ? 'third' : state.cameraMode === 'third' ? 'front' : 'first' })),
-  setBackpack: (backpackOpen) => set({ backpackOpen, backpackItem: null }),
+  setBackpack: (backpackOpen) => set((state) => ({ backpackOpen: backpackOpen && allowsBackpack(state.gameplayMode), backpackItem: null })),
   collectApple: () => set((state) => ({ apples: state.apples + 1 })),
   collectMeat: (kind) => set((state) => ({ meat: { ...state.meat, [kind]: state.meat[kind] + 1 } })),
   discardApple: () => set((state) => ({ apples: Math.max(0, state.apples - 1) })),
@@ -262,6 +263,7 @@ export const useGameStore = create<GameStore>((set) => ({
       worldId,
       worldName,
       generation: state.generation + 1,
+      backpackOpen: false,
       mode: 'menu',
     }));
   },

@@ -128,7 +128,9 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   };
   const ladder = flying ? null : ladderAt(position.y);
   const onLadder = ladder !== null;
-  const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1) * movementMultiplier() * (useGameStore.getState().gameplayMode === 'heist' ? heistMovementMultiplier() : 1);
+  const gameplaySpeed = useGameStore.getState().gameplayMode;
+  const arcadeSpeed = gameplaySpeed === 'heist' || gameplaySpeed === 'delivery' ? 1.35 : 1;
+  const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1) * movementMultiplier() * arcadeSpeed * (gameplaySpeed === 'heist' ? heistMovementMultiplier() : 1);
   const emote = useEmoteStore.getState().current;
   if ((forward !== 0 || strafe !== 0 || flying) && emote !== null) resetEmote();
   const normalizedForward = forward / length;

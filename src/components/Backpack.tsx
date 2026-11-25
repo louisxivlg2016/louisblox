@@ -14,6 +14,7 @@ import { CraftingPanel } from './CraftingPanel';
 import { normalizeSearch } from '../game/search';
 import { translate } from '../game/language';
 import { companionAnimalName, releaseStoredAnimal, storedAnimals } from '../game/taming';
+import { allowsBackpack } from '../game/worldMode';
 
 export function Backpack() {
   const open = useGameStore((state) => state.backpackOpen);
@@ -34,7 +35,7 @@ export function Backpack() {
   const survival = gameplayMode === 'survival';
   const inventory = { itemCounts, gameplayMode, apples };
   const animals = storedAnimals(world);
-  if (!open) return null;
+  if (!open || !allowsBackpack(gameplayMode)) return null;
   const close = () => {
     setBackpack(false);
     void requestPlay();

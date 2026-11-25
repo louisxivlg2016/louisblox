@@ -10,6 +10,7 @@ import { SKYFALL_SPAWN } from './skyfallArena';
 import { world } from './world';
 
 export type FallingBlock = { id: string; x: number; y: number; z: number; kind: 'tnt' | 'anvil' | 'safe'; speed: number };
+export const SKYFALL_FALL_SPEEDS: Readonly<Record<FallingBlock['kind'], number>> = { tnt: 12, anvil: 17, safe: 9.5 };
 const initial = { phase: 'waiting' as 'waiting' | 'running' | 'finished', startedAt: 0, nextSpawnAt: 0, blocks: [] as FallingBlock[], bestMs: 0 };
 export const useSkyfallStore = create<typeof initial>(() => ({ ...initial }));
 export function clearSkyfall() { useSkyfallStore.setState({ ...initial, blocks: [] }); }
@@ -17,7 +18,7 @@ export function clearSkyfall() { useSkyfallStore.setState({ ...initial, blocks: 
 function spawnBlock(state: typeof initial) {
   const kinds: FallingBlock['kind'][] = ['tnt', 'anvil', 'safe', 'safe'];
   const kind = kinds[Math.floor(Math.random() * kinds.length)];
-  const block: FallingBlock = { id: crypto.randomUUID(), x: Math.round((Math.random() - 0.5) * 36), y: 26, z: Math.round((Math.random() - 0.5) * 36), kind, speed: kind === 'anvil' ? 14 : kind === 'tnt' ? 10 : 8 };
+  const block: FallingBlock = { id: crypto.randomUUID(), x: Math.round((Math.random() - 0.5) * 36), y: 26, z: Math.round((Math.random() - 0.5) * 36), kind, speed: SKYFALL_FALL_SPEEDS[kind] };
   useSkyfallStore.setState({ blocks: [...state.blocks, block], nextSpawnAt: Date.now() + Math.max(350, 1100 - (Date.now() - state.startedAt) / 60) });
 }
 
@@ -58,7 +59,7 @@ export function skyfallControlSystem(world: World, dt: number) {
       if (Math.hypot(player.x - block.x, player.z - block.z) < 2.5) health.value = Math.max(0, health.value - 2);
     }
   }
-  if (player.y < 2 || health.value <= 0) {
+  if (player.y < 6.5 || health.value <= 0) {
     const bestMs = Math.max(useSkyfallStore.getState().bestMs, Date.now() - state.startedAt);
     useSkyfallStore.setState({ phase: 'finished', bestMs });
     releasePointerForOverlay();

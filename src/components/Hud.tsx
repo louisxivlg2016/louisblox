@@ -61,6 +61,7 @@ import { ConstructionPanel } from './ConstructionPanel';
 import { BlueprintControls } from './BlueprintControls';
 import { CompanionPanel } from './CompanionPanel';
 import { useCompanionMenuStore } from '../game/companionMenu';
+import { allowsBackpack } from '../game/worldMode';
 
 export function Hud() {
   const language = useLanguageStore((state) => state.language);
@@ -132,7 +133,7 @@ export function Hud() {
         <>
           <div className="crosshair" aria-hidden="true"><i /><b /></div>
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
-          {!['pirates', 'football', 'maze'].includes(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label={translate('Sac à dos', 'Backpack')}><img src={translate(backpackButtonFrUrl, backpackButtonEnUrl, backpackButtonEsUrl)} alt="" /></button>}
+          {allowsBackpack(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label={translate('Sac à dos', 'Backpack')}><img src={translate(backpackButtonFrUrl, backpackButtonEnUrl, backpackButtonEsUrl)} alt="" /></button>}
           {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label={translate('Boutique', 'Shop')}><img src={translate(shopButtonFrUrl, shopButtonEnUrl, shopButtonEsUrl)} alt="" /></button>}
           {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="construction-toggle" onClick={openConstruction} aria-label={translate('Construction · C', 'Construction · C')}><img src={constructionButtonUrl} alt={translate('Construction', 'Construction')} /></button>}
           {!['football', 'pirates', 'battle', 'maze'].includes(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label={translate('Téléportation · T', 'Teleportation · T')}>{language === 'es' ? <span className="localized-button-text">TELETRANSPORTE · T</span> : <img src={teleportButtonUrl} alt={translate('Téléportation · T', 'Teleportation · T')} />}</button>}
