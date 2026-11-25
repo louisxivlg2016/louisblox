@@ -237,6 +237,8 @@ export const EXTRA_BLOCKS = {
   PaintingForest: 262,
   PaintingAbstract: 263,
   PaintingCustom: 264,
+  SafeChest: 265,
+  KitchenFurnace: 266,
 } as const;
 
 export const PARIS_STREET_SIGN_TEXT = '4th arrondissement\nPeace Street';
@@ -308,8 +310,8 @@ export const stairFacingFromYaw = (yaw: number): NonNullable<import('./voxel').V
 };
 export const CROP_KINDS = [EXTRA_BLOCKS.Corn, EXTRA_BLOCKS.Wheat, EXTRA_BLOCKS.Tomato, EXTRA_BLOCKS.Carrot] as const;
 export const isCrop = (kind: number) => (CROP_KINDS as readonly number[]).includes(kind);
-export const isFurnace = (kind: number) => kind === EXTRA_BLOCKS.Furnace;
-export const isChest = (kind: number) => kind === EXTRA_BLOCKS.Chest;
+export const isFurnace = (kind: number) => kind === EXTRA_BLOCKS.Furnace || kind === EXTRA_BLOCKS.KitchenFurnace;
+export const isChest = (kind: number) => kind === EXTRA_BLOCKS.Chest || kind === EXTRA_BLOCKS.SafeChest;
 export const isLadder = (kind: number) => kind === EXTRA_BLOCKS.Ladder;
 export const isBed = (kind: number) => kind >= EXTRA_BLOCKS.Bed && kind <= EXTRA_BLOCKS.BedBlack;
 export const facingYaw = (facing?: import('./voxel').Voxel['facing']) => facing === 'north' ? Math.PI : facing === 'east' ? -Math.PI / 2 : facing === 'west' ? Math.PI / 2 : 0;
@@ -465,6 +467,8 @@ const BASE_EXTRA_BLOCK_META: Record<number, ExtraBlockMeta> = {
   [EXTRA_BLOCKS.PaintingForest]: block('Tableau de la forêt', '#47724d', 0.25),
   [EXTRA_BLOCKS.PaintingAbstract]: block('Tableau abstrait', '#9a5ea8', 0.25),
   [EXTRA_BLOCKS.PaintingCustom]: block('Tableau vide à personnaliser', '#eee8d8', 0.25),
+  [EXTRA_BLOCKS.SafeChest]: block('Coffre-fort', '#666c72', 2.5),
+  [EXTRA_BLOCKS.KitchenFurnace]: block('Four de cuisine', '#666c72', 2.5),
   [EXTRA_BLOCKS.StopSign]: block('Panneau STOP', '#c93d35', 0.35),
   [EXTRA_BLOCKS.YieldSign]: block('Cédez le passage', '#e8e0d5', 0.35),
   [EXTRA_BLOCKS.NoEntrySign]: block('Sens interdit', '#c93d35', 0.35),

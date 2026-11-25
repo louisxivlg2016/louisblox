@@ -144,6 +144,8 @@ export function RadioModel({ withLight = true }: { withLight?: boolean }) {
 }
 
 export function UtilityBlockModel({ kind, withLight = true, held = false, wallMounted = false, floor = false, variant = 0 }: { kind: BlockKind; withLight?: boolean; held?: boolean; wallMounted?: boolean; floor?: boolean; variant?: number }) {
+  if (kind === BlockKind.SafeChest) return <ChestModel variant={1} />;
+  if (kind === BlockKind.KitchenFurnace) return <FurnaceModel variant={1} />;
   return kind === BlockKind.Radio ? <RadioModel withLight={withLight} /> : kind === BlockKind.Lantern ? <LanternModel withLight={withLight} floor={floor} /> : kind === BlockKind.ModernCeilingLight ? <ModernCeilingLightModel withLight={withLight} /> : kind === BlockKind.ParisStreetSign ? <ParisStreetSignModel held={held} /> : isTrafficSign(kind) ? <Suspense fallback={null}><TrafficSignModel kind={kind} held={held} wallMounted={wallMounted} /></Suspense> : kind === BlockKind.ParisStreetLamp ? <ParisStreetLampModel lit={withLight} /> : kind === BlockKind.StreetLamp ? <NormalStreetLampModel lit={withLight} /> : kind === BlockKind.TrafficLight ? <TrafficLightModel /> : kind === BlockKind.Furnace ? <FurnaceModel variant={variant} /> : kind === BlockKind.Chest ? <ChestModel variant={variant} /> : isRail(kind) ? <RailModel /> : isBed(kind) ? <BedModel kind={kind} /> : <LadderModel />;
 }
 
