@@ -1,0 +1,61 @@
+import { useGameStore } from '../game/store';
+import { usePlanetStore, buyPlanetTool, buildPlanetRocket } from '../game/planetClient';
+import { useDeepStore, deepMaxOxygen, buyDeepGear, sellDeepFindings } from '../game/deepClient';
+import { useRoleplayStore, chooseRoleplayJob, performRoleplayWork, roleplayHome } from '../game/roleplayClient';
+import type { RoleplayJob } from '../game/roleplayClient';
+import { world } from '../game/world';
+import { translate } from '../game/language';
+
+export function PlanetHud() {
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
+  const shopOpen = useGameStore((state) => state.shopOpen);
+  const mined = usePlanetStore((state) => state.mined);
+  const coins = usePlanetStore((state) => state.coins);
+  const tool = usePlanetStore((state) => state.tool);
+  const rocket = usePlanetStore((state) => state.rocket);
+  const biome = usePlanetStore((state) => state.biome);
+  if (gameplayMode !== 'planet') return null;
+  const nextCost = tool === 0 ? 50 : tool === 1 ? 150 : 400;
+  return <>
+    <div className="heist-hud" data-planet-hud><strong>{biome}</strong><span>{translate(`${mined} blocs minés · ${coins} pièces`, `${mined} blocks mined · ${coins} coins`)}</span><small>{translate(`Pioche niveau ${tool} · ${rocket ? 'Fusée construite' : 'Fusée à construire'}`, `Pickaxe level ${tool} · ${rocket ? 'Rocket built' : 'Rocket to build'}`)}</small></div>
+    {shopOpen && <section className="heist-shop" data-planet-shop><h3>{translate('Atelier spatial', 'Space workshop')}</h3>{tool < 3 && <button disabled={coins < nextCost} onClick={() => buyPlanetTool(tool + 1)}>{translate(`Améliorer la pioche · ${nextCost}`, `Upgrade pickaxe · ${nextCost}`)}</button>}<button disabled={rocket} onClick={() => buildPlanetRocket(world)}>{rocket ? translate('Fusée construite', 'Rocket built') : translate('Construire la fusée', 'Build rocket')}</button><small>{translate('Fusée : 40 blocs minés, 30 pierres, 15 fers et 8 ors.', 'Rocket: 40 blocks, 30 stone, 15 iron and 8 gold.')}</small></section>}
+  </>;
+}
+
+export function DeepHud() {
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
+  const shopOpen = useGameStore((state) => state.shopOpen);
+  const coins = useDeepStore((state) => state.coins);
+  const findings = useDeepStore((state) => state.findings);
+  const gear = useDeepStore((state) => state.gear);
+  const oxygen = useDeepStore((state) => state.oxygen);
+  const depth = useDeepStore((state) => state.depth);
+  if (gameplayMode !== 'deep-dive') return null;
+  const maximum = deepMaxOxygen(gear);
+  const cost = gear === 0 ? 150 : gear === 1 ? 400 : 900;
+  return <>
+    <div className="heist-hud" data-deep-hud style={{ pointerEvents: 'auto' }}><strong>{translate(`Oxygène ${Math.ceil(oxygen)} s`, `Oxygen ${Math.ceil(oxygen)} s`)}</strong><div role="meter" aria-label={translate('Oxygène restant', 'Remaining oxygen')} aria-valuemin={0} aria-valuemax={maximum} aria-valuenow={Math.round(oxygen)} style={{ width: 180, height: 10, background: '#243348', border: '1px solid #9bb7c9' }}><div data-oxygen-bar style={{ width: `${Math.max(0, Math.min(100, oxygen / maximum * 100))}%`, height: '100%', background: oxygen < maximum * 0.2 ? '#e65045' : '#54c9e8' }} /></div><span>{translate(`Profondeur ${depth.toFixed(1)} m · Équipement ${gear}`, `Depth ${depth.toFixed(1)} m · Gear ${gear}`)}</span><small>{translate(`${findings} à vendre · ${coins} pièces`, `${findings} to sell · ${coins} coins`)}</small><button type="button" onClick={sellDeepFindings}>{translate('Vendre à la surface', 'Sell at surface')}</button></div>
+    {shopOpen && <section className="heist-shop" data-deep-shop><h3>{translate('Équipement de plongée', 'Diving equipment')}</h3>{gear < 3 ? <button disabled={coins < cost} onClick={buyDeepGear}>{translate(`Niveau ${gear + 1} · ${cost} pièces · ${deepMaxOxygen(gear + 1)} s`, `Level ${gear + 1} · ${cost} coins · ${deepMaxOxygen(gear + 1)} s`)}</button> : <strong>{translate('Équipement maximal', 'Maximum equipment')}</strong>}<small>{translate('Vends tes trouvailles sur la plateforme avant de plonger plus profond.', 'Sell your findings on the platform before diving deeper.')}</small></section>}
+  </>;
+}
+
+const JOBS: Array<{ id: RoleplayJob; fr: string; en: string; hintFr: string; hintEn: string }> = [
+  { id: 'miner', fr: 'Mineur', en: 'Miner', hintFr: 'Mine dans la carrière pour gagner des pièces.', hintEn: 'Mine in the quarry to earn coins.' },
+  { id: 'merchant', fr: 'Marchand', en: 'Merchant', hintFr: 'Travaille au marché couvert.', hintEn: 'Work at the covered market.' },
+  { id: 'police', fr: 'Policier', en: 'Police officer', hintFr: 'Travaille au poste de police, sans combat.', hintEn: 'Work at the police station, without combat.' },
+  { id: 'builder', fr: 'Constructeur', en: 'Builder', hintFr: 'Pose des blocs pour gagner des pièces.', hintEn: 'Place blocks to earn coins.' },
+];
+
+export function RoleplayHud() {
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
+  const job = useRoleplayStore((state) => state.job);
+  const coins = useRoleplayStore((state) => state.coins);
+  const panelOpen = useRoleplayStore((state) => state.panelOpen);
+  if (gameplayMode !== 'roleplay') return null;
+  const current = JOBS.find((entry) => entry.id === job);
+  const home = roleplayHome();
+  return <>
+    {panelOpen && <div className="backpack-backdrop"><section className="book-panel heist-role-panel" data-roleplay-jobs><h2>{translate('Choisis ton métier', 'Choose your job')}</h2>{JOBS.map((entry) => <button type="button" className="primary-button" data-job={entry.id} key={entry.id} onClick={() => chooseRoleplayJob(entry.id)}>{translate(entry.fr, entry.en)}</button>)}</section></div>}
+    <div className="heist-hud" data-roleplay-hud style={{ pointerEvents: 'auto' }}><strong>{current ? translate(current.fr, current.en) : translate('Sans métier', 'No job')} · {coins} {translate('pièces', 'coins')}</strong><span>{current ? translate(current.hintFr, current.hintEn) : translate('Choisis un métier pour commencer.', 'Choose a job to get started.')}</span><small>{translate(`Ta maison · X ${home.x} · Z ${home.z}`, `Your home · X ${home.x} · Z ${home.z}`)}</small>{(job === 'merchant' || job === 'police') && <button type="button" onClick={performRoleplayWork}>{translate('Travailler · +20 pièces', 'Work · +20 coins')}</button>}</div>
+  </>;
+}

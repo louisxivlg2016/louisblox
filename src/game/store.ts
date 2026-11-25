@@ -162,7 +162,7 @@ export const useGameStore = create<GameStore>((set) => ({
   selectBlock: (selected, slot) => set((state) => {
     selected = normalizePaintballGun(selected);
     const key = typeof selected === 'number' ? `block_${selected}` : selected;
-    if (state.gameplayMode === 'survival' && selected !== 'hand' && !storedAnimalIdFromSelection(selected) && (state.itemCounts[key] ?? 0) <= 0) return { notice: translate('Récolte et fabrique cet objet avant de l’utiliser.', 'Gather and craft this item before using it.') };
+    if ((state.gameplayMode === 'survival' || state.gameplayMode === 'planet') && selected !== 'hand' && !storedAnimalIdFromSelection(selected) && (state.itemCounts[key] ?? 0) <= 0) return { notice: translate('Récolte et fabrique cet objet avant de l’utiliser.', 'Gather and craft this item before using it.') };
     const matchingSlot = slot !== undefined && state.hotbarSlots[slot] === selected ? slot : state.hotbarSlots.indexOf(selected);
     return { selected, selectedSlot: matchingSlot >= 0 ? matchingSlot : state.selectedSlot };
   }),
@@ -174,7 +174,7 @@ export const useGameStore = create<GameStore>((set) => ({
     }
     kind = normalizePaintballGun(kind);
     const key = typeof kind === 'number' ? `block_${kind}` : kind;
-    if (state.gameplayMode === 'survival' && kind !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: translate('Cet objet n’a pas encore été fabriqué.', 'This item has not been crafted yet.') };
+    if ((state.gameplayMode === 'survival' || state.gameplayMode === 'planet') && kind !== 'hand' && (state.itemCounts[key] ?? 0) <= 0) return { notice: translate('Cet objet n’a pas encore été fabriqué.', 'This item has not been crafted yet.') };
     const hotbarSlots = [...state.hotbarSlots];
     hotbarSlots[index] = kind;
     return { hotbarSlots, selected: kind, selectedSlot: index, backpackItem: null };
@@ -182,7 +182,7 @@ export const useGameStore = create<GameStore>((set) => ({
   setBackpackItem: (backpackItem) => set({ backpackItem }),
   setItemCount: (kind, count) => set((state) => {
     const itemCounts = { ...state.itemCounts, [kind]: Math.max(0, count) };
-    if (state.gameplayMode !== 'survival' || count > 0 || kind === 'hand') return { itemCounts };
+    if (state.gameplayMode !== 'survival' && state.gameplayMode !== 'planet' || count > 0 || kind === 'hand') return { itemCounts };
     return {
       itemCounts,
       hotbarSlots: state.hotbarSlots.map((slot) => slot === kind || typeof slot === 'number' && `block_${slot}` === kind ? null : slot),

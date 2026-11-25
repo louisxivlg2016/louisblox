@@ -47,6 +47,7 @@ import { FootballHud } from './FootballHud';
 import { MazeHud } from './MazeHud';
 import { HeistHud } from './HeistHud';
 import { DeliveryHud, SkyfallHud } from './ArcadeHuds';
+import { DeepHud, PlanetHud, RoleplayHud } from './AdventureHuds';
 import { FriendRequestDialog } from './FriendRequestDialog';
 import { TradingPanel } from './TradingPanel';
 import { useTradeStore } from '../game/trading';
@@ -159,6 +160,9 @@ export function Hud() {
       <HeistHud />
       <DeliveryHud />
       <SkyfallHud />
+      <PlanetHud />
+      <DeepHud />
+      <RoleplayHud />
       <EmotePanel />
       <PaintballPalette />
       <PlaneTitleEditor />
@@ -189,7 +193,7 @@ export function Hud() {
               >
                 <span className="slot-number">{index === 9 ? '0' : index + 1}</span>
                 {kind !== null && <ItemIcon kind={kind} />}
-                {gameplayMode === 'survival' && kind !== null && inventoryCount(kind, { gameplayMode, itemCounts, apples }) > 1 && <span className="slot-count">{inventoryCount(kind, { gameplayMode, itemCounts, apples })}</span>}
+                {(gameplayMode === 'survival' || gameplayMode === 'planet') && kind !== null && inventoryCount(kind, { gameplayMode, itemCounts, apples }) > 1 && <span className="slot-count">{inventoryCount(kind, { gameplayMode, itemCounts, apples })}</span>}
               </button>
             ))}
           </div>

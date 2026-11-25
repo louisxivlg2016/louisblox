@@ -33,6 +33,9 @@ import { mazeControlSystem } from '../game/mazeClient';
 import { heistControlSystem } from '../game/heistClient';
 import { deliveryControlSystem } from '../game/deliveryClient';
 import { skyfallControlSystem } from '../game/skyfallClient';
+import { planetControlSystem } from '../game/planetClient';
+import { deepControlSystem } from '../game/deepClient';
+import { roleplayControlSystem } from '../game/roleplayClient';
 import { traderSystem } from '../game/systems/traderSystem';
 import { tradeInteractionSystem } from '../game/trading';
 import { updateAmbientSounds } from '../game/audio';
@@ -55,7 +58,10 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const heistHandled = heistControlSystem(world, camera, actions);
       const deliveryHandled = deliveryControlSystem(world, camera);
       const skyfallHandled = skyfallControlSystem(world, dt);
-      const modeHandled = footballHandled || heistHandled || deliveryHandled || skyfallHandled;
+      const planetHandled = planetControlSystem(world);
+      const deepHandled = deepControlSystem(world, dt, actions);
+      const roleplayHandled = roleplayControlSystem(world, actions);
+      const modeHandled = footballHandled || heistHandled || deliveryHandled || skyfallHandled || planetHandled || deepHandled || roleplayHandled;
       const animalHandled = !sleeping && !modeHandled && animalInteractionSystem(world, camera, actions.harvest + actions.interact, actions.tap);
       const tradeHandled = !animalHandled && !sleeping && !modeHandled && tradeInteractionSystem(world, camera, actions.place + actions.harvest + actions.tap + actions.interact);
       const mount = world.queryFirst(Player)?.get(PlayerMount);
@@ -82,7 +88,8 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       if (effectSystem(world, dt)) invalidate();
       const selected = useGameStore.getState().selected;
       const heistBlockActions = heistHandled && (selected === BlockKind.Ladder || selected === BlockKind.Tnt);
-      const remainingActions = sleeping || modeHandled && !heistBlockActions || animalHandled || vehicleHandled || tradeHandled || itemHandled ? { place: 0, harvest: 0 } : actions;
+      const adventureBlockActions = planetHandled || roleplayHandled;
+      const remainingActions = sleeping || modeHandled && !heistBlockActions && !adventureBlockActions || animalHandled || vehicleHandled || tradeHandled || itemHandled ? { place: 0, harvest: 0 } : actions;
       blockSystem(world, camera, dt, footballHandled || animalTarget || vehicleTarget || sleeping, remainingActions);
     } else {
       cameraSystem(world, camera, delta);

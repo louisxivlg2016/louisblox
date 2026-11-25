@@ -121,7 +121,7 @@ export function initInput() {
     if (event.code === 'Tab') {
       event.preventDefault();
       const state = useGameStore.getState();
-      if (!['creative', 'survival', 'city-ancient', 'city-modern'].includes(state.gameplayMode)) return;
+      if (!['creative', 'survival', 'city-ancient', 'city-modern', 'planet', 'deep-dive', 'roleplay'].includes(state.gameplayMode)) return;
       if (state.container) {
         state.closeContainer();
         void requestPlay();
@@ -170,7 +170,7 @@ export function initInput() {
     if (event.code === 'KeyC' && !event.repeat) {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLElement && event.target.isContentEditable) return;
       const state = useGameStore.getState();
-      if (!['creative', 'survival', 'city-ancient', 'city-modern'].includes(state.gameplayMode)) return;
+      if (!['creative', 'survival', 'city-ancient', 'city-modern', 'planet', 'deep-dive', 'roleplay'].includes(state.gameplayMode)) return;
       event.preventDefault();
       const construction = useConstructionStore.getState();
       if (construction.open) {

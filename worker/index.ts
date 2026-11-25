@@ -53,7 +53,7 @@ type VoxelEdit = number | {
   season?: string;
 } | null;
 type EditEntry = [string, VoxelEdit];
-type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern' | 'pirates' | 'football' | 'maze' | 'heist' | 'delivery' | 'skyfall';
+type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern' | 'pirates' | 'football' | 'maze' | 'heist' | 'delivery' | 'skyfall' | 'planet' | 'deep-dive' | 'roleplay';
 type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern' | 'custom';
 type BattleTeam = 'red' | 'blue' | `solo:${string}`;
 
@@ -1212,7 +1212,7 @@ export class GameRoom extends DurableObject<Env> {
         this.radioEnabled = false;
         this.radioTrack = 0;
         const mode = (data as { gameplayMode?: unknown }).gameplayMode;
-        this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' || mode === 'pirates' || mode === 'football' || mode === 'maze' || mode === 'heist' || mode === 'delivery' || mode === 'skyfall' ? mode : 'creative';
+        this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' || mode === 'pirates' || mode === 'football' || mode === 'maze' || mode === 'heist' || mode === 'delivery' || mode === 'skyfall' || mode === 'planet' || mode === 'deep-dive' || mode === 'roleplay' ? mode : 'creative';
         const template = (data as { template?: unknown }).template;
         this.worldTemplate = template === 'city-ancient' || template === 'city-modern' || template === 'custom' ? template : 'nature';
         if (this.worldTemplate === 'custom') {

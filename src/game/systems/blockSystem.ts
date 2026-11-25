@@ -29,6 +29,8 @@ import { toggleVehicleRadio } from '../radio';
 import { useShopBlock } from '../shops';
 import { useCustomPaintingStore } from '../customPainting';
 import { collapseHeistGravel, consumeHeistGadget, hasHeistGadget, heistMiningDuration, notifyHeistAlarm } from '../heistClient';
+import { onPlanetMined } from '../planetClient';
+import { canRoleplayBuildAt, canRoleplayMineAt, onRoleplayMined, onRoleplayPlaced } from '../roleplayClient';
 
 const direction = new Vector3();
 const origin = new Vector3();
@@ -98,7 +100,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
 
   const kind = hit?.block.kind;
   const ranged = typeof store.selected === 'string' && ['gun', 'bow'].includes(getItemMeta(store.selected).category);
-  const canMine = hit?.block.protected !== true && !ranged && !isWaterBlock(kind) && !['bucket', 'water_bucket', 'empty_bucket'].includes(store.selected as string) && (store.gameplayMode === 'creative' || store.gameplayMode !== 'football' && store.gameplayMode !== 'maze' && ((store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
+  const roleplayMining = store.gameplayMode !== 'roleplay' || hit !== null && canRoleplayMineAt(hit.x, hit.z);
+  const canMine = roleplayMining && hit?.block.protected !== true && !ranged && !isWaterBlock(kind) && !['bucket', 'water_bucket', 'empty_bucket'].includes(store.selected as string) && (store.gameplayMode === 'creative' || store.gameplayMode !== 'football' && store.gameplayMode !== 'maze' && ((store.selected === 'hand' && store.gameplayMode !== 'battle') || store.gameplayMode === 'survival' || typeof store.selected === 'number' || isSword(store.selected)
     || (typeof store.selected === 'string' && (['pickaxe', 'shovel'].includes(getItemMeta(store.selected).category) || getItemMeta(store.selected).shape === 'shears'))));
   const mining = canMine && isMouseDown(0) && hit !== null && useGameStore.getState().mode === 'play';
   if (mining && hit && kind !== undefined) {
@@ -127,6 +130,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       if (kind === BlockKind.Food) pickUpFood(world, hit);
       else {
         removeVoxel(world, hit);
+        if (store.gameplayMode === 'planet') onPlanetMined(kind);
+        if (store.gameplayMode === 'roleplay') onRoleplayMined(kind, hit.x, hit.y, hit.z);
         if (store.gameplayMode === 'heist') {
           if (kind === BlockKind.Glass && hit.x >= -46 && hit.x <= -25 && hit.z >= -34 && hit.z <= -17) notifyHeistAlarm(hit);
           if (kind === BlockKind.Sand) collapseHeistGravel(world, hit);
@@ -244,6 +249,10 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         store.setNotice(translate('Un tableau se pose sur la paroi verticale d’un bloc.', 'A painting must be placed on the vertical side of a block.'));
         return;
       }
+      if (!canRoleplayBuildAt(x, z)) {
+        store.setNotice(translate('Tu peux seulement décorer ta propre maison. Le constructeur peut bâtir dans toute la ville.', 'You can only decorate your own home. Builders can build throughout the city.'));
+        return;
+      }
       if (!hasInventory(kind, store)) {
         store.setNotice(translate('Récolte ou fabrique ce bloc avant de le poser.', 'Gather or craft this block before placing it.'));
         return;
@@ -281,7 +290,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
         releasePointerForOverlay();
       }
       if (placed && kind === BlockKind.Water) setVoxelFloodSource(world, placed, true);
-      if (placed && store.gameplayMode === 'survival') changeInventory(kind, -1);
+      if (placed && (store.gameplayMode === 'survival' || store.gameplayMode === 'planet')) changeInventory(kind, -1);
+      if (placed && store.gameplayMode === 'roleplay') onRoleplayPlaced();
       if (kind === BlockKind.Tnt) {
         const bomb = spawnBomb(world, x, y, z);
         const cx = chunkCoordinate(x);

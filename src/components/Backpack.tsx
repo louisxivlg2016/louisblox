@@ -32,7 +32,7 @@ export function Backpack() {
   const [gallerySearch, setGallerySearch] = useState('');
   const [animalVersion, setAnimalVersion] = useState(0);
   const dragSlot = useRef<{ index: number; kind: SelectedKind; pointerId: number; x: number; y: number } | null>(null);
-  const survival = gameplayMode === 'survival';
+  const survival = gameplayMode === 'survival' || gameplayMode === 'planet';
   const inventory = { itemCounts, gameplayMode, apples };
   const animals = storedAnimals(world);
   if (!open || !allowsBackpack(gameplayMode)) return null;

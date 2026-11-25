@@ -11,7 +11,7 @@ import type { GameplayMode } from '../game/worldMode';
 import { requestRoomMode } from './Multiplayer';
 import { translate } from '../game/language';
 
-const MODE_ORDER: GameplayMode[] = ['creative', 'survival', 'battle', 'pirates', 'football', 'maze', 'heist', 'delivery', 'skyfall', 'city-ancient', 'city-modern'];
+const MODE_ORDER: GameplayMode[] = ['creative', 'survival', 'battle', 'pirates', 'football', 'maze', 'heist', 'delivery', 'skyfall', 'planet', 'deep-dive', 'roleplay', 'city-ancient', 'city-modern'];
 
 function modeFromUrl(): GameplayMode | 'room' {
   const params = new URLSearchParams(window.location.search);

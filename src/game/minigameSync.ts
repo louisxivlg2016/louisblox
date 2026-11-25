@@ -4,6 +4,9 @@ import { clearMaze, receiveMazeSpawn, receiveMazeState, setMazeSocket } from './
 import { clearHeist, receiveHeistPrison, receiveHeistState, receiveHeistTaser, setHeistSocket } from './heistClient';
 import { clearDelivery } from './deliveryClient';
 import { clearSkyfall } from './skyfallClient';
+import { clearPlanet } from './planetClient';
+import { clearDeep } from './deepClient';
+import { clearRoleplay } from './roleplayClient';
 
 export function setMinigameSocket(socket: WebSocket | null) {
   setPirateSocket(socket);
@@ -19,6 +22,9 @@ export function clearMinigames() {
   clearHeist();
   clearDelivery();
   clearSkyfall();
+  clearPlanet();
+  clearDeep();
+  clearRoleplay();
 }
 
 export function receiveMinigameMessage(data: unknown) {

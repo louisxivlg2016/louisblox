@@ -24,7 +24,7 @@ export function sellableInventoryCount(kind: SelectedKind, state: InventoryState
 }
 
 export function hasInventory(kind: SelectedKind, state: InventoryState) {
-  return storedAnimalIdFromSelection(kind) !== null || state.gameplayMode !== 'survival' || kind === 'hand' || inventoryCount(kind, state) > 0;
+  return storedAnimalIdFromSelection(kind) !== null || state.gameplayMode !== 'survival' && state.gameplayMode !== 'planet' || kind === 'hand' || inventoryCount(kind, state) > 0;
 }
 
 export function changeInventory(kind: SelectedKind, amount: number) {

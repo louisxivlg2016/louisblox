@@ -51,8 +51,9 @@ export function BoutiquePanel() {
   const setWig = useCharacterStore((state) => state.setWig);
   const setAppearance = useCharacterStore((state) => state.setAppearance);
   const battle = useGameStore((state) => state.gameplayMode === 'battle');
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
   const [tab, setTab] = useState<'shop' | 'settings'>('shop');
-  if (!open) return null;
+  if (!open || gameplayMode === 'planet' || gameplayMode === 'deep-dive') return null;
   const close = () => {
     setOpen(false);
     void requestPlay();
