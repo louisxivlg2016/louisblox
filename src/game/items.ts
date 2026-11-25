@@ -18,7 +18,8 @@ export type ItemKind =
   | 'raw_chicken' | 'cooked_chicken' | 'raw_salmon' | 'cooked_salmon'
   | 'cheese_slice' | 'cheese_wheel' | 'milk' | 'wool'
   | 'bow' | 'crossbow' | 'pistol_iron' | 'pistol_gold' | 'pistol_bomb' | 'rifle_auto' | 'rifle_flintlock'
-  | 'car_red' | 'car_blue' | 'plane' | 'train' | 'metro' | 'boat' | 'jeep' | 'police_car' | 'firetruck' | 'carriage' | 'cannon' | 'saddle' | 'parachute';
+  | 'car_red' | 'car_blue' | 'plane' | 'train' | 'metro' | 'boat' | 'jeep' | 'police_car' | 'firetruck' | 'carriage' | 'cannon' | 'saddle' | 'parachute'
+  | 'handcuffs' | 'taser' | 'grappling_hook' | 'heist_trap' | 'security_key' | 'gold_bag';
 export type StoredAnimalItem = `stored_animal_${string}`;
 export type SelectedKind = BlockKind | ItemKind | GalleryItemId | StoredAnimalItem;
 
@@ -114,6 +115,12 @@ export const ITEM_META: Record<ItemKind, ItemMeta> = {
   saddle: item('Selle pour cheval', '#80502e', 'saddle'),
   extinguisher: item('Extincteur', '#d72b25', 'resource', { shape: 'extinguisher' }),
   parachute: item('Parachute', '#d94b45', 'resource', { shape: 'parachute' }),
+  handcuffs: item('Menottes', '#a8b5bc', 'resource', { shape: 'handcuffs' }),
+  taser: item('Taser', '#e5c442', 'resource', { shape: 'taser' }),
+  grappling_hook: item('Grappin', '#65747c', 'resource', { shape: 'grappling_hook' }),
+  heist_trap: item('Bloc piège', '#6b5b78', 'resource', { shape: 'trap' }),
+  security_key: item('Clé de sécurité', '#d6ae40', 'resource', { shape: 'key' }),
+  gold_bag: item('Sac d’or', '#e3bd32', 'resource', { shape: 'gold_bag' }),
 };
 
 export const ITEM_ORDER = Object.keys(ITEM_META) as ItemKind[];

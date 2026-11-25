@@ -36,6 +36,8 @@ import { PIRATE_LOADOUT } from '../game/pirates';
 import { Chunk } from '../game/traits';
 import { ConstructionGuide } from './ConstructionGuide';
 import { CustomWorldObjects } from './CustomWorldObjects';
+import { HeistLoot } from './HeistModels';
+import { SkyfallBlocks } from './SkyfallBlocks';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -163,6 +165,8 @@ export function Game() {
       <Explosions key={`explosions-${generation}`} />
       <Physics gravity={[0, 0, 0]} paused={mode !== 'play'}>
         <Level key={`level-${generation}`} />
+        {gameplayMode === 'heist' && <HeistLoot />}
+        {gameplayMode === 'skyfall' && <SkyfallBlocks />}
         <PirateWorld key={`pirate-world-${generation}`} />
         <PlayerView key={`player-${generation}`} />
         <TargetHighlight key={`target-${generation}`} />

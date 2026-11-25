@@ -490,6 +490,19 @@
       .battle-events p { margin: 4px 0; padding: 5px 7px; background: rgba(0,0,0,.48); }
       .battle-death { position: absolute; top: 42%; left: 50%; z-index: 55; display: grid; gap: 10px; transform: translate(-50%, -50%); color: #ffb0a5; font-size: 36px; font-weight: 700; text-align: center; text-shadow: 2px 2px #000; pointer-events: none; }
       .battle-death span { color: #fff; font-size: 14px; }
+      .heist-hud { position: absolute; top: 18px; left: 50%; z-index: 16; display: grid; justify-items: center; gap: 3px; transform: translateX(-50%); padding: 8px 14px; color: #f5e9b5; background: rgba(32, 29, 24, .88); border: 2px solid #a8845e; pointer-events: none; }
+      .heist-hud strong { font-size: 18px; }
+      .heist-hud span { font-size: 12px; }
+      .heist-hud small { color: #fff; font-size: 10px; }
+      .heist-prison-hint { position: absolute; left: 50%; bottom: 180px; z-index: 16; max-width: min(600px, 90vw); transform: translateX(-50%); padding: 9px 14px; color: #fff0b0; background: rgba(42, 34, 26, .9); border: 2px solid #a8845e; text-align: center; font-size: 12px; pointer-events: none; }
+      .heist-role-panel { display: grid; gap: 14px; width: min(440px, 90vw); padding: 24px; color: #fff; background: #253329; border: 3px solid #71885e; text-align: center; }
+      .heist-shop { position: absolute; right: 18px; bottom: 190px; z-index: 20; display: grid; gap: 7px; width: 210px; padding: 12px; color: #fff; background: rgba(29, 39, 32, .96); border: 2px solid #71885e; }
+      .heist-shop h3 { margin: 0 0 4px; font-size: 13px; }
+      .heist-shop button { padding: 7px; color: #fff; background: #465d3a; border: 1px solid #71885e; cursor: pointer; }
+      @media (max-width: 650px) { .heist-hud { top: 62px; padding: 5px 8px; } .heist-shop { right: 8px; bottom: 220px; width: 175px; } .heist-prison-hint { bottom: 205px; font-size: 10px; } }
+      .delivery-hud, .skyfall-hud { position: absolute; top: 18px; right: 18px; z-index: 16; display: grid; justify-items: end; gap: 4px; padding: 8px 12px; color: #fff; background: rgba(25, 38, 30, .88); border: 2px solid #71885e; pointer-events: none; }
+      .delivery-hud span, .skyfall-hud span { color: #f0d98b; font-size: 12px; }
+      .delivery-hud small, .skyfall-hud small { font-size: 10px; }
       .football-notice { position: absolute; top: 130px; left: 50%; z-index: 16; display: grid; gap: 5px; width: min(520px, calc(100vw - 28px)); padding: 10px 14px; transform: translateX(-50%); text-align: center; color: #fff; background: rgba(19, 29, 35, .86); border: 2px solid #8a9c9d; pointer-events: none; }
       .football-notice strong { color: #fff1ac; font-size: 16px; }
       .football-notice span { font-size: 13px; }

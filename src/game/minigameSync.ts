@@ -1,17 +1,24 @@
 import { clearPirates, receivePirateInventory, receivePirateState, setPirateSocket } from './piratesClient';
 import { clearFootball, receiveFootballSpawn, receiveFootballState, setFootballSocket } from './footballClient';
 import { clearMaze, receiveMazeSpawn, receiveMazeState, setMazeSocket } from './mazeClient';
+import { clearHeist, receiveHeistPrison, receiveHeistState, receiveHeistTaser, setHeistSocket } from './heistClient';
+import { clearDelivery } from './deliveryClient';
+import { clearSkyfall } from './skyfallClient';
 
 export function setMinigameSocket(socket: WebSocket | null) {
   setPirateSocket(socket);
   setFootballSocket(socket);
   setMazeSocket(socket);
+  setHeistSocket(socket);
 }
 
 export function clearMinigames() {
   clearPirates();
   clearFootball();
   clearMaze();
+  clearHeist();
+  clearDelivery();
+  clearSkyfall();
 }
 
 export function receiveMinigameMessage(data: unknown) {
@@ -23,6 +30,9 @@ export function receiveMinigameMessage(data: unknown) {
   else if (type === 'football-spawn') receiveFootballSpawn(data);
   else if (type === 'maze-state') receiveMazeState(data);
   else if (type === 'maze-spawn') receiveMazeSpawn(data);
+  else if (type === 'heist-state') receiveHeistState(data);
+  else if (type === 'heist-prison') receiveHeistPrison();
+  else if (type === 'heist-taser') receiveHeistTaser();
   else return false;
   return true;
 }

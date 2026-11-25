@@ -15,6 +15,7 @@ import { resetEmote, useEmoteStore } from '../emotes';
 import { CITY_LIMIT, isCityMode } from '../worldMode';
 import { hasEffect, jumpMultiplier, movementMultiplier } from '../effects';
 import { isPirateEliminated } from '../piratesClient';
+import { heistMovementMultiplier } from '../heistClient';
 import { footballBounds, isFootballFrozen } from '../footballClient';
 import { isMazeFrozen, mazeBounds } from '../mazeClient';
 import { canWalkInVehicle, isAnimalMount } from '../vehicleTypes';
@@ -75,7 +76,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const pitch = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, state.pitch - mouse.y * 0.004 - edge.y * dt * 3.2));
   const flightToggles = consumeFlightToggle();
   const canDoubleJump = hasEffect('doubleJump') && !state.grounded && !state.flying && (airJumps.get(world) ?? 0) < 1;
-  const flying = ['pirates', 'football', 'maze', 'survival'].includes(useGameStore.getState().gameplayMode) ? false : useGameStore.getState().selected !== 'parachute' && !canDoubleJump && flightToggles % 2 === 1 ? !state.flying : state.flying;
+  const flying = ['pirates', 'football', 'maze', 'survival', 'heist', 'delivery', 'skyfall'].includes(useGameStore.getState().gameplayMode) ? false : useGameStore.getState().selected !== 'parachute' && !canDoubleJump && flightToggles % 2 === 1 ? !state.flying : state.flying;
   if (health && health.value <= 0 && entity.get(PlayerMount)?.vehicle) dismount(world);
 
   const mount = entity.get(PlayerMount);
@@ -127,7 +128,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   };
   const ladder = flying ? null : ladderAt(position.y);
   const onLadder = ladder !== null;
-  const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1) * movementMultiplier();
+  const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1) * movementMultiplier() * (useGameStore.getState().gameplayMode === 'heist' ? heistMovementMultiplier() : 1);
   const emote = useEmoteStore.getState().current;
   if ((forward !== 0 || strafe !== 0 || flying) && emote !== null) resetEmote();
   const normalizedForward = forward / length;

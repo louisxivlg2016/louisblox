@@ -9,6 +9,8 @@ import { generatePirateChunk, pirateSpawn } from './pirates';
 import { spawnPirateCannons } from './pirateCannons';
 import { footballSpawn, generateFootballChunk } from './footballArena';
 import { generateMazeChunk } from './maze';
+import { generateHeistChunk, HEIST_DELIVERY_START, HEIST_HIDEOUT } from './heistCity';
+import { generateSkyfallChunk, SKYFALL_SPAWN } from './skyfallArena';
 import { mazePlaygroundSpawn } from './mazePlayground';
 import type { GameplayMode } from './worldMode';
 import { CITY_CENTER_LIMIT, isCityMode, isMinigameMode } from './worldMode';
@@ -345,7 +347,7 @@ export function loadChunk(world: World, cx: number, cz: number) {
   const battle = mode === 'battle';
   const customWorld = template === 'custom' ? useGameStore.getState().customWorld : null;
   const cached = state.chunkCache.get(key);
-  const generated = cached ?? (mode === 'pirates' ? generatePirateChunk(cx, cz) : mode === 'football' ? generateFootballChunk(cx, cz) : mode === 'maze' ? generateMazeChunk(cx, cz) : battle ? generateBattleChunk(cx, cz) : template === 'custom' ? generateCustomChunk(cx, cz, state.seed, customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, state.seed)) : template === 'city-ancient' || template === 'city-modern' ? generateCityChunk(cx, cz, state.seed, template === 'city-modern') : generateChunk(cx, cz, state.seed));
+  const generated = cached ?? (mode === 'pirates' ? generatePirateChunk(cx, cz) : mode === 'football' ? generateFootballChunk(cx, cz) : mode === 'maze' ? generateMazeChunk(cx, cz) : mode === 'heist' || mode === 'delivery' ? generateHeistChunk(cx, cz) : mode === 'skyfall' ? generateSkyfallChunk(cx, cz) : battle ? generateBattleChunk(cx, cz) : template === 'custom' ? generateCustomChunk(cx, cz, state.seed, customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, state.seed)) : template === 'city-ancient' || template === 'city-modern' ? generateCityChunk(cx, cz, state.seed, template === 'city-modern') : generateChunk(cx, cz, state.seed));
   if (!cached && !isMinigameMode(mode) && !isCityMode(mode) && template !== 'custom') {
     generated.blocks = removeVillageTrees(generated.blocks, cx, cz, state.seed);
     generated.blocks.push(...generateVillageBlocks(cx, cz, state.seed));
@@ -847,7 +849,7 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
   const legacyCitySignSpawn = city && restore !== null && Math.hypot(restore.player.x, restore.player.z) < 1;
   const spawn = gameplayMode === 'maze' ? mazePlaygroundSpawn(0) : restore && restorePosition && !legacyCitySignSpawn
     ? { x: restore.player.x, y: restore.player.y, z: restore.player.z }
-    : gameplayMode === 'pirates' ? pirateSpawn('red') : gameplayMode === 'football' ? footballSpawn(null) : gameplayMode === 'battle' ? battleSpawn(null) : city ? { ...CITY_SPAWN } : worldTemplate === 'custom' ? customWorldSpawn(customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, seed), seed) : safeSpawnAt(0, 0, seed);
+    : gameplayMode === 'heist' ? { ...HEIST_HIDEOUT } : gameplayMode === 'delivery' ? { ...HEIST_DELIVERY_START } : gameplayMode === 'skyfall' ? { ...SKYFALL_SPAWN } : gameplayMode === 'pirates' ? pirateSpawn('red') : gameplayMode === 'football' ? footballSpawn(null) : gameplayMode === 'battle' ? battleSpawn(null) : city ? { ...CITY_SPAWN } : worldTemplate === 'custom' ? customWorldSpawn(customWorld ?? createCustomWorld(DEFAULT_WORLD_SOURCE, seed), seed) : safeSpawnAt(0, 0, seed);
   world.spawn(
     Player,
     PlayerBody(),

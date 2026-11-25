@@ -45,6 +45,8 @@ import { EffectsHud } from './EffectsHud';
 import { PiratesHud } from './PiratesHud';
 import { FootballHud } from './FootballHud';
 import { MazeHud } from './MazeHud';
+import { HeistHud } from './HeistHud';
+import { DeliveryHud, SkyfallHud } from './ArcadeHuds';
 import { FriendRequestDialog } from './FriendRequestDialog';
 import { TradingPanel } from './TradingPanel';
 import { useTradeStore } from '../game/trading';
@@ -153,6 +155,9 @@ export function Hud() {
       <PiratesHud />
       <FootballHud />
       <MazeHud />
+      <HeistHud />
+      <DeliveryHud />
+      <SkyfallHud />
       <EmotePanel />
       <PaintballPalette />
       <PlaneTitleEditor />

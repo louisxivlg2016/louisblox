@@ -4,6 +4,7 @@ import type { Appearance, PlayerDirectory } from './directory';
 import { PirateEngine } from './pirates';
 import { FootballEngine } from './football';
 import { MazeEngine } from './maze';
+import { HeistEngine } from './heist';
 import { isAnimalMount, isVehicleKind } from '../src/game/vehicleTypes';
 import { BlockKind } from '../src/game/voxel';
 import { cleanPaintingImage } from '../src/game/paintingImage';
@@ -52,7 +53,7 @@ type VoxelEdit = number | {
   season?: string;
 } | null;
 type EditEntry = [string, VoxelEdit];
-type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern' | 'pirates' | 'football' | 'maze';
+type GameplayMode = 'survival' | 'creative' | 'battle' | 'city-ancient' | 'city-modern' | 'pirates' | 'football' | 'maze' | 'heist' | 'delivery' | 'skyfall';
 type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern' | 'custom';
 type BattleTeam = 'red' | 'blue' | `solo:${string}`;
 
@@ -64,7 +65,7 @@ function soloSpawn() {
 type WorldProtection = { ownerId: string; centerX: number; centerZ: number; radius: 500; enabled: boolean; allowedPlayerIds: string[]; canBreak?: boolean; canPlace?: boolean; allowDestructiveFire?: boolean; allowCampfire?: boolean; allowFloodingWater?: boolean; allowCalmWater?: boolean; bannedPlayerIds?: string[]; bannedPlayerNames?: Record<string, string> };
 type TribeHome = { x: number; y: number; z: number; yaw: number; pitch: number };
 type Tribe = { id: string; name: string; ownerId: string; members: Array<{ playerId: string; name: string }>; home?: TribeHome };
-type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; worldName?: string; template?: WorldTemplate; customWorld?: CustomWorldDefinition; protection?: WorldProtection; tribes?: Tribe[]; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']>; deadAnimals?: string[]; deadTraders?: string[]; deathWorldId?: string; animalOwners?: Array<[string, string]>; storedAnimals?: string[] };
+type StoredWorld = { seed: number | null; edits: EditEntry[]; gameplayMode?: GameplayMode; worldId?: string; worldName?: string; template?: WorldTemplate; customWorld?: CustomWorldDefinition; protection?: WorldProtection; tribes?: Tribe[]; pirates?: ReturnType<PirateEngine['snapshot']>; football?: ReturnType<FootballEngine['snapshot']>; maze?: ReturnType<MazeEngine['snapshot']>; heist?: ReturnType<HeistEngine['snapshot']>; deadAnimals?: string[]; deadTraders?: string[]; deathWorldId?: string; animalOwners?: Array<[string, string]>; storedAnimals?: string[] };
 
 function isDeathId(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0 && value.length <= 80;
@@ -396,6 +397,15 @@ export class GameRoom extends DurableObject<Env> {
     },
     save: () => this.saveWorld(),
   });
+  private heist = new HeistEngine({
+    mode: () => this.gameplayMode,
+    players: () => this.ctx.getWebSockets().flatMap((socket) => {
+      const attachment = this.attachment(socket);
+      return attachment ? [{ socket, attachment }] : [];
+    }),
+    broadcast: (message) => this.broadcast(message),
+    save: () => this.saveWorld(),
+  });
   private worldReady?: Promise<void>;
 
   private worldName?: string;
@@ -427,6 +437,7 @@ export class GameRoom extends DurableObject<Env> {
       this.pirates.restore(stored?.pirates);
       this.football.restore(stored?.football);
       this.maze.restore(stored?.maze);
+      this.heist.restore(stored?.heist);
     });
     await this.worldReady;
   }
@@ -469,7 +480,7 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private async flushWorldSave() {
-    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName, template: this.worldTemplate, customWorld: this.customWorld, protection: this.protection, tribes: this.tribes, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot(), deadAnimals: [...this.deadAnimals], deadTraders: [...this.deadTraders], deathWorldId: this.deathWorldId, animalOwners: [...this.animalOwners], storedAnimals: [...this.storedAnimals] } satisfies StoredWorld);
+    await this.ctx.storage.put('world-v1', { seed: this.worldSeed, edits: [...this.worldEdits], gameplayMode: this.gameplayMode, worldId: this.worldId, worldName: this.worldName, template: this.worldTemplate, customWorld: this.customWorld, protection: this.protection, tribes: this.tribes, pirates: this.pirates.snapshot(), football: this.football.snapshot(), maze: this.maze.snapshot(), heist: this.heist.snapshot(), deadAnimals: [...this.deadAnimals], deadTraders: [...this.deadTraders], deathWorldId: this.deathWorldId, animalOwners: [...this.animalOwners], storedAnimals: [...this.storedAnimals] } satisfies StoredWorld);
     this.schedulePublishWorld();
   }
 
@@ -646,6 +657,7 @@ export class GameRoom extends DurableObject<Env> {
     server.send(JSON.stringify(this.tribeSnapshot()));
     const tribe = this.tribeWithPlayer(playerId);
     if (tribe?.home) server.send(JSON.stringify({ type: 'tribe-home-spawn', home: tribe.home }));
+    if (this.gameplayMode === 'heist') server.send(JSON.stringify(this.heist.message()));
     if (this.gameplayMode === 'pirates') server.send(JSON.stringify(this.pirates.message()));
     if (this.gameplayMode === 'football') server.send(JSON.stringify(this.football.message()));
     if (this.gameplayMode === 'maze') {
@@ -999,6 +1011,11 @@ export class GameRoom extends DurableObject<Env> {
       this.broadcastBattleState();
       return;
     }
+    if (typeof type === 'string' && type.startsWith('heist-')) {
+      const attachment = this.attachment(ws);
+      if (attachment) this.heist.handle(ws, attachment, data as Record<string, unknown>);
+      return;
+    }
     if (typeof type === 'string' && type.startsWith('football-')) {
       const attachment = this.attachment(ws);
       if (attachment) this.football.handle(attachment, data as Record<string, unknown>);
@@ -1195,7 +1212,7 @@ export class GameRoom extends DurableObject<Env> {
         this.radioEnabled = false;
         this.radioTrack = 0;
         const mode = (data as { gameplayMode?: unknown }).gameplayMode;
-        this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' || mode === 'pirates' || mode === 'football' || mode === 'maze' ? mode : 'creative';
+        this.gameplayMode = mode === 'survival' || mode === 'battle' || mode === 'city-ancient' || mode === 'city-modern' || mode === 'pirates' || mode === 'football' || mode === 'maze' || mode === 'heist' || mode === 'delivery' || mode === 'skyfall' ? mode : 'creative';
         const template = (data as { template?: unknown }).template;
         this.worldTemplate = template === 'city-ancient' || template === 'city-modern' || template === 'custom' ? template : 'nature';
         if (this.worldTemplate === 'custom') {
@@ -1208,6 +1225,7 @@ export class GameRoom extends DurableObject<Env> {
         if (this.gameplayMode === 'pirates') this.pirates.reset();
         if (this.gameplayMode === 'football') this.football.reset();
         if (this.gameplayMode === 'maze') this.maze.reset();
+        if (this.gameplayMode === 'heist') this.heist.reset();
         if (this.gameplayMode === 'battle') {
           this.battleScores = { red: 0, blue: 0 };
           this.playerScores.clear();
@@ -1400,6 +1418,7 @@ export class GameRoom extends DurableObject<Env> {
     if (this.gameplayMode === 'maze') this.maze.constrainState(attachment, state);
     attachment.state = state;
     ws.serializeAttachment(attachment);
+    if (this.gameplayMode === 'heist') this.heist.tick();
     if (this.gameplayMode === 'pirates') this.pirates.tick(attachment);
     if (this.gameplayMode === 'football') this.football.tick(attachment);
     if (this.gameplayMode === 'maze') this.maze.tick(attachment);

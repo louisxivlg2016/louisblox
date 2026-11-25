@@ -23,11 +23,14 @@ import { useEmoteStore } from '../game/emotes';
 import { useEatingStore } from '../game/eating';
 import { canWalkInVehicle } from '../game/vehicleTypes';
 import { appearanceHairColor, appearanceSkinColor } from '../game/appearance';
+import { useHeistStore } from '../game/heistClient';
+import { GoldBagModel } from './HeistModels';
 
 export function PlayerAvatar({ entity, preview = false }: { entity: Entity; preview?: boolean }) {
   const cameraMode = useGameStore((state) => state.cameraMode);
   const sleeping = useGameStore((state) => state.sleepProgress !== null);
   const equipped = useGameStore((state) => state.equippedArmor);
+  const carried = useHeistStore((state) => state.carried);
   const selected = useGameStore((state) => state.selected);
   const riding = useGameStore((state) => state.riding);
   const ridingRole = useGameStore((state) => state.ridingRole);
@@ -140,6 +143,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
     >
       {(!hasFullCharacter(outfit, wig) || armor) && <PixelPart position={[0, 1.08, 0]} size={[0.56, 0.66, 0.32]} color={body} />}
       <CharacterOutfit character={character} outfit={outfit} wig={wig} color={appearance.clothingColor} seated={Boolean(riding) && (!walkingCabin || !walking)} head={headContent} headRef={headRef} appearance={appearance} avatar={avatar} />
+      {carried > 0 && <group name="carried-gold-bag" position={[0, 0.75, 0.32]} rotation={[0.15, 0, 0]} scale={0.85}><GoldBagModel /></group>}
       <group ref={leftArm} visible={!hasFullCharacter(outfit, wig)} position={[-0.39, 1.4, 0]}>
         <PixelPart position={[0, -0.33, 0]} size={[0.19, 0.66, 0.21]} color={limbs} />
       </group>

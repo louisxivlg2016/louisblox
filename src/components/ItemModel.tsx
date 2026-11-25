@@ -17,6 +17,7 @@ import { SaddleGlb } from './SaddleGlb';
 import { ParachuteModel } from './ParachuteModel';
 import { heldWeaponYaw } from '../game/itemPresentation';
 import { VehicleAssetModel } from './VehicleAssetModel';
+import { GoldBagModel, HandcuffsModel } from './HeistModels';
 import { AppleGlb } from './AppleGlb';
 import type { VehicleKind } from '../game/vehicleTypes';
 
@@ -610,6 +611,8 @@ export function ItemModel({ kind, held = false, flipWeapons = false }: ModelProp
   else if (kind === 'bucket' || kind === 'water_bucket' || kind === 'empty_bucket' || kind === 'paint_cleaning_bucket') model = <BucketModel filled={kind === 'water_bucket'} cleaner={kind === 'paint_cleaning_bucket'} />;
   else if (kind === 'extinguisher') model = <WeaponWithFallback kind="extinguisher" />;
   else if (kind === 'parachute') model = <ParachuteModel held />;
+  else if (kind === 'handcuffs') model = <HandcuffsModel />;
+  else if (kind === 'gold_bag') model = <GoldBagModel />;
   else if (meta.category === 'sword') model = <SwordModel color={meta.color} />;
   else if (meta.category === 'bow') model = <BowModel crossbow={kind === 'crossbow'} />;
   else if (meta.category === 'gun') model = kind === 'rifle_flintlock' ? <FlintlockModel /> : <GunModel color={meta.color} bomb={kind === 'pistol_bomb'} rifle={kind === 'rifle_auto'} />;

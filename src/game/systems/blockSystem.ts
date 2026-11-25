@@ -28,6 +28,7 @@ import { translate } from '../language';
 import { toggleVehicleRadio } from '../radio';
 import { useShopBlock } from '../shops';
 import { useCustomPaintingStore } from '../customPainting';
+import { heistMiningDuration } from '../heistClient';
 
 const direction = new Vector3();
 const origin = new Vector3();
@@ -107,7 +108,8 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
       target.miningProgress = 0;
     }
     target.miningProgress += dt;
-    const progress = Math.min(1, target.miningProgress / (store.gameplayMode === 'creative' ? 0.18 : BLOCK_HARDNESS[kind] / (miningSpeed(store.selected, kind) * miningMultiplier())));
+    const miningDuration = store.gameplayMode === 'heist' && hit.y <= 6 && hit.x >= 24 && hit.x <= 45 && hit.z >= 35 && hit.z <= 52 ? heistMiningDuration(kind, store.selected) : store.gameplayMode === 'creative' ? 0.18 : BLOCK_HARDNESS[kind] / (miningSpeed(store.selected, kind) * miningMultiplier());
+    const progress = Math.min(1, target.miningProgress / miningDuration);
     if (Math.abs(store.miningProgress - progress) >= 0.01) store.setMiningProgress(progress);
 
     if (progress >= 1) {
