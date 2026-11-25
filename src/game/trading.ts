@@ -8,7 +8,7 @@ import { AnimalMesh, AnimalMotion, AnimalPosition, CamelLeash, Player, PlayerHea
 import type { World } from 'koota';
 import { BlockKind } from './voxel';
 import { findInteractionTarget } from './interactionTargets';
-import { getWorldSeed, streamChunks } from './chunks';
+import { chunkCoordinate, getWorldSeed, loadChunk, streamChunks } from './chunks';
 import { tradeCityAt, restaurantAt } from './villages';
 import { requestPlay } from './input';
 import { translate } from './language';
@@ -158,6 +158,9 @@ export function arriveAtVillageWithTrader(world: World) {
   if (!traderId || !trader || trader.villager) return false;
   const seed = getWorldSeed(world);
   const site = tradeCityAt(seed);
+  const centerX = chunkCoordinate(site.x);
+  const centerZ = chunkCoordinate(site.z);
+  for (let dx = -2; dx <= 2; dx += 1) for (let dz = -2; dz <= 2; dz += 1) loadChunk(world, centerX + dx, centerZ + dz);
   const destination = teleportToHome(world, { x: site.x, y: heightAt(site.x, site.z + 7, seed) + 0.51, z: site.z + 7, yaw: 0, pitch: 0 });
   if (!destination) return false;
   traderId.set(Trader, { following: false, arrived: true, walking: false, targetX: site.x, targetZ: site.z, destinationX: site.x, destinationZ: site.z });
