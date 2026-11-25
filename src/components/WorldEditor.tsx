@@ -15,8 +15,9 @@ import { translate } from '../game/language';
 import { EditorPlayer } from './EditorPlayer';
 import { StairModel } from './StairModel';
 import { SlabModel } from './SlabModel';
-import { isCarpet, isSlab, isStair, isUpsideDownStair } from '../game/extraBlocks';
+import { isCarpet, isDoor, isSlab, isStair, isTrapdoor, isUpsideDownStair } from '../game/extraBlocks';
 import { CustomWorldObjects } from './CustomWorldObjects';
+import { DoorInstances } from './DoorInstances';
 
 const ALL_BLOCKS = [...new Set(Object.values(BlockKind).filter((kind) => typeof kind === 'number' && kind in BLOCK_INFO))] as BlockKind[];
 const matrix = new Matrix4();
@@ -48,6 +49,11 @@ function BlockInstanceGroup({ kind, values, erase, onInteract }: { kind: BlockKi
     mesh.current.instanceMatrix.needsUpdate = true;
     mesh.current.computeBoundingSphere();
   }, [values]);
+  if (isDoor(kind) || isTrapdoor(kind)) return values.map((target) => (
+    <group key={`${target.block.x},${target.block.y},${target.block.z}`} onClick={(event) => { if (event.delta > 5) return; event.stopPropagation(); onInteract(target, event.face?.normal ?? { x: 0, y: 1, z: 0 }, erase); }} onPointerDown={(event) => { if (event.button !== 2) return; event.stopPropagation(); onInteract(target, event.face?.normal ?? { x: 0, y: 1, z: 0 }, true); }}>
+      <DoorInstances blocks={[target.block]} />
+    </group>
+  ));
   if (isStair(kind) || isSlab(kind) || isCarpet(kind)) return values.map((target) => (
     <group key={`${target.block.x},${target.block.y},${target.block.z}`} onClick={(event) => { if (event.delta > 5) return; event.stopPropagation(); onInteract(target, event.face?.normal ?? { x: 0, y: 1, z: 0 }, erase); }} onPointerDown={(event) => { if (event.button !== 2) return; event.stopPropagation(); onInteract(target, event.face?.normal ?? { x: 0, y: 1, z: 0 }, true); }}>
       {isStair(kind)
@@ -119,7 +125,7 @@ export function WorldEditor({ blocks, terrain, images = [], characters = [], see
   const [category, setCategory] = useState('nature');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<BlockKind>(BlockKind.GrayBrick);
-  const [tool, setTool] = useState<'place' | 'erase' | 'protect'>('place');
+  const [tool, setTool] = useState<'place' | 'erase' | 'protect' | 'doors'>('place');
   const [protectedPlacement, setProtectedPlacement] = useState(false);
   const [history, setHistory] = useState<Voxel[][]>([]);
   const [position, setPosition] = useState({ x: '0', y: '1', z: '0' });
@@ -176,10 +182,20 @@ export function WorldEditor({ blocks, terrain, images = [], characters = [], see
     }
     const facing = normal.x === 1 ? 'east' : normal.x === -1 ? 'west' : normal.z === 1 ? 'south' : 'north';
     const growth = normal.y === -1 ? 1 : normal.y === 0 ? 2 : 0;
-    update([...next, { x, y, z, kind, ...(isStair(kind) || isSlab(kind) ? { facing: isStair(kind) ? 'south' : facing } : {}), ...(isSlab(kind) ? { growth } : {}), ...(protectedPlacement ? { protected: true } : {}) }]);
+    update([...next, { x, y, z, kind, ...(isStair(kind) || isSlab(kind) ? { facing: isStair(kind) ? 'south' : facing } : isDoor(kind) || isTrapdoor(kind) ? { facing } : {}), ...(isSlab(kind) ? { growth } : {}), ...(protectedPlacement ? { protected: true } : {}) }]);
     setMessage(`${selectionInfo(kind).name} placed at ${x}, ${y}, ${z}${protectedPlacement ? translate(' · incassable', ' · unbreakable') : ''}.`);
   };
   const interact = ({ block, base }: PreviewBlock, normal: { x: number; y: number; z: number }, remove: boolean) => {
+    if (tool === 'doors' && !remove) {
+      if (base || !isDoor(block.kind) && !isTrapdoor(block.kind)) {
+        setMessage(translate('Clique sur une porte ou une trappe pour l’ouvrir ou la fermer.', 'Click a door or trapdoor to open or close it.'));
+        return;
+      }
+      const open = block.open !== true;
+      update(blocks.map((other) => other.x === block.x && other.y === block.y && other.z === block.z ? { ...other, open } : other));
+      setMessage(translate(`${selectionInfo(block.kind).name} ${open ? 'ouverte' : 'fermée'}.`, `${selectionInfo(block.kind).name} ${open ? 'opened' : 'closed'}.`));
+      return;
+    }
     if (tool === 'protect') {
       if (base) { setMessage(translate('Le sol de départ ne peut pas être protégé ici. Pose un bloc à cet endroit.', 'The starting ground cannot be protected here. Place a block at this location.')); return; }
       update(blocks.map((other) => other.x === block.x && other.y === block.y && other.z === block.z ? { ...other, protected: other.protected === true ? undefined : true } : other));
@@ -224,6 +240,7 @@ export function WorldEditor({ blocks, terrain, images = [], characters = [], see
             <button type="button" className={tool === 'place' ? 'selected' : ''} onClick={() => setTool('place')}>{translate('Poser', 'Place')}</button>
             <button type="button" className={tool === 'erase' ? 'selected' : ''} onClick={() => setTool('erase')}>{translate('Enlever', 'Remove')}</button>
             <button type="button" className={tool === 'protect' ? 'selected' : ''} aria-pressed={tool === 'protect'} title={translate('Clique sur un bloc pour le rendre incassable ou cassable', 'Click a block to make it unbreakable or breakable')} onClick={() => setTool('protect')}>{translate('Protéger', 'Protect')}</button>
+            <button type="button" className={tool === 'doors' ? 'selected' : ''} aria-pressed={tool === 'doors'} data-editor-doors title={translate('Clique sur une porte ou une trappe pour l’ouvrir ou la fermer', 'Click a door or trapdoor to open or close it')} onClick={() => setTool('doors')}>{translate('Ouvrir / fermer', 'Open / close')}</button>
             <button type="button" onClick={undo} disabled={history.length === 0}>{translate('Annuler', 'Undo')}</button>
             <button type="button" className={playerVisible ? 'selected' : ''} aria-pressed={playerVisible} onClick={() => setPlayerVisible((visible) => !visible)}>{playerVisible ? translate('Joueur visible', 'Player visible') : translate('Joueur caché', 'Player hidden')}</button>
             <button type="button" onClick={() => { setSpawnPoint(null); setResetKey((value) => value + 1); setMessage(translate('Joueur replacé au point de départ.', 'Player returned to spawn.')); }}>{translate('Recentrer', 'Recenter')}</button>
@@ -237,7 +254,7 @@ export function WorldEditor({ blocks, terrain, images = [], characters = [], see
             <EditorScene blocks={blocks} terrain={terrain} images={images} characters={characters} seed={seed} erase={tool === 'erase'} onInteract={interact} playerVisible={playerVisible} resetKey={resetKey} keys={keys} infinite={infinite} spawnPoint={spawnPoint} />
           </Canvas>
         </div>
-        <p className="world-editor-help">{translate('WASD ou flèches : déplacer le joueur · Espace : sauter · glisser pour tourner · clic pour poser · Enlever ou clic droit pour retirer · Protéger puis clic pour changer la résistance d’un bloc', 'WASD or arrows: move player · Space: jump · drag to rotate · click to place · Remove or right click to delete · Protect then click to change block resistance')}</p>
+        <p className="world-editor-help">{translate('WASD ou flèches : déplacer le joueur · Espace : sauter · glisser pour tourner · clic pour poser · Enlever ou clic droit pour retirer · Protéger puis clic pour changer la résistance d’un bloc · Ouvrir / fermer puis clic sur une porte', 'WASD or arrows: move player · Space: jump · drag to rotate · click to place · Remove or right click to delete · Protect then click to change block resistance · Open / close then click a door')}</p>
         <div className="world-editor-coordinates">
           {(['x', 'y', 'z'] as const).map((axis) => <label key={axis}>{axis.toUpperCase()}<input type="number" value={position[axis]} onChange={(event) => setPosition({ ...position, [axis]: event.target.value })} min={axis === 'y' ? 1 : infinite ? -INFINITE_EDITOR_COORDINATE : -CUSTOM_WORLD_RADIUS} max={axis === 'y' ? CUSTOM_WORLD_MAX_Y : infinite ? INFINITE_EDITOR_COORDINATE : CUSTOM_WORLD_RADIUS} /></label>)}
           <button type="button" className="secondary-button" onClick={() => put(Number(position.x), Number(position.y), Number(position.z))}>{translate('Poser ici', 'Place here')}</button>

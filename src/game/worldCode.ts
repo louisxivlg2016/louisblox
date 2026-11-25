@@ -386,12 +386,12 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
     if (!season) throw new Error(translate(`Ligne ${line} : choisis printemps, ete, automne ou hiver.`, `Line ${line}: choose spring, summer, autumn, or winter.`));
     return season;
   };
-  const put = (x: number, y: number, z: number, block: BlockKind, line: number, protectedBlock = false) => {
+  const put = (x: number, y: number, z: number, block: BlockKind, line: number, protectedBlock = false, open = false) => {
     tick(line);
     const key = voxelKey(x, y, z);
     if (!blocks.has(key) && blocks.size >= CUSTOM_WORLD_MAX_BLOCKS) throw new Error(translate(`Ligne ${line} : la construction est limitée à ${CUSTOM_WORLD_MAX_BLOCKS} blocs.`, `Line ${line}: construction is limited to ${CUSTOM_WORLD_MAX_BLOCKS} blocks.`));
     const season = seasonFor(x, z);
-    blocks.set(key, { x, y, z, kind: block, ...(protectedBlock ? { protected: true } : {}), ...(season ? { season } : {}) });
+    blocks.set(key, { x, y, z, kind: block, ...(protectedBlock ? { protected: true } : {}), ...(open ? { open: true } : {}), ...(season ? { season } : {}) });
   };
   const arity = (args: Value[], count: number, name: string, line: number) => {
     if (args.length !== count) throw new Error(`Ligne ${line} : ${name} attend ${count} arguments.`);
@@ -596,10 +596,10 @@ export function executeWorldCode(source: string, seed = 73421, terrainHeight: (x
       return;
     }
     if (name === 'bloc' || name === 'effacer') {
-      if (name === 'bloc' ? args.length !== 4 && args.length !== 5 : args.length !== 3) throw new Error(translate(`Ligne ${line} : ${name} attend ${name === 'bloc' ? '4 arguments, plus true facultatif pour protéger' : '3 arguments'}.`, `Line ${line}: ${name} expects ${name === 'bloc' ? '4 arguments, plus optional true for protection' : '3 arguments'}.`));
+      if (name === 'bloc' ? args.length < 4 || args.length > 6 : args.length !== 3) throw new Error(translate(`Ligne ${line} : ${name} attend ${name === 'bloc' ? '4 arguments, plus les drapeaux facultatifs de protection et d’ouverture' : '3 arguments'}.`, `Line ${line}: ${name} expects ${name === 'bloc' ? '4 arguments, plus optional protection and open flags' : '3 arguments'}.`));
       const [x, y, z] = position(args, 0, line);
       if (name === 'effacer') { blocks.delete(voxelKey(x, y, z)); return; }
-      put(x, y, z, kind(args[3], line), line, args[4] === true);
+      put(x, y, z, kind(args[3], line), line, args[4] === true, args[5] === true);
       return;
     }
     if (name === 'remplir') {
@@ -877,6 +877,7 @@ export function sanitizeCustomWorld(value: unknown): CustomWorldDefinition | nul
       z: block.z,
       kind: block.kind,
       ...(block.protected === true ? { protected: true } : {}),
+      ...(block.open === true ? { open: true } : {}),
       ...(typeof block.text === 'string' ? { text: block.text.slice(0, 120) } : {}),
       ...(block.facing === 'north' || block.facing === 'south' || block.facing === 'east' || block.facing === 'west' ? { facing: block.facing } : {}),
       ...(shop ? { shop } : {}),
@@ -937,6 +938,7 @@ export function worldCodeFromBlocks(definition: Pick<CustomWorldDefinition, 'ter
       return `boutique(${block.x}, ${block.y}, ${block.z}, "${shop.action === 'buy' ? 'acheter' : 'vendre'}", "${shop.item}", ${shop.count ?? 1}, ${shop.price ?? 0}${protectedBlock});`;
     }
     const season = block.season && block.season !== 'auto' ? `saison(${block.x}, ${block.z}, ${block.x}, ${block.z}, "${({ spring: 'printemps', summer: 'ete', autumn: 'automne', winter: 'hiver' } as const)[block.season]}");\n` : '';
-    return `${season}bloc(${block.x}, ${block.y}, ${block.z}, "${worldBlockId(block.kind)}"${protectedBlock});`;
+    const open = block.open === true ? `${protectedBlock ? '' : ', false'}, true` : '';
+    return `${season}bloc(${block.x}, ${block.y}, ${block.z}, "${worldBlockId(block.kind)}"${protectedBlock}${open});`;
   }).join('\n')}${spawns ? `\n${spawns}` : ''}${images ? `\n${images}` : ''}${characters ? `\n${characters}` : ''}`;
 }
