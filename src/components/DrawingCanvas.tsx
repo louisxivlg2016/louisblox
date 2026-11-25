@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { translate } from '../game/language';
 
@@ -24,7 +24,9 @@ function blankCanvas(canvas: HTMLCanvasElement) {
   context.fillRect(0, 0, WIDTH, HEIGHT);
 }
 
-export function DrawingCanvas({ initialImage, onSave, onChange }: { initialImage?: string; onSave: (image: string) => void; onChange?: (image: string) => void }) {
+export type DrawingCanvasHandle = { save: () => void };
+
+export const DrawingCanvas = forwardRef<DrawingCanvasHandle, { initialImage?: string; onSave: (image: string) => void; onChange?: (image: string) => void; showSave?: boolean }>(function DrawingCanvas({ initialImage, onSave, onChange, showSave = true }, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const startRef = useRef<Point>({ x: 0, y: 0 });
@@ -36,6 +38,12 @@ export function DrawingCanvas({ initialImage, onSave, onChange }: { initialImage
   const [size, setSize] = useState(6);
   const [historyLength, setHistoryLength] = useState(0);
   const [loaded, setLoaded] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    save: () => {
+      if (loaded && canvasRef.current) onSave(canvasRef.current.toDataURL('image/png'));
+    },
+  }), [loaded, onSave]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -194,8 +202,8 @@ export function DrawingCanvas({ initialImage, onSave, onChange }: { initialImage
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         <button type="button" className="secondary-button" data-undo-drawing disabled={!historyLength} onClick={undo}>{translate('Annuler', 'Undo')}</button>
         <button type="button" className="secondary-button" data-clear-drawing onClick={clear}>{translate('Tout effacer', 'Clear all')}</button>
-        <button type="button" className="primary-button" data-save-drawing disabled={!loaded} onClick={() => { if (canvasRef.current) onSave(canvasRef.current.toDataURL('image/png')); }}>{translate('Enregistrer le dessin', 'Save drawing')}</button>
+        {showSave && <button type="button" className="primary-button" data-save-drawing disabled={!loaded} onClick={() => { if (canvasRef.current) onSave(canvasRef.current.toDataURL('image/png')); }}>{translate('Enregistrer le dessin', 'Save drawing')}</button>}
       </div>
     </div>
   );
-}
+});

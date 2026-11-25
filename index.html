@@ -417,6 +417,10 @@
         box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
       }
       .backpack-content { flex: 1; min-height: 0; overflow-y: auto; padding-right: 6px; }
+      [data-custom-painting-dialog] > .backpack-header, [data-custom-painting-dialog] > [data-painting-size] { flex: none; }
+      .painting-editor-content { flex: 1; min-height: 0; overflow-y: auto; padding-right: 6px; overscroll-behavior: contain; }
+      .painting-save-bar { flex: none; padding-top: 10px; background: #131f17; border-top: 2px solid rgba(255, 255, 255, 0.22); }
+      .painting-save-bar .primary-button { width: 100%; min-height: 48px; margin-top: 0; touch-action: manipulation; }
       .backpack-active-area { flex: 0 0 auto; margin-top: 12px; padding-top: 10px; background: #131f17; border-top: 2px solid rgba(255, 255, 255, 0.22); }
       .backpack-active-area .backpack-label { margin: 0 0 9px; font-size: 11px; }
       .backpack-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }

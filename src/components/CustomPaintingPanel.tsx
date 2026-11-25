@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { requestPlay } from '../game/input';
 import { changePaintingSize, saveCustomPainting, useCustomPaintingStore } from '../game/customPainting';
 import { PAINTING_IMAGE_SIZE, pixelatePaintingFile } from '../game/paintingImage';
 import { world } from '../game/world';
 import { translate } from '../game/language';
 import { DrawingCanvas } from './DrawingCanvas';
+import type { DrawingCanvasHandle } from './DrawingCanvas';
 import { setVoxelImage } from '../game/chunks';
 import { MAX_PAINTING_SIZE, MIN_PAINTING_SIZE } from '../game/voxel';
 
@@ -14,6 +15,7 @@ export function CustomPaintingPanel() {
   const [preview, setPreview] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const drawingRef = useRef<DrawingCanvasHandle>(null);
 
   useEffect(() => {
     setPreview(editing?.image);
@@ -52,8 +54,9 @@ export function CustomPaintingPanel() {
           <strong>{translate(`Taille : ${editing.size} ×`, `Size: ${editing.size} ×`)}</strong>
           <button type="button" className="secondary-button" data-painting-larger aria-label={translate('Agrandir le tableau', 'Make painting larger')} disabled={editing.size >= MAX_PAINTING_SIZE} onClick={() => { if (!changePaintingSize(world, editing, editing.size + 0.5)) setError(translate('Impossible de changer la taille.', 'Unable to resize the painting.')); }} style={{ width: 52, minHeight: 44, margin: 0, fontSize: 24 }}>+</button>
         </div>
+        <div className="painting-editor-content">
         {!editing.custom ? <p className="boutique-hint">{translate('Utilise − et + pour choisir la taille du tableau. Elle est enregistrée automatiquement.', 'Use − and + to choose the painting size. It is saved automatically.')}</p> : editing.drawing ? <>
-          <DrawingCanvas initialImage={editing.image} onChange={(image) => {
+          <DrawingCanvas ref={drawingRef} showSave={false} initialImage={editing.image} onChange={(image) => {
             if (!setVoxelImage(world, editing, image)) setError(translate('Impossible d’enregistrer ce dessin.', 'Unable to save this drawing.'));
           }} onSave={(image) => {
             setError('');
@@ -62,7 +65,7 @@ export function CustomPaintingPanel() {
           }} />
           <p className="boutique-hint">{translate('Ton dessin est enregistré automatiquement à chaque trait, même quand tu fermes le tableau.', 'Your drawing is saved automatically after every stroke, even when you close the painting.')}</p>
           {error && <p role="alert" className="boutique-hint">{error}</p>}
-        </> : <form onSubmit={(event) => {
+        </> : <form id="custom-painting-form" onSubmit={(event) => {
           event.preventDefault();
           if (!preview || busy) return;
           if (saveCustomPainting(world, editing, preview)) void requestPlay();
@@ -81,8 +84,11 @@ export function CustomPaintingPanel() {
           </label>
           <p className="boutique-hint">{translate(`Ton image est réduite à ${PAINTING_IMAGE_SIZE} × ${PAINTING_IMAGE_SIZE} pixels pour rester légère, sans devenir trop pixelisée. Elle est conservée avec le tableau.`, `Your image is reduced to ${PAINTING_IMAGE_SIZE} × ${PAINTING_IMAGE_SIZE} pixels to keep it light without becoming too pixelated. It is saved with the painting.`)}</p>
           {error && <p role="alert" className="boutique-hint">{error}</p>}
-          <button type="submit" className="primary-button" data-save-painting disabled={!preview || busy}>{translate('Enregistrer le tableau', 'Save painting')}</button>
         </form>}
+        </div>
+        {editing.custom && <div className="painting-save-bar">
+          <button type={editing.drawing ? 'button' : 'submit'} form={editing.drawing ? undefined : 'custom-painting-form'} className="primary-button" data-save-painting={editing.drawing ? undefined : ''} data-save-drawing={editing.drawing ? '' : undefined} disabled={!editing.drawing && (!preview || busy)} onClick={editing.drawing ? () => drawingRef.current?.save() : undefined}>{editing.drawing ? translate('Enregistrer le dessin', 'Save drawing') : translate('Enregistrer le tableau', 'Save painting')}</button>
+        </div>}
       </section>
     </div>
   );
