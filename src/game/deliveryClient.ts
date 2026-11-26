@@ -3,8 +3,9 @@ import type { Camera } from 'three';
 import type { World } from 'koota';
 import { Vector3 } from 'three';
 import { useGameStore } from './store';
-import { Player, PlayerPosition } from './traits';
-import { DELIVERY_LEVEL_COUNT, DELIVERY_START, deliveryPointAt } from './deliveryCity';
+import { Player, PlayerPosition, PlayerVelocity } from './traits';
+import { DELIVERY_CHIMNEYS, DELIVERY_LEVEL_COUNT, DELIVERY_START, deliveryPointAt } from './deliveryCity';
+import { useNavigationStore } from './navigation';
 import { useEffectStore } from './effects';
 import { getBlockIndex, replaceVoxel } from './chunks';
 import { moveVoxelCharacter } from './systems/collisionSystem';
@@ -55,6 +56,22 @@ export function deliveryControlSystem(world: World, camera: Camera, actions: { p
     }
   }
   const point = deliveryPointAt(state.level, state.index);
+  if (point) {
+    const destination = useNavigationStore.getState().destination;
+    if (destination?.x !== point.x || destination.z !== point.z) useNavigationStore.getState().setDestination(point.x, point.z);
+  }
+  if (actions.place > 0 || actions.harvest > 0 || actions.tap > 0 || actions.interact > 0) {
+    const chimney = DELIVERY_CHIMNEYS.find((entry) => Math.hypot(player.x - entry.x, player.y + 1 - entry.y, player.z - entry.z) <= 3);
+    if (chimney) {
+      player.set(chimney.houseX, 8.51, chimney.houseZ);
+      world.queryFirst(Player)?.get(PlayerVelocity)?.set(0, 0, 0);
+      actions.place = 0;
+      actions.harvest = 0;
+      actions.tap = 0;
+      actions.interact = 0;
+      useGameStore.getState().setNotice(translate('Entrée dans la maison par la cheminée.', 'Entered the house through the chimney.'));
+    }
+  }
   if (point && Math.hypot(player.x - point.x, player.y - point.y, player.z - point.z) <= 2.5) {
     const index = state.index + 1;
     const coins = state.coins + 500;

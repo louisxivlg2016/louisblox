@@ -32,16 +32,23 @@ const destinations = [
 
 export function deliveryPointAt(level: number, index: number) {
   if (index === 3) return DELIVERY_POINTS[3];
-  if (level === 0) return DELIVERY_POINTS[index];
+  if (level === 0) return { ...DELIVERY_POINTS[index], y: 8.51 };
   const start = level * 3 % destinations.length;
-  return destinations[(start + index * 5) % destinations.length];
+  return { ...destinations[(start + index * 5) % destinations.length], y: 8.51 };
 }
+
+export const DELIVERY_CHIMNEYS = destinations.map((destination) => ({ x: destination.x + 2, y: destination.y + 1, z: destination.z - 2, houseX: destination.x, houseZ: destination.z }));
 
 function put(blocks: Voxel[], cx: number, cz: number, x: number, y: number, z: number, kind: BlockKind, protectedBlock = true, facing?: Voxel['facing']) {
   if (Math.floor(x / CHUNK_SIZE) !== cx || Math.floor(z / CHUNK_SIZE) !== cz) return;
   const block: Voxel = { x, y, z, kind, ...(protectedBlock ? { protected: true } : {}), ...(facing ? { facing } : {}) };
   blocks.push(block);
   return block;
+}
+
+function clear(blocks: Voxel[], x: number, y: number, z: number) {
+  const index = blocks.findIndex((block) => block.x === x && block.y === y && block.z === z);
+  if (index >= 0) blocks.splice(index, 1);
 }
 
 function roadDistance(value: number) {
@@ -64,8 +71,11 @@ function house(blocks: Voxel[], cx: number, cz: number, x: number, z: number, he
   }
   for (let dx = -1; dx <= 1; dx += 1) for (let y = 8; y <= 10; y += 1) put(blocks, cx, cz, x + dx, y, z + 5, BlockKind.DoorBrown, true, 'north');
   for (let y = 8; y <= roofY; y += 1) put(blocks, cx, cz, x + 5, y, z, BlockKind.Ladder, true, 'west');
-  put(blocks, cx, cz, x + 2, roofY + 1, z - 2, BlockKind.GrayBrick);
-  put(blocks, cx, cz, x + 2, roofY + 2, z - 2, BlockKind.GrayBrick);
+  for (let y = 8; y <= roofY + 2; y += 1) {
+    clear(blocks, x + 2, y, z - 2);
+    for (const [dx, dz] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) put(blocks, cx, cz, x + 2 + dx, y, z - 2 + dz, BlockKind.GrayBrick);
+  }
+  for (let y = 8; y <= roofY + 1; y += 1) put(blocks, cx, cz, x + 2, y, z - 2, BlockKind.Ladder, true, 'east');
   put(blocks, cx, cz, x, roofY + 1, z, BlockKind.Chest);
   if (name) {
     const sign = put(blocks, cx, cz, x + 2, 9, z + 6, BlockKind.Sign, true, 'south');
