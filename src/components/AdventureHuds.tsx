@@ -51,6 +51,7 @@ const JOBS: Array<{ id: RoleplayJob; fr: string; en: string; hintFr: string; hin
   { id: 'merchant', fr: 'Marchand', en: 'Merchant', hintFr: 'Travaille au marché couvert.', hintEn: 'Work at the covered market.' },
   { id: 'police', fr: 'Policier', en: 'Police officer', hintFr: 'Travaille au poste de police, sans combat.', hintEn: 'Work at the police station, without combat.' },
   { id: 'builder', fr: 'Constructeur', en: 'Builder', hintFr: 'Pose des blocs pour gagner des pièces.', hintEn: 'Place blocks to earn coins.' },
+  { id: 'firefighter', fr: 'Pompier', en: 'Firefighter', hintFr: 'Travaille à la caserne de pompiers.', hintEn: 'Work at the fire station.' },
 ];
 
 export function RoleplayHud() {
@@ -63,6 +64,6 @@ export function RoleplayHud() {
   const home = roleplayHome();
   return <>
     {panelOpen && <div className="backpack-backdrop"><section className="book-panel heist-role-panel" data-roleplay-jobs><h2>{translate('Choisis ton métier', 'Choose your job')}</h2>{JOBS.map((entry) => <button type="button" className="primary-button" data-job={entry.id} key={entry.id} onClick={() => chooseRoleplayJob(entry.id)}>{translate(entry.fr, entry.en)}</button>)}</section></div>}
-    <div className="heist-hud" data-roleplay-hud style={{ pointerEvents: 'auto' }}><strong>{current ? translate(current.fr, current.en) : translate('Sans métier', 'No job')} · {coins} {translate('pièces', 'coins')}</strong><span>{current ? translate(current.hintFr, current.hintEn) : translate('Choisis un métier pour commencer.', 'Choose a job to get started.')}</span><small>{translate(`Ta maison · X ${home.x} · Z ${home.z}`, `Your home · X ${home.x} · Z ${home.z}`)}</small>{(job === 'merchant' || job === 'police') && <button type="button" onClick={performRoleplayWork}>{translate('Travailler · +20 pièces', 'Work · +20 coins')}</button>}</div>
+    <div className="heist-hud" data-roleplay-hud style={{ pointerEvents: 'auto' }}><strong>{current ? translate(current.fr, current.en) : translate('Sans métier', 'No job')} · {coins} {translate('pièces', 'coins')}</strong><span>{current ? translate(current.hintFr, current.hintEn) : translate('Choisis un métier pour commencer.', 'Choose a job to get started.')}</span><small>{translate(`Ta maison · X ${home.x} · Z ${home.z}`, `Your home · X ${home.x} · Z ${home.z}`)}</small>{(job === 'merchant' || job === 'police' || job === 'firefighter') && <button type="button" onClick={performRoleplayWork}>{translate('Travailler · +20 pièces', 'Work · +20 coins')}</button>}</div>
   </>;
 }

@@ -12,6 +12,7 @@ export const ROLEPLAY_HOMES = [
 ] as const;
 export const ROLEPLAY_MARKET = { x: 0, y: 8.51, z: -20 };
 export const ROLEPLAY_POLICE = { x: -20, y: 8.51, z: -20 };
+export const ROLEPLAY_FIRE_STATION = { x: 20, y: 8.51, z: -20 };
 export const ROLEPLAY_MINE = { x: 32, y: 8.51, z: -32 };
 
 function put(blocks: Voxel[], cx: number, cz: number, x: number, y: number, z: number, kind: BlockKind, protectedBlock = true, facing?: Voxel['facing']) {
@@ -62,12 +63,18 @@ export function generateRoleplayChunk(cx: number, cz: number): GeneratedChunk {
     if (x === -26 || x === -14 || z === -26 || z === -14) for (let y = 8; y <= 13; y += 1) put(blocks, cx, cz, x, y, z, BlockKind.ConcreteLightBlue);
   }
   put(blocks, cx, cz, ROLEPLAY_POLICE.x, 8, ROLEPLAY_POLICE.z, BlockKind.Chest);
+  for (let x = 14; x <= 26; x += 1) for (let z = -26; z <= -14; z += 1) {
+    put(blocks, cx, cz, x, 14, z, BlockKind.ConcreteRed);
+    if (x === 14 || x === 26 || z === -26 || z === -14) for (let y = 8; y <= 13; y += 1) put(blocks, cx, cz, x, y, z, y % 2 === 0 ? BlockKind.ConcreteRed : BlockKind.WhiteBrick);
+  }
+  put(blocks, cx, cz, ROLEPLAY_FIRE_STATION.x, 8, ROLEPLAY_FIRE_STATION.z, BlockKind.Chest);
   for (let x = 26; x <= 42; x += 1) for (let z = -42; z <= -24; z += 1) {
     put(blocks, cx, cz, x, 6, z, BlockKind.Stone, false);
     if ((x * 7 + z * 11) % 9 === 0) put(blocks, cx, cz, x, 7, z, (x + z) % 3 === 0 ? BlockKind.IronOre : BlockKind.CoalOre, false);
   }
   sign(blocks, cx, cz, 0, 9, -15, 'TRAVAIL · MARCHAND');
   sign(blocks, cx, cz, -20, 9, -13, 'TRAVAIL · POLICIER');
+  sign(blocks, cx, cz, 20, 9, -13, 'TRAVAIL · POMPIER');
   sign(blocks, cx, cz, 32, 8, -23, 'TRAVAIL · MINEUR');
   sign(blocks, cx, cz, 8, 9, -15, 'TRAVAIL · CONSTRUCTEUR\nVILLE ENTIÈRE');
   return { blocks, water: [] };

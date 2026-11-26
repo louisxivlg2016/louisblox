@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { World } from 'koota';
 import { addVoxel } from './chunks';
 import { BlockKind } from './voxel';
-import { ROLEPLAY_HOMES, ROLEPLAY_MARKET, ROLEPLAY_MINE, ROLEPLAY_POLICE } from './roleplayCity';
+import { ROLEPLAY_FIRE_STATION, ROLEPLAY_HOMES, ROLEPLAY_MARKET, ROLEPLAY_MINE, ROLEPLAY_POLICE } from './roleplayCity';
 import { useGameStore } from './store';
 import { useMultiplayerStore } from './multiplayerStore';
 import { readModeProgress, writeModeProgress } from './modeProgress';
@@ -11,7 +11,7 @@ import { world } from './world';
 import { Player, PlayerPosition } from './traits';
 import { translate } from './language';
 
-export type RoleplayJob = 'miner' | 'merchant' | 'police' | 'builder';
+export type RoleplayJob = 'miner' | 'merchant' | 'police' | 'builder' | 'firefighter';
 const initial = { job: null as RoleplayJob | null, coins: 0, workReadyAt: 0, panelOpen: true };
 export const useRoleplayStore = create<typeof initial>(() => ({ ...initial }));
 let loadedWorld = '';
@@ -31,14 +31,14 @@ function ensureRoleplay() {
   if (loadedWorld === game.worldId) return;
   loadedWorld = game.worldId;
   const saved = readModeProgress('roleplay', game.worldId, { job: null as RoleplayJob | null, coins: 0 });
-  const job = saved.job === 'miner' || saved.job === 'merchant' || saved.job === 'police' || saved.job === 'builder' ? saved.job : null;
+  const job = saved.job === 'miner' || saved.job === 'merchant' || saved.job === 'police' || saved.job === 'builder' || saved.job === 'firefighter' ? saved.job : null;
   useRoleplayStore.setState({ job, coins: typeof saved.coins === 'number' ? Math.max(0, Math.floor(saved.coins)) : 0, workReadyAt: 0, panelOpen: job === null });
-  if (job) useCharacterStore.getState().setOutfit(job === 'merchant' ? 'trader' : job === 'police' ? 'police' : 'worker');
+  if (job) useCharacterStore.getState().setOutfit(job === 'merchant' ? 'trader' : job === 'police' ? 'police' : job === 'firefighter' ? 'firefighter' : 'worker');
 }
 export function chooseRoleplayJob(job: RoleplayJob) {
   ensureRoleplay();
   useRoleplayStore.setState({ job, panelOpen: false });
-  useCharacterStore.getState().setOutfit(job === 'merchant' ? 'trader' : job === 'police' ? 'police' : 'worker');
+  useCharacterStore.getState().setOutfit(job === 'merchant' ? 'trader' : job === 'police' ? 'police' : job === 'firefighter' ? 'firefighter' : 'worker');
   persist();
 }
 export function roleplayHome() {
@@ -81,7 +81,7 @@ export function performRoleplayWork() {
   const state = useRoleplayStore.getState();
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player || state.workReadyAt > Date.now()) return;
-  const point = state.job === 'merchant' ? ROLEPLAY_MARKET : state.job === 'police' ? ROLEPLAY_POLICE : null;
+  const point = state.job === 'merchant' ? ROLEPLAY_MARKET : state.job === 'police' ? ROLEPLAY_POLICE : state.job === 'firefighter' ? ROLEPLAY_FIRE_STATION : null;
   if (!point || Math.hypot(player.x - point.x, player.y - point.y, player.z - point.z) > 5) {
     useGameStore.getState().setNotice(translate('Rapproche-toi de ton lieu de travail.', 'Move closer to your workplace.'));
     return;
@@ -93,7 +93,7 @@ export function performRoleplayWork() {
 export function roleplayControlSystem(world: World, actions: { harvest: number; tap: number; interact: number }) {
   if (useGameStore.getState().gameplayMode !== 'roleplay') return false;
   ensureRoleplay();
-  if ((useRoleplayStore.getState().job === 'merchant' || useRoleplayStore.getState().job === 'police') && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0)) performRoleplayWork();
+  if (['merchant', 'police', 'firefighter'].includes(useRoleplayStore.getState().job ?? '') && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0)) performRoleplayWork();
   const list = respawns.get(world);
   if (list?.length) {
     const remaining = list.filter((block) => {
