@@ -6,14 +6,14 @@ import { consumePendingPlanetTravel, getPlanetUniverse, readPlanetUniverseSnapsh
 import { ZOMBIE_PLANET_SPAWN, ZOMBIE_POSITIONS } from './zombiePlanetArena';
 import { spawnAnimal } from './animals';
 import { animalCombatSystem } from './systems/animalCombatSystem';
-import { clearPlanetPeople, planetPeopleSystem, rescueGirl, rescueSurvivor, survivorPositions, usePlanetPeopleStore } from './planetPeople';
+import { planetPeopleSystem, rescueGirl, rescueSurvivor, survivorPositions, usePlanetPeopleStore } from './planetPeople';
 import { BlockKind, voxelKey } from './voxel';
 import { PLANET_BIOMES, PLANET_ONE_BLOCK, PLANET_SPAWN } from './planetArena';
 import { useGameStore } from './store';
 import { changeInventory, inventoryCount } from './inventory';
 import { readModeProgress, writeModeProgress } from './modeProgress';
 import { createWorldSave } from './save';
-import { Animal, AnimalHealth, Player, PlayerPosition } from './traits';
+import { Animal, AnimalHealth, Player, PlayerBody, PlayerHealth, PlayerPosition, PlayerState, PlayerVelocity } from './traits';
 import { translate } from './language';
 
 const initial = { mined: 0, coins: 0, tool: 0, rocket: false, biome: 'Planète mère', universe: 'home' as 'home' | 'zombie' };
@@ -32,14 +32,20 @@ export function clearPlanet() {
   usePlanetStore.setState({ ...initial });
 }
 
-function restartPlanet() {
-  const game = useGameStore.getState();
-  const worldName = game.worldName;
-  clearPlanet();
-  clearPlanetPeople();
-  game.regenerate('planet', `planet-${crypto.randomUUID().slice(0, 8)}`, 'nature', worldName);
-  game.setMode('play');
-  game.setNotice(translate('Chute dans le vide · nouvelle partie !', 'Fell into space · new game!'));
+function restartPlanet(world: World) {
+  const player = world.queryFirst(Player);
+  const position = player?.get(PlayerPosition);
+  if (!player || !position) return;
+  const spawn = getPlanetUniverse() === 'zombie' ? ZOMBIE_PLANET_SPAWN : PLANET_SPAWN;
+  position.set(spawn.x, spawn.y, spawn.z);
+  player.get(PlayerBody)?.value?.setTranslation(position, true);
+  player.get(PlayerBody)?.value?.setNextKinematicTranslation(position);
+  player.get(PlayerVelocity)?.set(0, 0, 0);
+  player.set(PlayerHealth, { value: player.get(PlayerHealth)?.max ?? 10, absorbed: 0 });
+  player.set(PlayerState, { flying: false, parachuting: false });
+  useGameStore.getState().setLives(player.get(PlayerHealth)?.value ?? 10);
+  useGameStore.getState().setMode('play');
+  useGameStore.getState().setNotice(translate('Chute dans le vide · tu réapparais avec toutes tes constructions et tes objets.', 'Fell into space · you respawn with all your constructions and items.'));
 }
 function ensurePlanet() {
   const game = useGameStore.getState();
@@ -175,11 +181,11 @@ export function planetControlSystem(world: World, camera: Camera, dt: number, ac
       }
     }
     planetPeopleSystem(world, dt);
-    if (player && player.y < 3) restartPlanet();
+    if (player && player.y < 3) restartPlanet(world);
     return true;
   }
   if (!player) return true;
-  if (player.y < 3) restartPlanet();
+  if (player.y < 3) restartPlanet(world);
   const blocks = getBlockIndex(world);
   const key = voxelKey(PLANET_ONE_BLOCK.x, PLANET_ONE_BLOCK.y, PLANET_ONE_BLOCK.z);
   const block = blocks.get(key);
