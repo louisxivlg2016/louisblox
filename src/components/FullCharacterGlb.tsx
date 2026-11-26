@@ -35,6 +35,7 @@ import minerUrl from '../../assets/models/full-miner.glb';
 import thiefUrl from '../../assets/models/full-thief.glb';
 import diverUrl from '../../assets/models/full-diver.glb';
 import { PoliceSunglasses } from './PoliceSunglasses';
+import { createHeadIdle } from '../game/headIdle';
 
 type FullCharacterModel = Exclude<OutfitKind, 'default'> | 'classic-girl' | 'classic-boy';
 const models: Partial<Record<FullCharacterModel, string>> = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, corsair: corsairUrl, footballer: footballerUrl, worker: workerUrl, miner: minerUrl, thief: thiefUrl, diver: diverUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
@@ -73,6 +74,8 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
     return createCharacterRig(source, outfit, scale, appearance);
   }, [scene, outfit, scale, appearance?.skinColor, appearance?.hairColor, appearance?.eyeColor, appearance?.eyebrowColor, appearance?.clothingColor, appearance?.originalHairColor, appearance?.originalSkinColor, headAccessory]);
   const metadata = useMemo(() => ({ outfit: outfit.startsWith('classic-') ? 'default' : outfit, avatar: profileAvatar, source: 'Hunyuan', whole: true }), [outfit, profileAvatar]);
+  const headIdle = useMemo(() => createHeadIdle(character), [character]);
+  useEffect(() => () => { headIdle.dispose(); }, [headIdle]);
   const eating = useEatingStore((state) => remote ? null : state.eating);
 
   useEffect(() => {
@@ -100,6 +103,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
     group.current.position.y = sitting ? -0.45 : 0;
     group.current.userData.gesture = sitting ? 'sit' : emote;
     animateCharacterRig(character, performance.now() / 1000, walking, jumping, sitting, Math.min(delta, 0.05), eating);
+    headIdle.update(delta);
   });
 
   const head = character.userData.rig?.head as Object3D | undefined;

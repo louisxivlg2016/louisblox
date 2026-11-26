@@ -82,7 +82,7 @@ export function PlayerAvatar({ entity, preview = false }: { entity: Entity; prev
     }
     if (leftLeg.current) leftLeg.current.rotation.x += (-swing - leftLeg.current.rotation.x) * amount;
     if (rightLeg.current) rightLeg.current.rotation.x += (swing - rightLeg.current.rotation.x) * amount;
-    if (headRef.current && state) {
+    if (headRef.current && state && !hasFullCharacter(outfit, wig)) {
       const bodyYaw = entity.get(PlayerMesh)?.value?.rotation.y ?? state.yaw;
       const headYaw = preview ? 0 : canRotateHead(outfit) ? Math.atan2(Math.sin(state.yaw - bodyYaw), Math.cos(state.yaw - bodyYaw)) : 0;
       headRef.current.rotation.order = 'YXZ';
