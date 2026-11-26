@@ -3,9 +3,12 @@ import { useGameStore } from '../game/store';
 import { usePlanetStore, buyPlanetTool, buildPlanetRocket, travelPlanetUniverse } from '../game/planetClient';
 import { startCityBuild, usePlanetPeopleStore } from '../game/planetPeople';
 import { useDeepStore, deepMaxOxygen, buyDeepGear, buyDeepOxygen, sellDeepFindings } from '../game/deepClient';
-import { useRoleplayStore, chooseRoleplayJob, performRoleplayWork, roleplayHome } from '../game/roleplayClient';
+import { useRoleplayStore, chooseRoleplayJob, performRoleplayWork, roleplayHome, sellRoleplaySelected } from '../game/roleplayClient';
+import { useRoleplayLifeStore } from '../game/roleplayLife';
+import { ROLEPLAY_MARKET } from '../game/roleplayCity';
 import type { RoleplayJob } from '../game/roleplayClient';
 import { world } from '../game/world';
+import { Player, PlayerPosition } from '../game/traits';
 import { translate } from '../game/language';
 
 export function PlanetHud() {
@@ -59,11 +62,16 @@ export function RoleplayHud() {
   const job = useRoleplayStore((state) => state.job);
   const coins = useRoleplayStore((state) => state.coins);
   const panelOpen = useRoleplayStore((state) => state.panelOpen);
+  const stock = useRoleplayLifeStore((state) => state.stock);
+  const sales = useRoleplayLifeStore((state) => state.sales);
+  const arrests = useRoleplayLifeStore((state) => state.arrests);
   if (gameplayMode !== 'roleplay') return null;
   const current = JOBS.find((entry) => entry.id === job);
   const home = roleplayHome();
+  const player = world.queryFirst(Player)?.get(PlayerPosition);
+  const nearMarket = player ? Math.hypot(player.x - ROLEPLAY_MARKET.x, player.z - ROLEPLAY_MARKET.z) <= 5 : false;
   return <>
     {panelOpen && <div className="backpack-backdrop"><section className="book-panel heist-role-panel" data-roleplay-jobs><h2>{translate('Choisis ton métier', 'Choose your job')}</h2>{JOBS.map((entry) => <button type="button" className="primary-button" data-job={entry.id} key={entry.id} onClick={() => chooseRoleplayJob(entry.id)}>{translate(entry.fr, entry.en)}</button>)}</section></div>}
-    <div className="heist-hud" data-roleplay-hud style={{ pointerEvents: 'auto' }}><strong>{current ? translate(current.fr, current.en) : translate('Sans métier', 'No job')} · {coins} {translate('pièces', 'coins')}</strong><span>{current ? translate(current.hintFr, current.hintEn) : translate('Choisis un métier pour commencer.', 'Choose a job to get started.')}</span><small>{translate(`Ta maison · X ${home.x} · Z ${home.z}`, `Your home · X ${home.x} · Z ${home.z}`)}</small>{(job === 'merchant' || job === 'police' || job === 'firefighter') && <button type="button" onClick={performRoleplayWork}>{translate('Travailler · +20 pièces', 'Work · +20 coins')}</button>}</div>
+    <div className="heist-hud" data-roleplay-hud style={{ pointerEvents: 'auto' }}><strong>{current ? translate(current.fr, current.en) : translate('Sans métier', 'No job')} · {coins} {translate('pièces', 'coins')}</strong><span>{current ? translate(current.hintFr, current.hintEn) : translate('Choisis un métier pour commencer.', 'Choose a job to get started.')}</span><small>{translate(`Ta maison · X ${home.x} · Z ${home.z}`, `Your home · X ${home.x} · Z ${home.z}`)}</small>{job === 'merchant' && <small data-roleplay-sales>{translate(`Stock · pommes ${stock.apple} · pains ${stock.bread} · fer ${stock.ironOre} · diamants ${stock.diamondOre} · ventes ${sales}`, `Stock · apples ${stock.apple} · bread ${stock.bread} · iron ${stock.ironOre} · diamonds ${stock.diamondOre} · sales ${sales}`)}</small>}{job === 'police' && <small>{translate(`Voleurs arrêtés · ${arrests}`, `Thieves arrested · ${arrests}`)}</small>}{job === 'miner' && nearMarket && <button type="button" data-sell-roleplay-ore onClick={sellRoleplaySelected}>{translate('Vendre au marchand ambulant', 'Sell to wandering merchant')}</button>}{(job === 'merchant' || job === 'police' || job === 'firefighter') && <button type="button" onClick={performRoleplayWork}>{translate('Travailler · +20 pièces', 'Work · +20 coins')}</button>}</div>
   </>;
 }

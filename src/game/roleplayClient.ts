@@ -10,6 +10,10 @@ import { useCharacterStore } from './characterStore';
 import { world } from './world';
 import { Player, PlayerPosition } from './traits';
 import { translate } from './language';
+import { arrestRoleplayThief, clearRoleplayLife, roleplayLifeSystem } from './roleplayLife';
+import { selectedItemPrice } from './shops';
+import { changeInventory, sellableInventoryCount } from './inventory';
+import { selectionInfo } from './items';
 
 export type RoleplayJob = 'miner' | 'merchant' | 'police' | 'builder' | 'firefighter';
 const initial = { job: null as RoleplayJob | null, coins: 0, workReadyAt: 0, panelOpen: true };
@@ -24,7 +28,15 @@ function persist() {
 }
 export function clearRoleplay() {
   loadedWorld = '';
+  clearRoleplayLife();
   useRoleplayStore.setState({ ...initial });
+}
+
+export function earnRoleplayCoins(amount: number) {
+  ensureRoleplay();
+  const state = useRoleplayStore.getState();
+  useRoleplayStore.setState({ coins: state.coins + Math.max(0, Math.floor(amount)) });
+  persist();
 }
 function ensureRoleplay() {
   const game = useGameStore.getState();
@@ -39,6 +51,8 @@ export function chooseRoleplayJob(job: RoleplayJob) {
   ensureRoleplay();
   useRoleplayStore.setState({ job, panelOpen: false });
   useCharacterStore.getState().setOutfit(job === 'merchant' ? 'trader' : job === 'police' ? 'police' : job === 'firefighter' ? 'firefighter' : 'worker');
+  if (job === 'police') useGameStore.setState({ hotbarSlots: ['handcuffs', 'pickaxe_wood', ...Array(8).fill(null)], selected: 'handcuffs', selectedSlot: 0 });
+  if (job === 'miner') useGameStore.setState({ hotbarSlots: ['pickaxe_iron', ...Array(9).fill(null)], selected: 'pickaxe_iron', selectedSlot: 0 });
   persist();
 }
 export function roleplayHome() {
@@ -90,10 +104,33 @@ export function performRoleplayWork() {
   useGameStore.getState().setNotice(translate('Travail terminé · +20 pièces.', 'Work complete · +20 coins.'));
   persist();
 }
-export function roleplayControlSystem(world: World, actions: { harvest: number; tap: number; interact: number }) {
+export function sellRoleplaySelected() {
+  ensureRoleplay();
+  const game = useGameStore.getState();
+  const player = world.queryFirst(Player)?.get(PlayerPosition);
+  if (useRoleplayStore.getState().job !== 'miner' || !player || Math.hypot(player.x - ROLEPLAY_MARKET.x, player.z - ROLEPLAY_MARKET.z) > 5) {
+    game.setNotice(translate('Va vendre tes minerais au marchand ambulant du marché.', 'Sell your ores to the wandering merchant at the market.'));
+    return false;
+  }
+  const kind = game.selected;
+  const price = selectedItemPrice(kind);
+  if (price <= 0 || sellableInventoryCount(kind, game) <= 0) {
+    game.setNotice(translate('Sélectionne un minerai dans ta barre rapide pour le vendre.', 'Select an ore in your hotbar to sell it.'));
+    return false;
+  }
+  const name = selectionInfo(kind).name;
+  changeInventory(kind, -1);
+  earnRoleplayCoins(price);
+  game.setNotice(translate(`${name} vendu au marchand ambulant · +${price} pièces.`, `${name} sold to the wandering merchant · +${price} coins.`));
+  return true;
+}
+
+export function roleplayControlSystem(world: World, actions: { harvest: number; tap: number; interact: number }, dt: number) {
   if (useGameStore.getState().gameplayMode !== 'roleplay') return false;
   ensureRoleplay();
+  if (useRoleplayStore.getState().job === 'police' && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0) && useGameStore.getState().selected === 'handcuffs' && arrestRoleplayThief()) return true;
   if (['merchant', 'police', 'firefighter'].includes(useRoleplayStore.getState().job ?? '') && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0)) performRoleplayWork();
+  roleplayLifeSystem(world, dt);
   const list = respawns.get(world);
   if (list?.length) {
     const remaining = list.filter((block) => {

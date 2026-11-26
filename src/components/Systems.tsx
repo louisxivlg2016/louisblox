@@ -60,7 +60,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const skyfallHandled = skyfallControlSystem(world, dt);
       const planetHandled = planetControlSystem(world, camera, dt, actions);
       const deepHandled = deepControlSystem(world, dt, actions);
-      const roleplayHandled = roleplayControlSystem(world, actions);
+      const roleplayHandled = roleplayControlSystem(world, actions, dt);
       const modeHandled = footballHandled || heistHandled || deliveryHandled || skyfallHandled || planetHandled || deepHandled || roleplayHandled;
       const heistWeaponHandled = heistHandled && ['pistol_iron', 'rifle_auto', 'bow'].includes(String(useGameStore.getState().selected)) && itemSystem(world, camera, delta, actions);
       const cleaningHandled = !heistWeaponHandled && !sleeping && !modeHandled && useGameStore.getState().selected === 'paint_cleaning_bucket' && itemSystem(world, camera, delta, actions);

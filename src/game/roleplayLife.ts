@@ -1,0 +1,173 @@
+import { create } from 'zustand';
+import type { World } from 'koota';
+import { Vector3 } from 'three';
+import { getBlockIndex } from './chunks';
+import { groundAt } from './vehicles';
+import { moveVoxelCharacter } from './systems/collisionSystem';
+import { isNight } from './dayNight';
+import { Player, PlayerPosition } from './traits';
+import { useGameStore } from './store';
+import { earnRoleplayCoins, useRoleplayStore } from './roleplayClient';
+import { translate } from './language';
+
+export type RoleplayNpc = {
+  id: string;
+  kind: 'customer' | 'pedestrian' | 'thief';
+  outfit: 'trader' | 'worker' | 'police' | 'king' | 'princess' | 'explorer' | 'pirate';
+  x: number;
+  y: number;
+  z: number;
+  waypoint: number;
+  action: 'walking' | 'shopping' | 'leaving' | 'stealing' | 'attacking';
+  wait: number;
+};
+
+type Stock = { apple: number; bread: number; ironOre: number; diamondOre: number };
+const initialStock = (): Stock => ({ apple: 12, bread: 8, ironOre: 6, diamondOre: 2 });
+const initialNpcs = (): RoleplayNpc[] => [
+  { id: 'customer-1', kind: 'customer', outfit: 'princess', x: 0, y: 8.51, z: -4, waypoint: 0, action: 'shopping', wait: 0 },
+  { id: 'customer-2', kind: 'customer', outfit: 'worker', x: -8, y: 8.51, z: -8, waypoint: 0, action: 'shopping', wait: 0 },
+  { id: 'walker-1', kind: 'pedestrian', outfit: 'explorer', x: -12, y: 8.51, z: -16, waypoint: 0, action: 'walking', wait: 0 },
+  { id: 'walker-2', kind: 'pedestrian', outfit: 'king', x: 12, y: 8.51, z: -16, waypoint: 1, action: 'walking', wait: 0 },
+  { id: 'walker-3', kind: 'pedestrian', outfit: 'police', x: -8, y: 8.51, z: -24, waypoint: 2, action: 'walking', wait: 0 },
+  { id: 'walker-4', kind: 'pedestrian', outfit: 'worker', x: 8, y: 8.51, z: -24, waypoint: 3, action: 'walking', wait: 0 },
+];
+const initial = () => ({ npcs: initialNpcs(), stock: initialStock(), sales: 0, arrests: 0, nextThiefAt: 0, restockAt: Date.now() + 30000 });
+export const useRoleplayLifeStore = create<ReturnType<typeof initial>>(() => initial());
+let loadedWorld = '';
+let noticeAt = 0;
+
+const MARKET = { x: 0, y: 8.51, z: -18 };
+const WALK_ROUTE = [
+  { x: -16, z: -20 },
+  { x: 16, z: -20 },
+  { x: 16, z: -16 },
+  { x: -16, z: -16 },
+];
+
+export function clearRoleplayLife() {
+  loadedWorld = '';
+  useRoleplayLifeStore.setState(initial());
+}
+
+function notice(fr: string, en: string) {
+  if (Date.now() - noticeAt < 4000) return;
+  noticeAt = Date.now();
+  useGameStore.getState().setNotice(translate(fr, en));
+}
+
+function move(world: World, npc: RoleplayNpc, target: { x: number; z: number }, dt: number, speed: number) {
+  const dx = target.x - npc.x;
+  const dz = target.z - npc.z;
+  const distance = Math.hypot(dx, dz);
+  if (distance < 0.2) return true;
+  const step = Math.min(distance, speed * dt);
+  const position = new Vector3(npc.x, npc.y, npc.z);
+  moveVoxelCharacter(getBlockIndex(world), position, { x: dx / distance * step, y: 0, z: dz / distance * step }, true);
+  const ground = groundAt(world, position.x, position.z, position.y + 1.05);
+  npc.x = position.x;
+  npc.z = position.z;
+  npc.y = ground + 0.01;
+  return false;
+}
+
+function spawnThief() {
+  const npc: RoleplayNpc = { id: `thief-${Date.now()}`, kind: 'thief', outfit: 'pirate', x: 0, y: 8.51, z: -6, waypoint: 0, action: 'stealing', wait: 0 };
+  useRoleplayLifeStore.setState((state) => ({ npcs: [...state.npcs, npc], nextThiefAt: Date.now() + 25000 }));
+  notice('Un voleur tente de voler le marché !', 'A thief is trying to rob the market!');
+}
+
+export function arrestRoleplayThief() {
+  const player = gameWorldPlayer();
+  if (!player) return false;
+  const state = useRoleplayLifeStore.getState();
+  const thief = state.npcs.find((npc) => npc.kind === 'thief' && Math.hypot(player.x - npc.x, player.y - npc.y, player.z - npc.z) <= 3);
+  if (!thief) return false;
+  useRoleplayLifeStore.setState({ npcs: state.npcs.filter((npc) => npc.id !== thief.id), arrests: state.arrests + 1, nextThiefAt: Date.now() + 25000 });
+  earnRoleplayCoins(50);
+  useGameStore.getState().setNotice(translate('Voleur arrêté avant qu’il ne blesse quelqu’un · +50 pièces.', 'Thief arrested before anyone was hurt · +50 coins.'));
+  return true;
+}
+
+let worldForPlayer: World;
+function gameWorldPlayer() {
+  return worldForPlayer.queryFirst(Player)?.get(PlayerPosition);
+}
+
+export function roleplayLifeSystem(world: World, dt: number) {
+  if (loadedWorld !== useGameStore.getState().worldId) {
+    loadedWorld = useGameStore.getState().worldId;
+    useRoleplayLifeStore.setState(initial());
+  }
+  worldForPlayer = world;
+  const game = useGameStore.getState();
+  const state = useRoleplayLifeStore.getState();
+  const player = gameWorldPlayer();
+  if (!player) return;
+  const night = isNight(world);
+  if (night && !state.npcs.some((npc) => npc.kind === 'thief') && Date.now() >= state.nextThiefAt) spawnThief();
+  if (!night && state.npcs.some((npc) => npc.kind === 'thief')) useRoleplayLifeStore.setState({ npcs: state.npcs.filter((npc) => npc.kind !== 'thief') });
+  if (Date.now() >= state.restockAt) useRoleplayLifeStore.setState({ stock: initialStock(), restockAt: Date.now() + 30000 });
+
+  for (const npc of useRoleplayLifeStore.getState().npcs) {
+    if (npc.kind === 'customer' && useRoleplayStore.getState().job !== 'merchant') {
+      npc.action = 'walking';
+      const target = WALK_ROUTE[npc.waypoint % WALK_ROUTE.length];
+      if (move(world, npc, target, dt, 1.5)) npc.waypoint = (npc.waypoint + 1) % WALK_ROUTE.length;
+      continue;
+    }
+    if (npc.kind === 'customer') {
+      if (npc.action === 'leaving') {
+        if (move(world, npc, { x: npc.id === 'customer-1' ? 0 : -8, z: npc.id === 'customer-1' ? -4 : -8 }, dt, 2)) {
+          npc.action = 'shopping';
+          npc.wait = 8;
+        }
+        continue;
+      }
+      if (npc.wait > 0) {
+        npc.wait -= dt;
+        continue;
+      }
+      const arrived = move(world, npc, MARKET, dt, 2.2);
+      if (!arrived) continue;
+      const stock = useRoleplayLifeStore.getState().stock;
+      const item = stock.diamondOre > 0 ? 'diamondOre' : stock.ironOre > 0 ? 'ironOre' : stock.bread > 0 ? 'bread' : stock.apple > 0 ? 'apple' : null;
+      if (!item) continue;
+      const price = item === 'diamondOre' ? 25 : item === 'ironOre' ? 8 : item === 'bread' ? 5 : 3;
+      useRoleplayLifeStore.setState((current) => ({ stock: { ...current.stock, [item]: current.stock[item] - 1 }, sales: current.sales + 1 }));
+      earnRoleplayCoins(price);
+      npc.action = 'leaving';
+      npc.wait = 2;
+      notice('Un client vient d’acheter au stand.', 'A customer just bought from your stand.');
+      continue;
+    }
+    if (npc.kind === 'thief') {
+      if (npc.action === 'stealing') {
+        if (move(world, npc, MARKET, dt, 2.4)) {
+          npc.wait += dt;
+          if (npc.wait >= 3) {
+            npc.action = 'attacking';
+            npc.wait = 0;
+            notice('Le voleur attaque un passant ! Arrête-le avec les menottes !', 'The thief is attacking a pedestrian! Arrest them with handcuffs!');
+          }
+        }
+        continue;
+      }
+      const pedestrians = useRoleplayLifeStore.getState().npcs.filter((entry) => entry.kind !== 'thief').sort((a, b) => Math.hypot(a.x - npc.x, a.z - npc.z) - Math.hypot(b.x - npc.x, b.z - npc.z));
+      const target = pedestrians[0];
+      if (!target) continue;
+      if (move(world, npc, target, dt, 3)) {
+        npc.wait += dt;
+        if (npc.wait >= 4) {
+          useRoleplayLifeStore.setState((current) => ({ npcs: current.npcs.filter((entry) => entry.id !== target.id) }));
+          npc.action = 'stealing';
+          npc.wait = 0;
+          notice('Un passant a été blessé. Arrête le voleur avant le prochain !', 'A pedestrian was hurt. Arrest the thief before the next one!');
+        }
+      }
+      continue;
+    }
+    const target = WALK_ROUTE[npc.waypoint % WALK_ROUTE.length];
+    if (move(world, npc, target, dt, 1.5)) npc.waypoint = (npc.waypoint + 1) % WALK_ROUTE.length;
+  }
+}

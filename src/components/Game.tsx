@@ -41,6 +41,7 @@ import { SkyfallBlocks } from './SkyfallBlocks';
 import { PlanetPeople } from './PlanetPeople';
 import { pendingPlanetTravelSave } from '../game/planetClient';
 import { ensurePlanetUniverse } from '../game/planetUniverse';
+import { RoleplayPeople, RoleplayPoliceLight } from './RoleplayPeople';
 
 const clouds = [
   [-15, 20, -18, 1.2],
@@ -173,6 +174,7 @@ export function Game() {
         {gameplayMode === 'heist' && <HeistLoot />}
         {gameplayMode === 'skyfall' && <SkyfallBlocks />}
         {gameplayMode === 'planet' && <PlanetPeople />}
+        {gameplayMode === 'roleplay' && <><RoleplayPeople /><RoleplayPoliceLight /></>}
         <PirateWorld key={`pirate-world-${generation}`} />
         <PlayerView key={`player-${generation}`} />
         <TargetHighlight key={`target-${generation}`} />
