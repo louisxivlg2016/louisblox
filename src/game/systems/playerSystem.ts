@@ -5,7 +5,7 @@ import { MIN_WORLD_Y } from '../levels';
 import { useGameStore } from '../store';
 import { getSwimState, swimVerticalVelocity } from '../swimming';
 import { dismount, vehicleSeatPosition } from '../vehicles';
-import { isLadder } from '../extraBlocks';
+import { isLadder, isStair } from '../extraBlocks';
 import { BlockKind, voxelKey } from '../voxel';
 import { AnimalMotion, AnimalPosition, CamelLeash, HorseRider, Player, PlayerBody, PlayerCollider, PlayerHealth, PlayerMount, PlayerPosition, PlayerState, PlayerVelocity, Sleep } from '../traits';
 import { moveVoxelCharacter } from './collisionSystem';
@@ -137,6 +137,12 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const normalizedStrafe = strafe / length;
   velocity.x = (-Math.sin(yaw) * normalizedForward + Math.cos(yaw) * normalizedStrafe) * speed;
   velocity.z = (-Math.cos(yaw) * normalizedForward - Math.sin(yaw) * normalizedStrafe) * speed;
+  const stair = blocks.get(voxelKey(Math.round(position.x), Math.round(position.y - 0.5), Math.round(position.z)));
+  const descendingStair = state.grounded && stair && isStair(stair.kind) && (stair.facing === 'north' ? velocity.z > 0.5 : stair.facing === 'south' || !stair.facing ? velocity.z < -0.5 : stair.facing === 'east' ? velocity.x < -0.5 : velocity.x > 0.5);
+  if (descendingStair) {
+    velocity.x *= 3;
+    velocity.z *= 3;
+  }
 
   const spaceDown = isDown('Space');
   if (ladder && spaceDown) {
@@ -155,6 +161,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   if (flying) velocity.y = (Number(spaceDown) - Number(isDown('KeyN'))) * FLY_SPEED;
   else if (parachuting) velocity.y = -4.5;
   else if (onLadder) velocity.y = spaceDown ? 3.8 : isDown('KeyN') ? -7 : Math.max(velocity.y, -2.5);
+  else if (descendingStair) velocity.y = -12;
   else if (inWater) velocity.y = swimVerticalVelocity(swimming, velocity.y, isDown('KeyN'), spaceDown, position.y);
   else if (state.grounded && spaceDown) velocity.y = JUMP_SPEED * jumpMultiplier();
   else if (spacePressed && hasEffect('doubleJump') && (airJumps.get(world) ?? 0) < 1) {
