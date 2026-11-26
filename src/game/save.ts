@@ -55,6 +55,11 @@ export function readWorldSave(worldId = DEFAULT_WORLD_ID, forLoad = false): Worl
   }
 }
 
+export function hasLocalWorldName(name: string) {
+  const normalized = name.trim().toLocaleLowerCase('fr');
+  return Boolean(normalized) && listWorlds().some((world) => world.name.trim().toLocaleLowerCase('fr') === normalized);
+}
+
 export function listWorlds(): WorldMeta[] {
   let saved: WorldMeta[] = [];
   try {

@@ -3,7 +3,7 @@ import { useMultiplayerStore } from '../game/multiplayerStore';
 import { deleteRoom, fetchRoomInfo } from '../game/multiplayer';
 import type { RoomInfo } from '../game/multiplayer';
 import { useGameStore } from '../game/store';
-import { canCreateWorld } from '../game/save';
+import { canCreateWorld, hasLocalWorldName } from '../game/save';
 import { findPublicWorldByName, listPublicWorlds } from '../game/publicWorlds';
 import type { PublicWorld } from '../game/publicWorlds';
 import { GAMEPLAY_MODE_LABELS, isGameplayMode } from '../game/worldMode';
@@ -120,9 +120,17 @@ export function MultiplayerLobby({ onPlay, onCreateRoom, createLabel = translate
         useMultiplayerStore.getState().setStatus('error', translate('Tu as déjà 20 mondes. Supprimes-en un dans Mes mondes avant de créer un salon.', 'You already have 20 worlds. Delete one in My Worlds before creating a room.'));
         return;
       }
+      if (hasLocalWorldName(room)) {
+        useMultiplayerStore.getState().setStatus('error', translate('Ce nom est déjà utilisé par un de tes mondes. Choisis un autre nom pour ce nouveau salon.', 'This name is already used by one of your worlds. Choose another name for this new room.'));
+        return;
+      }
       if (onCreateRoom) {
         useMultiplayerStore.setState({ playerName, server: showServer ? server : '' });
         onCreateRoom(room.trim(), joinMode === 'room' ? null : joinMode);
+        return;
+      }
+      if (findPublicWorldByName(await listPublicWorlds(), room)) {
+        useMultiplayerStore.getState().setStatus('error', translate('Ce nom de salon est déjà utilisé. Choisis un autre nom.', 'This room name is already in use. Choose another name.'));
         return;
       }
       const worldId = `salon-${crypto.randomUUID().slice(0, 8)}`;
