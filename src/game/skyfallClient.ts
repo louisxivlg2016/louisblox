@@ -15,13 +15,13 @@ const initial = { phase: 'waiting' as 'waiting' | 'running' | 'finished', starte
 export const useSkyfallStore = create<typeof initial>(() => ({ ...initial }));
 export function clearSkyfall() { useSkyfallStore.setState({ ...initial, blocks: [] }); }
 
-function restartSkyfall(world: World) {
+function restartSkyfall(world: World, fellIntoVoid = false) {
   const state = useSkyfallStore.getState();
   const bestMs = Math.max(state.bestMs, Date.now() - state.startedAt);
   clearSkyfall();
   useSkyfallStore.setState({ bestMs });
   loadLevel(world, useGameStore.getState().generation, null);
-  useGameStore.getState().setNotice(translate('Partie perdue · nouvelle arène !', 'Game over · new arena!'));
+  useGameStore.getState().setNotice(fellIntoVoid ? translate('Chute dans le vide · tu réapparais !', 'Fell into the void · you respawn!') : translate('Partie perdue · nouvelle arène !', 'Game over · new arena!'));
 }
 
 function spawnBlock(state: typeof initial) {
@@ -67,7 +67,7 @@ export function skyfallControlSystem(world: World, dt: number) {
     }
   }
   if (player.y < 6.5 || health.value <= 0) {
-    restartSkyfall(world);
+    restartSkyfall(world, player.y < 6.5);
     return true;
   }
   useSkyfallStore.setState({ blocks: remaining });
