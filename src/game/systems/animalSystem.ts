@@ -181,7 +181,7 @@ function withinHomeBiome(world: World, entity: Entity, x: number, z: number) {
   return biomeAt(home.x, home.z, seed) === biomeAt(x, z, seed);
 }
 
-function moveInDirection(world: World, kind: AnimalKind, position: Vector3, motion: Motion, yaw: number, speed: number, dt: number, entity: Entity) {
+function moveInDirection(world: World, kind: AnimalKind, position: Vector3, motion: Motion, yaw: number, speed: number, dt: number, entity: Entity, allowHighClimb = true) {
   const x = position.x + Math.sin(yaw) * speed * dt;
   const z = position.z + Math.cos(yaw) * speed * dt;
   if (!withinHomeBiome(world, entity, x, z)) return false;
@@ -189,7 +189,7 @@ function moveInDirection(world: World, kind: AnimalKind, position: Vector3, moti
   openBearDoor(world, x, position.y, z, kind);
   const levelGround = groundAt(world, x, z, position.y + 0.49);
   const levelPassage = walkableGround(world, x, z, levelGround) && levelGround <= position.y + 1.05 && (position.y - levelGround <= MAX_WALK_DOWN || !motion.grounded) && bodyClear(world, x, z, levelGround);
-  const ground = levelPassage ? levelGround : groundAt(world, x, z, position.y + climbRise(entity) + 0.05);
+  const ground = levelPassage || !allowHighClimb ? levelGround : groundAt(world, x, z, position.y + climbRise(entity) + 0.05);
   if (kind === 'zombie' && useGameStore.getState().gameplayMode !== 'planet' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) return false;
   if (!walkableGround(world, x, z, ground) || ground > position.y + climbRise(entity) || (position.y - ground > MAX_WALK_DOWN && motion.grounded) || !bodyClear(world, x, z, ground)) return false;
   position.x = x;
@@ -209,13 +209,15 @@ function moveInDirection(world: World, kind: AnimalKind, position: Vector3, moti
 function moveAroundObstacle(world: World, kind: AnimalKind, position: Vector3, motion: Motion, speed: number, dt: number, entity: Entity) {
   const direction = entity % 2 === 0 ? 1 : -1;
   const candidates = [motion.yaw, motion.yaw + direction * Math.PI / 4, motion.yaw - direction * Math.PI / 4, motion.yaw + direction * Math.PI / 2, motion.yaw - direction * Math.PI / 2, motion.yaw + direction * Math.PI * 0.75, motion.yaw - direction * Math.PI * 0.75, motion.yaw + Math.PI];
-  for (let index = 0; index < candidates.length; index += 1) {
-    if (moveInDirection(world, kind, position, motion, candidates[index], speed, dt, entity)) {
-      if (index > 0) {
-        motion.avoid = Math.max(motion.avoid, 0.4);
-        motion.turnIn = Math.max(motion.turnIn, 0.8);
+  for (const allowHighClimb of [false, true]) {
+    for (let index = 0; index < candidates.length; index += 1) {
+      if (moveInDirection(world, kind, position, motion, candidates[index], speed, dt, entity, allowHighClimb)) {
+        if (index > 0) {
+          motion.avoid = Math.max(motion.avoid, 0.4);
+          motion.turnIn = Math.max(motion.turnIn, 0.8);
+        }
+        return true;
       }
-      return true;
     }
   }
   return false;
