@@ -1,6 +1,7 @@
 import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Box3, BoxGeometry, DataTexture, Mesh, MeshLambertMaterial, NearestFilter, RepeatWrapping, RGBAFormat, Vector3 } from 'three';
+import { Box3, BoxGeometry, CanvasTexture, DataTexture, Mesh, MeshLambertMaterial, NearestFilter, RepeatWrapping, RGBAFormat, Vector3 } from 'three';
+import type { Texture } from 'three';
 import raceCarUrl from '../../assets/models/raceCar.glb';
 import blueCarUrl from '../../assets/models/blueCar.glb';
 import airplaneUrl from '../../assets/models/airplane.glb';
@@ -38,6 +39,23 @@ bluePixelTexture.wrapT = RepeatWrapping;
 bluePixelTexture.repeat.set(2, 2);
 bluePixelTexture.needsUpdate = true;
 
+function pixelCarTexture(source: Texture) {
+  const image = source.image as { width?: number; height?: number } | undefined;
+  if (!image?.width || !image.height) return source;
+  const canvas = document.createElement('canvas');
+  canvas.width = 32;
+  canvas.height = 32;
+  const context = canvas.getContext('2d')!;
+  context.imageSmoothingEnabled = false;
+  context.drawImage(source.image as CanvasImageSource, 0, 0, 32, 32);
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = source.colorSpace;
+  texture.magFilter = NearestFilter;
+  texture.minFilter = NearestFilter;
+  texture.generateMipmaps = false;
+  return texture;
+}
+
 const dimensions = {
   raceCar: [2.6, 2.2, 4.8],
   blueCar: [2.15, 2.05, 5.1],
@@ -68,6 +86,7 @@ function Model({ kind, color, interior }: { kind: 'car' | 'plane' | 'train' | 'm
         }
         if (modelKind === 'blueCar' && !material.map) material.map = bluePixelTexture;
         if (!material.map) continue;
+        if (kind === 'car') material.map = pixelCarTexture(material.map);
         material.map.magFilter = NearestFilter;
         material.map.minFilter = NearestFilter;
         material.map.generateMipmaps = false;
