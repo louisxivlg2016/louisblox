@@ -59,22 +59,22 @@ export function generateDeliveryChunk(cx: number, cz: number): GeneratedChunk {
   }
 
   const houses = [
-    [-36, -36, 7, BlockKind.BeigeBrick, BlockKind.ConcreteRed, 'BOULANGERIE'],
-    [-12, -36, 6, BlockKind.WhiteBrick, BlockKind.ConcreteGray],
-    [12, -36, 8, BlockKind.BeigeBrick, BlockKind.ConcreteRed],
-    [36, -36, 7, BlockKind.WhiteBrick, BlockKind.ConcreteGray],
-    [-36, -12, 8, BlockKind.ConcreteLightBlue, BlockKind.ConcreteBlue],
-    [-12, -12, 6, BlockKind.WhiteBrick, BlockKind.ConcreteGray],
-    [12, -12, 7, BlockKind.BeigeBrick, BlockKind.ConcreteRed],
-    [36, -12, 9, BlockKind.ConcreteLightBlue, BlockKind.ConcreteBlue, 'VILLA BLEUE'],
-    [-36, 12, 6, BlockKind.WhiteBrick, BlockKind.ConcreteGray],
-    [-12, 12, 7, BlockKind.BeigeBrick, BlockKind.ConcreteRed],
-    [12, 12, 8, BlockKind.WhiteBrick, BlockKind.ConcreteGray],
-    [36, 12, 6, BlockKind.BeigeBrick, BlockKind.ConcreteRed],
-    [-36, 36, 7, BlockKind.WhiteBrick, BlockKind.ConcreteGray],
-    [-12, 36, 8, BlockKind.BeigeBrick, BlockKind.ConcreteRed],
-    [12, 36, 6, BlockKind.WhiteBrick, BlockKind.ConcreteGray],
-    [36, 36, 6, BlockKind.ConcretePink, BlockKind.ConcreteMagenta, 'MAISON ROSE'],
+    [-36, -36, 7, BlockKind.BeigeBrick, BlockKind.ConcreteRed, 'BOULANGERIE\nCOLIS ALIMENTAIRE'],
+    [-12, -36, 6, BlockKind.WhiteBrick, BlockKind.ConcreteGray, 'CAFÉ'],
+    [12, -36, 8, BlockKind.BeigeBrick, BlockKind.ConcreteRed, 'BIBLIOTHÈQUE'],
+    [36, -36, 7, BlockKind.WhiteBrick, BlockKind.ConcreteGray, 'HÔTEL'],
+    [-36, -12, 8, BlockKind.ConcreteLightBlue, BlockKind.ConcreteBlue, 'RÉSIDENCE AZUR'],
+    [-12, -12, 6, BlockKind.WhiteBrick, BlockKind.ConcreteGray, 'MAISON FAMILIALE'],
+    [12, -12, 7, BlockKind.BeigeBrick, BlockKind.ConcreteRed, 'APPARTEMENTS'],
+    [36, -12, 9, BlockKind.ConcreteLightBlue, BlockKind.ConcreteBlue, 'VILLA BLEUE\nCOLIS FRAGILE'],
+    [-36, 12, 6, BlockKind.WhiteBrick, BlockKind.ConcreteGray, 'FERME URBAINE'],
+    [-12, 12, 7, BlockKind.BeigeBrick, BlockKind.ConcreteRed, 'MAISON DU PARC'],
+    [12, 12, 8, BlockKind.WhiteBrick, BlockKind.ConcreteGray, 'MAISON DU MARCHÉ'],
+    [36, 12, 6, BlockKind.BeigeBrick, BlockKind.ConcreteRed, 'MAISON DES FLEURS'],
+    [-36, 36, 7, BlockKind.WhiteBrick, BlockKind.ConcreteGray, 'ATELIER'],
+    [-12, 36, 8, BlockKind.BeigeBrick, BlockKind.ConcreteRed, 'MAISON DU CANAL'],
+    [12, 36, 6, BlockKind.WhiteBrick, BlockKind.ConcreteGray, 'MAISON CENTRALE'],
+    [36, 36, 6, BlockKind.ConcretePink, BlockKind.ConcreteMagenta, 'MAISON ROSE\nCOLIS PERSONNEL'],
   ] as const;
   for (const [x, z, height, wall, roof, name] of houses) house(blocks, cx, cz, x, z, height, wall, roof, name);
 
