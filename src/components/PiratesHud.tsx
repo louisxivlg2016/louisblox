@@ -9,6 +9,7 @@ import { MatchResultActions } from './MatchResultActions';
 import { translate, useLanguageStore } from '../game/language';
 import pirateShopButtonUrl from '../../assets/menu/pirate-shop-button.webp';
 import defeatEnUrl from '../../assets/menu/english/defeat.jpeg';
+import defaiteFrUrl from '../../assets/menu/defaite.jpeg';
 import derrotaEsUrl from '../../assets/menu/spanish/derrota.jpeg';
 
 export function PiratesHud() {
@@ -86,7 +87,7 @@ export function PiratesHud() {
           <button className="primary-button" onClick={() => { setShopOpen(false); void requestPlay(); }}>{translate('Retour au navire', 'Return to ship')}</button>
         </div>
       )}
-      {winner && (defeated ? <div className="pirate-defeat"><img src={translate(defeatEnUrl, defeatEnUrl, derrotaEsUrl)} alt={translate('Défaite', 'Defeat', 'Derrota')} /><MatchResultActions /></div> : <div className="pirate-winner">{translate(`Victoire de l’équipage ${winner === 'red' ? 'rouge' : 'bleu'} !`, `The ${winner} crew wins!`, `¡La tripulación ${winner === 'red' ? 'roja' : 'azul'} gana!`)}<MatchResultActions /></div>)}
+      {winner && (defeated ? <div className="pirate-defeat"><img src={translate(defaiteFrUrl, defeatEnUrl, derrotaEsUrl)} alt={translate('Défaite', 'Defeat', 'Derrota')} /><MatchResultActions /></div> : <div className="pirate-winner">{translate(`Victoire de l’équipage ${winner === 'red' ? 'rouge' : 'bleu'} !`, `The ${winner} crew wins!`, `¡La tripulación ${winner === 'red' ? 'roja' : 'azul'} gana!`)}<MatchResultActions /></div>)}
       {isPirateEliminated() && !winner && <div className="battle-death">{translate('Élimination définitive', 'Permanent elimination')}<span>{translate('Le trésor de ton équipage est détruit.', 'Your crew’s treasure has been destroyed.')}</span></div>}
     </>
   );
