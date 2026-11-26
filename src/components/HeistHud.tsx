@@ -9,6 +9,7 @@ export function HeistHud() {
   const role = useHeistStore((state) => state.role);
   const roles = useHeistStore((state) => state.roles);
   const botEnabled = useHeistStore((state) => state.bot.enabled);
+  const botDetecting = useHeistStore((state) => state.bot.detecting);
   const phase = useHeistStore((state) => state.phase);
   const endsAt = useHeistStore((state) => state.endsAt);
   const score = useHeistStore((state) => state.score);
@@ -37,6 +38,7 @@ export function HeistHud() {
         {carried > 0 && <span>{translate(`Dans ton dos : ${carried}`, `On your back: ${carried}`)}</span>}
         <small>{role === 'guard' ? translate('Gardien', 'Guard') : translate('Voleur', 'Thief')} · {coins} {translate('pièces', 'coins')}</small>
         <small>{translate(`Voleurs ${Math.min(5, thieves)}/5 · Gardiens ${Math.min(5, guards)}/5`, `Thieves ${Math.min(5, thieves)}/5 · Guards ${Math.min(5, guards)}/5`)}</small>
+        {botDetecting && <small>{translate('GARDIEN · DÉTECTÉ !', 'GUARD · SPOTTED!')}</small>}
         {role === 'thief' && grappleReadyAt > Date.now() && <small>{translate(`Grappin ${Math.ceil((grappleReadyAt - Date.now()) / 1000)} s`, `Grapple ${Math.ceil((grappleReadyAt - Date.now()) / 1000)} s`)}</small>}
         {role === 'guard' && taserReadyAt > Date.now() && <small>{translate(`Taser ${Math.ceil((taserReadyAt - Date.now()) / 1000)} s`, `Taser ${Math.ceil((taserReadyAt - Date.now()) / 1000)} s`)}</small>}
         {role === 'guard' && alarmPosition && alarmUntil > Date.now() && <small>{translate(`ALARME · X ${Math.round(alarmPosition.x)} · Z ${Math.round(alarmPosition.z)}`, `ALARM · X ${Math.round(alarmPosition.x)} · Z ${Math.round(alarmPosition.z)}`)}</small>}

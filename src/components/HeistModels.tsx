@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Box3, Vector3 } from 'three';
+import { Box3, DoubleSide, Object3D, Vector3 } from 'three';
 import { useHeistStore } from '../game/heistClient';
 import { HEIST_LOOT } from '../game/heistCity';
 import { PixelPart } from './ItemModel';
@@ -49,6 +49,7 @@ function CrownModel() {
 
 export function HeistGuardBot() {
   const bot = useHeistStore((state) => state.bot);
+  const lightTarget = useMemo(() => new Object3D(), []);
   if (!bot.enabled) return null;
   return <group name="heist-guard-bot" position={[bot.x, bot.y, bot.z]} rotation={[0, bot.yaw, 0]}>
     <PixelPart position={[0, 1.05, 0]} size={[0.62, 0.72, 0.36]} color="#315d9b" />
@@ -59,7 +60,15 @@ export function HeistGuardBot() {
     <PixelPart position={[0.43, 1.04, 0]} size={[0.2, 0.68, 0.24]} color="#315d9b" />
     <PixelPart position={[-0.18, 0.37, 0]} size={[0.25, 0.72, 0.28]} color="#203b63" />
     <PixelPart position={[0.18, 0.37, 0]} size={[0.25, 0.72, 0.28]} color="#203b63" />
-    <group position={[0.55, 1.05, 0.2]}><HandcuffsModel /></group>
+    <group position={[-0.55, 1.05, 0.2]}><HandcuffsModel /></group>
+    <group name="guard-flashlight" position={[0.55, 1.2, 0.28]}>
+      <PixelPart position={[0, 0, 0]} size={[0.16, 0.16, 0.38]} color="#26313c" />
+      <mesh position={[0, 0, 0.22]}><boxGeometry args={[0.18, 0.18, 0.08]} /><meshBasicMaterial color="#fff2a8" toneMapped={false} /></mesh>
+      <pointLight position={[0, 0, 0.3]} color="#ffe9a3" intensity={18} distance={7} decay={2} />
+      <spotLight position={[0, 0, 0.32]} target={lightTarget} color="#ffe9a3" intensity={95} distance={18} angle={0.55} penumbra={0.45} decay={2} />
+      <primitive object={lightTarget} position={[0, 0, 8]} />
+      <mesh name="guard-light-beam" position={[0, 0, 4.3]} rotation={[Math.PI / 2, 0, 0]}><coneGeometry args={[2.7, 8, 24, 1, true]} /><meshBasicMaterial color="#ffe9a3" transparent opacity={0.07} depthWrite={false} side={DoubleSide} toneMapped={false} /></mesh>
+    </group>
   </group>;
 }
 

@@ -21,7 +21,7 @@ import type { SelectedKind } from './items';
 export type HeistRole = 'thief' | 'guard';
 type HeistPhase = 'prep' | 'running' | 'finished';
 type Trap = { x: number; y: number; z: number };
-type GuardBot = { enabled: boolean; x: number; y: number; z: number; yaw: number; waypoint: number; hits: number; nextArrestAt: number };
+type GuardBot = { enabled: boolean; x: number; y: number; z: number; yaw: number; waypoint: number; hits: number; nextArrestAt: number; detecting: boolean };
 type Gadget = 'grappling_hook' | 'gallery_projectiles_smoke_grenade' | 'taser' | 'heist_trap' | typeof BlockKind.Tnt | typeof BlockKind.Ladder;
 
 const initial = {
@@ -45,7 +45,7 @@ const initial = {
   smokeUntil: 0,
   gadgets: {} as Record<string, number>,
   traps: [] as Trap[],
-  bot: { enabled: false, x: 38, y: 8.51, z: 25, yaw: 0, waypoint: 0, hits: 0, nextArrestAt: 0 } as GuardBot,
+  bot: { enabled: false, x: 38, y: 8.51, z: 25, yaw: 0, waypoint: 0, hits: 0, nextArrestAt: 0, detecting: false } as GuardBot,
 };
 export const useHeistStore = create<typeof initial>(() => ({ ...initial, roles: {}, lootRespawns: {}, carriedLootIds: [], prison: [], gadgets: {}, traps: [] }));
 let socket: WebSocket | null = null;
@@ -283,20 +283,57 @@ const botWaypoints = [
   { x: 0, y: 8.51, z: -12 },
   { x: -35, y: 8.51, z: -10 },
 ];
+const prisonWaypoints = [
+  { x: 29, y: 8.51, z: 38 },
+  { x: 46, y: 8.51, z: 38 },
+  { x: 46, y: 8.51, z: 46 },
+  { x: 29, y: 8.51, z: 46 },
+];
+const botWasImprisoned = new WeakMap<KootaWorld, boolean>();
+
+function detectedByGuard(world: KootaWorld, bot: GuardBot, player: Vector3, distance: number) {
+  if (distance > 10 || Math.abs(player.y - bot.y) > 4) return false;
+  const dx = player.x - bot.x;
+  const dz = player.z - bot.z;
+  const facing = (Math.sin(bot.yaw) * dx + Math.cos(bot.yaw) * dz) / Math.max(distance, 0.001);
+  if (distance > 2.2 && facing < Math.cos(Math.PI / 3)) return false;
+  const origin = new Vector3(bot.x, bot.y + 1.55, bot.z);
+  const sight = new Vector3(player.x - origin.x, player.y + 0.9 - origin.y, player.z - origin.z).normalize();
+  const obstruction = raycastVoxel(getBlockIndex(world), origin, sight, distance, false);
+  return !obstruction || obstruction.distance >= distance - 0.6;
+}
 
 function updateHeistBot(world: KootaWorld, dt: number, current: typeof initial, player: Vector3) {
   const enabled = singleHuman() && current.role === 'thief' && current.phase !== 'finished';
   if (!enabled) {
-    if (current.bot.enabled) useHeistStore.setState({ bot: { ...current.bot, enabled: false } });
+    if (current.bot.enabled) useHeistStore.setState({ bot: { ...current.bot, enabled: false, detecting: false } });
     return;
   }
   const bot = current.bot;
   const id = localId();
   const imprisoned = current.prison.includes(id);
+  const wasImprisoned = botWasImprisoned.get(world) ?? false;
+  if (imprisoned !== wasImprisoned) {
+    botWasImprisoned.set(world, imprisoned);
+    if (imprisoned) {
+      bot.x = 38;
+      bot.y = 8.51;
+      bot.z = 38;
+      bot.nextArrestAt = Date.now() + 2500;
+    } else {
+      bot.x = 38;
+      bot.y = 8.51;
+      bot.z = 25;
+    }
+    bot.waypoint = 0;
+    bot.hits = 0;
+  }
   const inHideout = player.x >= -50 && player.x <= -35 && player.z >= 34 && player.z <= 49;
   const distanceToPlayer = Math.hypot(player.x - bot.x, player.z - bot.z);
-  const chasing = current.phase === 'running' && !imprisoned && !inHideout && distanceToPlayer <= 14;
-  const target = chasing ? player : botWaypoints[bot.waypoint];
+  const detecting = current.phase === 'running' && !inHideout && (imprisoned ? detectedByGuard(world, bot, player, distanceToPlayer) : distanceToPlayer <= 14);
+  const chasing = detecting && (!imprisoned || player.y >= 6);
+  const waypoints = imprisoned ? prisonWaypoints : botWaypoints;
+  const target = chasing ? player : waypoints[bot.waypoint % waypoints.length];
   const position = new Vector3(bot.x, bot.y, bot.z);
   const dx = target.x - position.x;
   const dz = target.z - position.z;
@@ -305,9 +342,9 @@ function updateHeistBot(world: KootaWorld, dt: number, current: typeof initial, 
   let hits = bot.hits;
   let nextArrestAt = bot.nextArrestAt;
   if (distance > 0.35) {
-    const movement = Math.min(distance, (chasing ? 4 : 2.4) * dt);
+    const movement = Math.min(distance, (chasing ? imprisoned ? 7.5 : 4 : 2.4) * dt);
     moveVoxelCharacter(getBlockIndex(world), position, { x: dx / distance * movement, y: 0, z: dz / distance * movement }, false);
-  } else if (!chasing) waypoint = (waypoint + 1) % botWaypoints.length;
+  } else if (!chasing) waypoint = (waypoint + 1) % waypoints.length;
   if (chasing && distanceToPlayer <= 2 && Date.now() >= nextArrestAt) {
     hits += 1;
     nextArrestAt = Date.now() + 1500;
@@ -321,7 +358,7 @@ function updateHeistBot(world: KootaWorld, dt: number, current: typeof initial, 
       useGameStore.getState().setNotice(translate('Le gardien bot t’a arrêté !', 'The guard bot arrested you!'));
     } else useGameStore.getState().setNotice(translate('Menottes du gardien bot · 1/2', 'Guard bot handcuffs · 1/2'));
   }
-  useHeistStore.setState({ bot: { enabled: true, x: position.x, y: position.y, z: position.z, yaw: Math.atan2(dx, dz), waypoint, hits, nextArrestAt } });
+  useHeistStore.setState({ bot: { enabled: true, x: position.x, y: position.y, z: position.z, yaw: Math.atan2(dx, dz), waypoint, hits, nextArrestAt, detecting: chasing } });
 }
 
 export function heistControlSystem(world: KootaWorld, camera: Camera, actions: { place: number; harvest: number; tap: number; interact: number }, dt = 0.05) {
