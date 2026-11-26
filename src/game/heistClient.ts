@@ -17,7 +17,7 @@ import { moveVoxelCharacter } from './systems/collisionSystem';
 import { fireProjectile } from './systems/projectileSystem';
 import { world } from './world';
 import type { SelectedKind } from './items';
-import { playSound } from './audio';
+import { playHeistAlarm } from './heistAlarm';
 
 export type HeistRole = 'thief' | 'guard';
 type HeistPhase = 'prep' | 'running' | 'finished';
@@ -96,7 +96,7 @@ export function chooseHeistRole(role: HeistRole) {
 }
 
 export function notifyHeistAlarm(position: { x: number; y: number; z: number }) {
-  playSound('heistAlarm', 0.85);
+  playHeistAlarm();
   useHeistStore.setState({ alarmUntil: Date.now() + 10000, alarmPosition: { ...position } });
   send({ type: 'heist-alarm', position });
 }
@@ -497,7 +497,7 @@ export function receiveHeistState(value: unknown) {
   const lootRespawns = data.lootRespawns && typeof data.lootRespawns === 'object' ? data.lootRespawns as Record<string, number> : {};
   const prison = Array.isArray(data.prison) ? data.prison.filter((id): id is string => typeof id === 'string') : [];
   const previous = useHeistStore.getState();
-  if (typeof data.alarmUntil === 'number' && data.alarmUntil > previous.alarmUntil && data.alarmUntil > Date.now()) playSound('heistAlarm', 0.85);
+  if (typeof data.alarmUntil === 'number' && data.alarmUntil > previous.alarmUntil && data.alarmUntil > Date.now()) playHeistAlarm();
   const role = roles[localId()] ?? previous.role;
   if (role && role !== previous.role) loadout(role, prison.includes(localId()));
   const alarmPosition = data.alarmPosition && typeof data.alarmPosition === 'object' ? data.alarmPosition as { x: number; y: number; z: number } : previous.alarmPosition;
