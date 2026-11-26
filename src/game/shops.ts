@@ -16,6 +16,7 @@ import { fireProjectile } from './systems/projectileSystem';
 import { spawnAnimal } from './animals';
 import { reportAnimalSpawn } from './animalSync';
 import { DAY_DURATION } from './dayNight';
+import { allowsConstruction } from './worldMode';
 
 export function selectedItemPrice(kind: SelectedKind) {
   if (kind === 'hand') return 0;
@@ -34,7 +35,7 @@ let lastCreativeSale = 0;
 
 export function sellSelectedItem() {
   const store = useGameStore.getState();
-  if (!['creative', 'survival', 'city-ancient', 'city-modern'].includes(store.gameplayMode)) return false;
+  if (!allowsConstruction(store.gameplayMode)) return false;
   const kind = store.selected;
   const price = selectedItemPrice(kind);
   if (price <= 0) {
