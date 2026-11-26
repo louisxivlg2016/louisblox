@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import type { World } from 'koota';
-import { DEEP_CHESTS, DEEP_SURFACE_Y, DEEP_VENDOR } from './deepArena';
+import { DEEP_CHESTS, DEEP_SPAWN, DEEP_SURFACE_Y, DEEP_VENDOR } from './deepArena';
 import { addVoxel, getBlockIndex, removeVoxel } from './chunks';
 import { Player, PlayerPosition } from './traits';
+import { respawnAtBase } from './battle';
 import { useGameStore } from './store';
 import { BlockKind, voxelKey } from './voxel';
 import { releasePointerForOverlay } from './input';
@@ -92,17 +93,23 @@ export function buyDeepOxygen() {
   persist();
 }
 
-export function deepControlSystem(world: World, _dt: number, actions: { harvest: number; tap: number; interact: number }) {
+export function deepControlSystem(world: World, dt: number, actions: { harvest: number; tap: number; interact: number }) {
   if (useGameStore.getState().gameplayMode !== 'deep-dive') return false;
   ensureDeep();
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return true;
   const state = useDeepStore.getState();
   const maximum = deepMaxOxygen(state.gear);
-  const oxygen = Math.max(state.oxygen, maximum);
+  const oxygen = player.y < DEEP_SURFACE_Y - 0.8 ? Math.max(0, state.oxygen - dt) : maximum;
   const depth = Math.max(0, DEEP_SURFACE_Y - player.y);
   const now = Date.now();
   useDeepStore.setState({ oxygen, depth });
+  if (oxygen <= 0) {
+    respawnAtBase(world, null, DEEP_SPAWN);
+    useDeepStore.setState({ oxygen: maximum, depth: 0 });
+    useGameStore.getState().setNotice(translate('Tu as manqué d’oxygène et tu es mort de noyade. Tu réapparais à la surface.', 'You ran out of oxygen and drowned. You respawn at the surface.'));
+    return true;
+  }
   if (nearVendor(player) && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0)) {
     useGameStore.setState({ shopOpen: true, mode: 'pause' });
     releasePointerForOverlay();
