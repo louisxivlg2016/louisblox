@@ -4,6 +4,7 @@ import { Box3, DoubleSide, Object3D, Vector3 } from 'three';
 import { useHeistStore } from '../game/heistClient';
 import { HEIST_LOOT } from '../game/heistCity';
 import { PixelPart } from './ItemModel';
+import { FullCharacterGlb } from './FullCharacterGlb';
 import handcuffsUrl from '../../assets/models/handcuffs.glb';
 import goldBagUrl from '../../assets/models/gold-bag.glb';
 
@@ -51,15 +52,8 @@ export function HeistGuardBot() {
   const bot = useHeistStore((state) => state.bot);
   const lightTarget = useMemo(() => new Object3D(), []);
   if (!bot.enabled) return null;
-  return <group name="heist-guard-bot" position={[bot.x, bot.y, bot.z]} rotation={[0, bot.yaw, 0]}>
-    <PixelPart position={[0, 1.05, 0]} size={[0.62, 0.72, 0.36]} color="#315d9b" />
-    <PixelPart position={[0, 1.68, 0]} size={[0.48, 0.48, 0.48]} color="#d9aa80" />
-    <PixelPart position={[0, 1.94, 0]} size={[0.6, 0.16, 0.58]} color="#1e385f" />
-    <PixelPart position={[0, 1.73, 0.255]} size={[0.13, 0.08, 0.03]} color="#f4f7ff" />
-    <PixelPart position={[-0.43, 1.04, 0]} size={[0.2, 0.68, 0.24]} color="#315d9b" />
-    <PixelPart position={[0.43, 1.04, 0]} size={[0.2, 0.68, 0.24]} color="#315d9b" />
-    <PixelPart position={[-0.18, 0.37, 0]} size={[0.25, 0.72, 0.28]} color="#203b63" />
-    <PixelPart position={[0.18, 0.37, 0]} size={[0.25, 0.72, 0.28]} color="#203b63" />
+  return <group name="heist-guard-bot" position={[bot.x, bot.y, bot.z]} rotation={[0, bot.yaw + Math.PI, 0]}>
+    <FullCharacterGlb outfit="police" moving remote />
     <group position={[-0.55, 1.05, 0.2]}><HandcuffsModel /></group>
     <group name="guard-flashlight" position={[0.55, 1.2, 0.28]}>
       <PixelPart position={[0, 0, 0]} size={[0.16, 0.16, 0.38]} color="#26313c" />

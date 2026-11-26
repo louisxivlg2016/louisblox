@@ -18,6 +18,7 @@ import { fireProjectile } from './systems/projectileSystem';
 import { world } from './world';
 import type { SelectedKind } from './items';
 import { playHeistAlarm } from './heistAlarm';
+import { useCharacterStore } from './characterStore';
 
 export type HeistRole = 'thief' | 'guard';
 type HeistPhase = 'prep' | 'running' | 'finished';
@@ -70,6 +71,7 @@ export function consumeHeistGadget(kind: Gadget, amount = 1) {
   useHeistStore.setState({ gadgets });
 }
 function loadout(role: HeistRole, prison = false) {
+  if (role === 'guard') useCharacterStore.getState().setOutfit('police');
   const base: Array<SelectedKind | null> = prison
     ? ['hand', 'pickaxe_wood']
     : role === 'guard'
@@ -154,6 +156,7 @@ export function preloadHeistTunnel(world: KootaWorld) {
 }
 
 function restoreTunnel(world: KootaWorld) {
+  if (useHeistStore.getState().prison.length > 0) return;
   const now = Date.now();
   const last = tunnelResets.get(world) ?? 0;
   if (now - last < 60000) return;
@@ -519,6 +522,7 @@ export function receiveHeistPrison() {
   preloadHeistTunnel(world);
   loadout('thief', true);
   respawnAtBase(world, null, HEIST_PRISON_SPAWN);
+  useGameStore.getState().setNotice(translate('Pour t’évader, creuse la terre sous ton lit avec la pioche, puis suis les égouts jusqu’au repaire. Le tunnel ne se rebouche plus pendant ton évasion.', 'To escape, dig the dirt under your bed with the pickaxe, then follow the sewers to the hideout. The tunnel will not refill during your escape.'));
 }
 export function receiveHeistRelease() {
   release();
