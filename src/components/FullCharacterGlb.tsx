@@ -31,10 +31,13 @@ import classicBoyUrl from '../../assets/models/full-classic-boy.glb';
 import traderUrl from '../../assets/models/full-trader.glb';
 import footballerUrl from '../../assets/models/full-footballer.glb';
 import workerUrl from '../../assets/models/full-worker.glb';
+import minerUrl from '../../assets/models/full-miner.glb';
+import thiefUrl from '../../assets/models/full-thief.glb';
+import diverUrl from '../../assets/models/full-diver.glb';
 import { PoliceSunglasses } from './PoliceSunglasses';
 
 type FullCharacterModel = Exclude<OutfitKind, 'default'> | 'classic-girl' | 'classic-boy';
-const models: Partial<Record<FullCharacterModel, string>> = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, corsair: corsairUrl, footballer: footballerUrl, worker: workerUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
+const models: Partial<Record<FullCharacterModel, string>> = { king: kingUrl, military: militaryUrl, knight: knightUrl, explorer: explorerUrl, princess: princessUrl, louis14: louis14Url, louis15: louis15Url, pirate: pirateUrl, corsair: corsairUrl, footballer: footballerUrl, worker: workerUrl, miner: minerUrl, thief: thiefUrl, diver: diverUrl, firefighter: firefighterUrl, police: policeUrl, soldier: soldierUrl, 'classic-girl': classicGirlUrl, 'classic-boy': classicBoyUrl, trader: traderUrl };
 
 export function hasFullCharacter(_outfit: OutfitKind, _wig: WigSelection = 'auto') {
   return true;

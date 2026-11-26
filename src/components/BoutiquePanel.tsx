@@ -27,6 +27,9 @@ import workerAvatarUrl from '../../assets/avatars/outfits/worker.webp';
 import policeAvatarUrl from '../../assets/avatars/outfits/police.webp';
 import soldierAvatarUrl from '../../assets/avatars/outfits/soldier.webp';
 import traderAvatarUrl from '../../assets/avatars/outfits/trader.webp';
+import minerAvatarUrl from '../../assets/character-references/miner.png';
+import thiefAvatarUrl from '../../assets/character-references/thief.png';
+import diverAvatarUrl from '../../assets/character-references/diver.png';
 import { translate, useLanguageStore } from '../game/language';
 import { saveWorld } from '../game/save';
 import { world } from '../game/world';
@@ -36,7 +39,7 @@ const SKIN_COLORS = ['#f0c7a6', '#e7a0aa', '#c98962', '#966045', '#704735', '#49
 const HAIR_COLORS = ['#49382f', '#25232a', '#8a5838', '#d6b46a', '#d7d0c3', '#a74a82', '#4e79a7', '#50844a'];
 const EYE_COLORS = ['#273b4b', '#3d6e45', '#6f4d35', '#4e79a7', '#784da0', '#a13c3c'];
 const CLOTHING_COLORS = ['#4d83a7', '#9a5f9f', '#8e303d', '#526647', '#c467a5', '#2d467f', '#b98a53', '#35434c'];
-const OUTFIT_IMAGES: Record<OutfitKind, string> = { default: defaultBoyUrl, king: kingAvatarUrl, military: militaryAvatarUrl, knight: knightAvatarUrl, explorer: explorerAvatarUrl, princess: princessAvatarUrl, louis14: louis14AvatarUrl, louis15: louis15AvatarUrl, pirate: pirateAvatarUrl, corsair: corsairAvatarUrl, footballer: footballerAvatarUrl, firefighter: firefighterAvatarUrl, worker: workerAvatarUrl, police: policeAvatarUrl, soldier: soldierAvatarUrl, trader: traderAvatarUrl };
+const OUTFIT_IMAGES: Record<OutfitKind, string> = { default: defaultBoyUrl, king: kingAvatarUrl, military: militaryAvatarUrl, knight: knightAvatarUrl, explorer: explorerAvatarUrl, princess: princessAvatarUrl, louis14: louis14AvatarUrl, louis15: louis15AvatarUrl, pirate: pirateAvatarUrl, corsair: corsairAvatarUrl, footballer: footballerAvatarUrl, firefighter: firefighterAvatarUrl, worker: workerAvatarUrl, miner: minerAvatarUrl, police: policeAvatarUrl, soldier: soldierAvatarUrl, trader: traderAvatarUrl, thief: thiefAvatarUrl, diver: diverAvatarUrl };
 
 export function BoutiquePanel() {
   const language = useLanguageStore((state) => state.language);

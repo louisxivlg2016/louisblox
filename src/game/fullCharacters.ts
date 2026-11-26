@@ -16,5 +16,8 @@ export const fullCharacterHeights: Record<string, number> = {
   "classic-girl": 1.9000003337860107,
   "classic-boy": 1.9000003337860107,
   "trader": 1.9000003337860107,
-  "referee": 1.9000003337860107
+  "referee": 1.9000003337860107,
+  "miner": 1.9000003337860107,
+  "thief": 1.9000003337860107,
+  "diver": 1.9000003337860107
 };

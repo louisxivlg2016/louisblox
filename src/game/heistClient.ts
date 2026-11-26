@@ -72,7 +72,7 @@ export function consumeHeistGadget(kind: Gadget, amount = 1) {
   useHeistStore.setState({ gadgets });
 }
 function loadout(role: HeistRole, prison = false) {
-  if (role === 'guard') useCharacterStore.getState().setOutfit('police');
+  useCharacterStore.getState().setOutfit(role === 'guard' ? 'police' : 'thief');
   const base: Array<SelectedKind | null> = prison
     ? ['hand', 'pickaxe_wood']
     : role === 'guard'

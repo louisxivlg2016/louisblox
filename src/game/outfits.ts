@@ -1,6 +1,6 @@
 import { translate } from './language';
 
-export const OUTFIT_ORDER = ['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'corsair', 'footballer', 'firefighter', 'worker', 'police', 'soldier', 'trader'] as const;
+export const OUTFIT_ORDER = ['default', 'king', 'military', 'knight', 'explorer', 'princess', 'louis14', 'louis15', 'pirate', 'corsair', 'footballer', 'firefighter', 'worker', 'miner', 'police', 'soldier', 'trader', 'thief', 'diver'] as const;
 export type OutfitKind = (typeof OUTFIT_ORDER)[number];
 
 export const OUTFITS = (): Record<OutfitKind, { name: string; description: string; body: string; legs: string; color: string }> => ({
@@ -20,6 +20,9 @@ export const OUTFITS = (): Record<OutfitKind, { name: string; description: strin
   police: { name: translate('Policier', 'Police Officer'), description: translate('Casquette, chemise bleue, ceinturon et uniforme.', 'Cap, blue shirt, belt, and uniform.'), body: '#4777a7', legs: '#283a53', color: '#4777a7' },
   soldier: { name: translate('Soldat', 'Soldier'), description: translate('Uniforme bleu, bandoulières blanches, bicorne et baïonnette.', 'Blue uniform, white crossbelts, bicorne, and bayonet.'), body: '#293e74', legs: '#e4e7e1', color: '#293e74' },
   trader: { name: translate('Marchand', 'Trader'), description: translate('Turban bleu, tunique et ceinture dorée du marchand voyageur.', 'Blue turban, tunic, and golden belt of the traveling trader.'), body: '#49668b', legs: '#43352e', color: '#49668b' },
+  miner: { name: translate('Mineur', 'Miner'), description: translate('Casque jaune avec lampe et gilet réfléchissant pour descendre dans la mine.', 'Yellow helmet with headlamp and reflective vest for the mine.'), body: '#ed7d24', legs: '#30383c', color: '#f3ce35' },
+  thief: { name: translate('Voleur', 'Thief'), description: translate('Chapeau noir, masque et haut rayé pour les cambriolages.', 'Black hat, mask, and striped shirt for heists.'), body: '#34353b', legs: '#252a33', color: '#34353b' },
+  diver: { name: translate('Plongeur', 'Diver'), description: translate('Combinaison, masque et bouteille pour la chasse sous-marine.', 'Wetsuit, mask, and oxygen tank for underwater treasure hunting.'), body: '#17364f', legs: '#152c43', color: '#26a7b8' },
 });
 
 export function isOutfitKind(value: unknown): value is OutfitKind {

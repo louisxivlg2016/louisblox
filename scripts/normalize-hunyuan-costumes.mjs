@@ -1,6 +1,6 @@
 import { fullCharacterHeights } from '../src/game/fullCharacters';
 
-const names = ['pirate', 'footballer', 'firefighter', 'police'];
+const names = ['pirate', 'footballer', 'firefighter', 'police', 'miner', 'thief', 'diver'];
 const targetHeight = 1.9000003337860107;
 const heights = { ...fullCharacterHeights };
 

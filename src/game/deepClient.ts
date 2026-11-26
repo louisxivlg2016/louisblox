@@ -9,6 +9,7 @@ import { releasePointerForOverlay } from './input';
 import { readModeProgress, writeModeProgress } from './modeProgress';
 import { world } from './world';
 import { translate } from './language';
+import { useCharacterStore } from './characterStore';
 
 const initial = { coins: 0, findings: 0, gear: 0, oxygen: 60, opened: {} as Record<string, number>, depth: 0 };
 export const useDeepStore = create<typeof initial>(() => ({ ...initial, opened: {} }));
@@ -34,6 +35,7 @@ function ensureDeep() {
   const game = useGameStore.getState();
   if (loadedWorld === game.worldId) return;
   loadedWorld = game.worldId;
+  useCharacterStore.getState().setOutfit('diver');
   const saved = readModeProgress('deep-dive', game.worldId, initial);
   const gear = typeof saved.gear === 'number' ? Math.max(0, Math.min(3, Math.floor(saved.gear))) : 0;
   useDeepStore.setState({

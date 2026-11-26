@@ -29,6 +29,9 @@ import footballerUrl from '../../assets/avatars/footballer.webp';
 import firefighterUrl from '../../assets/avatars/firefighter.webp';
 import policeUrl from '../../assets/avatars/police.webp';
 import workerUrl from '../../assets/avatars/worker.webp';
+import minerUrl from '../../assets/character-references/miner.png';
+import thiefUrl from '../../assets/character-references/thief.png';
+import diverUrl from '../../assets/character-references/diver.png';
 import { translate } from '../game/language';
 
 export const PHOTO_AVATARS = () => ({
@@ -57,6 +60,9 @@ export const PHOTO_AVATARS = () => ({
   firefighter: { name: 'Firefighter', url: firefighterUrl },
   worker: { name: 'Construction Worker', url: workerUrl },
   police: { name: 'Police Officer', url: policeUrl },
+  miner: { name: 'Miner', url: minerUrl },
+  thief: { name: 'Thief', url: thiefUrl },
+  diver: { name: 'Diver', url: diverUrl },
 });
 const photoKinds = Object.keys(PHOTO_AVATARS()) as Array<keyof ReturnType<typeof PHOTO_AVATARS>>;
 

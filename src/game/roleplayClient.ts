@@ -46,7 +46,7 @@ function ensureRoleplay() {
   const saved = readModeProgress('roleplay', game.worldId, { job: null as RoleplayJob | null, coins: 0 });
   const job = saved.job === 'miner' || saved.job === 'merchant' || saved.job === 'police' || saved.job === 'builder' || saved.job === 'firefighter' ? saved.job : null;
   useRoleplayStore.setState({ job, coins: typeof saved.coins === 'number' ? Math.max(0, Math.floor(saved.coins)) : 0, workReadyAt: 0, panelOpen: job === null });
-  if (job) useCharacterStore.getState().setOutfit(job === 'merchant' ? 'trader' : job === 'police' ? 'police' : job === 'firefighter' ? 'firefighter' : 'worker');
+  if (job) useCharacterStore.getState().setOutfit(job === 'merchant' ? 'trader' : job === 'police' ? 'police' : job === 'firefighter' ? 'firefighter' : job === 'miner' ? 'miner' : 'worker');
   ensureFirefighterEquipment();
 }
 
@@ -67,7 +67,7 @@ function ensureFirefighterEquipment() {
 export function chooseRoleplayJob(job: RoleplayJob) {
   ensureRoleplay();
   useRoleplayStore.setState({ job, panelOpen: false });
-  useCharacterStore.getState().setOutfit(job === 'merchant' ? 'trader' : job === 'police' ? 'police' : job === 'firefighter' ? 'firefighter' : 'worker');
+  useCharacterStore.getState().setOutfit(job === 'merchant' ? 'trader' : job === 'police' ? 'police' : job === 'firefighter' ? 'firefighter' : job === 'miner' ? 'miner' : 'worker');
   if (job === 'police') useGameStore.setState({ hotbarSlots: ['handcuffs', 'pickaxe_wood', ...Array(8).fill(null)], selected: 'handcuffs', selectedSlot: 0 });
   if (job === 'miner') useGameStore.setState({ hotbarSlots: ['pickaxe_iron', ...Array(9).fill(null)], selected: 'pickaxe_iron', selectedSlot: 0 });
   if (job === 'firefighter') useGameStore.setState({ hotbarSlots: ['extinguisher', ...Array(9).fill(null)], selected: 'extinguisher', selectedSlot: 0 });
