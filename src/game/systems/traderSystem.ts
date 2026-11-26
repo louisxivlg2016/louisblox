@@ -3,7 +3,7 @@ import { chunkCoordinate, getBlockIndex, getWorldSeed, loadChunk } from '../chun
 import { turnToward } from '../rotation';
 import { BlockKind, voxelKey } from '../voxel';
 import { clearRoute, findPath, routeDirection, walkableGround } from './traderNavigation';
-import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, HorseRider, Player, PlayerBody, PlayerMount, PlayerPosition, Trader, TraderMesh, TraderPosition } from '../traits';
+import { CamelLeash, AnimalMesh, AnimalMotion, AnimalPosition, Environment, HorseRider, Player, PlayerBody, PlayerMount, PlayerPosition, Trader, TraderMesh, TraderPosition } from '../traits';
 import { getFireSources, nearestFire } from '../hazards';
 import { useTradeStore } from '../trading';
 import { useGameStore } from '../store';
@@ -12,12 +12,33 @@ import { updateMerchantRestaurant, updateVillageSleep } from '../villageLife';
 import { animalSeatOffset } from '../mounts';
 import { translate } from '../language';
 import { useNavigationStore } from '../navigation';
+import { changeInventory } from '../inventory';
+import { DAY_DURATION } from '../dayNight';
 
 const foliage = new Set<BlockKind>([BlockKind.Leaves, BlockKind.PineLeaves, BlockKind.AutumnLeaves, BlockKind.JungleLeaves, BlockKind.JungleVine, BlockKind.Apple]);
 const stuckCamels = new Map<Entity, { x: number; z: number; time: number }>();
 const stuckTraders = new Map<Entity, { x: number; z: number; time: number }>();
 const obstacleDetours = new Set<Entity>();
 const traderPaths = new Map<Entity, Array<{ x: number; y: number; z: number }>>();
+const villageGiftDays = new WeakMap<World, Map<string, number>>();
+
+function offerVillageGift(world: World, entity: Entity, player: import('three').Vector3) {
+  const trader = entity.get(Trader)!;
+  const position = entity.get(TraderPosition)!;
+  if (!trader.villager || position.distanceToSquared(player) > 5 * 5) return;
+  const site = nearestVillageAt(position.x, position.z, getWorldSeed(world));
+  const key = `${site?.x ?? trader.homeX},${site?.z ?? trader.homeZ}`;
+  const day = Math.floor((world.queryFirst(Environment)?.get(Environment)?.elapsed ?? 0) / DAY_DURATION);
+  let gifts = villageGiftDays.get(world);
+  if (!gifts) {
+    gifts = new Map();
+    villageGiftDays.set(world, gifts);
+  }
+  if (gifts.get(key) === day) return;
+  gifts.set(key, day);
+  changeInventory('bread', 2);
+  useGameStore.getState().setNotice(translate('Villageois : Bienvenue ! Tiens, deux pains pour ton voyage. Ils sont dans tes cases.', 'Villager: Welcome! Here are two breads for your journey. They are in your slots.'));
+}
 
 function moveOnGround(_world: World, position: import('three').Vector3, x: number, z: number, ground: number) {
   position.set(x, ground, z);
@@ -188,6 +209,7 @@ export function traderSystem(world: World, dt: number) {
     const mesh = entity.get(TraderMesh)!;
     if (mesh.value) mesh.value.visible = trader.following || position.distanceToSquared(player) < 64 * 64;
     if (updateVillageSleep(world, entity, dt, talkingTo)) continue;
+    offerVillageGift(world, entity, player);
     if (updateMerchantRestaurant(world, entity, dt, talkingTo)) continue;
     if (talkingTo === entity) {
       if (trader.walking) entity.set(Trader, { walking: false });
