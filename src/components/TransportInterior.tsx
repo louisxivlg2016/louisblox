@@ -74,10 +74,7 @@ function PlaneInterior({ driverPresent }: { driverPresent: boolean }) {
       <Seat position={[-0.65, cabin.floor + 0.55, cabin.front + 1.1]} />
       {driverPresent && <Person position={[-0.65, cabin.floor + 0.55, cabin.front + 1.1]} color="#31537b" worker />}
       {rows.flatMap((z, row) => [-0.62, 0.62].map((x, column) => (
-        <group key={`${row}-${column}`}>
-          <Seat position={[x, cabin.floor + 0.55, z]} />
-          <Person position={[x, cabin.floor + 0.55, z]} color={(row + column) % 2 === 0 ? '#568b62' : '#8d5e9d'} />
-        </group>
+        <Seat key={`${row}-${column}`} position={[x, cabin.floor + 0.55, z]} />
       )))}
       <Person position={[0, cabin.floor, cabin.rear - 2]} color="#31537b" worker />
     </group>
@@ -132,7 +129,6 @@ function TrainInterior({ kind, driverPresent, passengerSeat }: { kind: 'train' |
       {passengers.map((position, index) => (
         <group key={index}>
           <Seat position={position} />
-          {passengerSeat !== index && <Person position={position} color={index % 2 === 0 ? '#a36248' : '#4d789c'} />}
         </group>
       ))}
       <Seat position={[-seatX, seatY, cabin.front + 1]} />

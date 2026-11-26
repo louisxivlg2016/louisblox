@@ -8,7 +8,6 @@ import { VehicleGlb } from './VehicleGlb';
 import { VehicleInterior } from './TransportInterior';
 import { useRemotePlayerStore } from '../game/multiplayerStore';
 import { useVehicleControls } from '../game/vehicleControls';
-import { TransportPassengers } from './TransportPassengers';
 
 function VehicleHeadlights({ kind }: { kind: import('../game/vehicleTypes').VehicleKind }) {
   const enabled = useVehicleControls((state) => state.headlights);
@@ -51,7 +50,6 @@ function VehicleView({ entity }: { entity: Entity }) {
       position={[position.x, position.y, position.z]}
     >
       {vehicle && <VehicleGlb entity={entity} kind={kind} color={vehicle.color} interior={showInterior}  />}
-      <TransportPassengers kind={kind} />
       <VehicleHeadlights kind={kind} />
       {showInterior && <VehicleInterior
         kind={kind}

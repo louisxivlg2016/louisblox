@@ -100,7 +100,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
     const name = jumping ? 'jump' : walking ? 'run' : 'idle';
     group.current.userData.clip = name;
     const sitting = seated || emote === 'sit' || Boolean(mounted?.vehicle && !walking);
-    group.current.position.y = sitting ? -0.45 : 0;
+    group.current.position.y = sitting ? -0.18 : 0;
     group.current.userData.gesture = sitting ? 'sit' : emote;
     animateCharacterRig(character, performance.now() / 1000, walking, jumping, sitting, Math.min(delta, 0.05), eating);
     headIdle.update(delta);
