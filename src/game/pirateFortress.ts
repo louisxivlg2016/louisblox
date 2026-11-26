@@ -37,37 +37,56 @@ function put(blocks: Voxel[], cx: number, cz: number, x: number, y: number, z: n
 function fortress(blocks: Voxel[], cx: number, cz: number, centerX: number, team: 'red' | 'blue') {
   const color = team === 'red' ? BlockKind.ConcreteRed : BlockKind.ConcreteBlue;
   const gateX = team === 'red' ? centerX + 10 : centerX - 10;
+  const inward = team === 'red' ? 1 : -1;
   for (let x = centerX - 10; x <= centerX + 10; x += 1) for (let z = -10; z <= 10; z += 1) {
-    put(blocks, cx, cz, x, 7, z, BlockKind.OakPlanks);
+    put(blocks, cx, cz, x, 7, z, Math.abs(x - centerX) <= 6 && Math.abs(z) <= 6 ? BlockKind.Stone : BlockKind.Grass);
     const edge = x === centerX - 10 || x === centerX + 10 || z === -10 || z === 10;
-    if (edge) for (let y = 8; y <= 14; y += 1) {
-      const gate = x === gateX && Math.abs(z) <= 1 && y <= 10;
-      if (!gate) put(blocks, cx, cz, x, y, z, BlockKind.GrayBrick);
+    if (edge) {
+      for (let y = 8; y <= 14; y += 1) {
+        const gate = x === gateX && Math.abs(z) <= 1 && y <= 10;
+        const window = y === 12 && (x + z) % 4 === 0;
+        if (!gate) put(blocks, cx, cz, x, y, z, window ? BlockKind.Glass : BlockKind.GrayBrick);
+      }
+      if ((x + z) % 2 === 0) put(blocks, cx, cz, x, 15, z, BlockKind.Stone);
     }
   }
-  for (const x of [centerX - 10, centerX + 10]) for (const z of [-10, 10]) {
+  for (const towerX of [centerX - 10, centerX + 10]) for (const towerZ of [-10, 10]) {
     for (let dx = -2; dx <= 2; dx += 1) for (let dz = -2; dz <= 2; dz += 1) {
-      put(blocks, cx, cz, x + dx, 15, z + dz, BlockKind.Stone);
-      if (dx === -2 || dx === 2 || dz === -2 || dz === 2) for (let y = 8; y <= 17; y += 1) put(blocks, cx, cz, x + dx, y, z + dz, BlockKind.GrayBrick);
+      for (let y = 8; y <= 17; y += 1) {
+        const edge = dx === -2 || dx === 2 || dz === -2 || dz === 2;
+        const window = edge && (y === 12 || y === 15) && (dx === 0 || dz === 0);
+        if (edge) put(blocks, cx, cz, towerX + dx, y, towerZ + dz, window ? BlockKind.Glass : BlockKind.GrayBrick);
+      }
+      put(blocks, cx, cz, towerX + dx, 18, towerZ + dz, BlockKind.Stone);
+      if ((dx + dz) % 2 === 0 && (dx === -2 || dx === 2 || dz === -2 || dz === 2)) put(blocks, cx, cz, towerX + dx, 19, towerZ + dz, BlockKind.Stone);
     }
-    put(blocks, cx, cz, x, 18, z, color);
-    put(blocks, cx, cz, x, 19, z, color);
+    put(blocks, cx, cz, towerX, 20, towerZ, color);
+    put(blocks, cx, cz, towerX, 21, towerZ, color);
   }
+  for (let dx = -3; dx <= 3; dx += 1) for (let dz = -3; dz <= 3; dz += 1) {
+    put(blocks, cx, cz, centerX + dx, 7, dz, BlockKind.Stone);
+    put(blocks, cx, cz, centerX + dx, 18, dz, BlockKind.Stone);
+    const edge = dx === -3 || dx === 3 || dz === -3 || dz === 3;
+    if (edge) {
+      for (let y = 8; y <= 17; y += 1) {
+        const door = dx === inward * 3 && dz === 0 && y <= 10;
+        const window = (y === 12 || y === 16) && (dx === 0 || dz === 0);
+        if (!door) put(blocks, cx, cz, centerX + dx, y, dz, window ? BlockKind.Glass : BlockKind.Stone);
+      }
+      if ((dx + dz) % 2 === 0) put(blocks, cx, cz, centerX + dx, 19, dz, BlockKind.GrayBrick);
+    }
+  }
+  put(blocks, cx, cz, centerX, 20, 0, color);
+  put(blocks, cx, cz, centerX, 21, 0, color);
+  put(blocks, cx, cz, centerX, 22, 0, color);
+  for (let y = 8; y <= 17; y += 1) put(blocks, cx, cz, centerX + inward * 4, y, 0, BlockKind.Ladder, true, inward > 0 ? 'east' : 'west');
   for (let z = -1; z <= 1; z += 1) for (let y = 8; y <= 10; y += 1) put(blocks, cx, cz, gateX, y, z, BlockKind.DoorBlack, true, team === 'red' ? 'west' : 'east');
   const sign = put(blocks, cx, cz, gateX, 12, 0, BlockKind.Sign, true, team === 'red' ? 'west' : 'east');
   if (sign) sign.text = team === 'red' ? 'FORT ROUGE' : 'FORT BLEU';
-  for (let z = -7; z <= 7; z += 1) {
-    put(blocks, cx, cz, centerX - 4, 8, z, BlockKind.Stone);
-    put(blocks, cx, cz, centerX + 4, 8, z, BlockKind.Stone);
-  }
-  for (let z = -6; z <= 6; z += 1) {
-    put(blocks, cx, cz, centerX - 3, 8, z, BlockKind.Ladder, true, 'east');
-    put(blocks, cx, cz, centerX + 3, 8, z, BlockKind.Ladder, true, 'west');
-  }
   for (const [dx, dy, dz] of PIRATE_CHEST_OFFSETS) put(blocks, cx, cz, centerX + dx, 7 + dy, dz, BlockKind.Chest, true, 'south');
-  for (const z of [-6, 0, 6]) {
-    put(blocks, cx, cz, centerX - 4, 10, z, BlockKind.ConcreteBlack);
-    put(blocks, cx, cz, centerX + 4, 10, z, BlockKind.ConcreteBlack);
+  for (const z of [-6, 6]) for (const x of [centerX - 6, centerX + 6]) {
+    put(blocks, cx, cz, x, 8, z, BlockKind.Wood);
+    put(blocks, cx, cz, x, 9, z, BlockKind.Wood);
   }
 }
 
