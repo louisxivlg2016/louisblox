@@ -25,7 +25,7 @@ function maskCanvas(geometry: BufferGeometry, bounds: Box3, region: MaskRegion, 
     const head = horizontal && vertical > 0.68;
     const arm = Math.abs(x) > size.x * 0.25 && vertical < 0.82 && (vertical > 0.48 || Math.abs(x) > size.x * 0.3 && vertical > 0.24);
     const eyes = z * frontSign > 0 && Math.abs(x) > size.x * 0.035 && Math.abs(x) < size.x * 0.14 && vertical > eyeBottom && vertical < eyeTop;
-    const eyebrows = z * frontSign > 0 && Math.abs(x) > size.x * 0.025 && Math.abs(x) < size.x * 0.25 && vertical > eyebrowBottom && vertical < eyebrowTop;
+    const eyebrows = z * frontSign > 0 && Math.abs(x) > size.x * 0.025 && Math.abs(x) < size.x * 0.18 && vertical > eyebrowBottom && vertical < eyebrowTop;
     const lowerStrand = princessHair && z * frontSign > 0 && Math.abs(x) > size.x * 0.13 && Math.abs(x) < size.x * 0.33 && vertical > 0.38 && vertical < 0.7;
     const visible = region === 'classic-boy-band'
       ? horizontal && Math.abs(x) < size.x * 0.22 && vertical > 0.34 && vertical < 0.67
@@ -204,7 +204,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
   const hairMask = maskCanvas(geometry, bounds, 'hair', canvas.width, canvas.height, material.map.flipY, princessHair, frontSign).getImageData(0, 0, canvas.width, canvas.height).data;
   const eyeMask = maskCanvas(geometry, bounds, 'eyes', canvas.width, canvas.height, material.map.flipY, false, frontSign, outfit === 'princess' ? 0.79 : 0.69, outfit === 'princess' ? 0.85 : outfit === 'classic-girl' ? 0.72 : 0.697).getImageData(0, 0, canvas.width, canvas.height).data;
   const eyeAreaMask = maskCanvas(geometry, bounds, 'eyes', canvas.width, canvas.height, material.map.flipY, false, frontSign, outfit === 'princess' ? 0.7 : 0.655, outfit === 'princess' ? 0.87 : 0.697).getImageData(0, 0, canvas.width, canvas.height).data;
-  const eyebrowMask = maskCanvas(geometry, bounds, 'eyebrows', canvas.width, canvas.height, material.map.flipY, false, frontSign, 0.69, 0.697, outfit === 'princess' ? 0.84 : 0.68, outfit === 'princess' ? 0.89 : 0.735).getImageData(0, 0, canvas.width, canvas.height).data;
+  const eyebrowMask = maskCanvas(geometry, bounds, 'eyebrows', canvas.width, canvas.height, material.map.flipY, false, frontSign, 0.69, 0.697, outfit === 'princess' ? 0.84 : outfit === 'classic-girl' ? 0.72 : outfit === 'classic-boy' ? 0.697 : 0.68, outfit === 'princess' ? 0.89 : outfit === 'classic-girl' ? 0.75 : 0.725).getImageData(0, 0, canvas.width, canvas.height).data;
   for (let index = 0; index < eyebrowMask.length; index += 4) {
     if (eyeMask[index + 3] > 0) eyebrowMask[index + 3] = 0;
     if (eyebrowMask[index + 3] > 0) hairMask[index + 3] = 0;

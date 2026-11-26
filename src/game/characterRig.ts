@@ -1,10 +1,10 @@
-import { Box3, BoxGeometry, BufferGeometry, CapsuleGeometry, CylinderGeometry, Group, MathUtils, Mesh, MeshLambertMaterial, Vector3 } from 'three';
+import { Box3, BoxGeometry, BufferGeometry, Group, MathUtils, Mesh, MeshLambertMaterial, Vector3 } from 'three';
 import type { Material, Object3D } from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { animalMaterial } from './animalTextures';
 import { colorCharacterMaterial } from './characterAppearance';
 import type { CharacterAppearance } from './appearance';
-import { appearanceSkinColor } from './appearance';
+import { appearanceHairColor, appearanceSkinColor } from './appearance';
 import type { OutfitKind } from './outfits';
 
 type Part = 'body' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg' | 'leftLowerLeg' | 'rightLowerLeg';
@@ -44,17 +44,14 @@ function addPrincessHair(root: Group, width: number, height: number, depth: numb
   hair.name = 'princess-back-hair';
   hair.position.y = offsetY;
   const material = new MeshLambertMaterial({ color: hairColor ?? '#5a321c' });
-  const back = new Mesh(new CapsuleGeometry(width * 0.12, height * 0.18, 6, 12), material);
-  back.scale.set(1.35, 1, 0.65);
+  const back = new Mesh(new BoxGeometry(width * 0.32, height * 0.3, depth * 0.18), material);
   back.position.set(0, floor + height * 0.76, -depth * 0.55);
   hair.add(back);
-  const crown = new Mesh(new CylinderGeometry(width * 0.16, width * 0.16, height * 0.075, 16), material);
-  crown.scale.z = 1.6;
+  const crown = new Mesh(new BoxGeometry(width * 0.32, height * 0.075, depth * 0.52), material);
   crown.position.set(0, floor + height * 0.89, 0);
   hair.add(crown);
   for (const side of [-1, 1]) {
-    const strand = new Mesh(new CapsuleGeometry(width * 0.05, height * 0.18, 6, 10), material);
-    strand.scale.z = 0.75;
+    const strand = new Mesh(new BoxGeometry(width * 0.09, height * 0.26, depth * 0.12), material);
     strand.position.set(side * width * 0.12, floor + height * 0.68, -depth * 0.62);
     hair.add(strand);
   }
@@ -132,7 +129,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
     cover.position.y = -height * 0.03;
     rig.head.add(cover);
   }
-  if (outfit === 'princess') addPrincessHair(rig.head ?? root, width, height, bounds.max.z - bounds.min.z, floor, rig.head ? -(floor + height * 0.68) : 0, appearance?.hairColor);
+  if (outfit === 'princess') addPrincessHair(rig.head ?? root, width, height, bounds.max.z - bounds.min.z, floor, rig.head ? -(floor + height * 0.68) : 0, appearance ? appearanceHairColor(appearance, 'girl') : undefined);
   root.userData.rig = rig;
   root.userData.sourceBounds = { min: bounds.min.toArray(), max: bounds.max.toArray() };
   const center = bounds.getCenter(new Vector3());

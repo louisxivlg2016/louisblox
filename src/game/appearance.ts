@@ -25,7 +25,7 @@ export function defaultAppearance(character: 'boy' | 'girl'): CharacterAppearanc
   return { ...DEFAULT_APPEARANCE, hairColor: character === 'girl' ? '#d78229' : '#b5944b', hairStyle: character === 'girl' ? 'long' : 'short' };
 }
 
-export function appearanceHairColor(appearance: CharacterAppearance, character: 'boy' | 'girl') {
+export function appearanceHairColor(appearance: Pick<CharacterAppearance, 'hairColor' | 'originalHairColor'>, character: 'boy' | 'girl') {
   return appearance.originalHairColor ? defaultAppearance(character).hairColor : appearance.hairColor;
 }
 
