@@ -1,12 +1,14 @@
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import { Box3, MeshBasicMaterial, Vector3 } from 'three';
+import type { Group } from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { BlockKind } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { PixelPart } from './ItemModel';
 import { blockGeometry, blockMaterials } from '../game/textures';
-import redFireUrl from '../../assets/models/red-fire.glb';
+import redFireUrl from '../../assets/models/hunyuan-fire.glb';
 import { DecorationCulling } from './DecorationCulling';
 
 const flameOrange = new MeshBasicMaterial({ color: '#ff9b28' });
@@ -52,8 +54,14 @@ function HeldRedFire({ withLight }: { withLight: boolean }) {
     const center = bounds.getCenter(new Vector3());
     return { model, center, minY: bounds.min.y, height: Math.max(0.01, bounds.max.y - bounds.min.y) };
   }, [scene]);
+  const group = useRef<Group>(null);
+  useFrame(({ clock }) => {
+    if (!group.current) return;
+    const scale = Math.min(3, 1.2 + clock.elapsedTime / 20) / height;
+    group.current.scale.set(scale, scale, scale);
+  });
   return (
-    <group name="red-fire-held" scale={1.2 / height}>
+    <group ref={group} name="red-fire-held" scale={1.2 / height}>
       <primitive object={model} position={[-center.x, -minY, -center.z]} dispose={null} />
       {withLight && <pointLight position={[0, 0.65, 0]} color="#ff632e" intensity={2.6} distance={13} decay={2} />}
     </group>
@@ -63,8 +71,14 @@ function HeldRedFire({ withLight }: { withLight: boolean }) {
 export function CampfireModel({ destructive = false, withLight = true }: { destructive?: boolean; withLight?: boolean }) {
   const outerFlame = destructive ? wildfireOrange : flameOrange;
   const innerFlame = destructive ? wildfireYellow : flameYellow;
+  const flamesRef = useRef<Group>(null);
+  useFrame(({ clock }) => {
+    if (!flamesRef.current) return;
+    const scale = Math.min(3, 1.2 + clock.elapsedTime / 20);
+    flamesRef.current.scale.set(scale, scale, scale);
+  });
   const flames = (
-    <group>
+    <group ref={flamesRef}>
       <mesh position={[0, 0.35, 0]} material={outerFlame}><boxGeometry args={[0.26, 0.38, 0.26]} /></mesh>
       <mesh position={[0, 0.42, -0.02]} material={innerFlame}><boxGeometry args={[0.13, 0.3, 0.13]} /></mesh>
       <mesh position={[0, 0.62, 0]} material={outerFlame}><boxGeometry args={[0.12, 0.16, 0.12]} /></mesh>
