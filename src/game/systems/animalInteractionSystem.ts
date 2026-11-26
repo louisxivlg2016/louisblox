@@ -6,7 +6,7 @@ import { animalFoodNotice, canFeedAnimal, feedAnimal, isOwnTamedAnimal, isTamedA
 import { reportAnimalTame } from '../animalSync';
 import { useGameStore } from '../store';
 import { getItemMeta } from '../items';
-import { AnimalRest, Player, PlayerPosition } from '../traits';
+import { Animal, AnimalHealth, AnimalPosition, AnimalRest, Player, PlayerPosition } from '../traits';
 import { isNight } from '../dayNight';
 import { useCompanionMenuStore } from '../companionMenu';
 import { releasePointerForOverlay } from '../input';
@@ -24,7 +24,17 @@ export function animalInteractionSystem(world: World, camera: Camera, interact: 
   origin.copy(player);
   origin.y += 1.62;
   camera.getWorldDirection(direction);
-  const target = findAnimalTarget(world, origin, direction, 5.5);
+  let target = findAnimalTarget(world, origin, direction, 5.5);
+  if (!target && pets > 0) {
+    let closest = 3;
+    for (const entity of world.query(Animal, AnimalPosition, AnimalHealth)) {
+      const health = entity.get(AnimalHealth)!.value;
+      const distance = entity.get(AnimalPosition)!.distanceTo(player);
+      if (health <= 0 || distance >= closest) continue;
+      closest = distance;
+      target = { entity, kind: entity.get(Animal)!.kind, health, distance };
+    }
+  }
   if (!target || target.health <= 0) return false;
   if (pets > 0) return petAnimal(world, target.entity);
   const rest = target.entity.get(AnimalRest);
