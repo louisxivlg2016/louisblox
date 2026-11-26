@@ -76,7 +76,7 @@ function house(blocks: Voxel[], cx: number, cz: number, x: number, z: number, he
     clear(blocks, x + 2, y, z - 2);
     for (const [dx, dz] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) put(blocks, cx, cz, x + 2 + dx, y, z - 2 + dz, BlockKind.GrayBrick);
   }
-  for (let y = 8; y <= roofY + 1; y += 1) put(blocks, cx, cz, x + 2, y, z - 2, BlockKind.Ladder, true, 'east');
+  for (let y = 8; y < roofY; y += 1) put(blocks, cx, cz, x + 2, y, z - 2, BlockKind.Ladder, true, 'east');
   put(blocks, cx, cz, x, roofY + 1, z, BlockKind.Chest);
   if (name) {
     const sign = put(blocks, cx, cz, x + 2, 9, z + 6, BlockKind.Sign, true, 'south');
