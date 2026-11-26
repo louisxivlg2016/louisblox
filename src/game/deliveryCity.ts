@@ -12,6 +12,31 @@ export const DELIVERY_POINTS = [
   { x: 0, y: 8, z: 3, name: 'Poste centrale', englishName: 'Central Post Office' },
 ] as const;
 
+export const DELIVERY_LEVEL_COUNT = 10;
+const destinations = [
+  ...DELIVERY_POINTS.slice(0, 3),
+  { x: -12, y: 14, z: -36, name: 'Café', englishName: 'Café' },
+  { x: 12, y: 16, z: -36, name: 'Bibliothèque', englishName: 'Library' },
+  { x: 36, y: 15, z: -36, name: 'Hôtel', englishName: 'Hotel' },
+  { x: -36, y: 16, z: -12, name: 'Résidence Azur', englishName: 'Azure Residence' },
+  { x: -12, y: 14, z: -12, name: 'Maison familiale', englishName: 'Family House' },
+  { x: 12, y: 15, z: -12, name: 'Appartements', englishName: 'Apartments' },
+  { x: -36, y: 14, z: 12, name: 'Ferme urbaine', englishName: 'Urban Farm' },
+  { x: -12, y: 15, z: 12, name: 'Maison du parc', englishName: 'Park House' },
+  { x: 12, y: 16, z: 12, name: 'Maison du marché', englishName: 'Market House' },
+  { x: 36, y: 14, z: 12, name: 'Maison des fleurs', englishName: 'Flower House' },
+  { x: -36, y: 15, z: 36, name: 'Atelier', englishName: 'Workshop' },
+  { x: -12, y: 16, z: 36, name: 'Maison du canal', englishName: 'Canal House' },
+  { x: 12, y: 14, z: 36, name: 'Maison centrale', englishName: 'Central House' },
+] as const;
+
+export function deliveryPointAt(level: number, index: number) {
+  if (index === 3) return DELIVERY_POINTS[3];
+  if (level === 0) return DELIVERY_POINTS[index];
+  const start = level * 3 % destinations.length;
+  return destinations[(start + index * 5) % destinations.length];
+}
+
 function put(blocks: Voxel[], cx: number, cz: number, x: number, y: number, z: number, kind: BlockKind, protectedBlock = true, facing?: Voxel['facing']) {
   if (Math.floor(x / CHUNK_SIZE) !== cx || Math.floor(z / CHUNK_SIZE) !== cz) return;
   const block: Voxel = { x, y, z, kind, ...(protectedBlock ? { protected: true } : {}), ...(facing ? { facing } : {}) };
