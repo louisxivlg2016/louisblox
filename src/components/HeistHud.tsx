@@ -8,6 +8,7 @@ import { BlockKind } from '../game/voxel';
 export function HeistHud() {
   const gameplayMode = useGameStore((state) => state.gameplayMode);
   const role = useHeistStore((state) => state.role);
+  const roleDeadline = useHeistStore((state) => state.roleDeadline);
   const roles = useHeistStore((state) => state.roles);
   const botEnabled = useHeistStore((state) => state.bot.enabled);
   const botDetecting = useHeistStore((state) => state.bot.detecting);
@@ -33,7 +34,7 @@ export function HeistHud() {
   return (
     <>
       <HeistCityLife />
-      {!role && <div className="backpack-backdrop"><section className="book-panel heist-role-panel"><h2>{translate('Choisis ton équipe', 'Choose your team')}</h2><button className="primary-button" onClick={() => chooseHeistRole('thief')}>{translate('Voleur · braquer et s’évader', 'Thief · rob and escape')}</button><button className="primary-button" onClick={() => chooseHeistRole('guard')}>{translate('Gardien · arrêter les voleurs', 'Guard · arrest thieves')}</button></section></div>}
+      {!role && <div className="backpack-backdrop"><section className="book-panel heist-role-panel"><h2>{translate('Choisis ton équipe', 'Choose your team')}</h2><p>{translate(`Sélection automatique de Voleur dans ${Math.max(0, Math.ceil((roleDeadline - Date.now()) / 1000))} s`, `Automatic thief selection in ${Math.max(0, Math.ceil((roleDeadline - Date.now()) / 1000))} s`)}</p><button className="primary-button" onClick={() => chooseHeistRole('thief')}>{translate('Voleur · braquer et s’évader', 'Thief · rob and escape')}</button><button className="primary-button" onClick={() => chooseHeistRole('guard')}>{translate('Gardien · arrêter les voleurs', 'Guard · arrest thieves')}</button></section></div>}
       <div className="heist-hud" data-heist-hud>
         <strong>{phase === 'prep' ? `${translate('Préparation', 'Preparation')} · ${time}` : time}</strong>
         <span>{translate(`Butin ${score}/10 000`, `Loot ${score}/10,000`)}</span>

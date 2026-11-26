@@ -29,6 +29,7 @@ type Gadget = 'grappling_hook' | 'gallery_projectiles_smoke_grenade' | 'taser' |
 
 const initial = {
   role: null as HeistRole | null,
+  roleDeadline: 0,
   roles: {} as Record<string, HeistRole>,
   phase: 'prep' as HeistPhase,
   endsAt: 0,
@@ -409,7 +410,8 @@ function updateHeistBot(world: KootaWorld, dt: number, current: typeof initial, 
 export function heistControlSystem(world: KootaWorld, camera: Camera, actions: { place: number; harvest: number; tap: number; interact: number }, dt = 0.05) {
   if (useGameStore.getState().gameplayMode !== 'heist') return false;
   const state = useHeistStore.getState();
-  if (!state.role && offline()) chooseHeistRole('thief');
+  if (!state.role && state.roleDeadline === 0) useHeistStore.setState({ roleDeadline: Date.now() + 20000 });
+  if (!state.role && Date.now() >= useHeistStore.getState().roleDeadline) chooseHeistRole('thief');
   const current = useHeistStore.getState();
   if (current.alarmUntil <= Date.now()) stopHeistAlarm();
   if (current.phase === 'prep' && Date.now() >= current.endsAt) useHeistStore.setState({ phase: 'running', endsAt: Date.now() + 600000 });
