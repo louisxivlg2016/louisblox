@@ -25,6 +25,7 @@ import { replaceVoxel } from '../chunks';
 import { useRemotePlayerStore } from '../multiplayerStore';
 import { playerIdentity } from '../playerIdentity';
 import { animalSay, findTreeShelter } from '../animalCompanionship';
+import { eatFoundFood, foundFoodFor } from '../animalFeeding';
 
 type Motion = {
   yaw: number;
@@ -448,6 +449,21 @@ export function animalSystem(world: World, dt: number) {
     hit.attackIn = Math.max(0, hit.attackIn - stepDt);
     const love = entity.get(AnimalLove);
     if (love) love.time = Math.max(0, love.time - stepDt);
+    const foodTarget = (!tamed || (entity.get(AnimalTame)?.happiness ?? 100) < 75) ? foundFoodFor(world, entity) : null;
+    if (foodTarget && !fire) {
+      const distance = position.distanceTo(foodTarget.position);
+      if (distance <= 1.2) eatFoundFood(world, entity, foodTarget);
+      else {
+        motion.yaw = Math.atan2(foodTarget.position.x - position.x, foodTarget.position.z - position.z);
+        motion.speed = 4;
+        moveAnimal(world, animal.kind, position, motion, stepDt, entity);
+      }
+      if (mesh.value) {
+        mesh.value.position.copy(position);
+        motion.displayYaw = turnToward(motion.displayYaw, motion.yaw, stepDt * 10);
+      }
+      return;
+    }
     const aggressive = !attentive && (animal.kind === 'zombie' || animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf') && (useGameStore.getState().gameplayMode !== 'creative' || hit.panic > 0);
     const defenseTarget = tamed && owner && DEFENSIVE_ANIMALS.has(animal.kind) ? findDefenseTarget(world, entity, owner, claimedDefenseTargets) : null;
     if (defenseTarget) claimedDefenseTargets.add(defenseTarget);
