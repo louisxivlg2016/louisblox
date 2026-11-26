@@ -248,7 +248,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
               const playerCount = modePlayerCounts[card.mode] ?? 0;
               return (
                 <div className="world-card-shell" key={card.id ?? card.mode}>
-                  <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode, card)} disabled={pendingWorld !== null}>
+                  <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} data-world-template={card.template} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode, card)} disabled={pendingWorld !== null}>
                     <img src={card.image} alt={card.alt} />
                     <span className="world-card-label"><strong>{card.name}</strong></span>
                     {!['skyfall', 'planet', 'deep-dive'].includes(card.mode) && <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{card.tag(enabled)}</span>}
