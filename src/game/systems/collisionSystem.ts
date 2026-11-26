@@ -141,6 +141,7 @@ export function moveVoxelCharacter(
   cabin?: CabinDefinition,
   height = HEIGHT,
   maxStepHeight = 1.05,
+  swimming = false,
 ) {
   const substeps = Math.max(1, Math.ceil(Math.max(Math.abs(movement.x), Math.abs(movement.y), Math.abs(movement.z)) / MAX_SUBSTEP));
   let grounded = false;
@@ -164,8 +165,8 @@ export function moveVoxelCharacter(
         if (candidate.y - start.y > maxStepHeight || collides(blocks, candidate, cabin, height)) continue;
         slide(blocks, candidate, 'x', x, cabin, height);
         slide(blocks, candidate, 'z', z, cabin, height);
-        slide(blocks, candidate, 'y', -0.15, cabin, height);
-        if (collides(blocks, candidate, cabin, height) || !onGround(blocks, candidate, cabin, height)) continue;
+        if (!swimming) slide(blocks, candidate, 'y', -0.15, cabin, height);
+        if (collides(blocks, candidate, cabin, height) || !swimming && !onGround(blocks, candidate, cabin, height)) continue;
         Object.assign(position, candidate);
         climbed = true;
         stepped = true;

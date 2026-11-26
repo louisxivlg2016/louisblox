@@ -175,7 +175,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
     x: velocity.x * dt,
     y: velocity.y * dt,
     z: velocity.z * dt,
-  }, !flying && !onLadder && (state.grounded || inWater));
+  }, !flying && !onLadder && (state.grounded || inWater), undefined, 1.8, 1.05, inWater);
   const grounded = movement.grounded;
   const nextFlying = flying && grounded && isDown('KeyN') ? false : flying;
   if (movement.stepped) velocity.y = 0;
