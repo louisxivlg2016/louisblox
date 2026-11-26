@@ -13,7 +13,7 @@ import { playerIdentity } from '../game/playerIdentity';
 const CELL = 4;
 const MINI_RADIUS = 32;
 const MAP_RADIUS = 96;
-const allowedModes = new Set(['creative', 'survival', 'pirates', 'football', 'city-modern', 'city-ancient']);
+const allowedModes = new Set(['creative', 'survival', 'pirates', 'football', 'city-modern', 'city-ancient', 'delivery']);
 
 function RouteGuide() {
   const destination = useNavigationStore((state) => state.destination);
