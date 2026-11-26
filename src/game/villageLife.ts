@@ -21,8 +21,10 @@ function wake(world: World, entity: Entity) {
   const position = entity.get(TraderPosition);
   const mesh = entity.get(TraderMesh)?.value;
   if (!trader || !position) return;
-  if (trader.bedY !== null) position.y = groundAt(world, position.x, position.z, trader.bedY + 2) + 0.02;
-  entity.set(Trader, { sleeping: false, bedDoorReached: false });
+  const homeX = trader.arrived ? trader.destinationX ?? trader.homeX : trader.homeX;
+  const homeZ = trader.arrived ? trader.destinationZ ?? trader.homeZ : trader.homeZ;
+  position.set(homeX, groundAt(world, homeX, homeZ, position.y + 6) + 0.02, homeZ);
+  entity.set(Trader, { sleeping: false, bedDoorReached: false, targetX: homeX, targetZ: homeZ, walking: false });
   if (mesh) {
     mesh.position.copy(position);
     mesh.rotation.x = 0;
