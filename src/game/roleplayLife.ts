@@ -8,6 +8,8 @@ import { isNight } from './dayNight';
 import { Fire, Player, PlayerPosition } from './traits';
 import { addVoxel } from './chunks';
 import { BlockKind } from './voxel';
+import { selectionInfo } from './items';
+import { releasePointerForOverlay } from './input';
 import { useGameStore } from './store';
 import { earnRoleplayCoins, useRoleplayStore } from './roleplayClient';
 import { translate } from './language';
@@ -20,7 +22,7 @@ export type RoleplayNpc = {
   y: number;
   z: number;
   waypoint: number;
-  action: 'walking' | 'shopping' | 'leaving' | 'stealing' | 'attacking';
+  action: 'walking' | 'shopping' | 'waiting' | 'leaving' | 'stealing' | 'attacking';
   wait: number;
 };
 
@@ -34,12 +36,12 @@ const initialNpcs = (): RoleplayNpc[] => [
   { id: 'walker-3', kind: 'pedestrian', outfit: 'police', x: -8, y: 8.51, z: -24, waypoint: 2, action: 'walking', wait: 0 },
   { id: 'walker-4', kind: 'pedestrian', outfit: 'worker', x: 8, y: 8.51, z: -24, waypoint: 3, action: 'walking', wait: 0 },
 ];
-const initial = () => ({ npcs: initialNpcs(), stock: initialStock(), sales: 0, arrests: 0, nextThiefAt: 0, nextFireAt: Date.now() + 8000, restockAt: Date.now() + 30000 });
+const initial = () => ({ npcs: initialNpcs(), stock: initialStock(), sales: 0, arrests: 0, activeCustomerId: null as string | null, nextThiefAt: 0, nextFireAt: Date.now() + 8000, restockAt: Date.now() + 30000 });
 export const useRoleplayLifeStore = create<ReturnType<typeof initial>>(() => initial());
 let loadedWorld = '';
 let noticeAt = 0;
 
-const MARKET = { x: 0, y: 8.51, z: -18 };
+const MARKET = { x: 0, y: 8.51, z: -16 };
 const WALK_ROUTE = [
   { x: -16, z: -20 },
   { x: 16, z: -20 },
@@ -106,6 +108,43 @@ export function arrestRoleplayThief() {
   return true;
 }
 
+export function roleplayCustomerRequest() {
+  const stock = useRoleplayLifeStore.getState().stock;
+  const item: keyof Stock | null = stock.diamondOre > 0 ? 'diamondOre' : stock.ironOre > 0 ? 'ironOre' : stock.bread > 0 ? 'bread' : stock.apple > 0 ? 'apple' : null;
+  if (!item) return null;
+  const selection = item === 'apple' ? 'apple' : item === 'bread' ? 'bread' : item === 'ironOre' ? BlockKind.IronOre : BlockKind.DiamondOre;
+  const price = item === 'diamondOre' ? 25 : item === 'ironOre' ? 8 : item === 'bread' ? 5 : 3;
+  return { item, name: selectionInfo(selection).name, price };
+}
+
+export function talkRoleplayCustomer() {
+  const player = gameWorldPlayer();
+  if (!player) return false;
+  const customer = useRoleplayLifeStore.getState().npcs.find((npc) => npc.kind === 'customer' && npc.action === 'waiting' && Math.hypot(player.x - npc.x, player.y - npc.y, player.z - npc.z) <= 4);
+  if (!customer || !roleplayCustomerRequest()) return false;
+  useRoleplayLifeStore.setState({ activeCustomerId: customer.id });
+  useGameStore.getState().setMode('pause');
+  releasePointerForOverlay();
+  return true;
+}
+
+export function closeRoleplayCustomer() {
+  useRoleplayLifeStore.setState({ activeCustomerId: null });
+}
+
+export function serveRoleplayCustomer() {
+  const state = useRoleplayLifeStore.getState();
+  const customer = state.npcs.find((npc) => npc.id === state.activeCustomerId && npc.action === 'waiting');
+  const request = roleplayCustomerRequest();
+  if (!customer || !request) return false;
+  useRoleplayLifeStore.setState({ activeCustomerId: null, stock: { ...state.stock, [request.item]: state.stock[request.item] - 1 }, sales: state.sales + 1 });
+  customer.action = 'leaving';
+  customer.wait = 2;
+  earnRoleplayCoins(request.price);
+  useGameStore.getState().setNotice(translate(`Le client paie ${request.price} pièces pour ${request.name}. Merci !`, `The customer pays ${request.price} coins for ${request.name}. Thank you!`));
+  return true;
+}
+
 let worldForPlayer: World;
 function gameWorldPlayer() {
   return worldForPlayer.queryFirst(Player)?.get(PlayerPosition);
@@ -142,21 +181,15 @@ export function roleplayLifeSystem(world: World, dt: number) {
         }
         continue;
       }
+      if (npc.action === 'waiting') continue;
       if (npc.wait > 0) {
         npc.wait -= dt;
         continue;
       }
       const arrived = move(world, npc, MARKET, dt, 2.2);
       if (!arrived) continue;
-      const stock = useRoleplayLifeStore.getState().stock;
-      const item = stock.diamondOre > 0 ? 'diamondOre' : stock.ironOre > 0 ? 'ironOre' : stock.bread > 0 ? 'bread' : stock.apple > 0 ? 'apple' : null;
-      if (!item) continue;
-      const price = item === 'diamondOre' ? 25 : item === 'ironOre' ? 8 : item === 'bread' ? 5 : 3;
-      useRoleplayLifeStore.setState((current) => ({ stock: { ...current.stock, [item]: current.stock[item] - 1 }, sales: current.sales + 1 }));
-      earnRoleplayCoins(price);
-      npc.action = 'leaving';
-      npc.wait = 2;
-      notice('Un client vient d’acheter au stand.', 'A customer just bought from your stand.');
+      npc.action = 'waiting';
+      notice('Un client attend au stand. Approche-toi et appuie sur E pour lui parler.', 'A customer is waiting at the stand. Come closer and press E to talk to them.');
       continue;
     }
     if (npc.kind === 'thief') {

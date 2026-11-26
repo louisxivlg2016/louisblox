@@ -17,7 +17,7 @@ function RoleplayPerson({ npc }: { npc: RoleplayNpc }) {
     if (Math.abs(dx) + Math.abs(dz) > 0.001) group.current.rotation.y = Math.atan2(dx, dz) + Math.PI;
     group.current.position.set(npc.x, npc.y, npc.z);
   });
-  return <group ref={group} name={`roleplay-npc-${npc.id}`} position={[npc.x, npc.y, npc.z]}><FullCharacterGlb outfit={npc.outfit} moving={npc.action !== 'shopping'} airborne={false} remote /></group>;
+  return <group ref={group} name={`roleplay-npc-${npc.id}`} position={[npc.x, npc.y, npc.z]}><FullCharacterGlb outfit={npc.outfit} moving={npc.action !== 'shopping' && npc.action !== 'waiting'} airborne={false} remote /></group>;
 }
 
 export function RoleplayPeople() {

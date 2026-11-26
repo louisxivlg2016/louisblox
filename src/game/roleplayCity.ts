@@ -83,11 +83,15 @@ export function generateRoleplayChunk(cx: number, cz: number): GeneratedChunk {
   }
   const colors = [BlockKind.BeigeBrick, BlockKind.ConcreteLightBlue, BlockKind.ConcretePink, BlockKind.ConcreteLime] as const;
   ROLEPLAY_HOMES.forEach((home, index) => house(blocks, cx, cz, home.x, home.z, colors[index]));
-  for (let x = -4; x <= 4; x += 1) for (let z = -24; z <= -16; z += 1) {
-    put(blocks, cx, cz, x, 12, z, BlockKind.ConcreteRed);
-    if (x === -4 || x === 4 || z === -24) for (let y = 8; y <= 11; y += 1) put(blocks, cx, cz, x, y, z, BlockKind.WhiteBrick);
+  for (const x of [-3, 3]) for (const z of [-22, -18]) for (let y = 8; y <= 11; y += 1) put(blocks, cx, cz, x, y, z, BlockKind.OakPlanks, false);
+  for (let x = -3; x <= 3; x += 1) {
+    put(blocks, cx, cz, x, 8, -18, BlockKind.OakPlanks, false);
+    put(blocks, cx, cz, x, 9, -18, BlockKind.OakPlanks, false);
+    put(blocks, cx, cz, x, 9, -22, BlockKind.OakPlanks, false);
   }
-  put(blocks, cx, cz, ROLEPLAY_MARKET.x, 8, ROLEPLAY_MARKET.z, BlockKind.Chest);
+  for (let x = -4; x <= 4; x += 1) for (let z = -23; z <= -17; z += 1) put(blocks, cx, cz, x, 12, z, x % 2 === 0 ? BlockKind.ConcreteRed : BlockKind.ConcreteWhite, false);
+  for (let x = -3; x <= 3; x += 1) for (let z = -22; z <= -18; z += 1) put(blocks, cx, cz, x, 13, z, x % 2 === 0 ? BlockKind.ConcreteRed : BlockKind.ConcreteWhite, false);
+  put(blocks, cx, cz, 2, 8, -20, BlockKind.Chest);
   for (let x = -26; x <= -14; x += 1) for (let z = -26; z <= -14; z += 1) {
     put(blocks, cx, cz, x, 14, z, BlockKind.ConcreteBlue);
     if (x === -26 || x === -14 || z === -26 || z === -14) for (let y = 8; y <= 13; y += 1) put(blocks, cx, cz, x, y, z, BlockKind.ConcreteLightBlue);

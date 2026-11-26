@@ -11,7 +11,7 @@ import { world } from './world';
 import { Player, PlayerPosition, Vehicle } from './traits';
 import { spawnVehicle } from './vehicles';
 import { translate } from './language';
-import { arrestRoleplayThief, clearRoleplayLife, roleplayLifeSystem, scheduleNextRoleplayFire } from './roleplayLife';
+import { arrestRoleplayThief, clearRoleplayLife, roleplayLifeSystem, scheduleNextRoleplayFire, talkRoleplayCustomer } from './roleplayLife';
 import { selectedItemPrice } from './shops';
 import { changeInventory, sellableInventoryCount } from './inventory';
 import { selectionInfo } from './items';
@@ -155,7 +155,10 @@ export function roleplayControlSystem(world: World, actions: { harvest: number; 
   if (useGameStore.getState().gameplayMode !== 'roleplay') return false;
   ensureRoleplay();
   if (useRoleplayStore.getState().job === 'police' && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0) && useGameStore.getState().selected === 'handcuffs' && arrestRoleplayThief()) return true;
-  if (['merchant', 'police'].includes(useRoleplayStore.getState().job ?? '') && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0)) performRoleplayWork();
+  if (['merchant', 'police'].includes(useRoleplayStore.getState().job ?? '') && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0)) {
+    if (useRoleplayStore.getState().job === 'merchant' && talkRoleplayCustomer()) return true;
+    performRoleplayWork();
+  }
   roleplayLifeSystem(world, dt);
   const list = respawns.get(world);
   if (list?.length) {
