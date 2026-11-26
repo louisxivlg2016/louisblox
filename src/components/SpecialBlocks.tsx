@@ -8,7 +8,8 @@ import { BlockKind } from '../game/voxel';
 import type { Voxel } from '../game/voxel';
 import { PixelPart } from './ItemModel';
 import { blockGeometry, blockMaterials } from '../game/textures';
-import redFireUrl from '../../assets/models/hunyuan-fire.glb';
+import redFireUrl from '../../assets/models/red-fire.glb';
+import hunyuanFireUrl from '../../assets/models/hunyuan-fire.glb';
 import { DecorationCulling } from './DecorationCulling';
 
 const flameOrange = new MeshBasicMaterial({ color: '#ff9b28' });
@@ -46,8 +47,8 @@ export function CandleModel() {
   );
 }
 
-function HeldRedFire({ withLight }: { withLight: boolean }) {
-  const { scene } = useGLTF(redFireUrl);
+function HeldRedFire({ withLight, url }: { withLight: boolean; url: string }) {
+  const { scene } = useGLTF(url);
   const { model, center, minY, height } = useMemo(() => {
     const model = SkeletonUtils.clone(scene);
     const bounds = new Box3().setFromObject(model);
@@ -85,7 +86,7 @@ export function CampfireModel({ destructive = false, withLight = true }: { destr
       {withLight && <pointLight position={[0, 0.65, 0]} color={destructive ? '#ff632e' : '#ff9b45'} intensity={destructive ? 2.6 : 1.8} distance={destructive ? 13 : 9} decay={2} />}
     </group>
   );
-  return destructive ? <Suspense fallback={flames}><HeldRedFire withLight={withLight} /></Suspense> : flames;
+  return <Suspense fallback={flames}><HeldRedFire withLight={withLight} url={destructive ? hunyuanFireUrl : redFireUrl} /></Suspense>;
 }
 
 export function SpecialBlocks({ kind, blocks }: { kind: BlockKind; blocks: Voxel[] }) {

@@ -6,7 +6,9 @@ import type { Entity } from 'koota';
 import { Box3, BoxGeometry, CanvasTexture, Color, InstancedMesh, Matrix4, MeshBasicMaterial, PlaneGeometry, Vector3 } from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { Fire, FirePosition, Player, PlayerPosition } from '../game/traits';
-import redFireUrl from '../../assets/models/hunyuan-fire.glb';
+import { BlockKind } from '../game/voxel';
+import redFireUrl from '../../assets/models/red-fire.glb';
+import hunyuanFireUrl from '../../assets/models/hunyuan-fire.glb';
 
 const geometry = new BoxGeometry(1, 1, 1);
 const matrix = new Matrix4();
@@ -143,7 +145,7 @@ function SmokeInstances({ fires, main }: { fires: readonly Entity[]; main?: Enti
 
 function RedFlame({ entity, main }: { entity: Entity; main: boolean }) {
   const group = useRef<import('three').Group>(null);
-  const { scene } = useGLTF(redFireUrl);
+  const { scene } = useGLTF(entity.get(Fire)?.kind === BlockKind.Campfire ? redFireUrl : hunyuanFireUrl);
   const { model, center, minY, height } = useMemo(() => {
     const model = SkeletonUtils.clone(scene);
     const bounds = new Box3().setFromObject(model);
