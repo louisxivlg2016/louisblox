@@ -108,9 +108,12 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
           pivot.name = names[part];
           pivot.position.set(lowerLeg ? 0 : pivotX, lowerLeg ? -height * 0.24 : pivotY, 0);
           if (lowerLeg) {
-            const cover = new Mesh(new BoxGeometry(width * 0.18, height * 0.12, (bounds.max.z - bounds.min.z) * 0.28), piece.material);
+            const cover = new Mesh(new BoxGeometry(width * 0.18, height * 0.16, (bounds.max.z - bounds.min.z) * 0.28), piece.material);
             cover.name = 'knee-cover';
-            cover.position.y = height * 0.18 - pivotY;
+            pivot.add(cover);
+          } else if (part.endsWith('Leg')) {
+            const cover = new Mesh(new BoxGeometry(width * 0.2, height * 0.16, (bounds.max.z - bounds.min.z) * 0.3), piece.material);
+            cover.name = 'hip-cover';
             pivot.add(cover);
           }
           const parent = lowerLeg ? part.startsWith('left') ? rig.leftLeg : rig.rightLeg : undefined;
