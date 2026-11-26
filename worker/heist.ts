@@ -91,6 +91,10 @@ export class HeistEngine {
     return thieves <= guards ? 'thief' : 'guard';
   }
 
+  roleOf(playerId: string) {
+    return this.roles.get(playerId) ?? null;
+  }
+
   private target(targetId: unknown) {
     return this.room.players().find(({ attachment }) => attachment.playerId === targetId);
   }

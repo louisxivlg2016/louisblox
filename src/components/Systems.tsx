@@ -62,12 +62,13 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const deepHandled = deepControlSystem(world, dt, actions);
       const roleplayHandled = roleplayControlSystem(world, actions);
       const modeHandled = footballHandled || heistHandled || deliveryHandled || skyfallHandled || planetHandled || deepHandled || roleplayHandled;
-      const cleaningHandled = !sleeping && !modeHandled && useGameStore.getState().selected === 'paint_cleaning_bucket' && itemSystem(world, camera, delta, actions);
-      const animalHandled = !cleaningHandled && !sleeping && !modeHandled && animalInteractionSystem(world, camera, actions.harvest + actions.interact, actions.tap);
-      const tradeHandled = !animalHandled && !sleeping && !modeHandled && tradeInteractionSystem(world, camera, actions.place + actions.harvest + actions.tap + actions.interact);
+      const heistWeaponHandled = heistHandled && ['pistol_iron', 'rifle_auto', 'bow'].includes(String(useGameStore.getState().selected)) && itemSystem(world, camera, delta, actions);
+      const cleaningHandled = !heistWeaponHandled && !sleeping && !modeHandled && useGameStore.getState().selected === 'paint_cleaning_bucket' && itemSystem(world, camera, delta, actions);
+      const animalHandled = !heistWeaponHandled && !cleaningHandled && !sleeping && !modeHandled && animalInteractionSystem(world, camera, actions.harvest + actions.interact, actions.tap);
+      const tradeHandled = !heistWeaponHandled && !animalHandled && !sleeping && !modeHandled && tradeInteractionSystem(world, camera, actions.place + actions.harvest + actions.tap + actions.interact);
       const mount = world.queryFirst(Player)?.get(PlayerMount);
       const dismountHandled = !sleeping && !modeHandled && Boolean(mount?.vehicle) && vehicleInteractionSystem(world, camera, actions.place + actions.harvest + actions.tap + actions.interact, true);
-      const itemHandled = cleaningHandled || (!animalHandled && !tradeHandled && !dismountHandled && !modeHandled && !sleeping && itemSystem(world, camera, delta, actions));
+      const itemHandled = heistWeaponHandled || cleaningHandled || (!animalHandled && !tradeHandled && !dismountHandled && !modeHandled && !sleeping && itemSystem(world, camera, delta, actions));
       const placingWhileMounted = Boolean(mount?.vehicle && (mount.kind === 'horse' || mount.kind === 'camel')) && typeof useGameStore.getState().selected === 'number';
       const vehicleHandled = dismountHandled || (!sleeping && !modeHandled && !itemHandled && vehicleInteractionSystem(world, camera, placingWhileMounted ? 0 : actions.place + actions.harvest, false, actions.place > 0));
       const cannonHandled = !sleeping && !modeHandled && vehicleWeaponSystem(world, camera, delta, actions.tap);

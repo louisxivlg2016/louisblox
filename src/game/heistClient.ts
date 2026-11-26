@@ -21,7 +21,7 @@ import type { SelectedKind } from './items';
 export type HeistRole = 'thief' | 'guard';
 type HeistPhase = 'prep' | 'running' | 'finished';
 type Trap = { x: number; y: number; z: number };
-type GuardBot = { enabled: boolean; x: number; y: number; z: number; yaw: number; waypoint: number; hits: number; nextArrestAt: number; detecting: boolean };
+type GuardBot = { enabled: boolean; x: number; y: number; z: number; yaw: number; waypoint: number; hits: number; nextArrestAt: number; detecting: boolean; health: number; stunnedUntil: number };
 type Gadget = 'grappling_hook' | 'gallery_projectiles_smoke_grenade' | 'taser' | 'heist_trap' | typeof BlockKind.Tnt | typeof BlockKind.Ladder;
 
 const initial = {
@@ -45,7 +45,7 @@ const initial = {
   smokeUntil: 0,
   gadgets: {} as Record<string, number>,
   traps: [] as Trap[],
-  bot: { enabled: false, x: -35, y: 8.51, z: -25, yaw: 0, waypoint: 0, hits: 0, nextArrestAt: 0, detecting: false } as GuardBot,
+  bot: { enabled: false, x: -35, y: 8.51, z: -25, yaw: 0, waypoint: 0, hits: 0, nextArrestAt: 0, detecting: false, health: 5, stunnedUntil: 0 } as GuardBot,
 };
 export const useHeistStore = create<typeof initial>(() => ({ ...initial, roles: {}, lootRespawns: {}, carriedLootIds: [], prison: [], gadgets: {}, traps: [] }));
 let socket: WebSocket | null = null;
@@ -73,7 +73,7 @@ function loadout(role: HeistRole, prison = false) {
     ? ['hand', 'pickaxe_wood']
     : role === 'guard'
       ? ['handcuffs', 'security_key']
-      : ['pickaxe_wood'];
+      : ['pickaxe_wood', 'pistol_iron', 'rifle_auto', 'bow'];
   if (!prison) {
     for (const [key, count] of Object.entries(useHeistStore.getState().gadgets)) {
       if (count <= 0) continue;
@@ -319,6 +319,11 @@ function updateHeistBot(world: KootaWorld, dt: number, current: typeof initial, 
     return;
   }
   const bot = current.bot;
+  if (bot.stunnedUntil > Date.now()) {
+    if (bot.detecting) useHeistStore.setState({ bot: { ...bot, enabled: true, detecting: false } });
+    return;
+  }
+  if (bot.health <= 0) useHeistStore.setState({ bot: { ...bot, health: 5 } });
   const id = localId();
   const imprisoned = current.prison.includes(id);
   const wasImprisoned = botWasImprisoned.get(world) ?? false;
@@ -373,7 +378,7 @@ function updateHeistBot(world: KootaWorld, dt: number, current: typeof initial, 
       useGameStore.getState().setNotice(translate('Le gardien bot t’a arrêté !', 'The guard bot arrested you!'));
     } else useGameStore.getState().setNotice(translate('Menottes du gardien bot · 1/2', 'Guard bot handcuffs · 1/2'));
   }
-  useHeistStore.setState({ bot: { enabled: true, x: position.x, y: position.y, z: position.z, yaw: Math.atan2(dx, dz), waypoint, hits, nextArrestAt, detecting: chasing } });
+  useHeistStore.setState({ bot: { enabled: true, x: position.x, y: position.y, z: position.z, yaw: Math.atan2(dx, dz), waypoint, hits, nextArrestAt, detecting: chasing, health: bot.health, stunnedUntil: bot.stunnedUntil } });
 }
 
 export function heistControlSystem(world: KootaWorld, camera: Camera, actions: { place: number; harvest: number; tap: number; interact: number }, dt = 0.05) {

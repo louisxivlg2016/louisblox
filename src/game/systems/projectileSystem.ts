@@ -14,6 +14,7 @@ import { raycastPaintSurface } from '../paintSurface';
 import { playSound } from '../audio';
 import { damagePirateObjectivesInRadius } from '../piratesClient';
 import { useGameStore } from '../store';
+import { damageHeistBot, findHeistBotTarget } from '../heistCombat';
 
 const step = new Vector3();
 const next = new Vector3();
@@ -109,6 +110,17 @@ export function projectileSystem(world: World, dt: number) {
       next.copy(position).add(step);
       const direction = step.normalize();
       const hit = projectile.color && !projectile.effect ? raycastPaintSurface(blocks, position, direction, distance) : raycastVoxel(blocks, position, direction, distance);
+      const heistTarget = findHeistBotTarget(world, position, direction, distance + 1.2);
+      if (heistTarget && (!hit || heistTarget.distance < hit.distance)) {
+        if (projectile.kind === 'bomb') {
+          position.copy(heistTarget.position);
+          detonateProjectileEffect(world, position, projectile);
+        }
+        damageHeistBot(projectile.damage);
+        syncProjectileRemoval(world, entity, projectile.kind === 'bomb');
+        entity.destroy();
+        return;
+      }
       const playerTarget = findBattleTarget(world, position, direction, distance + 1.2);
       if (playerTarget && (!hit || playerTarget.distance < hit.distance)) {
         if (projectile.kind === 'bomb') {

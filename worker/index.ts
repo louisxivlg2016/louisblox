@@ -966,6 +966,29 @@ export class GameRoom extends DurableObject<Env> {
         if (attacker) this.pirates.hit(attacker, targetId, kind);
         return;
       }
+      if (this.gameplayMode === 'heist') {
+        if (!attacker || this.heist.roleOf(attacker.playerId) !== 'thief' || typeof targetId !== 'string') return;
+        if (kind !== 'bullet' && kind !== 'rifle' && kind !== 'arrow' && kind !== 'bomb' && kind !== 'melee') return;
+        const now = Date.now();
+        if (now - (this.battleHits.get(attacker.playerId) ?? 0) < (kind === 'bomb' ? 0 : kind === 'rifle' ? 80 : 150)) return;
+        const targetSocket = this.ctx.getWebSockets().find((socket) => this.attachment(socket)?.playerId === targetId);
+        const target = targetSocket ? this.attachment(targetSocket) : null;
+        if (!targetSocket || !target?.state || !attacker.state || this.heist.roleOf(targetId) !== 'guard') return;
+        const distance = Math.hypot(target.state.x - attacker.state.x, target.state.y - attacker.state.y, target.state.z - attacker.state.z);
+        if (distance > (kind === 'melee' ? 6 : 90)) return;
+        this.battleHits.set(attacker.playerId, now);
+        const damage = kind === 'bomb' ? 3 : kind === 'melee' || kind === 'rifle' ? 2 : 1;
+        const remaining = Math.max(0, (this.battleHealth.get(targetId) ?? 10) - damage);
+        if (remaining > 0) {
+          this.battleHealth.set(targetId, remaining);
+          this.broadcastBattleState();
+          return;
+        }
+        this.battleHealth.set(targetId, 10);
+        this.broadcastBattleState();
+        targetSocket.send(JSON.stringify({ type: 'heist-taser' }));
+        return;
+      }
       if (this.gameplayMode !== 'battle' || !attacker?.team || typeof targetId !== 'string') return;
       if (kind !== 'bullet' && kind !== 'rifle' && kind !== 'arrow' && kind !== 'bomb' && kind !== 'melee') return;
       const now = Date.now();
