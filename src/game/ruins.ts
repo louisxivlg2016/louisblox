@@ -8,10 +8,11 @@ type Put = (x: number, y: number, z: number, kind: BlockKind, overwrite?: boolea
 type Remove = (x: number, y: number, z: number) => void;
 
 const layouts = {
-  church: { width: 23, depth: 39, height: 16, ox: 12, oz: 12 },
-  palace: { width: 25, depth: 23, height: 10, ox: 42, oz: 42 },
-  fort: { width: 29, depth: 29, height: 11, ox: 42, oz: 12 },
+  church: { width: 23, depth: 39, height: 16, ox: 50, oz: 50 },
+  palace: { width: 25, depth: 23, height: 10, ox: 150, oz: 150 },
+  fort: { width: 29, depth: 29, height: 11, ox: 150, oz: 50 },
 } as const;
+const RUIN_SPACING = 300;
 
 function hash(x: number, y: number, z: number, seed: number) {
   let value = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z, 1442695041) + seed;
@@ -27,8 +28,8 @@ function ruinTypeAt(cx: number, cz: number): RuinType {
 function siteFor(_type: RuinType, cx: number, cz: number, seed: number): RuinSite {
   const type = ruinTypeAt(cx, cz);
   const layout = layouts[type];
-  const x = cx * 100 + layout.ox + Math.floor(hash(cx, cz, type.length, seed) * 5) - 2;
-  const z = cz * 100 + layout.oz + Math.floor(hash(cx, cz, type.length + 31, seed) * 5) - 2;
+  const x = cx * RUIN_SPACING + layout.ox + Math.floor(hash(cx, cz, type.length, seed) * 5) - 2;
+  const z = cz * RUIN_SPACING + layout.oz + Math.floor(hash(cx, cz, type.length + 31, seed) * 5) - 2;
   const hx = Math.floor(layout.width / 2);
   const hz = Math.floor(layout.depth / 2);
   const baseY = Math.max(SEA_LEVEL + 1, ...[
@@ -38,8 +39,8 @@ function siteFor(_type: RuinType, cx: number, cz: number, seed: number): RuinSit
 }
 
 export function nearestRuinOfType(x: number, z: number, seed: number, type: RuinType) {
-  const cx = Math.floor(x / 100);
-  const cz = Math.floor(z / 100);
+  const cx = Math.floor(x / RUIN_SPACING);
+  const cz = Math.floor(z / RUIN_SPACING);
   let nearest: (RuinSite & { distance: number }) | null = null;
   for (let dx = -2; dx <= 2; dx += 1) {
     for (let dz = -2; dz <= 2; dz += 1) {
@@ -53,8 +54,8 @@ export function nearestRuinOfType(x: number, z: number, seed: number, type: Ruin
 }
 
 export function nearestRuin(x: number, z: number, seed: number) {
-  const cx = Math.floor(x / 100);
-  const cz = Math.floor(z / 100);
+  const cx = Math.floor(x / RUIN_SPACING);
+  const cz = Math.floor(z / RUIN_SPACING);
   let nearest: (RuinSite & { distance: number }) | null = null;
   for (let dx = -1; dx <= 1; dx += 1) {
     for (let dz = -1; dz <= 1; dz += 1) {
@@ -203,8 +204,8 @@ function buildFort(site: RuinSite, put: Put, remove: Remove) {
 }
 
 export function generateRuinsForChunk(cx: number, cz: number, seed: number, put: Put, remove: Remove) {
-  const cellX = Math.floor(cx * 16 / 100);
-  const cellZ = Math.floor(cz * 16 / 100);
+  const cellX = Math.floor(cx * 16 / RUIN_SPACING);
+  const cellZ = Math.floor(cz * 16 / RUIN_SPACING);
   for (let dx = -1; dx <= 1; dx += 1) {
     for (let dz = -1; dz <= 1; dz += 1) {
       const site = siteFor('church', cellX + dx, cellZ + dz, seed);
