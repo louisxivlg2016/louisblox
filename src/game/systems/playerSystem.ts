@@ -129,6 +129,7 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   const ladder = flying ? null : ladderAt(position.y);
   const onLadder = ladder !== null;
   const gameplaySpeed = useGameStore.getState().gameplayMode;
+  const jumpSpeed = gameplaySpeed === 'delivery' ? 10.8 : JUMP_SPEED;
   const arcadeSpeed = gameplaySpeed === 'heist' || gameplaySpeed === 'delivery' ? 1.35 : 1;
   const speed = (flying ? (shifting ? 11.5 : 6.5) : shifting ? 7.4 : 4.8) * (inWater ? 0.65 : 1) * movementMultiplier() * arcadeSpeed * (gameplaySpeed === 'heist' ? heistMovementMultiplier() : 1);
   const emote = useEmoteStore.getState().current;
@@ -163,9 +164,9 @@ export function playerSystem(world: World, dt: number, spawn: { x: number; y: nu
   else if (onLadder) velocity.y = spaceDown ? 3.8 : isDown('KeyN') ? -7 : Math.max(velocity.y, -2.5);
   else if (descendingStair) velocity.y = -12;
   else if (inWater) velocity.y = swimVerticalVelocity(swimming, velocity.y, isDown('KeyN'), spaceDown, position.y);
-  else if (state.grounded && spaceDown) velocity.y = JUMP_SPEED * jumpMultiplier();
+  else if (state.grounded && spaceDown) velocity.y = jumpSpeed * jumpMultiplier();
   else if (spacePressed && hasEffect('doubleJump') && (airJumps.get(world) ?? 0) < 1) {
-    velocity.y = JUMP_SPEED * jumpMultiplier();
+    velocity.y = jumpSpeed * jumpMultiplier();
     airJumps.set(world, 1);
   } else velocity.y -= GRAVITY * dt;
 
