@@ -17,7 +17,7 @@ import { moveVoxelCharacter } from './systems/collisionSystem';
 import { fireProjectile } from './systems/projectileSystem';
 import { world } from './world';
 import type { SelectedKind } from './items';
-import { playHeistAlarm } from './heistAlarm';
+import { playHeistAlarm, stopHeistAlarm } from './heistAlarm';
 import { useCharacterStore } from './characterStore';
 
 export type HeistRole = 'thief' | 'guard';
@@ -54,6 +54,7 @@ let socket: WebSocket | null = null;
 export function setHeistSocket(next: WebSocket | null) { socket = next; }
 export function clearHeist() {
   socket = null;
+  stopHeistAlarm();
   useHeistStore.setState({ ...initial, roles: {}, lootRespawns: {}, carriedLootIds: [], prison: [], gadgets: {}, traps: [], bot: { ...initial.bot } });
 }
 function send(message: unknown) {
@@ -308,6 +309,7 @@ function shopIdAt(point: { x: number; y: number; z: number }) {
   return null;
 }
 const shopAlarmAt = new WeakMap<KootaWorld, Record<string, number>>();
+const playerShops = new WeakMap<KootaWorld, string | null>();
 const prisonWaypoints = [
   { x: 29, y: 8.51, z: 38 },
   { x: 46, y: 8.51, z: 38 },
@@ -407,6 +409,7 @@ export function heistControlSystem(world: KootaWorld, camera: Camera, actions: {
   const state = useHeistStore.getState();
   if (!state.role && offline()) chooseHeistRole('thief');
   const current = useHeistStore.getState();
+  if (current.alarmUntil <= Date.now()) stopHeistAlarm();
   if (current.phase === 'prep' && Date.now() >= current.endsAt) useHeistStore.setState({ phase: 'running', endsAt: Date.now() + 600000 });
   else if (current.phase === 'running' && Date.now() >= current.endsAt) useHeistStore.setState({ phase: 'finished', winner: 'guards' });
   const player = world.queryFirst(Player)?.get(PlayerPosition);
@@ -423,6 +426,9 @@ export function heistControlSystem(world: KootaWorld, camera: Camera, actions: {
   if (current.role === 'thief' && current.phase === 'running') {
     updateEntries(world, player, current.role, useGameStore.getState().selected, actions);
     const shop = shopIdAt(player);
+    const previousShop = playerShops.get(world) ?? null;
+    if (previousShop && previousShop !== shop) stopHeistAlarm();
+    playerShops.set(world, shop);
     if (shop) {
       const alarms = shopAlarmAt.get(world) ?? {};
       if (Date.now() - (alarms[shop] ?? 0) >= 30000) {
