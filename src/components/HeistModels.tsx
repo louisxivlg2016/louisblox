@@ -23,7 +23,7 @@ function ScaledModel({ url, height }: { url: string; height: number }) {
 }
 
 export function HandcuffsModel() {
-  return <ScaledModel url={handcuffsUrl} height={0.45} />;
+  return <ScaledModel url={handcuffsUrl} height={0.28} />;
 }
 
 export function GoldBagModel() {
