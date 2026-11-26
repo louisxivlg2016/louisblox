@@ -526,6 +526,9 @@
       .maze-referee-controls button { padding: 10px 14px; color: #fff; background: #455b39; border: 2px solid #c7d18f; font-weight: 700; }
       .maze-referee-controls span { padding: 8px; color: #fff; background: rgba(20,30,18,.8); font-size: 11px; }
       .pirate-winner span { display: block; margin-top: 10px; color: #fff; font-size: 18px; }
+      .pirate-defeat { position: absolute; inset: 0; z-index: 60; display: grid; place-items: center; pointer-events: auto; background: rgba(8, 12, 16, .45); }
+      .pirate-defeat > img { width: min(900px, 92vw); max-height: 72vh; object-fit: contain; }
+      .pirate-defeat .match-result-actions { position: absolute; bottom: 22px; }
       .match-result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; width: min(380px, calc(100vw - 28px)); margin: 20px auto 0; pointer-events: auto; }
       .maze-continue { min-height: 54px; margin-top: 18px; touch-action: manipulation; }
       .match-result-actions button { flex: 1; min-width: 140px; min-height: 52px; touch-action: manipulation; cursor: pointer; }
