@@ -7,7 +7,7 @@ import { isPaintballGun } from './paintball';
 import { useTradeStore } from './trading';
 import { useHomeStore } from './homes';
 import { useMultiplayerStore } from './multiplayerStore';
-import { allowsConstruction, allowsTeleport, isMultiplayerOnlyMode } from './worldMode';
+import { allowsBackpack, allowsConstruction, allowsTeleport, isMultiplayerOnlyMode } from './worldMode';
 import { honk, toggleHeadlights, toggleSiren, useVehicleControls } from './vehicleControls';
 import { useConstructionStore } from './constructions';
 import { placeNextBlueprintBlock } from './blueprints';
@@ -121,7 +121,7 @@ export function initInput() {
     if (event.code === 'Tab') {
       event.preventDefault();
       const state = useGameStore.getState();
-      if (!['creative', 'survival', 'city-ancient', 'city-modern', 'planet', 'deep-dive', 'roleplay'].includes(state.gameplayMode)) return;
+      if (!allowsBackpack(state.gameplayMode)) return;
       if (state.container) {
         state.closeContainer();
         void requestPlay();

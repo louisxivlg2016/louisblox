@@ -6,7 +6,7 @@ export type WorldTemplate = 'nature' | 'city-ancient' | 'city-modern' | 'custom'
 export const isCityMode = (mode: GameplayMode) => mode === 'city-ancient' || mode === 'city-modern';
 export const isMinigameMode = (mode: GameplayMode) => mode === 'battle' || mode === 'pirates' || mode === 'football' || mode === 'maze' || mode === 'heist' || mode === 'delivery' || mode === 'skyfall' || mode === 'planet' || mode === 'deep-dive' || mode === 'roleplay';
 export const isMultiplayerOnlyMode = (mode: GameplayMode) => mode === 'pirates' || mode === 'football';
-const NO_BACKPACK_MODES: ReadonlySet<GameplayMode> = new Set(['pirates', 'football', 'maze', 'heist', 'delivery', 'skyfall']);
+const NO_BACKPACK_MODES: ReadonlySet<GameplayMode> = new Set(['pirates', 'football', 'maze', 'heist', 'delivery', 'skyfall', 'deep-dive']);
 export const allowsBackpack = (mode: GameplayMode) => !NO_BACKPACK_MODES.has(mode);
 export const allowsConstruction = (mode: GameplayMode) => mode === 'creative' || mode === 'survival' || mode === 'planet';
 const NO_TELEPORT_MODES: ReadonlySet<GameplayMode> = new Set(['pirates', 'football', 'battle', 'maze', 'heist', 'delivery', 'skyfall', 'planet', 'deep-dive', 'roleplay']);

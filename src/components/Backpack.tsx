@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { requestPlay } from '../game/input';
 import { getItemMeta, ITEM_ORDER, selectionInfo } from '../game/items';
 import { GALLERY_CATEGORIES, GALLERY_ITEMS, GALLERY_ITEM_MAP } from '../game/galleryCatalog';
@@ -35,6 +35,12 @@ export function Backpack() {
   const survival = gameplayMode === 'survival' || gameplayMode === 'planet';
   const inventory = { itemCounts, gameplayMode, apples };
   const animals = storedAnimals(world);
+  useEffect(() => {
+    if (open && !allowsBackpack(gameplayMode)) {
+      setBackpack(false);
+      if (useGameStore.getState().mode === 'pause') void requestPlay();
+    }
+  }, [open, gameplayMode, setBackpack]);
   if (!open || !allowsBackpack(gameplayMode)) return null;
   const close = () => {
     setBackpack(false);
