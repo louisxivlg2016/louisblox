@@ -17,6 +17,7 @@ import { moveVoxelCharacter } from './systems/collisionSystem';
 import { fireProjectile } from './systems/projectileSystem';
 import { world } from './world';
 import type { SelectedKind } from './items';
+import { playSound } from './audio';
 
 export type HeistRole = 'thief' | 'guard';
 type HeistPhase = 'prep' | 'running' | 'finished';
@@ -95,6 +96,7 @@ export function chooseHeistRole(role: HeistRole) {
 }
 
 export function notifyHeistAlarm(position: { x: number; y: number; z: number }) {
+  playSound('heistAlarm', 0.85);
   useHeistStore.setState({ alarmUntil: Date.now() + 10000, alarmPosition: { ...position } });
   send({ type: 'heist-alarm', position });
 }
@@ -106,6 +108,8 @@ function collectLoot(loot: HeistLoot) {
   }
   useHeistStore.setState({ carried: loot.value, carriedLootIds: [loot.id], lootRespawns: { ...state.lootRespawns, [loot.id]: Date.now() + 120000 } });
   useGameStore.getState().setNotice(translate(`${loot.name} volé · ${loot.value} pièces. Retourne au repaire !`, `${loot.name} stolen · ${loot.value} coins. Return to the hideout!`));
+  const player = world.queryFirst(Player)?.get(PlayerPosition);
+  if (player) notifyHeistAlarm(player);
   send({ type: 'heist-loot', id: loot.id });
 }
 function deposit() {
@@ -292,6 +296,15 @@ function insideShop(point: { x: number; y: number; z: number }) {
     || point.x >= -14 && point.x <= 14 && point.z >= -42 && point.z <= -18
     || point.x >= 18 && point.x <= 52 && point.z >= -40 && point.z <= -10;
 }
+
+function shopIdAt(point: { x: number; y: number; z: number }) {
+  if (point.y < 6 || point.y > 18) return null;
+  if (point.x >= -46 && point.x <= -25 && point.z >= -34 && point.z <= -17) return 'jewelry';
+  if (point.x >= -14 && point.x <= 14 && point.z >= -42 && point.z <= -18) return 'museum';
+  if (point.x >= 18 && point.x <= 52 && point.z >= -40 && point.z <= -10) return 'bank';
+  return null;
+}
+const shopAlarmAt = new WeakMap<KootaWorld, Record<string, number>>();
 const prisonWaypoints = [
   { x: 29, y: 8.51, z: 38 },
   { x: 46, y: 8.51, z: 38 },
@@ -345,9 +358,10 @@ function updateHeistBot(world: KootaWorld, dt: number, current: typeof initial, 
   const inHideout = player.x >= -50 && player.x <= -35 && player.z >= 34 && player.z <= 49;
   const distanceToPlayer = Math.hypot(player.x - bot.x, player.z - bot.z);
   const detecting = current.phase === 'running' && !inHideout && (imprisoned ? detectedByGuard(world, bot, player, distanceToPlayer) : insideShop(bot) && insideShop(player) && distanceToPlayer <= 14);
-  const chasing = detecting && (!imprisoned || player.y >= 6);
+  const alarm = !imprisoned && current.alarmUntil > Date.now() ? current.alarmPosition : null;
+  const chasing = (detecting || alarm !== null) && (!imprisoned || player.y >= 6);
   const waypoints = imprisoned ? prisonWaypoints : botWaypoints;
-  const target = chasing ? player : waypoints[bot.waypoint % waypoints.length];
+  const target = detecting ? player : alarm ?? waypoints[bot.waypoint % waypoints.length];
   const position = new Vector3(bot.x, bot.y, bot.z);
   const dx = target.x - position.x;
   const dz = target.z - position.z;
@@ -355,8 +369,12 @@ function updateHeistBot(world: KootaWorld, dt: number, current: typeof initial, 
   let waypoint = bot.waypoint;
   let hits = bot.hits;
   let nextArrestAt = bot.nextArrestAt;
+  if (alarm) for (let x = -2; x <= 2; x += 1) for (let z = -2; z <= 2; z += 1) for (let y = 8; y <= 10; y += 1) {
+    const block = getBlockIndex(world).get(voxelKey(Math.round(position.x) + x, y, Math.round(position.z) + z));
+    if (block && (isDoor(block.kind) || isTrapdoor(block.kind)) && !block.open) replaceVoxel(world, { block, x: block.x, y: block.y, z: block.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, block.kind, true, undefined, undefined, undefined, undefined, undefined, undefined, true);
+  }
   if (distance > 0.35) {
-    const movement = Math.min(distance, (chasing ? imprisoned ? 7.5 : 4 : 2.4) * dt);
+    const movement = Math.min(distance, (chasing ? alarm ? 9 : imprisoned ? 7.5 : 4 : 2.4) * dt);
     moveVoxelCharacter(getBlockIndex(world), position, { x: dx / distance * movement, y: 0, z: dz / distance * movement }, false);
   } else if (!chasing) {
     waypoint = (waypoint + 1) % waypoints.length;
@@ -401,6 +419,15 @@ export function heistControlSystem(world: KootaWorld, camera: Camera, actions: {
 
   if (current.role === 'thief' && current.phase === 'running') {
     updateEntries(world, player, current.role, useGameStore.getState().selected, actions);
+    const shop = shopIdAt(player);
+    if (shop) {
+      const alarms = shopAlarmAt.get(world) ?? {};
+      if (Date.now() - (alarms[shop] ?? 0) >= 30000) {
+        alarms[shop] = Date.now();
+        shopAlarmAt.set(world, alarms);
+        notifyHeistAlarm(player);
+      }
+    }
     const openingLoot = nearestLoot(player);
     const opening = openings.get(world);
     if (openingLoot) {
@@ -470,6 +497,7 @@ export function receiveHeistState(value: unknown) {
   const lootRespawns = data.lootRespawns && typeof data.lootRespawns === 'object' ? data.lootRespawns as Record<string, number> : {};
   const prison = Array.isArray(data.prison) ? data.prison.filter((id): id is string => typeof id === 'string') : [];
   const previous = useHeistStore.getState();
+  if (typeof data.alarmUntil === 'number' && data.alarmUntil > previous.alarmUntil && data.alarmUntil > Date.now()) playSound('heistAlarm', 0.85);
   const role = roles[localId()] ?? previous.role;
   if (role && role !== previous.role) loadout(role, prison.includes(localId()));
   const alarmPosition = data.alarmPosition && typeof data.alarmPosition === 'object' ? data.alarmPosition as { x: number; y: number; z: number } : previous.alarmPosition;
