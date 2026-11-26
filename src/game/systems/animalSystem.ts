@@ -70,6 +70,7 @@ function openBearDoor(world: World, x: number, feetY: number, z: number, kind: A
   }
 }
 
+const ZOMBIE_ATTACK_RANGE = 1.35;
 const MAX_CLIMB_RISE = 4;
 const TAMED_MAX_CLIMB_RISE = 24;
 const MAX_WALK_DOWN = 4.05;
@@ -513,7 +514,7 @@ export function animalSystem(world: World, dt: number) {
       hit.attackIn = 1.2;
     }
     const canAttack = animal.kind !== 'zombie' || motion.hunting && canZombieAttackPlayer(world, position, player!, motion.displayYaw);
-    if (!fire && aggressive && !tamed && playerEntity && player && health && !hasEffect('invisibility') && hit.attackIn <= 0 && distanceSquared < 2.2 * 2.2 && canAttack) {
+    if (!fire && aggressive && !tamed && playerEntity && player && health && !hasEffect('invisibility') && hit.attackIn <= 0 && distanceSquared < (animal.kind === 'zombie' ? ZOMBIE_ATTACK_RANGE : 2.2) ** 2 && canAttack) {
       hit.attackIn = 1.2;
       damagePlayer(world, 1);
     }

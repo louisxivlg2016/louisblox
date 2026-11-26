@@ -22,5 +22,5 @@ export function canSeePlayer(world: World, position: Vector3, player: Vector3, m
 export function canZombieAttackPlayer(world: World, position: Vector3, player: Vector3, displayYaw: number) {
   const playerYaw = Math.atan2(player.x - position.x, player.z - position.z);
   if (Math.cos(playerYaw - displayYaw) < 0.35) return false;
-  return canSeePlayer(world, position, player, 2.2);
+  return canSeePlayer(world, position, player, 1.35);
 }
