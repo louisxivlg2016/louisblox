@@ -238,6 +238,11 @@ function keepZombieOnNaturalGround(world: World, kind: AnimalKind, position: Vec
 function moveAnimalStep(world: World, kind: AnimalKind, position: Vector3, motion: Motion, dt: number, entity: Entity, panic = 0, speedOverride?: number) {
   keepZombieOnNaturalGround(world, kind, position, motion);
   const naturalGround = kind === 'zombie' && useGameStore.getState().gameplayMode !== 'planet' ? heightAt(Math.round(position.x), Math.round(position.z), getWorldSeed(world)) + 0.5 : null;
+  const groundBelow = groundAt(world, position.x, position.z, position.y + 0.2);
+  if (motion.climbTarget === null && position.y > groundBelow + 0.05) {
+    motion.grounded = false;
+    return updateAnimalVertical(world, position, motion, dt, entity);
+  }
   if (!isLoaded(world, position.x, position.z) && !recoverSafePosition(world, kind, position, entity) && !rescueAnimal(world, kind, position, entity)) return true;
   if (motion.climbTarget === null && !bodyClear(world, position.x, position.z, position.y)) {
     const ground = groundAt(world, position.x, position.z, position.y + MAX_CLIMB_RISE + 0.05);
