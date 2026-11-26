@@ -122,6 +122,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
   }
   if (outfit === 'princess') addPrincessHair(rig.head ?? root, width, height, bounds.max.z - bounds.min.z, floor, rig.head ? -(floor + height * 0.68) : 0, appearance ? appearanceHairColor(appearance, 'girl') : undefined);
   root.userData.rig = rig;
+  root.userData.keepLegsStraight = outfit === 'diver';
   root.userData.sourceBounds = { min: bounds.min.toArray(), max: bounds.max.toArray() };
   const center = bounds.getCenter(new Vector3());
   root.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
@@ -141,10 +142,11 @@ export function animateCharacterRig(root: Object3D, time: number, walking: boole
   turn(rig.leftArm, seated ? -0.25 : swing, delta);
   if (rig.rightArm && eating) rig.rightArm.rotation.x = 1.25 + bite * 0.65;
   else turn(rig.rightArm, seated ? -0.25 : -swing, delta);
-  turn(rig.leftLeg, seated ? 0.95 : -swing * 0.85, delta);
-  turn(rig.rightLeg, seated ? 0.95 : swing * 0.85, delta);
-  turn(rig.leftLowerLeg, seated ? -Math.PI / 2 : moving ? -Math.max(0, Math.sin(time * 8)) * 0.5 : 0, delta);
-  turn(rig.rightLowerLeg, seated ? -Math.PI / 2 : moving ? -Math.max(0, -Math.sin(time * 8)) * 0.5 : 0, delta);
+  const straightLegs = root.userData.keepLegsStraight === true;
+  turn(rig.leftLeg, straightLegs ? 0 : seated ? 0.95 : -swing * 0.85, delta);
+  turn(rig.rightLeg, straightLegs ? 0 : seated ? 0.95 : swing * 0.85, delta);
+  turn(rig.leftLowerLeg, straightLegs ? 0 : seated ? -Math.PI / 2 : moving ? -Math.max(0, Math.sin(time * 8)) * 0.5 : 0, delta);
+  turn(rig.rightLowerLeg, straightLegs ? 0 : seated ? -Math.PI / 2 : moving ? -Math.max(0, -Math.sin(time * 8)) * 0.5 : 0, delta);
 }
 
 export function attachCharacterHand(avatar: Object3D | null, hand: Group | null, fullCharacter: boolean) {
