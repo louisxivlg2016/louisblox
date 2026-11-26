@@ -2,18 +2,27 @@ import { create } from 'zustand';
 import type { World } from 'koota';
 import { useGameStore } from './store';
 import { Player, PlayerHealth, PlayerPosition } from './traits';
-import { addVoxel, explodeVoxels } from './chunks';
+import { addVoxel, explodeVoxels, loadLevel } from './chunks';
 import { BlockKind } from './voxel';
-import { releasePointerForOverlay } from './input';
 import { respawnAtBase } from './battle';
 import { SKYFALL_SPAWN } from './skyfallArena';
 import { world } from './world';
+import { translate } from './language';
 
 export type FallingBlock = { id: string; x: number; y: number; z: number; kind: 'tnt' | 'anvil' | 'safe'; speed: number };
 export const SKYFALL_FALL_SPEEDS: Readonly<Record<FallingBlock['kind'], number>> = { tnt: 12, anvil: 17, safe: 9.5 };
 const initial = { phase: 'waiting' as 'waiting' | 'running' | 'finished', startedAt: 0, nextSpawnAt: 0, blocks: [] as FallingBlock[], bestMs: 0 };
 export const useSkyfallStore = create<typeof initial>(() => ({ ...initial }));
 export function clearSkyfall() { useSkyfallStore.setState({ ...initial, blocks: [] }); }
+
+function restartSkyfall(world: World) {
+  const state = useSkyfallStore.getState();
+  const bestMs = Math.max(state.bestMs, Date.now() - state.startedAt);
+  clearSkyfall();
+  useSkyfallStore.setState({ bestMs });
+  loadLevel(world, useGameStore.getState().generation, null);
+  useGameStore.getState().setNotice(translate('Partie perdue · nouvelle arène !', 'Game over · new arena!'));
+}
 
 function spawnBlock(state: typeof initial) {
   const kinds: FallingBlock['kind'][] = ['tnt', 'anvil', 'safe', 'safe'];
@@ -43,9 +52,7 @@ export function skyfallControlSystem(world: World, dt: number) {
     if (close && block.kind !== 'safe') {
       health.value = Math.max(0, health.value - (block.kind === 'anvil' ? 5 : 3));
       if (health.value <= 0) {
-        const bestMs = Math.max(useSkyfallStore.getState().bestMs, Date.now() - state.startedAt);
-        useSkyfallStore.setState({ phase: 'finished', bestMs });
-        releasePointerForOverlay();
+        restartSkyfall(world);
         return true;
       }
     }
@@ -60,9 +67,7 @@ export function skyfallControlSystem(world: World, dt: number) {
     }
   }
   if (player.y < 6.5 || health.value <= 0) {
-    const bestMs = Math.max(useSkyfallStore.getState().bestMs, Date.now() - state.startedAt);
-    useSkyfallStore.setState({ phase: 'finished', bestMs });
-    releasePointerForOverlay();
+    restartSkyfall(world);
     return true;
   }
   useSkyfallStore.setState({ blocks: remaining });

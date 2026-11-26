@@ -337,6 +337,8 @@ function editsFor(state: WorldChunks, cx: number, cz: number) {
 }
 
 export function ensureChunkDepth(world: World, cx: number, cz: number, fromY: number) {
+  const mode = useGameStore.getState().gameplayMode;
+  if (mode === 'skyfall' || mode === 'planet') return;
   const state = stateFor(world);
   const key = chunkKey(cx, cz);
   const entity = state.chunks.get(key);

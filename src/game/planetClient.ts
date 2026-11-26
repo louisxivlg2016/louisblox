@@ -6,13 +6,12 @@ import { consumePendingPlanetTravel, getPlanetUniverse, readPlanetUniverseSnapsh
 import { ZOMBIE_PLANET_SPAWN, ZOMBIE_POSITIONS } from './zombiePlanetArena';
 import { spawnAnimal } from './animals';
 import { animalCombatSystem } from './systems/animalCombatSystem';
-import { planetPeopleSystem, rescueGirl, rescueSurvivor, survivorPositions, usePlanetPeopleStore } from './planetPeople';
+import { clearPlanetPeople, planetPeopleSystem, rescueGirl, rescueSurvivor, survivorPositions, usePlanetPeopleStore } from './planetPeople';
 import { BlockKind, voxelKey } from './voxel';
 import { PLANET_BIOMES, PLANET_ONE_BLOCK, PLANET_SPAWN } from './planetArena';
 import { useGameStore } from './store';
 import { changeInventory, inventoryCount } from './inventory';
 import { readModeProgress, writeModeProgress } from './modeProgress';
-import { respawnAtBase } from './battle';
 import { createWorldSave } from './save';
 import { Animal, AnimalHealth, Player, PlayerPosition } from './traits';
 import { translate } from './language';
@@ -31,6 +30,16 @@ export function clearPlanet() {
   loadedWorld = '';
   setPlanetUniverse('home', '');
   usePlanetStore.setState({ ...initial });
+}
+
+function restartPlanet() {
+  const game = useGameStore.getState();
+  const worldName = game.worldName;
+  clearPlanet();
+  clearPlanetPeople();
+  game.regenerate('planet', `planet-${crypto.randomUUID().slice(0, 8)}`, 'nature', worldName);
+  game.setMode('play');
+  game.setNotice(translate('Chute dans le vide · nouvelle partie !', 'Fell into space · new game!'));
 }
 function ensurePlanet() {
   const game = useGameStore.getState();
@@ -166,17 +175,11 @@ export function planetControlSystem(world: World, camera: Camera, dt: number, ac
       }
     }
     planetPeopleSystem(world, dt);
-    if (player && player.y < 3) {
-      respawnAtBase(world, null, ZOMBIE_PLANET_SPAWN);
-      useGameStore.getState().setNotice(translate('Chute dans le vide · retour sur la planète enneigée.', 'Fell into space · returned to the snowy planet.'));
-    }
+    if (player && player.y < 3) restartPlanet();
     return true;
   }
   if (!player) return true;
-  if (player.y < 3) {
-    respawnAtBase(world, null, PLANET_SPAWN);
-    useGameStore.getState().setNotice(translate('Chute dans l’espace · retour sur la planète mère.', 'Fell into space · returned to the home planet.'));
-  }
+  if (player.y < 3) restartPlanet();
   const blocks = getBlockIndex(world);
   const key = voxelKey(PLANET_ONE_BLOCK.x, PLANET_ONE_BLOCK.y, PLANET_ONE_BLOCK.z);
   const block = blocks.get(key);
