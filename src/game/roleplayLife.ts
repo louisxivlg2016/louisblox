@@ -4,6 +4,7 @@ import { Vector3 } from 'three';
 import { getBlockIndex } from './chunks';
 import { groundAt } from './vehicles';
 import { moveVoxelCharacter } from './systems/collisionSystem';
+import { findPath } from './systems/traderNavigation';
 import { isNight } from './dayNight';
 import { Fire, Player, PlayerPosition } from './traits';
 import { addVoxel } from './chunks';
@@ -60,11 +61,34 @@ function notice(fr: string, en: string) {
   useGameStore.getState().setNotice(translate(fr, en));
 }
 
+const npcPaths = new Map<string, { key: string; points: Array<{ x: number; y: number; z: number }> }>();
+
 function move(world: World, npc: RoleplayNpc, target: { x: number; z: number }, dt: number, speed: number) {
-  const dx = target.x - npc.x;
-  const dz = target.z - npc.z;
+  const remaining = Math.hypot(target.x - npc.x, target.z - npc.z);
+  if (remaining < 0.2) {
+    npcPaths.delete(npc.id);
+    return true;
+  }
+  const key = `${useGameStore.getState().worldId}:${target.x},${target.z}`;
+  let path = npcPaths.get(npc.id);
+  if (path?.key !== key) {
+    const points = findPath(world, new Vector3(npc.x, npc.y, npc.z), target.x, target.z, false);
+    path = points ? { key, points } : undefined;
+    if (path) npcPaths.set(npc.id, path);
+    else npcPaths.delete(npc.id);
+  }
+  if (path && path.points.length > 0 && Math.hypot(path.points[0].x - npc.x, path.points[0].z - npc.z) < 0.2) {
+    path.points.shift();
+    if (path.points.length === 0) {
+      npcPaths.delete(npc.id);
+      return true;
+    }
+  }
+  const waypoint = path?.points[0] ?? target;
+  const dx = waypoint.x - npc.x;
+  const dz = waypoint.z - npc.z;
   const distance = Math.hypot(dx, dz);
-  if (distance < 0.2) return true;
+  if (distance < 0.2) return false;
   const step = Math.min(distance, speed * dt);
   const position = new Vector3(npc.x, npc.y, npc.z);
   moveVoxelCharacter(getBlockIndex(world), position, { x: dx / distance * step, y: 0, z: dz / distance * step }, false);
