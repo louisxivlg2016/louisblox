@@ -30,17 +30,43 @@ function sign(blocks: Voxel[], cx: number, cz: number, x: number, y: number, z: 
 function house(blocks: Voxel[], cx: number, cz: number, centerX: number, centerZ: number, color: BlockKind) {
   for (let x = centerX - 6; x <= centerX + 6; x += 1) for (let z = centerZ - 6; z <= centerZ + 6; z += 1) {
     put(blocks, cx, cz, x, 7, z, BlockKind.OakPlanks, false);
-    put(blocks, cx, cz, x, 13, z, color, false);
     const edge = x === centerX - 6 || x === centerX + 6 || z === centerZ - 6 || z === centerZ + 6;
-    if (!edge) continue;
-    for (let y = 8; y <= 12; y += 1) {
-      const door = z === centerZ - 6 && Math.abs(x - centerX) <= 1 && y <= 10;
-      if (!door) put(blocks, cx, cz, x, y, z, y === 10 && (x + z) % 3 === 0 ? BlockKind.Glass : color, false);
+    if (edge) for (let y = 8; y <= 12; y += 1) {
+      const door = z === centerZ - 6 && x === centerX && y <= 10;
+      const window = y >= 9 && y <= 11 && (x + z) % 4 === 0;
+      if (!door) put(blocks, cx, cz, x, y, z, window ? BlockKind.Glass : color, false);
     }
+    if (z === centerZ - 7) put(blocks, cx, cz, x, 7, z, BlockKind.ConcreteLightGray, false);
   }
-  if (color === BlockKind.ConcreteLightBlue) for (let y = 8; y <= 10; y += 1) put(blocks, cx, cz, centerX, y, centerZ - 6, BlockKind.DoorBlue, false, 'north');
+  for (let layer = 0; layer <= 3; layer += 1) for (let x = centerX - 6 + layer; x <= centerX + 6 - layer; x += 1) for (let z = centerZ - 6; z <= centerZ + 6; z += 1) put(blocks, cx, cz, x, 13 + layer, z, BlockKind.ConcreteGray, false);
+  for (let y = 8; y <= 10; y += 1) put(blocks, cx, cz, centerX, y, centerZ - 6, color === BlockKind.ConcreteLightBlue ? BlockKind.DoorBlue : BlockKind.DoorBrown, false, 'north');
   put(blocks, cx, cz, centerX + 4, 8, centerZ + 4, BlockKind.Chest, false);
   put(blocks, cx, cz, centerX - 4, 8, centerZ + 4, BlockKind.Bed, false);
+}
+
+function parisian(blocks: Voxel[], cx: number, cz: number, centerX: number, centerZ: number) {
+  for (let dx = -4; dx <= 4; dx += 1) for (let dz = -4; dz <= 4; dz += 1) {
+    put(blocks, cx, cz, centerX + dx, 19, centerZ + dz, BlockKind.ConcreteGray, false);
+    const edge = dx === -4 || dx === 4 || dz === -4 || dz === 4;
+    if (!edge) continue;
+    for (let y = 8; y <= 18; y += 1) {
+      const window = y >= 10 && (y - 10) % 4 <= 1 && (dx + dz) % 3 === 0;
+      put(blocks, cx, cz, centerX + dx, y, centerZ + dz, window ? BlockKind.Glass : BlockKind.BeigeBrick, false);
+    }
+    for (const y of [12, 16]) if (dz === 4) put(blocks, cx, cz, centerX + dx, y, centerZ + dz + 1, BlockKind.OakPlanks, false);
+  }
+}
+
+function skyscraper(blocks: Voxel[], cx: number, cz: number, centerX: number, centerZ: number, height: number) {
+  for (let dx = -4; dx <= 4; dx += 1) for (let dz = -4; dz <= 4; dz += 1) {
+    put(blocks, cx, cz, centerX + dx, height + 8, centerZ + dz, BlockKind.ConcreteBlack, false);
+    const edge = dx === -4 || dx === 4 || dz === -4 || dz === 4;
+    if (!edge) continue;
+    for (let y = 8; y < height + 8; y += 1) {
+      const frame = (y - 8) % 4 === 0;
+      put(blocks, cx, cz, centerX + dx, y, centerZ + dz, frame ? BlockKind.ConcreteLightGray : BlockKind.Glass, false);
+    }
+  }
 }
 
 function mine(blocks: Voxel[], cx: number, cz: number) {
@@ -77,12 +103,18 @@ export function generateRoleplayChunk(cx: number, cz: number): GeneratedChunk {
   for (let x = cx * CHUNK_SIZE; x < (cx + 1) * CHUNK_SIZE; x += 1) for (let z = cz * CHUNK_SIZE; z < (cz + 1) * CHUNK_SIZE; z += 1) {
     if (x < -48 || x >= 48 || z < -48 || z >= 48) continue;
     const road = Math.abs(x) <= 4 || Math.abs(z + 20) <= 4 || Math.abs(x - 32) <= 3;
+    const sidewalk = Math.abs(x) >= 5 && Math.abs(x) <= 7 || Math.abs(z + 20) >= 5 && Math.abs(z + 20) <= 7;
     const mineCavity = x >= 26 && x <= 42 && z >= -42 && z <= -25 || x >= 31 && x <= 33 && z >= -24 && z <= -20;
-    if (!mineCavity) put(blocks, cx, cz, x, 7, z, road ? BlockKind.ConcreteGray : BlockKind.Grass);
+    if (!mineCavity) put(blocks, cx, cz, x, 7, z, sidewalk ? BlockKind.ConcreteLightGray : road ? BlockKind.ConcreteGray : BlockKind.Grass);
     if (x === -48 || x === 47 || z === -48 || z === 47) for (let y = 8; y <= 12; y += 1) put(blocks, cx, cz, x, y, z, BlockKind.Bedrock);
   }
   const colors = [BlockKind.BeigeBrick, BlockKind.ConcreteLightBlue, BlockKind.ConcretePink, BlockKind.ConcreteLime] as const;
   ROLEPLAY_HOMES.forEach((home, index) => house(blocks, cx, cz, home.x, home.z, colors[index]));
+  parisian(blocks, cx, cz, -38, 10);
+  parisian(blocks, cx, cz, -38, -8);
+  skyscraper(blocks, cx, cz, 36, 28, 22);
+  skyscraper(blocks, cx, cz, 36, -6, 18);
+  for (const [x, z] of [[-7, -8], [7, 8], [-7, -28], [7, -28]] as const) put(blocks, cx, cz, x, 8, z, BlockKind.StreetLamp, false);
   for (const x of [-3, 3]) for (const z of [-22, -18]) for (let y = 8; y <= 11; y += 1) put(blocks, cx, cz, x, y, z, BlockKind.OakPlanks, false);
   for (let x = -3; x <= 3; x += 1) {
     put(blocks, cx, cz, x, 8, -18, BlockKind.OakPlanks, false);
@@ -103,6 +135,10 @@ export function generateRoleplayChunk(cx: number, cz: number): GeneratedChunk {
     if (x === 14 || x === 26 || z === -26 || z === -14) for (let y = 8; y <= 13; y += 1) put(blocks, cx, cz, x, y, z, y % 2 === 0 ? BlockKind.ConcreteRed : BlockKind.WhiteBrick);
   }
   put(blocks, cx, cz, ROLEPLAY_FIRE_STATION.x, 8, ROLEPLAY_FIRE_STATION.z, BlockKind.Chest);
+  for (let x = 18; x <= 22; x += 1) for (let y = 8; y <= 11; y += 1) {
+    const door = put(blocks, cx, cz, x, y, -14, BlockKind.DoorRed, false, 'north');
+    if (door) door.open = true;
+  }
   mine(blocks, cx, cz);
   sign(blocks, cx, cz, 0, 9, -15, 'TRAVAIL · MARCHAND');
   sign(blocks, cx, cz, -20, 9, -13, 'TRAVAIL · POLICIER');
