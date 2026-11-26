@@ -453,19 +453,19 @@ export function tamingSystem(world: World, _dt: number) {
   }
 }
 
-export function findDefenseTarget(world: World, defender: Entity, owner: Vector3) {
+export function findDefenseTarget(world: World, defender: Entity, owner: Vector3, claimedTargets: ReadonlySet<Entity> = new Set()) {
   const kind = defender.get(Animal)?.kind;
   if (!kind || !DEFENSIVE_ANIMALS.has(kind)) return null;
   const position = defender.get(AnimalPosition)!;
   const playerTarget = animalHitByPlayer(world);
-  if (playerTarget && playerTarget !== defender && playerTarget.isAlive() && !isTamedAnimal(playerTarget) && (playerTarget.get(AnimalHealth)?.value ?? 0) > 0) {
+  if (playerTarget && playerTarget !== defender && !claimedTargets.has(playerTarget) && playerTarget.isAlive() && !isTamedAnimal(playerTarget) && (playerTarget.get(AnimalHealth)?.value ?? 0) > 0) {
     const targetPosition = playerTarget.get(AnimalPosition)!;
     if (position.distanceToSquared(targetPosition) < 14 * 14 && targetPosition.distanceToSquared(owner) <= 16 * 16) return playerTarget;
   }
   let best: Entity | null = null;
   let closest = 14 * 14;
   for (const candidate of world.query(Animal, AnimalPosition, AnimalHealth)) {
-    if (candidate === defender || isTamedAnimal(candidate) || candidate.get(AnimalHealth)!.value <= 0) continue;
+    if (candidate === defender || claimedTargets.has(candidate) || isTamedAnimal(candidate) || candidate.get(AnimalHealth)!.value <= 0) continue;
     const kind = candidate.get(Animal)!.kind;
     if (!['bear', 'wolf', 'snowWolf', 'snowBear', 'zombie'].includes(kind)) continue;
     const targetPosition = candidate.get(AnimalPosition)!;

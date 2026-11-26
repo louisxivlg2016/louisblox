@@ -350,6 +350,7 @@ export function animalSystem(world: World, dt: number) {
   zombieNights.set(world, survival && night);
   const fires = getFireSources(world);
   const neighbors = world.query(Animal, AnimalPosition).map((entity) => ({ entity, position: entity.get(AnimalPosition)!, stationary: Boolean(entity.get(CamelLeash) || entity.get(HorseRider)?.mounted || entity.get(HorseRider)?.passenger) }));
+  const claimedDefenseTargets = new Set<Entity>();
 
   world.query(Animal, AnimalHealth, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, animalHealth, hit, position, motion, mesh], entity) => {
     keepZombieOnNaturalGround(world, animal.kind, position, motion);
@@ -448,7 +449,8 @@ export function animalSystem(world: World, dt: number) {
     const love = entity.get(AnimalLove);
     if (love) love.time = Math.max(0, love.time - stepDt);
     const aggressive = !attentive && (animal.kind === 'zombie' || animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf') && (useGameStore.getState().gameplayMode !== 'creative' || hit.panic > 0);
-    const defenseTarget = tamed && owner && DEFENSIVE_ANIMALS.has(animal.kind) ? findDefenseTarget(world, entity, owner) : null;
+    const defenseTarget = tamed && owner && DEFENSIVE_ANIMALS.has(animal.kind) ? findDefenseTarget(world, entity, owner, claimedDefenseTargets) : null;
+    if (defenseTarget) claimedDefenseTargets.add(defenseTarget);
     const targetPosition = defenseTarget?.get(AnimalPosition);
     const targetDistanceSquared = targetPosition ? position.distanceToSquared(targetPosition) : Infinity;
     if (tamed && owner && !targetPosition && distanceSquared > 30 * 30) {
