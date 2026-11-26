@@ -170,8 +170,8 @@ export function generateHeistChunk(cx: number, cz: number, seed = 0): GeneratedC
       if (x !== cellX - 2 && x !== cellX + 1 && z !== cellZ - 2 && z !== cellZ + 1) continue;
       for (let y = 8; y <= 11; y += 1) put(blocks, x, y, z, x === cellX - 2 && z === cellZ ? BlockKind.TrapdoorIron : BlockKind.Bedrock);
     }
-    put(blocks, cellX, 8, cellZ, BlockKind.Bed);
-    for (let y = 4; y <= 7; y += 1) put(blocks, cellX, y, cellZ, BlockKind.Dirt, false);
+    put(blocks, cellX, 8, cellZ, BlockKind.Bed, false);
+    for (let x = cellX - 1; x <= cellX; x += 1) for (let z = cellZ - 1; z <= cellZ + 1; z += 1) for (let y = 4; y <= 7; y += 1) put(blocks, x, y, z, BlockKind.Dirt, false);
   }
 
   const chestCandidates: Array<[number, number, number]> = [[29, 2, 44], [33, 2, 49], [38, 2, 46], [40, 2, 51]];
