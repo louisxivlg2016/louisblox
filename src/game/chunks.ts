@@ -962,8 +962,10 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
     );
   }
   if (gameplayMode === 'pirates') spawnPirateCannons(world);
-  for (let index = 0; index < 9; index += 1) streamChunks(world, spawn.x, spawn.z);
-  if (gameplayMode === 'deep-dive') for (let cx = -3; cx <= 2; cx += 1) for (let cz = -3; cz <= 2; cz += 1) loadChunk(world, cx, cz);
+  if (gameplayMode === 'skyfall' || gameplayMode === 'deep-dive') {
+    loadChunk(world, 0, 0);
+    loadChunk(world, 1, 0);
+  } else for (let index = 0; index < 9; index += 1) streamChunks(world, spawn.x, spawn.z);
   for (const animal of customWorld?.spawns ?? []) spawnAnimal(world, animal.kind, animal.x, animal.y, animal.z, seed);
   return { spawn };
 }
