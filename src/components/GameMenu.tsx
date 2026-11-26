@@ -251,7 +251,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
                   <button className={['world-card', card.className].filter(Boolean).join(' ')} data-world-mode={card.mode} data-world-template={card.template} aria-haspopup="dialog" onClick={() => openJoinMode(card.mode, card)} disabled={pendingWorld !== null}>
                     <img src={card.image} alt={card.alt} />
                     <span className="world-card-label"><strong>{card.name}</strong></span>
-                    {!['skyfall', 'planet', 'deep-dive'].includes(card.mode) && <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{card.tag(enabled)}</span>}
+                    {!['skyfall', 'planet', 'deep-dive'].includes(card.mode) && card.template !== 'fortress' && <span className={['world-mode-tag', card.tagClass].filter(Boolean).join(' ')}>{card.tag(enabled)}</span>}
                     {enabled && <span className="world-mode-badges">
                       {POPULAR_MODES.has(card.mode) && <span className="world-mode-popular">{translate('Populaire', 'Popular')}</span>}
                       <span className="world-mode-player-count" aria-label={`${playerCount} ${translate('joueur', 'player')}${playerCount > 1 ? 's' : ''} ${translate('en', 'in')} ${card.name}`}>{playerCount} {translate('joueur', 'player')}{playerCount > 1 ? 's' : ''}</span>
