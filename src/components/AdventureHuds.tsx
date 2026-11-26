@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useGameStore } from '../game/store';
 import { usePlanetStore, buyPlanetTool, buildPlanetRocket, travelPlanetUniverse } from '../game/planetClient';
 import { startCityBuild, usePlanetPeopleStore } from '../game/planetPeople';
-import { useDeepStore, deepMaxOxygen, buyDeepGear, sellDeepFindings } from '../game/deepClient';
+import { useDeepStore, deepMaxOxygen, buyDeepGear, buyDeepOxygen, sellDeepFindings } from '../game/deepClient';
 import { useRoleplayStore, chooseRoleplayJob, performRoleplayWork, roleplayHome } from '../game/roleplayClient';
 import type { RoleplayJob } from '../game/roleplayClient';
 import { world } from '../game/world';
@@ -42,7 +42,7 @@ export function DeepHud() {
   const cost = gear === 0 ? 150 : gear === 1 ? 400 : 900;
   return <>
     <div className="heist-hud" data-deep-hud style={{ pointerEvents: 'auto' }}><strong>{translate(`Oxygène ${Math.ceil(oxygen)} s`, `Oxygen ${Math.ceil(oxygen)} s`)}</strong><div role="meter" aria-label={translate('Oxygène restant', 'Remaining oxygen')} aria-valuemin={0} aria-valuemax={maximum} aria-valuenow={Math.round(oxygen)} style={{ width: 180, height: 10, background: '#243348', border: '1px solid #9bb7c9' }}><div data-oxygen-bar style={{ width: `${Math.max(0, Math.min(100, oxygen / maximum * 100))}%`, height: '100%', background: oxygen < maximum * 0.2 ? '#e65045' : '#54c9e8' }} /></div><span>{translate(`Profondeur ${depth.toFixed(1)} m · Équipement ${gear}`, `Depth ${depth.toFixed(1)} m · Gear ${gear}`)}</span><small>{translate(`${findings} à vendre · ${coins} pièces`, `${findings} to sell · ${coins} coins`)}</small><button type="button" onClick={sellDeepFindings}>{translate('Vendre à la surface', 'Sell at surface')}</button></div>
-    {shopOpen && <section className="heist-shop" data-deep-shop><h3>{translate('Équipement de plongée', 'Diving equipment')}</h3>{gear < 3 ? <button disabled={coins < cost} onClick={buyDeepGear}>{translate(`Niveau ${gear + 1} · ${cost} pièces · ${deepMaxOxygen(gear + 1)} s`, `Level ${gear + 1} · ${cost} coins · ${deepMaxOxygen(gear + 1)} s`)}</button> : <strong>{translate('Équipement maximal', 'Maximum equipment')}</strong>}<small>{translate('Vends tes trouvailles sur la plateforme avant de plonger plus profond.', 'Sell your findings on the platform before diving deeper.')}</small></section>}
+    {shopOpen && <section className="heist-shop" data-deep-shop><h3>{translate('VENTE & OXYGÈNE', 'SALES & OXYGEN')}</h3><button data-sell-deep disabled={findings <= 0} onClick={sellDeepFindings}>{translate(`Vendre les trouvailles · ${findings}`, `Sell findings · ${findings}`)}</button><button data-buy-deep-oxygen disabled={coins < 25} onClick={buyDeepOxygen}>{translate('+30 s d’oxygène · 25 pièces', '+30 s oxygen · 25 coins')}</button>{gear < 3 ? <button disabled={coins < cost} onClick={buyDeepGear}>{translate(`Niveau ${gear + 1} · ${cost} pièces · ${deepMaxOxygen(gear + 1)} s`, `Level ${gear + 1} · ${cost} coins · ${deepMaxOxygen(gear + 1)} s`)}</button> : <strong>{translate('Équipement maximal', 'Maximum equipment')}</strong>}<small>{translate('Vends tes trouvailles au stand avant de plonger plus profond.', 'Sell your findings at the stand before diving deeper.')}</small></section>}
   </>;
 }
 

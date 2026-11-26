@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import type { World } from 'koota';
-import { DEEP_CHESTS, DEEP_SPAWN, DEEP_SURFACE_Y } from './deepArena';
-import { getBlockIndex } from './chunks';
+import { DEEP_CHESTS, DEEP_SPAWN, DEEP_SURFACE_Y, DEEP_VENDOR } from './deepArena';
+import { addVoxel, getBlockIndex, removeVoxel } from './chunks';
 import { getSwimState } from './swimming';
 import { Player, PlayerPosition } from './traits';
 import { useGameStore } from './store';
+import { BlockKind, voxelKey } from './voxel';
+import { releasePointerForOverlay } from './input';
 import { readModeProgress, writeModeProgress } from './modeProgress';
 import { respawnAtBase } from './battle';
 import { world } from './world';
@@ -17,6 +19,10 @@ let lastPersist = 0;
 
 export function deepMaxOxygen(gear: number) {
   return gear >= 3 ? 480 : gear === 2 ? 240 : gear === 1 ? 120 : 60;
+}
+
+function nearVendor(player: { x: number; y: number; z: number }) {
+  return player.y >= DEEP_SURFACE_Y - 1 && Math.hypot(player.x - DEEP_VENDOR.x, player.z - DEEP_VENDOR.z) <= 3;
 }
 function persist() {
   const worldId = useGameStore.getState().worldId;
@@ -46,8 +52,8 @@ export function sellDeepFindings() {
   ensureDeep();
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   const state = useDeepStore.getState();
-  if (!player || player.y < DEEP_SURFACE_Y - 1 || Math.hypot(player.x, player.z) > 7) {
-    useGameStore.getState().setNotice(translate('Remonte sur la plateforme pour vendre.', 'Return to the surface platform to sell.'));
+  if (!player || !nearVendor(player)) {
+    useGameStore.getState().setNotice(translate('Remonte au stand VENTE & OXYGÈNE pour vendre.', 'Return to the SALES & OXYGEN stand to sell.'));
     return;
   }
   if (state.findings <= 0) return;
@@ -58,12 +64,31 @@ export function sellDeepFindings() {
 
 export function buyDeepGear() {
   ensureDeep();
+  const player = world.queryFirst(Player)?.get(PlayerPosition);
+  if (!player || !nearVendor(player)) {
+    useGameStore.getState().setNotice(translate('Achète ton équipement au stand VENTE & OXYGÈNE.', 'Buy your gear at the SALES & OXYGEN stand.'));
+    return;
+  }
   const state = useDeepStore.getState();
   const next = state.gear + 1;
   const cost = next === 1 ? 150 : next === 2 ? 400 : 900;
   if (next > 3 || state.coins < cost) return;
   useDeepStore.setState({ gear: next, coins: state.coins - cost, oxygen: deepMaxOxygen(next) });
   useGameStore.getState().setNotice(translate(`Équipement niveau ${next} · ${deepMaxOxygen(next)} s d’oxygène.`, `Gear level ${next} · ${deepMaxOxygen(next)} s of oxygen.`));
+  persist();
+}
+
+export function buyDeepOxygen() {
+  ensureDeep();
+  const player = world.queryFirst(Player)?.get(PlayerPosition);
+  if (!player || !nearVendor(player)) {
+    useGameStore.getState().setNotice(translate('Remonte au stand VENTE & OXYGÈNE pour recharger.', 'Return to the SALES & OXYGEN stand to refill.'));
+    return;
+  }
+  const state = useDeepStore.getState();
+  if (state.coins < 25) return;
+  useDeepStore.setState({ coins: state.coins - 25, oxygen: state.oxygen + 30 });
+  useGameStore.getState().setNotice(translate('+30 secondes d’oxygène.', '+30 seconds of oxygen.'));
   persist();
 }
 
@@ -75,7 +100,7 @@ export function deepControlSystem(world: World, dt: number, actions: { harvest: 
   const state = useDeepStore.getState();
   const swimming = getSwimState(getBlockIndex(world), player);
   const maximum = deepMaxOxygen(state.gear);
-  const oxygen = swimming.underwater ? Math.max(0, state.oxygen - dt) : maximum;
+  const oxygen = swimming.underwater ? Math.max(0, state.oxygen - dt) : Math.max(state.oxygen, maximum);
   const depth = Math.max(0, DEEP_SURFACE_Y - player.y);
   const now = Date.now();
   useDeepStore.setState({ oxygen, depth });
@@ -87,8 +112,9 @@ export function deepControlSystem(world: World, dt: number, actions: { harvest: 
     persist();
     return true;
   }
-  if (player.y >= DEEP_SURFACE_Y - 1 && Math.hypot(player.x, player.z) <= 7 && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0)) {
-    sellDeepFindings();
+  if (nearVendor(player) && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0)) {
+    useGameStore.setState({ shopOpen: true, mode: 'pause' });
+    releasePointerForOverlay();
     return true;
   }
   const chest = DEEP_CHESTS.find((entry) => Math.hypot(player.x - entry.x, player.y - entry.y, player.z - entry.z) <= 3);
@@ -97,9 +123,18 @@ export function deepControlSystem(world: World, dt: number, actions: { harvest: 
     else if (state.gear < chest.gear) useGameStore.getState().setNotice(translate(`Équipement de plongée niveau ${chest.gear} requis.`, `Diving gear level ${chest.gear} required.`));
     else {
       useDeepStore.setState({ findings: state.findings + chest.value, opened: { ...state.opened, [chest.id]: now + 60000 } });
+      const block = getBlockIndex(world).get(voxelKey(chest.x, chest.y, chest.z));
+      if (block) removeVoxel(world, { block, x: chest.x, y: chest.y, z: chest.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, true);
       useGameStore.getState().setNotice(translate(`${chest.name} ouvert · +${chest.value} de trouvailles.`, `${chest.name} opened · +${chest.value} findings.`));
       persist();
     }
+  }
+  for (const chest of DEEP_CHESTS) {
+    if (!state.opened[chest.id] || state.opened[chest.id] > now) continue;
+    if (!getBlockIndex(world).has(voxelKey(chest.x, chest.y, chest.z))) addVoxel(world, chest.x, chest.y, chest.z, BlockKind.Chest, undefined, undefined, 0, undefined, undefined, false, true);
+    const opened = { ...useDeepStore.getState().opened };
+    delete opened[chest.id];
+    useDeepStore.setState({ opened });
   }
   if (now - lastPersist >= 5000) {
     lastPersist = now;
