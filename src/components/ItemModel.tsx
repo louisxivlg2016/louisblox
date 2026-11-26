@@ -475,17 +475,7 @@ function GalleryGenericModel({ shape, color }: { shape: string; color: string })
       {shape === 'arrow_potion' && <PixelPart position={[0.35, 0, 0]} size={[0.55, 0.06, 0.06]} color="#d4d5c7" />}
     </group>
   );
-  if (shape === 'bomb') return (
-    <group name="smoke-grenade-item">
-      <mesh rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.2, 0.2, 0.5, 12]} />
-        <meshLambertMaterial color="#43564b" />
-      </mesh>
-      <PixelPart position={[0, 0.29, 0]} size={[0.15, 0.12, 0.15]} color="#bcc6ca" />
-      <PixelPart position={[0.1, 0.37, 0]} size={[0.27, 0.06, 0.1]} color="#e0e5e7" />
-      <PixelPart position={[0, -0.04, -0.2]} size={[0.4, 0.09, 0.045]} color="#d7c34b" />
-    </group>
-  );
+  if (shape === 'bomb') return <SmokeGrenadeModel />;
   if (shape === 'firecracker' || shape === 'pebble') return (
     <group>
       <PixelPart position={[0, -0.1, 0]} size={[0.28, 0.58, 0.28]} color={color} />
@@ -599,6 +589,27 @@ function vehicleItemKind(kind: ModelProps['kind']): Exclude<VehicleKind, 'boat'>
   if (kind === 'plane' || kind === 'train' || kind === 'metro' || kind === 'jeep' || kind === 'firetruck' || kind === 'carriage' || kind === 'cannon') return kind;
   if (kind === 'police_car') return 'police';
   return null;
+}
+
+export function SmokeGrenadeModel() {
+  const layers = [
+    [-0.34, 0.22, '#4a5634'],
+    [-0.22, 0.34, '#59663b'],
+    [-0.1, 0.42, '#657240'],
+    [0.02, 0.46, '#536233'],
+    [0.14, 0.44, '#687641'],
+    [0.26, 0.36, '#5b693a'],
+    [0.36, 0.26, '#4a5834'],
+  ] as const;
+  return <group name="smoke-grenade-item">
+    {layers.map(([y, width, color], index) => <PixelPart key={y} position={[0, y, 0]} size={[width, 0.12, width]} color={index % 2 === 0 ? color : '#485732'} />)}
+    <PixelPart position={[0, 0.46, 0]} size={[0.25, 0.12, 0.25]} color="#aeb8b8" />
+    <PixelPart position={[0, 0.55, 0]} size={[0.12, 0.1, 0.12]} color="#d4dbda" />
+    <PixelPart position={[0.16, 0.52, 0]} size={[0.3, 0.055, 0.1]} color="#c6cecd" />
+    <PixelPart position={[0.3, 0.4, 0]} size={[0.055, 0.26, 0.1]} color="#bcc6c4" />
+    <PixelPart position={[0.36, 0.02, 0]} size={[0.075, 0.82, 0.11]} color="#202d2c" />
+    <PixelPart position={[0.32, 0.43, 0]} size={[0.09, 0.14, 0.13]} color="#2d3a37" />
+  </group>;
 }
 
 export function ItemModel({ kind, held = false, flipWeapons = false }: ModelProps) {

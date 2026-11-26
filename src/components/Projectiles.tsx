@@ -1,7 +1,7 @@
 import { useQuery } from 'koota/react';
 import type { Entity } from 'koota';
 import { Projectile, ProjectileMesh, ProjectilePosition } from '../game/traits';
-import { PixelPart } from './ItemModel';
+import { PixelPart, SmokeGrenadeModel } from './ItemModel';
 
 function ProjectileView({ entity }: { entity: Entity }) {
   const position = entity.get(ProjectilePosition)!;
@@ -23,15 +23,15 @@ function ProjectileView({ entity }: { entity: Entity }) {
               <PixelPart position={[0, 0.34, 0]} size={[0.07, 0.16, 0.07]} color="#c6a35a" />
               <PixelPart position={[0, 0.45, 0]} size={[0.1, 0.1, 0.1]} color="#ffb43c" />
             </>
-          ) : (
+          ) : projectile.effect === 'smoke' ? <SmokeGrenadeModel /> : (
             <>
               <mesh rotation={[0, 0, Math.PI / 2]}>
                 <cylinderGeometry args={[0.17, 0.17, 0.38, 12]} />
-                <meshLambertMaterial color={projectile.effect === 'smoke' ? '#43564b' : '#343c47'} />
+                <meshLambertMaterial color="#343c47" />
               </mesh>
               <PixelPart position={[0, 0.22, 0]} size={[0.12, 0.1, 0.12]} color="#b7c0c4" />
               <PixelPart position={[0.08, 0.28, 0]} size={[0.2, 0.05, 0.08]} color="#d8dfe1" />
-              <PixelPart position={[0, -0.04, -0.17]} size={[0.32, 0.07, 0.04]} color={projectile.effect === 'smoke' ? '#d7c34b' : '#a9a9a0'} />
+              <PixelPart position={[0, -0.04, -0.17]} size={[0.32, 0.07, 0.04]} color="#a9a9a0" />
             </>
           )}
         </group>
