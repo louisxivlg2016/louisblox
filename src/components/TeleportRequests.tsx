@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { requestPlay } from '../game/input';
 import { BIOME_NAMES } from '../game/levels';
 import type { Biome } from '../game/levels';
@@ -15,6 +15,7 @@ import { translate } from '../game/language';
 import { sendFriendRequest, useFriendStore } from '../game/friends';
 import { useCharacterStore } from '../game/characterStore';
 import { historicCityDestinations } from '../game/historicCapitals';
+import { allowsTeleport } from '../game/worldMode';
 
 const DESTINATIONS: Biome[] = ['winter', 'autumn', 'forest', 'jungle', 'prairie', 'desert'];
 const RUINS: Array<{ type: RuinType; name: string }> = [
@@ -51,7 +52,10 @@ export function TeleportPanel() {
   const worldTemplate = useGameStore((state) => state.worldTemplate);
   const homes = useHomeStore((state) => state.homes[worldId] ?? NO_HOMES);
   const setHomeOpen = useHomeStore((state) => state.setOpen);
-  if (!open) return null;
+  useEffect(() => {
+    if (!allowsTeleport(gameplayMode)) setOpen(false);
+  }, [gameplayMode, setOpen]);
+  if (!open || !allowsTeleport(gameplayMode)) return null;
   const cityDestinations = gameplayMode === 'city-modern' ? CITY_DESTINATIONS.modern : gameplayMode === 'city-ancient' ? CITY_DESTINATIONS.ancient : null;
 
   const travel = (biome: Biome) => {

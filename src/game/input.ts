@@ -7,7 +7,7 @@ import { isPaintballGun } from './paintball';
 import { useTradeStore } from './trading';
 import { useHomeStore } from './homes';
 import { useMultiplayerStore } from './multiplayerStore';
-import { isMultiplayerOnlyMode } from './worldMode';
+import { allowsTeleport, isMultiplayerOnlyMode } from './worldMode';
 import { honk, toggleHeadlights, toggleSiren, useVehicleControls } from './vehicleControls';
 import { useConstructionStore } from './constructions';
 import { placeNextBlueprintBlock } from './blueprints';
@@ -157,7 +157,7 @@ export function initInput() {
       if (homes.open) {
         homes.setOpen(false);
         void requestPlay();
-      } else if (state.mode === 'play' && state.gameplayMode !== 'pirates') {
+      } else if (state.mode === 'play' && allowsTeleport(state.gameplayMode)) {
         state.setShopOpen(false);
         clearInput();
         state.setTeleportOpen(false);
@@ -205,6 +205,10 @@ export function initInput() {
     if (event.code === 'KeyT') {
       event.preventDefault();
       const state = useGameStore.getState();
+      if (!allowsTeleport(state.gameplayMode)) {
+        state.setTeleportOpen(false);
+        return;
+      }
       if (state.teleportOpen) {
         state.setTeleportOpen(false);
         void requestPlay();
