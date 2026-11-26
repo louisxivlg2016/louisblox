@@ -98,7 +98,7 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
         const side = part.startsWith('left') ? -1 : 1;
         const lowerLeg = part.endsWith('LowerLeg');
         const pivotY = floor + height * (part === 'head' ? 0.68 : part.endsWith('Arm') ? 0.7 : lowerLeg ? 0.24 : (outfit === 'trader' || outfit === 'king') ? 0.48 : 0.36);
-        const pivotX = part === 'head' ? 0 : side * width * (part.endsWith('Arm') ? 0.27 : 0.12);
+        const pivotX = part === 'head' ? 0 : side * width * (part.endsWith('Arm') ? 0.27 : (outfit === 'trader' || outfit === 'king') ? 0.16 : 0.12);
         let pivot = rig[part];
         if (!pivot) {
           pivot = new Group();
