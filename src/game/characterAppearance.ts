@@ -258,7 +258,7 @@ export function colorCharacterMaterial(source: Material & { map?: import('three'
         ? eyes
         : eyebrowMask[index + 3] > 0 && eyebrowPixel(red, green, blue)
           ? eyebrows
-          : hairMask[index + 3] > 0 && !skinPixel(red, green, blue) && hairPixel(red, green, blue, allowGrayHair, outfit === 'footballer' || outfit === 'classic-girl') ? hair
+          : hairMask[index + 3] > 0 && !skinPixel(red, green, blue) && hairPixel(red, green, blue, allowGrayHair, outfit === 'footballer' || outfit === 'classic-girl' || outfit === 'classic-boy') ? hair
             : uniformPixel ? uniform : null;
     if (!target) continue;
     if (target === eyebrows) eyebrowPixels += 1;
