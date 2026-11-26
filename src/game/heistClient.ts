@@ -8,12 +8,14 @@ import { useBattleStore, respawnAtBase } from './battle';
 import { Player, PlayerBody, PlayerPosition, PlayerVelocity } from './traits';
 import { HEIST_DEPOSIT, HEIST_ENTRIES, HEIST_GUARD_SPAWN, HEIST_HIDEOUT, HEIST_LOOT, HEIST_PRISON_SPAWN, HEIST_TUNNEL_EXIT } from './heistCity';
 import type { HeistEntry, HeistLoot } from './heistCity';
-import { addVoxel, getBlockIndex, loadChunk, removeVoxel, replaceVoxel } from './chunks';
+import { addVoxel, chunkCoordinate, getBlockIndex, loadChunk, removeVoxel, replaceVoxel } from './chunks';
 import { BlockKind, raycastVoxel, voxelKey } from './voxel';
+import { MIN_WORLD_Y } from './levels';
 import { isDoor, isTrapdoor } from './extraBlocks';
 import { translate } from './language';
 import { isDown } from './input';
 import { moveVoxelCharacter } from './systems/collisionSystem';
+import { groundAt } from './vehicles';
 import { fireProjectile } from './systems/projectileSystem';
 import { world } from './world';
 import type { SelectedKind } from './items';
@@ -391,6 +393,9 @@ function updateHeistBot(world: KootaWorld, dt: number, current: typeof initial, 
       position.set(next.x, next.y, next.z);
     }
   }
+  loadChunk(world, chunkCoordinate(position.x), chunkCoordinate(position.z));
+  const ground = groundAt(world, position.x, position.z, position.y + 1.05);
+  if (ground > MIN_WORLD_Y + 0.5) position.y = ground + 0.01;
   if (chasing && distanceToPlayer <= 2 && Date.now() >= nextArrestAt) {
     hits += 1;
     nextArrestAt = Date.now() + 1500;
