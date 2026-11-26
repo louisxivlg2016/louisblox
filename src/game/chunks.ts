@@ -961,6 +961,20 @@ export function loadLevel(world: World, generation = 0, saved: WorldSave | null 
       VehicleHealth(),
     );
   }
+  const parkedCars = gameplayMode === 'heist'
+    ? [{ x: -20, z: 3, color: '#d63935' }, { x: 20, z: -3, color: '#347cd0' }]
+    : gameplayMode === 'roleplay'
+      ? [{ x: -7, z: 8, color: '#347cd0' }, { x: 7, z: -8, color: '#d63935' }]
+      : [];
+  for (const car of parkedCars) {
+    world.spawn(
+      Vehicle({ id: crypto.randomUUID(), color: car.color, kind: 'car' }),
+      VehiclePosition(new Vector3(car.x, 7.51, car.z)),
+      VehicleMotion({ yaw: 0, homeX: car.x, homeY: 7.51, homeZ: car.z, homeYaw: 0 }),
+      VehicleMesh(),
+      VehicleHealth(),
+    );
+  }
   if (gameplayMode === 'pirates') spawnPirateCannons(world);
   if (gameplayMode === 'skyfall' || gameplayMode === 'deep-dive') {
     loadChunk(world, 0, 0);
