@@ -8,7 +8,7 @@ export const HEIST_HIDEOUT = { x: -42, y: 8.51, z: 42 };
 export const HEIST_DEPOSIT = { x: -42, y: 8, z: 42 };
 export const HEIST_PRISON_SPAWN = { x: 30, y: 8.51, z: 34 };
 export const HEIST_GUARD_SPAWN = { x: 35, y: 8.51, z: -25 };
-export const HEIST_TUNNEL_EXIT = { x: -27, y: 8.51, z: 42 };
+export const HEIST_TUNNEL_EXIT = { x: -42, y: 8.51, z: 42 };
 export type HeistLoot = { id: string; building: 'jewelry' | 'museum' | 'bank'; name: string; value: number; x: number; y: number; z: number };
 export const HEIST_LOOT: HeistLoot[] = [
   { id: 'diamonds-1', building: 'jewelry', name: 'Sac de diamants 1', value: 500, x: -40, y: 8, z: -25 },
@@ -188,9 +188,9 @@ export function generateHeistChunk(cx: number, cz: number, seed = 0): GeneratedC
   put(blocks, hiddenChest[0], hiddenChest[1], hiddenChest[2], BlockKind.Chest, false).items = ['pickaxe_stone'];
   for (let y = 1; y <= 3; y += 1) put(blocks, 24, y, 47, BlockKind.GrayBrick, false);
   put(blocks, 23, 2, 47, BlockKind.JungleVine, false, 'east');
-  sewerX(blocks, -27, 24, 47);
-  sewerZ(blocks, 42, 47, -27);
-  ladder(blocks, -27, 42, 2, 8, 'east');
+  sewerX(blocks, -42, 24, 47);
+  sewerZ(blocks, 42, 47, -42);
+  ladder(blocks, -42, 42, 2, 8, 'east');
 
   for (const z of [-8, 8]) sewerX(blocks, -50, 50, z);
   for (const x of [-8, 8]) sewerZ(blocks, -50, 50, x);

@@ -169,7 +169,7 @@ export const BLOCK_HARDNESS = {
 
 export const voxelKey = (x: number, y: number, z: number) => `${x},${y},${z}`;
 
-function raycastSlab(block: Voxel, origin: Vector3, direction: Vector3, entry: number, exit: number, entryNormal: VoxelHit['normal']) {
+function raycastSlab(block: Voxel, origin: Vector3, direction: Vector3, entry: number, exit: number, entryNormal: VoxelHit['normal'], expandY = 0) {
   const wall = block.growth === 2;
   const min = { x: block.x - 0.5, y: block.y - 0.5, z: block.z - 0.5 };
   const max = { x: block.x + 0.5, y: block.y + 0.5, z: block.z + 0.5 };
@@ -179,6 +179,10 @@ function raycastSlab(block: Voxel, origin: Vector3, direction: Vector3, entry: n
   else if (wall) min.z = block.z + 0.32;
   if (!wall && block.growth === 1) min.y = block.y + 0.32;
   else if (!wall) max.y = block.y - 0.32;
+  if (expandY > 0) {
+    min.y = block.y - 0.5;
+    max.y = block.y + 0.5 + expandY;
+  }
 
   let near = Math.max(0, entry);
   let far = exit;
@@ -205,6 +209,10 @@ function raycastSlab(block: Voxel, origin: Vector3, direction: Vector3, entry: n
   return { distance: near, normal };
 }
 
+function raycastDoor(block: Voxel, origin: Vector3, direction: Vector3, entry: number, exit: number, entryNormal: VoxelHit['normal']) {
+  return raycastSlab({ ...block, y: block.y + 1 }, origin, direction, entry, exit, entryNormal, 1);
+}
+
 export function raycastVoxel(
   blocks: Map<string, Voxel>,
   origin: Vector3,
@@ -229,9 +237,15 @@ export function raycastVoxel(
   let normal = { x: 0, y: 0, z: 0 };
 
   for (let steps = 0; steps < 128 && distance <= maxDistance; steps += 1) {
-    const block = blocks.get(voxelKey(x, y, z));
+    const direct = blocks.get(voxelKey(x, y, z));
+    const block = direct ?? [y - 1, y + 1].map((height) => blocks.get(voxelKey(x, height, z))).find((candidate) => candidate && isDoor(candidate.kind));
     if (block !== undefined && (includeWater || !isWaterBlock(block.kind)) && (!block.open || isDoor(block.kind) || isTrapdoor(block.kind))) {
       const exit = Math.min(maxX, maxY, maxZ, maxDistance);
+      if (isDoor(block.kind)) {
+        const doorHit = raycastDoor(block, origin, direction, distance, exit, normal);
+        if (doorHit) return { block, x: block.x, y: block.y, z: block.z, normal: doorHit.normal, distance: doorHit.distance };
+        continue;
+      }
       const slabHit = isSlab(block.kind) ? raycastSlab(block, origin, direction, distance, exit, normal) : null;
       if (!isSlab(block.kind)) return { block, x, y, z, normal, distance };
       if (slabHit) return { block, x, y, z, normal: slabHit.normal, distance: slabHit.distance };

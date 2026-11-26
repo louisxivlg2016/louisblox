@@ -362,6 +362,26 @@ export function ensureChunkDepth(world: World, cx: number, cz: number, fromY: nu
   touchChunk(entity);
 }
 
+function collapseVerticalDoors(blocks: Voxel[]) {
+  const doors = new Map<string, Voxel>();
+  const result: Voxel[] = [];
+  for (const block of blocks) {
+    if (!isDoor(block.kind)) {
+      result.push(block);
+      continue;
+    }
+    const key = `${block.x},${block.z},${block.kind}`;
+    const existing = doors.get(key);
+    if (!existing || block.y < existing.y) doors.set(key, block);
+  }
+  for (const block of result) doors.set(`${block.x},${block.z},${block.kind}`, block);
+  for (const block of blocks) {
+    if (isDoor(block.kind)) continue;
+    result.push(block);
+  }
+  return [...doors.values(), ...result];
+}
+
 export function loadChunk(world: World, cx: number, cz: number) {
   const state = stateFor(world);
   const key = chunkKey(cx, cz);
@@ -390,6 +410,9 @@ export function loadChunk(world: World, cx: number, cz: number) {
       }
     }
   }
+  const collapsedBlocks = collapseVerticalDoors([...blockMap.values()]);
+  blockMap.clear();
+  for (const block of collapsedBlocks) blockMap.set(voxelKey(block.x, block.y, block.z), block);
   for (const block of blockMap.values()) {
     if (isPirateSeabed(block)) block.protected = true;
   }
@@ -759,6 +782,7 @@ export function addVoxel(world: World, x: number, y: number, z: number, kind: Bl
   if (existing && isFireBlock(existing.kind) && isWaterBlock(kind)) extinguishFireAt(world, x, y, z);
   else if (existing && !isWaterBlock(existing.kind)) return;
   if (existing) data.blocks = data.blocks.filter((block) => voxelKey(block.x, block.y, block.z) !== position);
+  if (isDoor(kind) && [...state.blocks.values()].some((other) => other.x === x && other.z === z && other.kind === kind)) return;
 
   const block: Voxel = { x, y, z, kind, ...(protectedBlock ? { protected: true } : {}) };
   if (isCrop(kind) || isGrassPlate({ kind, growth }) || (isStair(kind) || isSlab(kind)) && growth !== undefined) block.growth = growth ?? 3;

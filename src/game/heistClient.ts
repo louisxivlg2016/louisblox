@@ -145,7 +145,7 @@ function nearestEntry(world: KootaWorld, position: Vector3) {
 const preloadedTunnels = new WeakSet<KootaWorld>();
 export function preloadHeistTunnel(world: KootaWorld) {
   if (preloadedTunnels.has(world)) return;
-  for (let cx = -2; cx <= 3; cx += 1) for (let cz = 1; cz <= 3; cz += 1) loadChunk(world, cx, cz);
+  for (let cx = -3; cx <= 3; cx += 1) for (let cz = 1; cz <= 3; cz += 1) loadChunk(world, cx, cz);
   preloadedTunnels.add(world);
 }
 

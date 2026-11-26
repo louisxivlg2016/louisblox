@@ -170,6 +170,10 @@ export function WorldEditor({ blocks, terrain, images = [], characters = [], see
     onChange(next);
   };
   const put = (x: number, y: number, z: number, kind = selected, normal = { x: 0, y: 1, z: 0 }) => {
+    if (isDoor(kind) && blocks.some((block) => block.x === x && block.z === z && block.kind === kind)) {
+      setMessage(translate('Une seule porte par entrée.', 'Only one door per entrance.'));
+      return;
+    }
     const limit = infinite ? INFINITE_EDITOR_COORDINATE : CUSTOM_WORLD_RADIUS;
     if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y) || !Number.isSafeInteger(z) || Math.abs(x) > limit || Math.abs(z) > limit || y < 1 || y > CUSTOM_WORLD_MAX_Y) {
       setMessage(infinite ? translate('Coordonnées entières trop grandes. Y doit être entre 1 et 48.', 'Integer coordinates are too large. Y must be between 1 and 48.') : translate('Coordonnées : x et z de -32 à 32, y de 1 à 48.', 'Coordinates: x and z from -32 to 32, y from 1 to 48.'));
