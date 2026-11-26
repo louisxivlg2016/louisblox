@@ -62,7 +62,7 @@ import { ConstructionPanel } from './ConstructionPanel';
 import { BlueprintControls } from './BlueprintControls';
 import { CompanionPanel } from './CompanionPanel';
 import { useCompanionMenuStore } from '../game/companionMenu';
-import { allowsBackpack, allowsTeleport } from '../game/worldMode';
+import { allowsBackpack, allowsConstruction, allowsTeleport } from '../game/worldMode';
 
 export function Hud() {
   const language = useLanguageStore((state) => state.language);
@@ -136,7 +136,7 @@ export function Hud() {
           {miningProgress > 0 && <div className="mining-meter"><div className="mining-fill" style={{ width: `${miningProgress * 100}%` }} /></div>}
           {allowsBackpack(gameplayMode) && <button className="backpack-toggle" onClick={openBackpack} aria-label={translate('Sac à dos', 'Backpack')}><img src={translate(backpackButtonFrUrl, backpackButtonEnUrl, backpackButtonEsUrl)} alt="" /></button>}
           {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="shop-toggle" onClick={openShop} aria-label={translate('Boutique', 'Shop')}><img src={translate(shopButtonFrUrl, shopButtonEnUrl, shopButtonEsUrl)} alt="" /></button>}
-          {!['pirates', 'football', 'maze', 'battle'].includes(gameplayMode) && <button className="construction-toggle" onClick={openConstruction} aria-label={translate('Construction · C', 'Construction · C')}><img src={constructionButtonUrl} alt={translate('Construction', 'Construction')} /></button>}
+          {allowsConstruction(gameplayMode) && <button className="construction-toggle" onClick={openConstruction} aria-label={translate('Construction · C', 'Construction · C')}><img src={constructionButtonUrl} alt={translate('Construction', 'Construction')} /></button>}
           {allowsTeleport(gameplayMode) && <button className="teleport-toggle" onClick={openTeleport} aria-label={translate('Téléportation · T', 'Teleportation · T')}>{language === 'es' ? <span className="localized-button-text">TELETRANSPORTE · T</span> : <img src={teleportButtonUrl} alt={translate('Téléportation · T', 'Teleportation · T')} />}</button>}
           {multiplayerReady && <button className="tribe-toggle" onClick={openTribe} aria-label={translate('Ouvrir ma tribu', 'Open my tribe')}>{language === 'es' ? <span className="localized-button-text">TRIBU</span> : <img src={tribeButtonUrl} alt="TRIBU" />}{tribeInvitations > 0 && <span className="tribe-invitation-count">{tribeInvitations}</span>}</button>}
           {notice && <div className="game-notice">{notice}</div>}

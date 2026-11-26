@@ -7,7 +7,7 @@ import { isPaintballGun } from './paintball';
 import { useTradeStore } from './trading';
 import { useHomeStore } from './homes';
 import { useMultiplayerStore } from './multiplayerStore';
-import { allowsTeleport, isMultiplayerOnlyMode } from './worldMode';
+import { allowsConstruction, allowsTeleport, isMultiplayerOnlyMode } from './worldMode';
 import { honk, toggleHeadlights, toggleSiren, useVehicleControls } from './vehicleControls';
 import { useConstructionStore } from './constructions';
 import { placeNextBlueprintBlock } from './blueprints';
@@ -170,7 +170,7 @@ export function initInput() {
     if (event.code === 'KeyC' && !event.repeat) {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLElement && event.target.isContentEditable) return;
       const state = useGameStore.getState();
-      if (!['creative', 'survival', 'city-ancient', 'city-modern', 'planet', 'deep-dive', 'roleplay'].includes(state.gameplayMode)) return;
+      if (!allowsConstruction(state.gameplayMode)) return;
       event.preventDefault();
       const construction = useConstructionStore.getState();
       if (construction.open) {

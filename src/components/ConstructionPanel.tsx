@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { CONSTRUCTION_INFO, purchaseConstruction, useConstructionStore } from '../game/constructions';
 import type { ConstructionKind } from '../game/constructions';
 import { requestPlay } from '../game/input';
@@ -8,17 +9,22 @@ import { selectedItemPrice, sellSelectedItem } from '../game/shops';
 import { sellableInventoryCount } from '../game/inventory';
 import { selectionInfo } from '../game/items';
 import { ItemIcon } from './ItemIcon';
+import { allowsConstruction } from '../game/worldMode';
 
 export function ConstructionPanel() {
   const open = useConstructionStore((state) => state.open);
   const setOpen = useConstructionStore((state) => state.setOpen);
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
+  useEffect(() => {
+    if (!allowsConstruction(gameplayMode)) setOpen(false);
+  }, [gameplayMode, setOpen]);
   const coins = useGameStore((state) => state.coins);
   const selected = useGameStore((state) => state.selected);
   const price = selectedItemPrice(selected);
   const count = sellableInventoryCount(selected, useGameStore.getState());
   const stock = count;
   const canSell = price > 0 && stock > 0;
-  if (!open) return null;
+  if (!open || !allowsConstruction(gameplayMode)) return null;
   const close = () => {
     setOpen(false);
     void requestPlay();

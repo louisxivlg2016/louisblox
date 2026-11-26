@@ -1,10 +1,13 @@
 import { useBlueprintStore } from '../game/blueprints';
 import { BLOCK_INFO } from '../game/voxel';
 import { blockGeometry } from '../game/textures';
+import { allowsConstruction } from '../game/worldMode';
+import { useGameStore } from '../game/store';
 
 export function ConstructionGuide() {
   const active = useBlueprintStore((state) => state.active);
-  if (!active) return null;
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
+  if (!active || !allowsConstruction(gameplayMode)) return null;
   return (
     <group name="construction-blueprint">
       {active.blocks.slice(active.index, active.index + 6).map((block, offset) => (

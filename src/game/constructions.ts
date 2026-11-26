@@ -3,6 +3,7 @@ import type { World } from 'koota';
 import { startBlueprint } from './blueprints';
 import { translate } from './language';
 import { useGameStore } from './store';
+import { allowsConstruction } from './worldMode';
 
 export type ConstructionKind = 'church' | 'farm' | 'paris' | 'skyscraper' | 'villa';
 
@@ -18,7 +19,7 @@ export const CONSTRUCTION_INFO = () => ({
 
 export function purchaseConstruction(world: World, kind: ConstructionKind) {
   const store = useGameStore.getState();
-  if (!['creative', 'survival', 'city-ancient', 'city-modern'].includes(store.gameplayMode)) return false;
+  if (!allowsConstruction(store.gameplayMode)) return false;
   const info = CONSTRUCTION_INFO()[kind];
   if (!store.spendCoins(info.cost)) {
     store.setNotice(translate(`Il te faut ${info.cost} pièces pour cette construction.`, `You need ${info.cost} coins for this construction.`));

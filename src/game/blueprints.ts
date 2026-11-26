@@ -9,6 +9,7 @@ import { Player, PlayerPosition, PlayerState } from './traits';
 import { voxelKey } from './voxel';
 import type { Voxel } from './voxel';
 import { world } from './world';
+import { allowsConstruction } from './worldMode';
 
 export type BlueprintKind = 'church' | 'farm' | 'paris' | 'skyscraper' | 'villa';
 type Blueprint = { kind: BlueprintKind; worldId: string; anchorX: number; anchorZ: number; ground: number; quarter: number; blocks: Voxel[]; index: number };
@@ -71,6 +72,7 @@ function persist(active: Blueprint | null) {
 }
 
 export function startBlueprint(world: World, kind: BlueprintKind) {
+  if (!allowsConstruction(useGameStore.getState().gameplayMode)) return false;
   stopAutoBuild();
   const placement = computePlacement(world, kind);
   if (!placement) return false;
@@ -82,6 +84,7 @@ export function startBlueprint(world: World, kind: BlueprintKind) {
 }
 
 export function resumeBlueprint(world: World) {
+  if (!allowsConstruction(useGameStore.getState().gameplayMode)) return;
   const current = useBlueprintStore.getState().active;
   const worldId = useGameStore.getState().worldId;
   if (current?.worldId === worldId) return;
@@ -97,6 +100,7 @@ export function resumeBlueprint(world: World) {
 }
 
 export function placeNextBlueprintBlock() {
+  if (!allowsConstruction(useGameStore.getState().gameplayMode)) return false;
   const active = useBlueprintStore.getState().active;
   if (!active || active.index >= active.blocks.length || useBlueprintStore.getState().autoBuilding) return false;
   const block = active.blocks[active.index];
@@ -110,6 +114,7 @@ export function placeNextBlueprintBlock() {
 }
 
 export function autoBuildBlueprint() {
+  if (!allowsConstruction(useGameStore.getState().gameplayMode)) return false;
   const active = useBlueprintStore.getState().active;
   if (!active || active.index >= active.blocks.length || autoBuildTimer) return false;
   ensureBlueprintChunks(active.blocks);
@@ -119,7 +124,7 @@ export function autoBuildBlueprint() {
   useBlueprintStore.setState({ autoBuilding: true });
   const tick = () => {
     const current = useBlueprintStore.getState().active;
-    if (!current || current.worldId !== active.worldId) {
+    if (!current || current.worldId !== active.worldId || !allowsConstruction(useGameStore.getState().gameplayMode)) {
       stopAutoBuild();
       return;
     }
@@ -146,6 +151,7 @@ export function autoBuildBlueprint() {
 }
 
 export function moveBlueprint(world: World) {
+  if (!allowsConstruction(useGameStore.getState().gameplayMode)) return false;
   const active = useBlueprintStore.getState().active;
   if (!active || active.index > 0 || useBlueprintStore.getState().autoBuilding) return false;
   const placement = computePlacement(world, active.kind);

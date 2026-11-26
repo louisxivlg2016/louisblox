@@ -5,14 +5,16 @@ import { selectionInfo } from '../game/items';
 import { translate } from '../game/language';
 import { useGameStore } from '../game/store';
 import { world } from '../game/world';
+import { allowsConstruction } from '../game/worldMode';
 
 export function BlueprintControls() {
   const worldId = useGameStore((state) => state.worldId);
   const mode = useGameStore((state) => state.mode);
+  const gameplayMode = useGameStore((state) => state.gameplayMode);
   const active = useBlueprintStore((state) => state.active);
   const autoBuilding = useBlueprintStore((state) => state.autoBuilding);
   useEffect(() => resumeBlueprint(world), [worldId]);
-  if (!active || mode !== 'play') return null;
+  if (!active || mode !== 'play' || !allowsConstruction(gameplayMode)) return null;
   const block = active.blocks[active.index];
   return (
     <div className="blueprint-controls" data-blueprint-controls>
