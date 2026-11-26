@@ -1,14 +1,12 @@
 import { create } from 'zustand';
 import type { World } from 'koota';
-import { DEEP_CHESTS, DEEP_SPAWN, DEEP_SURFACE_Y, DEEP_VENDOR } from './deepArena';
+import { DEEP_CHESTS, DEEP_SURFACE_Y, DEEP_VENDOR } from './deepArena';
 import { addVoxel, getBlockIndex, removeVoxel } from './chunks';
-import { getSwimState } from './swimming';
 import { Player, PlayerPosition } from './traits';
 import { useGameStore } from './store';
 import { BlockKind, voxelKey } from './voxel';
 import { releasePointerForOverlay } from './input';
 import { readModeProgress, writeModeProgress } from './modeProgress';
-import { respawnAtBase } from './battle';
 import { world } from './world';
 import { translate } from './language';
 
@@ -92,26 +90,17 @@ export function buyDeepOxygen() {
   persist();
 }
 
-export function deepControlSystem(world: World, dt: number, actions: { harvest: number; tap: number; interact: number }) {
+export function deepControlSystem(world: World, _dt: number, actions: { harvest: number; tap: number; interact: number }) {
   if (useGameStore.getState().gameplayMode !== 'deep-dive') return false;
   ensureDeep();
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return true;
   const state = useDeepStore.getState();
-  const swimming = getSwimState(getBlockIndex(world), player);
   const maximum = deepMaxOxygen(state.gear);
-  const oxygen = swimming.underwater ? Math.max(0, state.oxygen - dt) : Math.max(state.oxygen, maximum);
+  const oxygen = Math.max(state.oxygen, maximum);
   const depth = Math.max(0, DEEP_SURFACE_Y - player.y);
   const now = Date.now();
   useDeepStore.setState({ oxygen, depth });
-  if (oxygen <= 0) {
-    const findings = Math.floor(state.findings / 2);
-    useDeepStore.setState({ findings, oxygen: maximum });
-    respawnAtBase(world, null, DEEP_SPAWN);
-    useGameStore.getState().setNotice(translate('Oxygène épuisé · la moitié des trouvailles est perdue.', 'Out of oxygen · half of your findings were lost.'));
-    persist();
-    return true;
-  }
   if (nearVendor(player) && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0)) {
     useGameStore.setState({ shopOpen: true, mode: 'pause' });
     releasePointerForOverlay();

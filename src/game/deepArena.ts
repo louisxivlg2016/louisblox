@@ -38,6 +38,7 @@ export function generateDeepChunk(cx: number, cz: number): GeneratedChunk {
     const floor = radius < 12 ? 14 : radius < 24 ? 8 : radius < 30 ? 0 : -4;
     put(blocks, cx, cz, x, floor, z, radius < 24 ? BlockKind.Sand : BlockKind.Stone, true);
     for (let y = floor + 1; y <= 18; y += 1) put(blocks, cx, cz, x, y, z, BlockKind.CalmWater);
+    if (x === -40 || x === 39 || z === -40 || z === 39) for (let y = -4; y <= 19; y += 1) put(blocks, cx, cz, x, y, z, BlockKind.Sand, true);
   }
   for (let x = -2; x <= 2; x += 1) for (let z = -2; z <= 2; z += 1) put(blocks, cx, cz, x, 18, z, BlockKind.OakPlanks, true);
   put(blocks, cx, cz, DEEP_VENDOR.x, 18, DEEP_VENDOR.z, BlockKind.Chest, true);
