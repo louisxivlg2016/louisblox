@@ -103,7 +103,7 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
     const sitting = seated || emote === 'sit' || Boolean(mounted?.vehicle && !walking);
     group.current.position.y = sitting ? -0.18 : 0;
     group.current.userData.gesture = sitting ? 'sit' : emote;
-    const turning = Boolean(state && previousLook.current && (Math.abs(state.yaw - previousLook.current.yaw) > 0.0005 || Math.abs(state.pitch - previousLook.current.pitch) > 0.0005));
+    const turning = Boolean(state && previousLook.current && Math.abs(state.pitch - previousLook.current.pitch) > 0.0005);
     if (state) previousLook.current = { yaw: state.yaw, pitch: state.pitch };
     animateCharacterRig(character, performance.now() / 1000, walking, jumping, sitting, Math.min(delta, 0.05), eating);
     headIdle.update(delta, turning);
