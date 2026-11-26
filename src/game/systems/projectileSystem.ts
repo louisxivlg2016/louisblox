@@ -1,6 +1,6 @@
 import type { World } from 'koota';
 import { Vector3 } from 'three';
-import { getBlockIndex, explodeVoxels } from '../chunks';
+import { getBlockIndex, explodeVoxels, removeVoxel } from '../chunks';
 import { damageAnimal, findAnimalTarget } from '../combat';
 import { damageCreaturesInRadius } from '../hazards';
 import { damageBattlePlayersInRadius, findBattleTarget } from '../battleCombat';
@@ -58,7 +58,7 @@ export function detonateProjectile(world: World, position: Vector3, damagePlayer
   explodeVoxels(world, position.x, position.y, position.z, pirates ? 1.6 : 2.8);
   damageCreaturesInRadius(world, position, pirates ? 2.5 : 4.5);
   damagePirateObjectivesInRadius(position, pirates ? 2 : 3.5);
-  if (pirates) damagePirateFortressWalls(world, position, 1.6);
+  if (pirates) damagePirateFortressWalls(world, getBlockIndex(world), (block) => removeVoxel(world, { block, x: block.x, y: block.y, z: block.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, true), position, 1.6);
   if (damagePlayers) damageBattlePlayersInRadius(world, position, pirates ? 2 : 3.5);
   world.spawn(
     Explosion({ time: 0.45, maxTime: 0.45 }),
