@@ -43,7 +43,7 @@ function house(blocks: Voxel[], cx: number, cz: number, x: number, z: number, he
   put(blocks, cx, cz, x + 2, roofY + 2, z - 2, BlockKind.GrayBrick);
   put(blocks, cx, cz, x, roofY + 1, z, BlockKind.Chest);
   if (name) {
-    const sign = put(blocks, cx, cz, x, 9, z + 6, BlockKind.Sign, true, 'south');
+    const sign = put(blocks, cx, cz, x + 2, 9, z + 6, BlockKind.Sign, true, 'south');
     if (sign) sign.text = name;
   }
   for (let step = 0; step < 3; step += 1) put(blocks, cx, cz, x - 2, roofY + 1 + step, z + 4 + step, BlockKind.OakPlanks);
