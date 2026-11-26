@@ -3,6 +3,26 @@ import type { GeneratedChunk } from './levels';
 import { BlockKind } from './voxel';
 import type { Voxel } from './voxel';
 import { PIRATE_CHEST_OFFSETS } from './pirateShipGeometry';
+import { getBlockIndex, removeVoxel } from './chunks';
+import { voxelKey } from './voxel';
+import type { World } from 'koota';
+
+const wallHits = new WeakMap<World, Map<string, number>>();
+
+export function damagePirateFortressWalls(world: World, position: { x: number; y: number; z: number }, radius = 1.6) {
+  const hits = wallHits.get(world) ?? new Map<string, number>();
+  for (const block of [...getBlockIndex(world).values()]) {
+    if (block.kind !== BlockKind.GrayBrick && block.kind !== BlockKind.Stone || Math.hypot(block.x - position.x, block.y - position.y, block.z - position.z) > radius) continue;
+    const key = voxelKey(block.x, block.y, block.z);
+    const count = (hits.get(key) ?? 0) + 1;
+    hits.set(key, count);
+    if (count >= 20) {
+      removeVoxel(world, { block, x: block.x, y: block.y, z: block.z, normal: { x: 0, y: 1, z: 0 }, distance: 0 }, true);
+      hits.delete(key);
+    }
+  }
+  wallHits.set(world, hits);
+}
 
 export function pirateFortressSpawn(team: 'red' | 'blue' | null) {
   return { x: team === 'red' ? -18 : 18, y: 9.51, z: 3 };

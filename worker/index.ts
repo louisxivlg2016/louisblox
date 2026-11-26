@@ -362,6 +362,7 @@ export class GameRoom extends DurableObject<Env> {
   private battleHits = new Map<string, number>();
   private pirates = new PirateEngine({
     mode: () => this.gameplayMode,
+    template: () => this.worldTemplate,
     players: () => this.ctx.getWebSockets().flatMap((socket) => {
       const attachment = this.attachment(socket);
       return attachment ? [{ socket, attachment }] : [];

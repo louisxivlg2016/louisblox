@@ -13,6 +13,7 @@ import { spawnPaintSplash } from '../paintball';
 import { raycastPaintSurface } from '../paintSurface';
 import { playSound } from '../audio';
 import { damagePirateObjectivesInRadius } from '../piratesClient';
+import { damagePirateFortressWalls } from '../pirateFortress';
 import { useGameStore } from '../store';
 import { damageHeistBot, findHeistBotTarget } from '../heistCombat';
 
@@ -57,6 +58,7 @@ export function detonateProjectile(world: World, position: Vector3, damagePlayer
   explodeVoxels(world, position.x, position.y, position.z, pirates ? 1.6 : 2.8);
   damageCreaturesInRadius(world, position, pirates ? 2.5 : 4.5);
   damagePirateObjectivesInRadius(position, pirates ? 2 : 3.5);
+  if (pirates) damagePirateFortressWalls(world, position, 1.6);
   if (damagePlayers) damageBattlePlayersInRadius(world, position, pirates ? 2 : 3.5);
   world.spawn(
     Explosion({ time: 0.45, maxTime: 0.45 }),

@@ -1,4 +1,5 @@
 import { generatePirateChunk } from '../src/game/pirates';
+import { generatePirateFortressChunk } from '../src/game/pirateFortress';
 import { BlockKind } from '../src/game/voxel';
 import { PIRATE_CHEST_OFFSETS } from '../src/game/pirateShipGeometry';
 import type { PlayerAttachment } from './index';
@@ -10,6 +11,7 @@ type PlayerSocket = { socket: WebSocket; attachment: PlayerAttachment };
 
 type PirateRoom = {
   mode: () => string;
+  template: () => string;
   players: () => PlayerSocket[];
   health: Map<string, number>;
   scores: Map<string, number>;
@@ -44,6 +46,7 @@ export class PirateEngine {
   private kits = new Map<string, PirateKit>();
   private coins = new Map<string, number>();
   private objectives: Record<Team, number> = { red: 6, blue: 6 };
+  private wallHits = new Map<string, number>();
   private eliminated = new Set<string>();
   private winner: Team | null = null;
   private coinsAt = 0;
@@ -54,6 +57,7 @@ export class PirateEngine {
     this.kits.clear();
     this.coins.clear();
     this.objectives = { red: 6, blue: 6 };
+    this.wallHits.clear();
     this.eliminated.clear();
     this.winner = null;
     this.coinsAt = 0;
@@ -61,7 +65,8 @@ export class PirateEngine {
 
   restore(value: unknown) {
     if (!value || typeof value !== 'object') return;
-    const state = value as { kits?: Array<[string, PirateKit]>; coins?: Array<[string, number]>; objectives?: Record<Team, number>; eliminated?: string[]; winner?: Team; coinsAt?: number };
+    const state = value as { kits?: Array<[string, PirateKit]>; coins?: Array<[string, number]>; objectives?: Record<Team, number>; eliminated?: string[]; winner?: Team; coinsAt?: number; wallHits?: Array<[string, number]> };
+    this.wallHits = new Map(state.wallHits ?? []);
     this.kits = new Map(state.kits ?? []);
     this.coins = new Map(state.coins ?? []);
     if (state.objectives) this.objectives = { red: Math.max(0, state.objectives.red ?? 6), blue: Math.max(0, state.objectives.blue ?? 6) };
@@ -71,7 +76,7 @@ export class PirateEngine {
   }
 
   snapshot() {
-    return { kits: [...this.kits], coins: [...this.coins], objectives: this.objectives, eliminated: [...this.eliminated], winner: this.winner, coinsAt: this.coinsAt };
+    return { kits: [...this.kits], coins: [...this.coins], objectives: this.objectives, eliminated: [...this.eliminated], winner: this.winner, coinsAt: this.coinsAt, wallHits: [...this.wallHits] };
   }
 
   message() {
@@ -176,6 +181,27 @@ export class PirateEngine {
   explode(position: { x: number; y: number; z: number }) {
     if (this.room.mode() !== 'pirates') return;
     const radius = 1.6;
+    if (this.room.template() === 'fortress') {
+      const edits = new Map<string, null>();
+      for (let cx = Math.floor((position.x - radius + 8) / 16); cx <= Math.floor((position.x + radius + 8) / 16); cx++) {
+        for (let cz = Math.floor((position.z - radius + 8) / 16); cz <= Math.floor((position.z + radius + 8) / 16); cz++) {
+          for (const block of generatePirateFortressChunk(cx, cz).blocks) {
+            if (block.kind !== BlockKind.GrayBrick && block.kind !== BlockKind.Stone || Math.hypot(block.x - position.x, block.y - position.y, block.z - position.z) > radius) continue;
+            const key = `${block.x},${block.y},${block.z}`;
+            const count = (this.wallHits.get(key) ?? 0) + 1;
+            if (count >= 20) {
+              edits.set(key, null);
+              this.wallHits.delete(key);
+            } else this.wallHits.set(key, count);
+          }
+        }
+      }
+      for (const [key, value] of edits) this.room.setEdit(key, value);
+      if (edits.size > 0) this.room.broadcast({ type: 'edits', edits: [...edits] });
+      void this.room.save();
+      this.update();
+      return;
+    }
     const edits = new Map<string, null>();
     for (let cx = Math.floor((position.x - radius + 8) / 16); cx <= Math.floor((position.x + radius + 8) / 16); cx++) {
       for (let cz = Math.floor((position.z - radius + 8) / 16); cz <= Math.floor((position.z + radius + 8) / 16); cz++) {
