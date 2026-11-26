@@ -6,7 +6,7 @@ import type { Entity } from 'koota';
 import { Box3, BoxGeometry, CanvasTexture, Color, InstancedMesh, Matrix4, MeshBasicMaterial, PlaneGeometry, Vector3 } from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { Fire, FirePosition, Player, PlayerPosition } from '../game/traits';
-import redFireUrl from '../../assets/models/red-fire.glb';
+import redFireUrl from '../../assets/models/hunyuan-fire.glb';
 
 const geometry = new BoxGeometry(1, 1, 1);
 const matrix = new Matrix4();
@@ -93,7 +93,7 @@ function createSmokeTexture() {
   return new CanvasTexture(canvas);
 }
 
-function SmokeInstances({ fires }: { fires: readonly Entity[] }) {
+function SmokeInstances({ fires, main }: { fires: readonly Entity[]; main?: Entity }) {
   const smoke = useRef<InstancedMesh>(null);
   const capacity = Math.max(SMOKE_CAPACITY, fires.length * SMOKE_PUFFS);
   const smokeMaterial = useMemo(() => new MeshBasicMaterial({ map: createSmokeTexture(), transparent: true, opacity: 0.68, depthWrite: false, alphaTest: 0.004 }), []);
@@ -111,7 +111,7 @@ function SmokeInstances({ fires }: { fires: readonly Entity[] }) {
       const fire = entity.get(Fire);
       const position = entity.get(FirePosition);
       if (!fire || !position) continue;
-      const flameScale = 1.2 + fire.age / 20;
+      const flameScale = entity === main ? Math.min(3, 1.2 + fire.age / 20) : 0.65;
       const offset = ((position.x * 0.17 + position.z * 0.29) % 1 + 1) % 1;
       for (let puff = 0; puff < SMOKE_PUFFS && index < capacity; puff += 1) {
         const progress = (time * 0.17 + puff / SMOKE_PUFFS + offset) % 1;
@@ -141,7 +141,7 @@ function SmokeInstances({ fires }: { fires: readonly Entity[] }) {
   return <instancedMesh name="fire-smoke" ref={smoke} args={[smokeGeometry, smokeMaterial, capacity]} count={0} frustumCulled={false} dispose={null} />;
 }
 
-function RedFlame({ entity }: { entity: Entity }) {
+function RedFlame({ entity, main }: { entity: Entity; main: boolean }) {
   const group = useRef<import('three').Group>(null);
   const { scene } = useGLTF(redFireUrl);
   const { model, center, minY, height } = useMemo(() => {
@@ -154,7 +154,7 @@ function RedFlame({ entity }: { entity: Entity }) {
     const fire = entity.get(Fire);
     const position = entity.get(FirePosition);
     if (!group.current || !fire || !position) return;
-    const scale = (1.2 + fire.age / 20) / height;
+    const scale = (main ? Math.min(3, 1.2 + fire.age / 20) : 0.65) / height;
     group.current.scale.setScalar(scale);
     group.current.position.set(position.x, position.y - 0.5, position.z);
     group.current.rotation.y = Math.sin(fire.age * 2) * 0.04;
@@ -174,9 +174,9 @@ export function Fires() {
   const position = nearest?.get(FirePosition);
   return (
     <>
-      <SmokeInstances fires={fires} />
+      <SmokeInstances fires={fires} main={nearest} />
       <Suspense fallback={<FlameInstances fires={fires} />}>
-        {fires.map((entity) => <RedFlame key={entity} entity={entity} />)}
+        {fires.map((entity) => <RedFlame key={entity} entity={entity} main={entity === nearest} />)}
       </Suspense>
       {position && <pointLight position={[position.x, position.y, position.z]} color="#ff632e" intensity={2.2} distance={12} decay={2} />}
     </>

@@ -62,6 +62,7 @@ export function fireSystem(world: World, dt: number) {
   fireHazardSystem(world, dt);
   const fires = world.query(Fire, FirePosition);
   if (fires.length === 0) return;
+  const mainFire = [...fires].sort((a, b) => a.get(FirePosition)!.distanceToSquared(player) - b.get(FirePosition)!.distanceToSquared(player))[0];
 
   batchVoxelEdits(world, () => {
     fires.updateEach(([fire, position]) => {
@@ -82,7 +83,7 @@ export function fireSystem(world: World, dt: number) {
       const fire = entity.get(Fire);
       const position = entity.get(FirePosition);
       if (!fire || !position) return [];
-      return fire.spreadIn <= 0 && blocks.get(voxelKey(position.x, position.y, position.z))?.kind === fire.kind ? [entity] : [];
+      return entity === mainFire && fire.spreadIn <= 0 && blocks.get(voxelKey(position.x, position.y, position.z))?.kind === fire.kind ? [entity] : [];
     });
     for (const entity of candidates) {
       const fire = entity.get(Fire)!;
