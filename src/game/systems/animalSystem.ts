@@ -57,11 +57,8 @@ function blockAt(world: World, x: number, y: number, z: number) {
 const isLoaded = isChunkLoaded;
 
 function bodyClear(world: World, x: number, z: number, feetY: number) {
-  for (const height of [0.35, 1.15]) {
-    const block = blockAt(world, x, feetY + height, z);
-    if (block && !isWaterBlock(block.kind) && isCollidable(block)) return false;
-  }
-  return true;
+  const block = blockAt(world, x, feetY + 0.35, z);
+  return !block || isWaterBlock(block.kind) || !isCollidable(block);
 }
 
 function openBearDoor(world: World, x: number, feetY: number, z: number, kind: AnimalKind) {
@@ -190,7 +187,9 @@ function moveInDirection(world: World, kind: AnimalKind, position: Vector3, moti
   if (!withinHomeBiome(world, entity, x, z)) return false;
   if (!isLoaded(world, x, z)) return false;
   openBearDoor(world, x, position.y, z, kind);
-  const ground = groundAt(world, x, z, position.y + climbRise(entity) + 0.05);
+  const levelGround = groundAt(world, x, z, position.y + 0.49);
+  const levelPassage = walkableGround(world, x, z, levelGround) && levelGround <= position.y + 1.05 && (position.y - levelGround <= MAX_WALK_DOWN || !motion.grounded) && bodyClear(world, x, z, levelGround);
+  const ground = levelPassage ? levelGround : groundAt(world, x, z, position.y + climbRise(entity) + 0.05);
   if (kind === 'zombie' && useGameStore.getState().gameplayMode !== 'planet' && ground > heightAt(Math.round(x), Math.round(z), getWorldSeed(world)) + 1.05) return false;
   if (!walkableGround(world, x, z, ground) || ground > position.y + climbRise(entity) || (position.y - ground > MAX_WALK_DOWN && motion.grounded) || !bodyClear(world, x, z, ground)) return false;
   position.x = x;
