@@ -115,7 +115,7 @@ function updateFires(world: World) {
 }
 
 function spawnThief() {
-  const npc: RoleplayNpc = { id: `thief-${Date.now()}`, kind: 'thief', outfit: 'pirate', x: 0, y: 8.51, z: -6, waypoint: 0, action: 'stealing', wait: 0 };
+  const npc: RoleplayNpc = { id: `thief-${Date.now()}`, kind: 'thief', outfit: 'pirate', x: 0, y: 8.51, z: -16, waypoint: 0, action: 'stealing', wait: 0 };
   useRoleplayLifeStore.setState((state) => ({ npcs: [...state.npcs, npc], nextThiefAt: Date.now() + 25000 }));
   notice('Un voleur tente de voler le marché !', 'A thief is trying to rob the market!');
 }
@@ -185,8 +185,9 @@ export function roleplayLifeSystem(world: World, dt: number) {
   const player = gameWorldPlayer();
   if (!player) return;
   const night = isNight(world);
-  if (night && !state.npcs.some((npc) => npc.kind === 'thief') && Date.now() >= state.nextThiefAt) spawnThief();
-  if (!night && state.npcs.some((npc) => npc.kind === 'thief')) useRoleplayLifeStore.setState({ npcs: state.npcs.filter((npc) => npc.kind !== 'thief') });
+  const police = useRoleplayStore.getState().job === 'police';
+  if ((night || police) && !state.npcs.some((npc) => npc.kind === 'thief') && Date.now() >= state.nextThiefAt) spawnThief();
+  if (!night && !police && state.npcs.some((npc) => npc.kind === 'thief')) useRoleplayLifeStore.setState({ npcs: state.npcs.filter((npc) => npc.kind !== 'thief') });
   if (Date.now() >= state.restockAt) useRoleplayLifeStore.setState({ stock: initialStock(), restockAt: Date.now() + 30000 });
   updateFires(world);
 

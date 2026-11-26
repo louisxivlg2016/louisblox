@@ -97,6 +97,7 @@ export function generateRoleplayChunk(cx: number, cz: number): GeneratedChunk {
     if (x === -26 || x === -14 || z === -26 || z === -14) for (let y = 8; y <= 13; y += 1) put(blocks, cx, cz, x, y, z, BlockKind.ConcreteLightBlue);
   }
   put(blocks, cx, cz, ROLEPLAY_POLICE.x, 8, ROLEPLAY_POLICE.z, BlockKind.Chest);
+  for (let y = 8; y <= 10; y += 1) put(blocks, cx, cz, ROLEPLAY_POLICE.x, y, -14, BlockKind.DoorBlue, false, 'north');
   for (let x = 14; x <= 26; x += 1) for (let z = -26; z <= -14; z += 1) {
     put(blocks, cx, cz, x, 14, z, BlockKind.ConcreteRed);
     if (x === 14 || x === 26 || z === -26 || z === -14) for (let y = 8; y <= 13; y += 1) put(blocks, cx, cz, x, y, z, y % 2 === 0 ? BlockKind.ConcreteRed : BlockKind.WhiteBrick);
