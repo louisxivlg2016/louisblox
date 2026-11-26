@@ -55,6 +55,8 @@ import roleplayUrl from '../../assets/menu/roleplay.webp';
 import { useLanguageStore, translate } from '../game/language';
 import { LanguagePanel } from './LanguagePanel';
 import { PlayerWorlds } from './PlayerWorlds';
+import { clearBattle } from '../game/battle';
+import { clearMinigames } from '../game/minigameSync';
 
 type ModeCard = {
   id?: string;
@@ -173,6 +175,8 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   const create = (gameplayMode: GameplayMode, sharedOverride?: boolean, options?: import('./CreateWorldDialog').CreateWorldOptions) => {
     if (pendingWorld !== null) return;
     if (full) return;
+    clearBattle();
+    clearMinigames();
     const shared = sharedOverride ?? (enabled && gameplayMode !== 'battle');
     if (shared && isMinigameMode(gameplayMode)) {
       requestRoomMode(gameplayMode);
@@ -185,11 +189,11 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
     const template = options?.template ?? (gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : 'nature');
     const names: Record<GameplayMode, string> = { survival: shared ? translate('Survie avec tous les joueurs', 'Survival with every player') : translate('Survie solo', 'Solo Survival'), creative: shared ? translate('Créatif avec tous les joueurs', 'Creative with every player') : translate('Créatif solo', 'Solo Creative'), battle: translate('Bataille', 'Combat'), 'city-ancient': translate('Ville ancienne · 10 km', 'Historic City · 10 km'), 'city-modern': translate('Ville moderne · 10 km', 'Modern City · 10 km'), pirates: shared ? translate('Pirates en équipe', 'Team Pirates') : translate('Pirates solo', 'Solo Pirates'), football: shared ? translate('Match de football', 'Football Match') : translate('Football solo', 'Solo Football'), maze: translate('Course Labyrinthe', 'Maze Race'), heist: translate('Braquage & Évasion', 'Heist & Escape'), delivery: translate('Livraison Express', 'Express Delivery'), skyfall: translate('Ciel qui Tombe', 'Sky Fall'), planet: translate('Mini-Planètes', 'Planet Survival'), 'deep-dive': translate('Chasse au Trésor Sous-Marine', 'Deep Dive'), roleplay: translate('Vie de Ville', 'City Life') };
     const worldName = options?.name.trim().slice(0, 48) || names[gameplayMode];
-    const worldId = options?.multiplayer ? `salon-${crypto.randomUUID().slice(0, 8)}` : normalizeRoomId(worldName);
+    const requestedId = options?.multiplayer ? `salon-${crypto.randomUUID().slice(0, 8)}` : normalizeRoomId(worldName);
+    const worldId = readWorldSave(requestedId) ? `${requestedId}-${crypto.randomUUID().slice(0, 8)}` : requestedId;
     setEnabled(shared);
     if (options) useProtectionStore.getState().setProtection({ ...newProtection(), canBreak: options.canBreak, canPlace: options.canPlace, allowDestructiveFire: options.allowDestructiveFire, allowCampfire: options.allowCampfire, allowFloodingWater: options.allowFloodingWater, allowCalmWater: options.allowCalmWater });
-    if (readWorldSave(worldId)) useGameStore.getState().openWorld(worldId, worldName);
-    else regenerate(gameplayMode, worldId, template, worldName, options?.customWorld);
+    regenerate(gameplayMode, worldId, template, worldName, options?.customWorld);
     if (shared) useGameStore.setState({ worldName });
     if (shared) {
       setPendingWorld(worldId);
