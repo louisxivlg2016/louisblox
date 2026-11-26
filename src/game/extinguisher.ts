@@ -8,6 +8,7 @@ import { getFireSources } from './hazards';
 import { raycastVoxel, voxelKey } from './voxel';
 import { useGameStore } from './store';
 import { translate } from './language';
+import { onRoleplayFireExtinguished } from './roleplayClient';
 
 export type ExtinguisherSpray = { id: number; origin: Vector3; direction: Vector3; age: number };
 export const useExtinguisherStore = create<{ sprays: ExtinguisherSpray[] }>(() => ({ sprays: [] }));
@@ -39,5 +40,6 @@ export function useFireExtinguisher(world: World, origin: Vector3, direction: Ve
   if (block && isFireBlock(block.kind)) removeVoxel(world, { block, x, y, z, normal: { x: 0, y: 1, z: 0 }, distance: target.distance });
   else extinguishFireAt(world, x, y, z);
   useGameStore.getState().setNotice(translate('Feu éteint avec l’extincteur.', 'Fire extinguished with the fire extinguisher.'));
+  onRoleplayFireExtinguished();
   return true;
 }

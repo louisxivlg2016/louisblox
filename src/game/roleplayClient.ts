@@ -8,9 +8,10 @@ import { useMultiplayerStore } from './multiplayerStore';
 import { readModeProgress, writeModeProgress } from './modeProgress';
 import { useCharacterStore } from './characterStore';
 import { world } from './world';
-import { Player, PlayerPosition } from './traits';
+import { Player, PlayerPosition, Vehicle } from './traits';
+import { spawnVehicle } from './vehicles';
 import { translate } from './language';
-import { arrestRoleplayThief, clearRoleplayLife, roleplayLifeSystem } from './roleplayLife';
+import { arrestRoleplayThief, clearRoleplayLife, roleplayLifeSystem, scheduleNextRoleplayFire } from './roleplayLife';
 import { selectedItemPrice } from './shops';
 import { changeInventory, sellableInventoryCount } from './inventory';
 import { selectionInfo } from './items';
@@ -46,13 +47,31 @@ function ensureRoleplay() {
   const job = saved.job === 'miner' || saved.job === 'merchant' || saved.job === 'police' || saved.job === 'builder' || saved.job === 'firefighter' ? saved.job : null;
   useRoleplayStore.setState({ job, coins: typeof saved.coins === 'number' ? Math.max(0, Math.floor(saved.coins)) : 0, workReadyAt: 0, panelOpen: job === null });
   if (job) useCharacterStore.getState().setOutfit(job === 'merchant' ? 'trader' : job === 'police' ? 'police' : job === 'firefighter' ? 'firefighter' : 'worker');
+  ensureFirefighterEquipment();
 }
+
+function ensureFirefighterEquipment() {
+  if (useRoleplayStore.getState().job !== 'firefighter') return;
+  if (!world.query(Vehicle).some((entity) => entity.get(Vehicle)?.kind === 'firetruck')) spawnVehicle(world, 'firetruck', ROLEPLAY_FIRE_STATION.x, 8.5, -10, '#d72b25');
+  const state = useGameStore.getState();
+  if (!state.hotbarSlots.includes('extinguisher')) {
+    const empty = state.hotbarSlots.findIndex((slot) => slot === null);
+    if (empty >= 0) {
+      const hotbarSlots = [...state.hotbarSlots];
+      hotbarSlots[empty] = 'extinguisher';
+      useGameStore.setState({ hotbarSlots, selected: 'extinguisher', selectedSlot: empty });
+    }
+  }
+}
+
 export function chooseRoleplayJob(job: RoleplayJob) {
   ensureRoleplay();
   useRoleplayStore.setState({ job, panelOpen: false });
   useCharacterStore.getState().setOutfit(job === 'merchant' ? 'trader' : job === 'police' ? 'police' : job === 'firefighter' ? 'firefighter' : 'worker');
   if (job === 'police') useGameStore.setState({ hotbarSlots: ['handcuffs', 'pickaxe_wood', ...Array(8).fill(null)], selected: 'handcuffs', selectedSlot: 0 });
   if (job === 'miner') useGameStore.setState({ hotbarSlots: ['pickaxe_iron', ...Array(9).fill(null)], selected: 'pickaxe_iron', selectedSlot: 0 });
+  if (job === 'firefighter') useGameStore.setState({ hotbarSlots: ['extinguisher', ...Array(9).fill(null)], selected: 'extinguisher', selectedSlot: 0 });
+  ensureFirefighterEquipment();
   persist();
 }
 export function roleplayHome() {
@@ -125,11 +144,18 @@ export function sellRoleplaySelected() {
   return true;
 }
 
+export function onRoleplayFireExtinguished() {
+  if (useGameStore.getState().gameplayMode !== 'roleplay' || useRoleplayStore.getState().job !== 'firefighter') return;
+  earnRoleplayCoins(30);
+  scheduleNextRoleplayFire();
+  useGameStore.getState().setNotice(translate('Incendie éteint · +30 pièces.', 'Fire extinguished · +30 coins.'));
+}
+
 export function roleplayControlSystem(world: World, actions: { harvest: number; tap: number; interact: number }, dt: number) {
   if (useGameStore.getState().gameplayMode !== 'roleplay') return false;
   ensureRoleplay();
   if (useRoleplayStore.getState().job === 'police' && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0) && useGameStore.getState().selected === 'handcuffs' && arrestRoleplayThief()) return true;
-  if (['merchant', 'police', 'firefighter'].includes(useRoleplayStore.getState().job ?? '') && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0)) performRoleplayWork();
+  if (['merchant', 'police'].includes(useRoleplayStore.getState().job ?? '') && (actions.harvest > 0 || actions.tap > 0 || actions.interact > 0)) performRoleplayWork();
   roleplayLifeSystem(world, dt);
   const list = respawns.get(world);
   if (list?.length) {

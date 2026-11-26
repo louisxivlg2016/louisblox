@@ -5,7 +5,9 @@ import { getBlockIndex } from './chunks';
 import { groundAt } from './vehicles';
 import { moveVoxelCharacter } from './systems/collisionSystem';
 import { isNight } from './dayNight';
-import { Player, PlayerPosition } from './traits';
+import { Fire, Player, PlayerPosition } from './traits';
+import { addVoxel } from './chunks';
+import { BlockKind } from './voxel';
 import { useGameStore } from './store';
 import { earnRoleplayCoins, useRoleplayStore } from './roleplayClient';
 import { translate } from './language';
@@ -32,7 +34,7 @@ const initialNpcs = (): RoleplayNpc[] => [
   { id: 'walker-3', kind: 'pedestrian', outfit: 'police', x: -8, y: 8.51, z: -24, waypoint: 2, action: 'walking', wait: 0 },
   { id: 'walker-4', kind: 'pedestrian', outfit: 'worker', x: 8, y: 8.51, z: -24, waypoint: 3, action: 'walking', wait: 0 },
 ];
-const initial = () => ({ npcs: initialNpcs(), stock: initialStock(), sales: 0, arrests: 0, nextThiefAt: 0, restockAt: Date.now() + 30000 });
+const initial = () => ({ npcs: initialNpcs(), stock: initialStock(), sales: 0, arrests: 0, nextThiefAt: 0, nextFireAt: Date.now() + 8000, restockAt: Date.now() + 30000 });
 export const useRoleplayLifeStore = create<ReturnType<typeof initial>>(() => initial());
 let loadedWorld = '';
 let noticeAt = 0;
@@ -63,12 +65,27 @@ function move(world: World, npc: RoleplayNpc, target: { x: number; z: number }, 
   if (distance < 0.2) return true;
   const step = Math.min(distance, speed * dt);
   const position = new Vector3(npc.x, npc.y, npc.z);
-  moveVoxelCharacter(getBlockIndex(world), position, { x: dx / distance * step, y: 0, z: dz / distance * step }, true);
-  const ground = groundAt(world, position.x, position.z, position.y + 1.05);
+  moveVoxelCharacter(getBlockIndex(world), position, { x: dx / distance * step, y: 0, z: dz / distance * step }, false);
+  const ground = groundAt(world, position.x, position.z, position.y + 0.49);
   npc.x = position.x;
   npc.z = position.z;
   npc.y = ground + 0.01;
   return false;
+}
+
+const FIRE_POINTS = [{ x: -8, z: -8 }, { x: 8, z: -8 }, { x: 0, z: 8 }];
+
+export function scheduleNextRoleplayFire() {
+  useRoleplayLifeStore.setState({ nextFireAt: Date.now() + 20000 });
+}
+
+function updateFires(world: World) {
+  const state = useRoleplayLifeStore.getState();
+  if (useRoleplayStore.getState().job !== 'firefighter' || Date.now() < state.nextFireAt || world.query(Fire).length > 0) return;
+  const point = FIRE_POINTS[Math.floor(Date.now() / 20000) % FIRE_POINTS.length];
+  addVoxel(world, point.x, 8, point.z, BlockKind.Wildfire);
+  scheduleNextRoleplayFire();
+  notice('Incendie signalé ! Prends ton extincteur et va éteindre les flammes.', 'Fire reported! Take your extinguisher and put out the flames.');
 }
 
 function spawnThief() {
@@ -108,6 +125,7 @@ export function roleplayLifeSystem(world: World, dt: number) {
   if (night && !state.npcs.some((npc) => npc.kind === 'thief') && Date.now() >= state.nextThiefAt) spawnThief();
   if (!night && state.npcs.some((npc) => npc.kind === 'thief')) useRoleplayLifeStore.setState({ npcs: state.npcs.filter((npc) => npc.kind !== 'thief') });
   if (Date.now() >= state.restockAt) useRoleplayLifeStore.setState({ stock: initialStock(), restockAt: Date.now() + 30000 });
+  updateFires(world);
 
   for (const npc of useRoleplayLifeStore.getState().npcs) {
     if (npc.kind === 'customer' && useRoleplayStore.getState().job !== 'merchant') {
