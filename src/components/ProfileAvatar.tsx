@@ -29,9 +29,9 @@ import footballerUrl from '../../assets/avatars/footballer.webp';
 import firefighterUrl from '../../assets/avatars/firefighter.webp';
 import policeUrl from '../../assets/avatars/police.webp';
 import workerUrl from '../../assets/avatars/worker.webp';
-import minerUrl from '../../assets/character-references/miner.png';
-import thiefUrl from '../../assets/character-references/thief.png';
-import diverUrl from '../../assets/character-references/diver.png';
+import minerUrl from '../../assets/avatars/outfits/miner.png';
+import thiefUrl from '../../assets/avatars/outfits/thief.png';
+import diverUrl from '../../assets/avatars/outfits/diver.png';
 import { translate } from '../game/language';
 
 export const PHOTO_AVATARS = () => ({
