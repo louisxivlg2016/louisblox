@@ -91,6 +91,7 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
   const [insertKind, setInsertKind] = useState<BlockKind>(BlockKind.OakPlanks);
   const [codeFullscreen, setCodeFullscreen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [creationError, setCreationError] = useState('');
   useEffect(() => {
     if (!codeFullscreen) return;
     const close = (event: KeyboardEvent) => {
@@ -104,6 +105,7 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
   }, [codeFullscreen]);
   const change = <K extends keyof CreateWorldOptions>(key: K, value: CreateWorldOptions[K]) => {
     setDraftNotice('');
+    setCreationError('');
     setOptions((current) => ({ ...current, [key]: value }));
   };
   const openTab = (next: typeof tab) => {
@@ -201,12 +203,12 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
     if (creating) return;
     if (!nextOptions.name.trim()) {
       setTab('world');
-      setMessage(translate('Donne un nom à ton monde avant de continuer.', 'Name your world before continuing.'));
+      setCreationError(translate('Donne un nom à ton monde avant de continuer.', 'Name your world before continuing.'));
       return;
     }
     if (hasLocalWorldName(nextOptions.name)) {
       const error = translate('Ce nom est déjà utilisé par un de tes mondes. Choisis un autre nom pour ce nouveau monde.', 'This name is already used by one of your worlds. Choose another name for this new world.');
-      setMessage(error);
+      setCreationError(error);
       if (tab === 'lobby') useMultiplayerStore.getState().setStatus('error', error);
       else setTab('world');
       return;
@@ -223,10 +225,11 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
       }
     }
     setCreating(true);
+    setCreationError('');
     try {
       if (nextOptions.multiplayer && findPublicWorldByName(await listPublicWorlds(), nextOptions.name)) {
         const error = translate('Ce nom de monde public est déjà utilisé. Choisis un autre nom.', 'This public world name is already in use. Choose another name.');
-        setMessage(error);
+        setCreationError(error);
         if (tab === 'lobby') useMultiplayerStore.getState().setStatus('error', error);
         return;
       }
@@ -239,7 +242,7 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
       onCreate({ ...nextOptions, server, customWorld: nextOptions.template === 'custom' ? compiledWorld ?? { version: 1, source, terrain, blocks, ...(infiniteEditor ? { infinite: true } : {}), ...(environment ? { environment } : {}), ...(spawns.length > 0 ? { spawns } : {}), ...(images.length > 0 ? { images } : {}), ...(characters.length > 0 ? { characters } : {}) } : undefined });
     } catch {
       const error = translate('Impossible de vérifier le nom du monde. Réessaie dans un instant.', 'Unable to verify the world name. Try again in a moment.');
-      setMessage(error);
+      setCreationError(error);
       if (tab === 'lobby') useMultiplayerStore.getState().setStatus('error', error);
     } finally {
       setCreating(false);
@@ -323,9 +326,10 @@ export function CreateWorldDialog({ onClose, onCreate, onPlay, initialMultiplaye
           </section>
           <WorldEditor blocks={blocks} terrain={terrain} images={images} characters={characters} seed={seedFromName(options.name)} onChange={(next) => { setBlocks(next); setDraftNotice(''); }} onTerrainChange={(next) => { setTerrain(next); setDraftNotice(''); }} onSaveDraft={saveDraft} draftNotice={draftNotice} infinite={infiniteEditor} onInfiniteChange={changeInfinite} />
         </div>}
+        {tab !== 'lobby' && creationError && <p className="multiplayer-error" role="alert">{creationError}</p>}
         {tab !== 'lobby' && options.multiplayer && connectionStatus === 'connecting' && <p className="multiplayer-hint" role="status">{translate('Création du monde et connexion au salon…', 'Creating the world and connecting to the room…')}</p>}
         {tab !== 'lobby' && options.multiplayer && connectionError && <p className="multiplayer-error" role="alert">{connectionError}</p>}
-        {tab !== 'lobby' && <div className="create-world-submit"><span>{draftNotice || (options.template === 'custom' ? `${blocks.length} ${translate('blocs', 'blocks', 'bloques')} · ${terrain === 'flat' ? translate('terrain plat', 'flat terrain') : translate('terrain naturel', 'natural terrain')}` : translate('Ton monde sera sauvegardé dans Mes mondes.', 'Your world will be saved in My Worlds.'))}</span><button className="primary-button" type="button" onClick={() => { void submit(); }} disabled={creating || options.multiplayer && connectionStatus === 'connecting'}>{options.template === 'custom' && sourceDirty ? translate('Exécuter et créer le monde', 'Run and create world') : translate('Créer le monde', 'Create world')}</button></div>}
+        {tab !== 'lobby' && <div className="create-world-submit"><span>{draftNotice || (options.template === 'custom' ? `${blocks.length} ${translate('blocs', 'blocks', 'bloques')} · ${terrain === 'flat' ? translate('terrain plat', 'flat terrain') : translate('terrain naturel', 'natural terrain')}` : translate('Ton monde sera sauvegardé dans Mes mondes.', 'Your world will be saved in My Worlds.'))}</span><button className="primary-button" type="button" onClick={() => { void submit(); }} disabled={creating || options.multiplayer && connectionStatus === 'connecting'}>{creating ? translate('Création…', 'Creating…') : options.template === 'custom' && sourceDirty ? translate('Exécuter et créer le monde', 'Run and create world') : translate('Créer le monde', 'Create world')}</button></div>}
       </div>
     </MenuDialog>
   );
