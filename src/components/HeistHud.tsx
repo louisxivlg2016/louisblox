@@ -1,6 +1,7 @@
 import { chooseHeistRole, buyHeistItem, useHeistRadar, useHeistStore } from '../game/heistClient';
 import { useBattleStore } from '../game/battle';
 import { useGameStore } from '../game/store';
+import { HeistCityLife } from './HeistCityLife';
 import { translate } from '../game/language';
 import { BlockKind } from '../game/voxel';
 
@@ -31,6 +32,7 @@ export function HeistHud() {
   const guards = (Object.values(roles).filter((entry) => entry === 'guard').length || (role === 'guard' ? 1 : 0)) + (botEnabled ? 1 : 0);
   return (
     <>
+      <HeistCityLife />
       {!role && <div className="backpack-backdrop"><section className="book-panel heist-role-panel"><h2>{translate('Choisis ton équipe', 'Choose your team')}</h2><button className="primary-button" onClick={() => chooseHeistRole('thief')}>{translate('Voleur · braquer et s’évader', 'Thief · rob and escape')}</button><button className="primary-button" onClick={() => chooseHeistRole('guard')}>{translate('Gardien · arrêter les voleurs', 'Guard · arrest thieves')}</button></section></div>}
       <div className="heist-hud" data-heist-hud>
         <strong>{phase === 'prep' ? `${translate('Préparation', 'Preparation')} · ${time}` : time}</strong>

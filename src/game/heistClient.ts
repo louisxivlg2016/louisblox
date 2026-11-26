@@ -19,6 +19,7 @@ import { world } from './world';
 import type { SelectedKind } from './items';
 import { playHeistAlarm, stopHeistAlarm } from './heistAlarm';
 import { useCharacterStore } from './characterStore';
+import { clearHeistLife, heistLifeSystem } from './heistLife';
 
 export type HeistRole = 'thief' | 'guard';
 type HeistPhase = 'prep' | 'running' | 'finished';
@@ -55,6 +56,7 @@ export function setHeistSocket(next: WebSocket | null) { socket = next; }
 export function clearHeist() {
   socket = null;
   stopHeistAlarm();
+  clearHeistLife();
   useHeistStore.setState({ ...initial, roles: {}, lootRespawns: {}, carriedLootIds: [], prison: [], gadgets: {}, traps: [], bot: { ...initial.bot } });
 }
 function send(message: unknown) {
@@ -415,6 +417,7 @@ export function heistControlSystem(world: KootaWorld, camera: Camera, actions: {
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   if (!player) return true;
   updateHeistBot(world, dt, current, player);
+  heistLifeSystem(world, dt);
   keepGuardsOutsideHideout(world, current.role);
   preloadHeistTunnel(world);
   restoreTunnel(world);
