@@ -15,6 +15,7 @@ import { playerIdentity } from './playerIdentity';
 export const TAMED_ANIMAL_MONTH_DAYS = 30;
 
 export const WILD_ANIMALS = new Set<AnimalKind>(['bear', 'wolf', 'snowWolf', 'snowBear', 'monkey', 'ocelot', 'giraffe', 'elephant', 'deer', 'snowDeer']);
+export const DEFENSIVE_ANIMALS = new Set<AnimalKind>(['bear', 'wolf', 'snowWolf', 'snowBear']);
 export const FEED_INTERVAL_MS = 30 * 60 * 1000;
 const FARM_FOOD = new Set<SelectedKind>(['corn', 'apple', 'wheat']);
 const MEAT_FOOD = new Set<SelectedKind>(['raw_meat', 'cooked_meat']);
@@ -453,6 +454,8 @@ export function tamingSystem(world: World, _dt: number) {
 }
 
 export function findDefenseTarget(world: World, defender: Entity, owner: Vector3) {
+  const kind = defender.get(Animal)?.kind;
+  if (!kind || !DEFENSIVE_ANIMALS.has(kind)) return null;
   const position = defender.get(AnimalPosition)!;
   const playerTarget = animalHitByPlayer(world);
   if (playerTarget && playerTarget !== defender && playerTarget.isAlive() && !isTamedAnimal(playerTarget) && (playerTarget.get(AnimalHealth)?.value ?? 0) > 0) {

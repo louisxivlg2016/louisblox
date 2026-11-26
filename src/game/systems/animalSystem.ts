@@ -13,7 +13,7 @@ import { damageAnimal, damagePlayer, killAnimal, removeAnimal } from '../combat'
 import { isNight } from '../dayNight';
 import { useGameStore } from '../store';
 import { translate } from '../language';
-import { companionAnimalName, findDefenseTarget, isOwnTamedAnimal, isTamedAnimal, tamingSystem, WILD_ANIMALS } from '../taming';
+import { companionAnimalName, DEFENSIVE_ANIMALS, findDefenseTarget, isOwnTamedAnimal, isTamedAnimal, tamingSystem } from '../taming';
 import { canSeePlayer, canZombieAttackPlayer } from '../hostility';
 import { hasEffect } from '../effects';
 import { alertAnimalSound } from './animalSoundSystem';
@@ -448,7 +448,7 @@ export function animalSystem(world: World, dt: number) {
     const love = entity.get(AnimalLove);
     if (love) love.time = Math.max(0, love.time - stepDt);
     const aggressive = !attentive && (animal.kind === 'zombie' || animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf') && (useGameStore.getState().gameplayMode !== 'creative' || hit.panic > 0);
-    const defenseTarget = tamed && owner && WILD_ANIMALS.has(animal.kind) ? findDefenseTarget(world, entity, owner) : null;
+    const defenseTarget = tamed && owner && DEFENSIVE_ANIMALS.has(animal.kind) ? findDefenseTarget(world, entity, owner) : null;
     const targetPosition = defenseTarget?.get(AnimalPosition);
     const targetDistanceSquared = targetPosition ? position.distanceToSquared(targetPosition) : Infinity;
     if (tamed && owner && !targetPosition && distanceSquared > 30 * 30) {
