@@ -11,12 +11,13 @@ import { isNight } from '../dayNight';
 import { useCompanionMenuStore } from '../companionMenu';
 import { releasePointerForOverlay } from '../input';
 import { translate } from '../language';
+import { petAnimal } from '../animalCompanionship';
 
 const origin = new Vector3();
 const direction = new Vector3();
 
-export function animalInteractionSystem(world: World, camera: Camera, interact: number, touchTaps = 0) {
-  if (interact <= 0 && touchTaps <= 0) return false;
+export function animalInteractionSystem(world: World, camera: Camera, interact: number, touchTaps = 0, pets = 0) {
+  if (interact <= 0 && touchTaps <= 0 && pets <= 0) return false;
   const player = world.queryFirst(Player)?.get(PlayerPosition);
   const selected = useGameStore.getState().selected;
   if (!player) return false;
@@ -25,6 +26,7 @@ export function animalInteractionSystem(world: World, camera: Camera, interact: 
   camera.getWorldDirection(direction);
   const target = findAnimalTarget(world, origin, direction, 5.5);
   if (!target || target.health <= 0) return false;
+  if (pets > 0) return petAnimal(world, target.entity);
   const rest = target.entity.get(AnimalRest);
   if (rest?.sleeping) {
     if (!isOwnTamedAnimal(target.entity)) {

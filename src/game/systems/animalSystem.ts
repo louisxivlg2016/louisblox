@@ -8,7 +8,7 @@ import { groundAt } from '../vehicles';
 import { isWaterBlock, voxelKey } from '../voxel';
 import type { AnimalKind } from '../animals';
 import { spawnChunkZombies } from '../animals';
-import { Animal, AnimalHealth, AnimalHit, AnimalHome, AnimalLove, AnimalMesh, AnimalMotion, AnimalPosition, AnimalRest, AnimalTame, CamelLeash, Chunk, HorseRider, Player, PlayerHealth, PlayerPosition, Sleep } from '../traits';
+import { Animal, AnimalCompanionship, AnimalHealth, AnimalHit, AnimalHome, AnimalLove, AnimalMesh, AnimalMotion, AnimalPosition, AnimalRest, AnimalTame, CamelLeash, Chunk, Environment, HorseRider, Player, PlayerHealth, PlayerPosition, Sleep } from '../traits';
 import { damageAnimal, damagePlayer, killAnimal, removeAnimal } from '../combat';
 import { isNight } from '../dayNight';
 import { useGameStore } from '../store';
@@ -24,6 +24,7 @@ import { isDoor } from '../extraBlocks';
 import { replaceVoxel } from '../chunks';
 import { useRemotePlayerStore } from '../multiplayerStore';
 import { playerIdentity } from '../playerIdentity';
+import { animalSay, findTreeShelter } from '../animalCompanionship';
 
 type Motion = {
   yaw: number;
@@ -328,6 +329,7 @@ export function animalSystem(world: World, dt: number) {
   const ownerPositions = new Map<string, Vector3>();
   const health = playerEntity?.get(PlayerHealth);
   const survival = useGameStore.getState().gameplayMode === 'survival';
+  const raining = world.queryFirst(Environment)?.get(Environment)?.weather === 'rain';
   const night = isNight(world);
   if (survival && night && !zombieNights.get(world) && player) {
     const centerX = chunkCoordinate(player.x);
@@ -345,10 +347,40 @@ export function animalSystem(world: World, dt: number) {
   world.query(Animal, AnimalHealth, AnimalHit, AnimalPosition, AnimalMotion, AnimalMesh).updateEach(([animal, animalHealth, hit, position, motion, mesh], entity) => {
     keepZombieOnNaturalGround(world, animal.kind, position, motion);
     const tamed = isTamedAnimal(entity);
+    const ownTamed = isOwnTamedAnimal(entity);
     const owner = tamed ? animalOwnerPosition(entity, player, selfId, remotePlayers, ownerPositions) : null;
+    let companionship = entity.get(AnimalCompanionship);
+    if (!companionship) {
+      entity.add(AnimalCompanionship());
+      companionship = entity.get(AnimalCompanionship)!;
+    }
+    {
+      companionship.attention = Math.max(0, companionship.attention - dt);
+      if (!raining) {
+        companionship.shelterX = null;
+        companionship.shelterZ = null;
+      }
+      if (ownTamed && owner && position.distanceToSquared(owner) < 12 * 12) {
+        const now = Date.now();
+        if (health && health.value > 0 && health.value <= health.max * 0.5 && now - companionship.adviceAt > 30000) {
+          animalSay(animal.kind, 'Mange un peu, tu as besoin de reprendre des forces.', 'Eat something, you need to regain your strength.');
+          companionship.adviceAt = now;
+        } else if (raining && companionship.shelterX === null && now - companionship.adviceAt > 30000) {
+          const shelter = findTreeShelter(world, owner);
+          if (shelter) {
+            companionship.shelterX = shelter.x;
+            companionship.shelterZ = shelter.z;
+            companionship.adviceAt = now;
+            animalSay(animal.kind, 'Allons nous abriter sous cet arbre. Suis-moi !', 'Let us take shelter under this tree. Follow me!');
+          } else companionship.adviceAt = now;
+        }
+      }
+    }
+    entity.set(AnimalCompanionship, companionship);
+    const attentive = companionship.attention > 0 && player && position.distanceToSquared(player) < 10 * 10;
     const hungry = tamed && (entity.get(AnimalTame)?.happiness ?? 100) <= 0;
     let distanceSquared = tamed ? owner ? position.distanceToSquared(owner) : Infinity : player ? position.distanceToSquared(player) : Infinity;
-    if (hungry && owner && isOwnTamedAnimal(entity)) announceHunger(world, entity, animal.kind, distanceSquared);
+    if (hungry && owner && ownTamed) announceHunger(world, entity, animal.kind, distanceSquared);
     if (distanceSquared > 48 * 48 && !tamed) {
       if (mesh.value) mesh.value.visible = false;
       motion.running = false;
@@ -408,7 +440,7 @@ export function animalSystem(world: World, dt: number) {
     hit.attackIn = Math.max(0, hit.attackIn - stepDt);
     const love = entity.get(AnimalLove);
     if (love) love.time = Math.max(0, love.time - stepDt);
-    const aggressive = (animal.kind === 'zombie' || animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf') && (useGameStore.getState().gameplayMode !== 'creative' || hit.panic > 0);
+    const aggressive = !attentive && (animal.kind === 'zombie' || animal.kind === 'bear' || animal.kind === 'snowBear' || animal.kind === 'wolf' || animal.kind === 'snowWolf') && (useGameStore.getState().gameplayMode !== 'creative' || hit.panic > 0);
     const defenseTarget = tamed && owner && WILD_ANIMALS.has(animal.kind) ? findDefenseTarget(world, entity, owner) : null;
     const targetPosition = defenseTarget?.get(AnimalPosition);
     const targetDistanceSquared = targetPosition ? position.distanceToSquared(targetPosition) : Infinity;
@@ -446,12 +478,27 @@ export function animalSystem(world: World, dt: number) {
         motion.yaw = Math.atan2(player.x - position.x, player.z - position.z);
         motion.turnIn = Math.max(motion.turnIn, 0.5);
       }
-      if (tamed && owner && (targetPosition || distanceSquared > 2.8 * 2.8)) {
-        const target = targetPosition ?? owner;
-        const distance = Math.sqrt(targetPosition ? targetDistanceSquared : distanceSquared);
+      const shelter = raining && ownTamed && companionship?.shelterX !== null && companionship?.shelterZ !== null ? { x: companionship.shelterX, z: companionship.shelterZ } : null;
+      const shelterDistanceSquared = shelter ? (position.x - shelter.x) ** 2 + (position.z - shelter.z) ** 2 : Infinity;
+      if (shelter && shelterDistanceSquared < 1.8 * 1.8 && player && position.distanceToSquared(player) < 4 * 4) {
+        if (Date.now() - companionship.adviceAt > 8000) animalSay(animal.kind, 'Nous voilà à l’abri. La pluie ne peut plus nous mouiller ici.', 'We are sheltered now. The rain cannot wet us here.');
+        companionship.shelterX = null;
+        companionship.shelterZ = null;
+        companionship.adviceAt = Date.now();
+        entity.set(AnimalCompanionship, companionship);
+      } else if (tamed && owner && (shelter || targetPosition || distanceSquared > 2.8 * 2.8)) {
+        const target = targetPosition ?? shelter ?? owner;
+        const distance = Math.sqrt(targetPosition ? targetDistanceSquared : shelter ? shelterDistanceSquared : distanceSquared);
         motion.yaw = Math.atan2(target.x - position.x, target.z - position.z);
         motion.turnIn = Math.max(motion.turnIn, 0.5);
         motion.speed = targetPosition ? 8 : distance > 18 ? 14 : distance > 8 ? 9 : 4.5;
+      }
+      if (attentive && player) {
+        motion.hunting = false;
+        motion.yaw = Math.atan2(player.x - position.x, player.z - position.z);
+        motion.turnIn = Math.max(motion.turnIn, 0.5);
+        motion.speed = 0;
+        hit.panic = 0;
       }
     }
     if (!fire && defenseTarget && targetDistanceSquared < 2.2 * 2.2 && hit.attackIn <= 0) {
@@ -482,7 +529,7 @@ export function animalSystem(world: World, dt: number) {
       motion.turnIn = Math.min(motion.turnIn, 1.2);
       motion.yaw += Math.sin(entity * 3.17 + motion.phase * 2) * stepDt * 0.65;
     }
-    if (!fire && !tamed && motion.turnIn <= 0 && !motion.hunting && motion.avoid <= 0) {
+    if (!fire && !tamed && !attentive && motion.turnIn <= 0 && !motion.hunting && motion.avoid <= 0) {
       motion.yaw += Math.sin(entity * 17.31 + motion.phase) * 0.75;
       motion.turnIn = hit.panic > 0 ? 1.5 : 8 + (Math.sin(entity * 7.13 + motion.phase) + 1) * 3.5;
     }
@@ -502,8 +549,10 @@ export function animalSystem(world: World, dt: number) {
 
     const zombieNearPlayer = !fire && animal.kind === 'zombie' && !tamed && distanceSquared < 1.8 * 1.8;
     const zombieTooClose = zombieNearPlayer && distanceSquared < 1.35 * 1.35;
-    const stayClose = !fire && (tamed && (defenseTarget ? targetDistanceSquared < 2.2 * 2.2 : distanceSquared < 2.8 * 2.8) || zombieNearPlayer);
-    const tamedOnPlayer = tamed && distanceSquared < 1.5 * 1.5;
+    const shelter = raining && ownTamed && companionship.shelterX !== null && companionship.shelterZ !== null ? { x: companionship.shelterX, z: companionship.shelterZ } : null;
+    const shelterDistanceSquared = shelter ? (position.x - shelter.x) ** 2 + (position.z - shelter.z) ** 2 : Infinity;
+    const stayClose = !fire && (attentive || tamed && (defenseTarget ? targetDistanceSquared < 2.2 * 2.2 : shelter ? shelterDistanceSquared < 1.8 * 1.8 : distanceSquared < 2.8 * 2.8) || zombieNearPlayer);
+    const tamedOnPlayer = !attentive && !shelter && tamed && distanceSquared < 1.5 * 1.5;
     const tamedNeighbor = tamed ? neighbors.find((neighbor) => neighbor.entity !== entity && isTamedAnimal(neighbor.entity) && position.distanceToSquared(neighbor.position) < 0.65 * 0.65) : undefined;
     if (tamedNeighbor) {
       const dx = position.x - tamedNeighbor.position.x;
@@ -519,7 +568,7 @@ export function animalSystem(world: World, dt: number) {
     if (zombieTooClose && player) {
       motion.yaw = Math.atan2(position.x - player.x, position.z - player.z);
       moveAnimal(world, animal.kind, position, motion, stepDt, entity, 0, 2.4);
-    } else if (home && home.radius > 0 && !tamed) {
+    } else if (home && home.radius > 0 && !tamed && !attentive) {
       const angle = entity * 0.73 + motion.phase * 0.3;
       const radius = Math.min(0.75, home.radius);
       const dx = home.x + Math.sin(angle) * radius - position.x;

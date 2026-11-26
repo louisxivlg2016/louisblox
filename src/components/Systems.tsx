@@ -64,7 +64,7 @@ export function Systems({ spawn }: { spawn: { x: number; y: number; z: number } 
       const modeHandled = footballHandled || heistHandled || deliveryHandled || skyfallHandled || planetHandled || deepHandled || roleplayHandled;
       const heistWeaponHandled = heistHandled && ['pistol_iron', 'rifle_auto', 'bow'].includes(String(useGameStore.getState().selected)) && itemSystem(world, camera, delta, actions);
       const cleaningHandled = !heistWeaponHandled && !sleeping && !modeHandled && useGameStore.getState().selected === 'paint_cleaning_bucket' && itemSystem(world, camera, delta, actions);
-      const animalHandled = !heistWeaponHandled && !cleaningHandled && !sleeping && !modeHandled && animalInteractionSystem(world, camera, actions.harvest + actions.interact, actions.tap);
+      const animalHandled = !heistWeaponHandled && !cleaningHandled && !sleeping && !modeHandled && animalInteractionSystem(world, camera, actions.harvest + actions.interact, actions.tap, actions.pet);
       const tradeHandled = !heistWeaponHandled && !animalHandled && !sleeping && !modeHandled && tradeInteractionSystem(world, camera, actions.place + actions.harvest + actions.tap + actions.interact);
       const mount = world.queryFirst(Player)?.get(PlayerMount);
       const dismountHandled = !sleeping && !modeHandled && Boolean(mount?.vehicle) && vehicleInteractionSystem(world, camera, actions.place + actions.harvest + actions.tap + actions.interact, true);

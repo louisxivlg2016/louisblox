@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { queueHarvest, requestFlightToggle, setTouchKey, setTouchMouseButton, setTouchMovement } from '../game/input';
+import { queueHarvest, queuePet, requestFlightToggle, setTouchKey, setTouchMouseButton, setTouchMovement } from '../game/input';
 import { useGameStore } from '../game/store';
 import { landPlane } from '../game/vehicles';
 import { world } from '../game/world';
@@ -128,6 +128,7 @@ export function TouchControls() {
       </div>}
       <div className={plane ? 'touch-actions plane-touch-actions' : 'touch-actions'}>
         {cannon && <CannonFireButton />}
+        {!riding && <button type="button" className="touch-button" aria-label={translate('Caresser l’animal visé', 'Pet the animal you are looking at')} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); queuePet(); }}>{translate('Caresser', 'Pet')}</button>}
         {!plane && <>
           <HoldButton code="Space" label={translate('Sauter', 'Jump')} onDoubleTap={survival ? undefined : requestFlightToggle} />
           {!survival && <button
