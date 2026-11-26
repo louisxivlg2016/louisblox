@@ -98,10 +98,10 @@ export function buildPlanetRocket(world: World) {
   changeInventory(BlockKind.Stone, -30);
   changeInventory(BlockKind.IronOre, -15);
   changeInventory(BlockKind.GoldOre, -8);
-  for (let x = 2; x <= 4; x += 1) for (let z = -1; z <= 1; z += 1) addVoxel(world, x, 12, z, BlockKind.ConcreteWhite, undefined, undefined, 0, undefined, undefined, false, true);
-  for (let y = 13; y <= 16; y += 1) addVoxel(world, 3, y, 0, BlockKind.ConcreteWhite, undefined, undefined, 0, undefined, undefined, false, true);
-  addVoxel(world, 3, 17, 0, BlockKind.ConcreteOrange, undefined, undefined, 0, undefined, undefined, false, true);
-  for (const [x, z] of [[2, 0], [4, 0], [3, -1], [3, 1]] as const) addVoxel(world, x, 13, z, BlockKind.ConcreteRed, undefined, undefined, 0, undefined, undefined, false, true);
+  for (let x = 2; x <= 4; x += 1) for (let z = -1; z <= 1; z += 1) addVoxel(world, x, 14, z, BlockKind.ConcreteWhite, undefined, undefined, 0, undefined, undefined, false, true);
+  for (let y = 15; y <= 18; y += 1) addVoxel(world, 3, y, 0, BlockKind.ConcreteWhite, undefined, undefined, 0, undefined, undefined, false, true);
+  addVoxel(world, 3, 19, 0, BlockKind.ConcreteOrange, undefined, undefined, 0, undefined, undefined, false, true);
+  for (const [x, z] of [[2, 0], [4, 0], [3, -1], [3, 1]] as const) addVoxel(world, x, 15, z, BlockKind.ConcreteRed, undefined, undefined, 0, undefined, undefined, false, true);
   usePlanetStore.setState({ rocket: true });
   game.setNotice(translate('Fusée construite ! Approche-toi et appuie sur E pour voler vers l’univers zombie.', 'Rocket built! Get close and press E to fly to the zombie universe.'));
   persist();

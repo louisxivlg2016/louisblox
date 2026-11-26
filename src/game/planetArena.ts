@@ -3,8 +3,8 @@ import type { GeneratedChunk } from './levels';
 import { BlockKind } from './voxel';
 import type { Voxel } from './voxel';
 
-export const PLANET_SPAWN = { x: 0, y: 11.51, z: 1.5 };
-export const PLANET_ONE_BLOCK = { x: 0, y: 12, z: 0 };
+export const PLANET_SPAWN = { x: 0, y: 14.51, z: 1.5 };
+export const PLANET_ONE_BLOCK = { x: 0, y: 14, z: 0 };
 export const PLANET_BIOMES = [
   { id: 'ice' as const, name: 'Planète de glace', x: 28, y: 10, z: 0, radius: 5 },
   { id: 'lava' as const, name: 'Planète de lave', x: -28, y: 12, z: 0, radius: 5 },
@@ -28,7 +28,7 @@ function planet(blocks: Voxel[], cx: number, cz: number, center: { x: number; y:
 
 export function generatePlanetChunk(cx: number, cz: number): GeneratedChunk {
   const blocks: Voxel[] = [];
-  planet(blocks, cx, cz, { x: 0, y: 7, z: 0, radius: 4 }, BlockKind.Grass, BlockKind.Stone);
+  planet(blocks, cx, cz, { x: 0, y: 7, z: 0, radius: 6 }, BlockKind.Grass, BlockKind.Stone);
   put(blocks, cx, cz, PLANET_ONE_BLOCK.x, PLANET_ONE_BLOCK.y, PLANET_ONE_BLOCK.z, BlockKind.Stone);
   for (const biome of PLANET_BIOMES) {
     const surface = biome.id === 'ice' ? BlockKind.Snow : biome.id === 'lava' ? BlockKind.ConcreteOrange : biome.id === 'jungle' ? BlockKind.JungleGrass : BlockKind.ConcretePink;
