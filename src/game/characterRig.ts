@@ -33,7 +33,7 @@ function splitGeometry(source: BufferGeometry, matrix: import('three').Matrix4, 
     if (cape) part = 'body';
     else if (Math.abs(x) < width * 0.38 && y > floor + height * upperHeadStart || Math.abs(x) < width * headWidth && y > floor + height * headBottom) part = 'head';
     else if (Math.abs(x) > width * 0.25 && y > floor + height * 0.28 && y < floor + height * 0.82) part = `${side}Arm`;
-    else if (legs && outfit !== 'princess' && Math.abs(x) < width * 0.28 && y < floor + height * 0.36) part = y < floor + height * 0.24 ? `${side}LowerLeg` : `${side}Leg`;
+    else if (legs && outfit !== 'princess' && Math.abs(x) < width * 0.28 && y < floor + height * 0.36) part = `${side}Leg`;
     indices[part].push(a, b, c);
   }
   return { geometry, indices, material: appearance ? colorCharacterMaterial(material, geometry, bounds, appearance, allowGrayHair, princessHair, outfit) : material };
@@ -104,15 +104,6 @@ export function createCharacterRig(source: Object3D, outfit: Exclude<OutfitKind,
           pivot = new Group();
           pivot.name = names[part];
           pivot.position.set(lowerLeg ? 0 : pivotX, lowerLeg ? -height * 0.24 : pivotY, 0);
-          if (lowerLeg) {
-            const cover = new Mesh(new BoxGeometry(width * 0.18, height * 0.16, (bounds.max.z - bounds.min.z) * 0.28), piece.material);
-            cover.name = 'knee-cover';
-            pivot.add(cover);
-          } else if (part.endsWith('Leg')) {
-            const cover = new Mesh(new BoxGeometry(width * 0.2, height * 0.16, (bounds.max.z - bounds.min.z) * 0.3), piece.material);
-            cover.name = 'hip-cover';
-            pivot.add(cover);
-          }
           const parent = lowerLeg ? part.startsWith('left') ? rig.leftLeg : rig.rightLeg : undefined;
           (parent ?? root).add(pivot);
           rig[part] = pivot;
