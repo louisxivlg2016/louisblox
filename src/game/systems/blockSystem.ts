@@ -204,7 +204,16 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
   const interacting = actions.place > 0 || actions.harvest > 0 || (actions.interact ?? 0) > 0;
   const interactionHit = interacting && isWaterBlock(hit.block.kind) ? raycastVoxel(blocks, origin, direction, 6, false) : hit;
   if (interacting && interactionHit && (isDoor(interactionHit.block.kind) || isTrapdoor(interactionHit.block.kind))) {
-    replaceVoxel(world, interactionHit, interactionHit.block.kind, !interactionHit.block.open);
+    const open = !interactionHit.block.open;
+    const doorBlocks = [interactionHit.block];
+    if (isDoor(interactionHit.block.kind)) for (const direction of [-1, 1]) {
+      for (let y = interactionHit.block.y + direction; ; y += direction) {
+        const block = blocks.get(voxelKey(interactionHit.block.x, y, interactionHit.block.z));
+        if (!block || block.kind !== interactionHit.block.kind) break;
+        doorBlocks.push(block);
+      }
+    }
+    for (const block of doorBlocks) replaceVoxel(world, { block, x: block.x, y: block.y, z: block.z, normal: interactionHit.normal, distance: interactionHit.distance }, block.kind, open);
     return;
   }
 

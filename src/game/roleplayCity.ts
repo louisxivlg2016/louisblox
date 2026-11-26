@@ -14,9 +14,16 @@ export const ROLEPLAY_MARKET = { x: 0, y: 8.51, z: -20 };
 export const ROLEPLAY_POLICE = { x: -20, y: 8.51, z: -20 };
 export const ROLEPLAY_MINE = { x: 32, y: 8.51, z: -32 };
 
-function put(blocks: Voxel[], cx: number, cz: number, x: number, y: number, z: number, kind: BlockKind, protectedBlock = true) {
-  if (Math.floor(x / CHUNK_SIZE) !== cx || Math.floor(z / CHUNK_SIZE) !== cz) return;
-  blocks.push({ x, y, z, kind, ...(protectedBlock ? { protected: true } : {}) });
+function put(blocks: Voxel[], cx: number, cz: number, x: number, y: number, z: number, kind: BlockKind, protectedBlock = true, facing?: Voxel['facing']) {
+  if (Math.floor(x / CHUNK_SIZE) !== cx || Math.floor(z / CHUNK_SIZE) !== cz) return undefined;
+  const block: Voxel = { x, y, z, kind, ...(protectedBlock ? { protected: true } : {}), ...(facing ? { facing } : {}) };
+  blocks.push(block);
+  return block;
+}
+
+function sign(blocks: Voxel[], cx: number, cz: number, x: number, y: number, z: number, text: string) {
+  const block = put(blocks, cx, cz, x, y, z, BlockKind.Sign, true, 'south');
+  if (block) block.text = text;
 }
 
 function house(blocks: Voxel[], cx: number, cz: number, centerX: number, centerZ: number, color: BlockKind) {
@@ -30,6 +37,7 @@ function house(blocks: Voxel[], cx: number, cz: number, centerX: number, centerZ
       if (!door) put(blocks, cx, cz, x, y, z, y === 10 && (x + z) % 3 === 0 ? BlockKind.Glass : color, false);
     }
   }
+  if (color === BlockKind.ConcreteLightBlue) for (let y = 8; y <= 10; y += 1) put(blocks, cx, cz, centerX, y, centerZ - 6, BlockKind.DoorBlue, false, 'north');
   put(blocks, cx, cz, centerX + 4, 8, centerZ + 4, BlockKind.Chest, false);
   put(blocks, cx, cz, centerX - 4, 8, centerZ + 4, BlockKind.Bed, false);
 }
@@ -58,5 +66,9 @@ export function generateRoleplayChunk(cx: number, cz: number): GeneratedChunk {
     put(blocks, cx, cz, x, 6, z, BlockKind.Stone, false);
     if ((x * 7 + z * 11) % 9 === 0) put(blocks, cx, cz, x, 7, z, (x + z) % 3 === 0 ? BlockKind.IronOre : BlockKind.CoalOre, false);
   }
+  sign(blocks, cx, cz, 0, 9, -15, 'TRAVAIL · MARCHAND');
+  sign(blocks, cx, cz, -20, 9, -13, 'TRAVAIL · POLICIER');
+  sign(blocks, cx, cz, 32, 8, -23, 'TRAVAIL · MINEUR');
+  sign(blocks, cx, cz, 8, 9, -15, 'TRAVAIL · CONSTRUCTEUR\nVILLE ENTIÈRE');
   return { blocks, water: [] };
 }
