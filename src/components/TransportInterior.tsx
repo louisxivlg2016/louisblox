@@ -1,6 +1,7 @@
 import { PixelPart, SteeringWheel } from './ItemModel';
 import { CABINS } from '../game/vehicleTypes';
 import type { CabinDefinition, VehicleKind } from '../game/vehicleTypes';
+import { FullCharacterGlb } from './FullCharacterGlb';
 
 function Seat({ position }: { position: [number, number, number] }) {
   return (
@@ -76,6 +77,7 @@ function PlaneInterior({ driverPresent }: { driverPresent: boolean }) {
       {rows.flatMap((z, row) => [-0.62, 0.62].map((x, column) => (
         <Seat key={`${row}-${column}`} position={[x, cabin.floor + 0.55, z]} />
       )))}
+      <group name="front-cabin-passenger" position={[0.62, cabin.floor + 0.55, cabin.front + 5]} rotation={[0, Math.PI, 0]}><FullCharacterGlb outfit="classic-girl" seated remote /></group>
       <Person position={[0, cabin.floor, cabin.rear - 2]} color="#31537b" worker />
     </group>
   );
@@ -129,6 +131,7 @@ function TrainInterior({ kind, driverPresent, passengerSeat }: { kind: 'train' |
       {passengers.map((position, index) => (
         <group key={index}>
           <Seat position={position} />
+          {index === 0 && <group name="front-cabin-passenger" position={position} rotation={[0, Math.PI, 0]}><FullCharacterGlb outfit="classic-boy" seated remote /></group>}
         </group>
       ))}
       <Seat position={[-seatX, seatY, cabin.front + 1]} />
