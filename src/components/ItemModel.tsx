@@ -1,6 +1,9 @@
-import { Suspense, useRef } from 'react';
+import { Suspense, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
+import { Box3, Vector3 } from 'three';
 import type { Group } from 'three';
+import { SkeletonUtils } from 'three-stdlib';
 import { useVehicleSteeringStore } from '../game/vehicleSteering';
 import { CylinderGeometry, MeshLambertMaterial, TorusGeometry } from 'three';
 import { animalMaterial } from '../game/animalTextures';
@@ -19,6 +22,7 @@ import { heldWeaponYaw } from '../game/itemPresentation';
 import { VehicleAssetModel } from './VehicleAssetModel';
 import { GoldBagModel, HandcuffsModel } from './HeistModels';
 import { AppleGlb } from './AppleGlb';
+import smokeGrenadeUrl from '../../assets/models/smoke-grenade.glb';
 import type { VehicleKind } from '../game/vehicleTypes';
 
 type ModelKind = ItemKind | GalleryItemId | StoredAnimalItem;
@@ -592,24 +596,13 @@ function vehicleItemKind(kind: ModelProps['kind']): Exclude<VehicleKind, 'boat'>
 }
 
 export function SmokeGrenadeModel() {
-  const layers = [
-    [-0.34, 0.22, '#4a5634'],
-    [-0.22, 0.34, '#59663b'],
-    [-0.1, 0.42, '#657240'],
-    [0.02, 0.46, '#536233'],
-    [0.14, 0.44, '#687641'],
-    [0.26, 0.36, '#5b693a'],
-    [0.36, 0.26, '#4a5834'],
-  ] as const;
-  return <group name="smoke-grenade-item">
-    {layers.map(([y, width, color], index) => <PixelPart key={y} position={[0, y, 0]} size={[width, 0.12, width]} color={index % 2 === 0 ? color : '#485732'} />)}
-    <PixelPart position={[0, 0.46, 0]} size={[0.25, 0.12, 0.25]} color="#aeb8b8" />
-    <PixelPart position={[0, 0.55, 0]} size={[0.12, 0.1, 0.12]} color="#d4dbda" />
-    <PixelPart position={[0.16, 0.52, 0]} size={[0.3, 0.055, 0.1]} color="#c6cecd" />
-    <PixelPart position={[0.3, 0.4, 0]} size={[0.055, 0.26, 0.1]} color="#bcc6c4" />
-    <PixelPart position={[0.36, 0.02, 0]} size={[0.075, 0.82, 0.11]} color="#202d2c" />
-    <PixelPart position={[0.32, 0.43, 0]} size={[0.09, 0.14, 0.13]} color="#2d3a37" />
-  </group>;
+  const { scene } = useGLTF(smokeGrenadeUrl);
+  const { model, center, minY, height } = useMemo(() => {
+    const model = SkeletonUtils.clone(scene);
+    const bounds = new Box3().setFromObject(model);
+    return { model, center: bounds.getCenter(new Vector3()), minY: bounds.min.y, height: Math.max(0.01, bounds.max.y - bounds.min.y) };
+  }, [scene]);
+  return <Suspense fallback={null}><group name="smoke-grenade-item" scale={0.9 / height}><primitive object={model} position={[-center.x, -minY, -center.z]} dispose={null} /></group></Suspense>;
 }
 
 export function ItemModel({ kind, held = false, flipWeapons = false }: ModelProps) {
