@@ -46,6 +46,7 @@ export function hasFullCharacter(_outfit: OutfitKind, _wig: WigSelection = 'auto
 
 function FullCharacter({ outfit, moving, airborne, remote = false, seated = false, emote = null, headRef, appearance, headAccessory, profileAvatar = 'pixel' }: { outfit: FullCharacterModel; moving?: boolean; airborne?: boolean; remote?: boolean; seated?: boolean; emote?: EmoteKind | null; headRef?: Ref<Object3D>; appearance?: CharacterAppearance; headAccessory?: ReactNode; profileAvatar?: import('../game/avatar').ProfileAvatarKind }) {
   const group = useRef<Object3D>(null);
+  const previousLook = useRef<{ yaw: number; pitch: number } | null>(null);
   const { scene } = useGLTF(models[outfit] ?? explorerUrl);
   const scale = 2.05 / fullCharacterHeights[outfit];
   const character = useMemo(() => {
@@ -102,8 +103,10 @@ function FullCharacter({ outfit, moving, airborne, remote = false, seated = fals
     const sitting = seated || emote === 'sit' || Boolean(mounted?.vehicle && !walking);
     group.current.position.y = sitting ? -0.18 : 0;
     group.current.userData.gesture = sitting ? 'sit' : emote;
+    const turning = Boolean(state && previousLook.current && (Math.abs(state.yaw - previousLook.current.yaw) > 0.0005 || Math.abs(state.pitch - previousLook.current.pitch) > 0.0005));
+    if (state) previousLook.current = { yaw: state.yaw, pitch: state.pitch };
     animateCharacterRig(character, performance.now() / 1000, walking, jumping, sitting, Math.min(delta, 0.05), eating);
-    headIdle.update(delta);
+    headIdle.update(delta, turning);
   });
 
   const head = character.userData.rig?.head as Object3D | undefined;
