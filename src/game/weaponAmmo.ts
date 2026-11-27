@@ -1,8 +1,9 @@
 import { create } from 'zustand';
+import { useGameStore } from './store';
 
 export const BOMB_MAGAZINE_SIZE = 10;
 export const BOMB_RELOAD_SECONDS = 3;
-const BOMB_RELOAD_MS = BOMB_RELOAD_SECONDS * 1000;
+export const PIRATE_BOMB_RELOAD_SECONDS = 20;
 
 type BombLauncherState = {
   ammo: number;
@@ -25,7 +26,8 @@ export function tryFireBombLauncher(now = performance.now()) {
   const state = useBombLauncherStore.getState();
   if (state.reloadUntil !== null || state.ammo <= 0) return false;
   const ammo = state.ammo - 1;
-  useBombLauncherStore.setState({ ammo, reloadUntil: ammo === 0 ? now + BOMB_RELOAD_MS : null });
+  const reloadSeconds = useGameStore.getState().gameplayMode === 'pirates' ? PIRATE_BOMB_RELOAD_SECONDS : BOMB_RELOAD_SECONDS;
+  useBombLauncherStore.setState({ ammo, reloadUntil: ammo === 0 ? now + reloadSeconds * 1000 : null });
   return true;
 }
 

@@ -1,6 +1,6 @@
 import { releasePointerForOverlay, requestPlay } from '../game/input';
 import { useGameStore } from '../game/store';
-import { useBombLauncherStore } from '../game/weaponAmmo';
+import { BOMB_RELOAD_SECONDS, PIRATE_BOMB_RELOAD_SECONDS, useBombLauncherStore } from '../game/weaponAmmo';
 import { selectionInfo } from '../game/items';
 import { inventoryCount } from '../game/inventory';
 import { ItemIcon } from './ItemIcon';
@@ -177,7 +177,7 @@ export function Hud() {
           {gameplayMode === 'survival' && <div className="survival-health" aria-label={`${lives} vies sur 10`}><span>{translate('Vies', 'Lives')}</span><div><i style={{ width: `${Math.max(0, Math.min(100, lives * 10))}%` }} /></div><strong>{lives}/10</strong></div>}
           <div className="selected-name" role="status">
             {selectionInfo(selected).name}
-            {selected === 'pistol_bomb' && ` · ${bombAmmo}/10${bombReloading ? ' · 3-second reload…' : ''}`}
+            {selected === 'pistol_bomb' && ` · ${bombAmmo}/10${bombReloading ? ` · ${gameplayMode === 'pirates' ? PIRATE_BOMB_RELOAD_SECONDS : BOMB_RELOAD_SECONDS} ${translate('s de recharge…', 's to reload…')}` : ''}`}
           </div>
           <div className="hotbar">
             {hotbarSlots.map((kind, index) => (
