@@ -35,6 +35,12 @@ import { canRoleplayBuildAt, canRoleplayMineAt, onRoleplayMined, onRoleplayPlace
 const direction = new Vector3();
 const origin = new Vector3();
 
+export function blockBreakSound(kind: BlockKind) {
+  const plant = kind === BlockKind.Leaves || kind === BlockKind.PineLeaves || kind === BlockKind.AutumnLeaves || kind === BlockKind.JungleLeaves || kind === BlockKind.JungleVine || kind === BlockKind.Cactus || kind === BlockKind.Apple || kind === BlockKind.Watermelon || isCrop(kind) || isSapling(kind);
+  const dirt = kind === BlockKind.Dirt || kind === BlockKind.Sand || kind === BlockKind.Grass || kind === BlockKind.ForestGrass || kind === BlockKind.AutumnGrass || kind === BlockKind.JungleGrass;
+  return dirt || plant ? 'breakDirt' : isGlass(kind) ? 'breakGlass' : isWoodBlock(kind) ? 'breakWood' : 'breakBlock';
+}
+
 function intersectsPlayer(x: number, y: number, z: number, player: Vector3) {
   const horizontal = Math.abs(player.x - x) < 0.86 && Math.abs(player.z - z) < 0.86;
   const vertical = y - 0.5 < player.y + 1.8 && y + 0.5 > player.y;
@@ -149,8 +155,7 @@ export function blockSystem(world: World, camera: Camera, dt: number, disabled =
           if (sapling) changeInventory(sapling, 1 + Math.floor(Math.random() * 2));
         }
       }
-      const dirtBlock = hit.block.kind === BlockKind.Dirt || hit.block.kind === BlockKind.Sand || hit.block.kind === BlockKind.Grass || hit.block.kind === BlockKind.ForestGrass || hit.block.kind === BlockKind.AutumnGrass || hit.block.kind === BlockKind.JungleGrass;
-      playSound(dirtBlock ? 'breakDirt' : isGlass(hit.block.kind) ? 'breakGlass' : isWoodBlock(hit.block.kind) ? 'breakWood' : 'breakBlock', 0.5);
+      playSound(blockBreakSound(hit.block.kind), 0.5);
       target.visible = false;
       target.miningKey = '';
       target.miningProgress = 0;
