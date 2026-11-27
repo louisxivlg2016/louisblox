@@ -1314,15 +1314,17 @@
       }
       .world-card-shell { position: relative; width: 100%; max-width: 320px; height: auto; aspect-ratio: 1; min-width: 0; }
       .world-card .world-card-label { display: none !important; }
-      .world-card-shell .world-card { width: 100%; height: 100%; }
+      .world-card-shell .world-card { width: 100%; max-width: none; height: 100%; }
       .world-card img { width: 100%; height: 100% !important; object-fit: cover; }
       .world-card-shell:has([data-world-mode="skyfall"], [data-world-mode="planet"], [data-world-mode="deep-dive"]) { max-width: 340px; padding: 0; background: transparent; border: 0; box-shadow: none; }
       .world-card-shell:has([data-world-mode="skyfall"], [data-world-mode="planet"], [data-world-mode="deep-dive"]) .world-card { padding: 0; background: transparent; border: 0; box-shadow: none; }
       .world-card-shell:has([data-world-mode="skyfall"], [data-world-mode="planet"], [data-world-mode="deep-dive"]) .world-mode-tag, .world-card-shell:has([data-world-mode="skyfall"], [data-world-mode="planet"], [data-world-mode="deep-dive"]) .world-mode-badges { display: none; }
-      .world-card-shell:has([data-world-template="fortress"]) { max-width: 480px; aspect-ratio: 3 / 2; }
-      .world-card-shell:has([data-world-template="fortress"]) .world-card img { object-fit: contain; }
-      .world-card-shell:has([data-world-mode="skyfall"], [data-world-mode="planet"]) { max-width: 480px; aspect-ratio: 3 / 2; }
-      .world-card-shell:has([data-world-template="fortress"]) .world-card img, .world-card-shell:has([data-world-mode="skyfall"], [data-world-mode="planet"], [data-world-mode="deep-dive"]) .world-card img { width: 94%; height: 94%; margin: 3%; object-fit: contain; }
+      .world-cards { grid-auto-flow: dense; }
+      .world-card-shell:has([data-world-template="fortress"]), .world-card-shell:has([data-world-mode="skyfall"], [data-world-mode="planet"], [data-world-mode="deep-dive"]) { grid-column: span 2; max-width: none; aspect-ratio: 2 / 1; }
+      .world-card-shell:has([data-world-template="fortress"]) .world-card img, .world-card-shell:has([data-world-mode="skyfall"], [data-world-mode="planet"], [data-world-mode="deep-dive"]) .world-card img { width: 100%; height: 100% !important; margin: 0; object-fit: contain; }
+      @media (max-width: 650px) {
+        .world-card-shell:has([data-world-template="fortress"]), .world-card-shell:has([data-world-mode="skyfall"], [data-world-mode="planet"], [data-world-mode="deep-dive"]) { grid-column: 1 / -1; }
+      }
       .world-card-shell .world-card-label { padding-bottom: 14px; }
       .community-random:disabled { opacity: .5; cursor: not-allowed; }
       .community-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
