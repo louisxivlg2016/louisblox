@@ -12,6 +12,7 @@ import type { Voxel } from './voxel';
 export type FoundFood = { selected: SelectedKind; position: Vector3; dropped?: Entity; block?: Voxel };
 const searches = new WeakMap<World, Map<Entity, number>>();
 const targets = new WeakMap<World, Map<Entity, FoundFood | null>>();
+const blockFoods = new WeakMap<World, { at: number; foods: FoundFood[] }>();
 
 function edible(kind: AnimalKind, selected: SelectedKind) {
   return typeof selected === 'string' && getItemMeta(selected).category === 'food' && canFeedAnimal(kind, selected);
@@ -19,6 +20,20 @@ function edible(kind: AnimalKind, selected: SelectedKind) {
 
 function meatSelection(kind: AnimalKind): SelectedKind {
   return kind === 'chicken' || kind === 'duck' ? 'raw_chicken' : 'raw_meat';
+}
+
+function foodBlocks(world: World) {
+  const now = Date.now();
+  const cached = blockFoods.get(world);
+  if (cached && now - cached.at < 1000) return cached.foods;
+  const foods: FoundFood[] = [];
+  for (const block of getBlockIndex(world).values()) {
+    const selected = block.food ?? (block.meat ? meatSelection(block.meat) : undefined);
+    if (!selected || typeof selected !== 'string' || getItemMeta(selected).category !== 'food') continue;
+    foods.push({ selected, position: new Vector3(block.x, block.y + 0.5, block.z), block });
+  }
+  blockFoods.set(world, { at: now, foods });
+  return foods;
 }
 
 function nearestFood(world: World, entity: Entity, kind: AnimalKind): FoundFood | null {
@@ -43,14 +58,12 @@ function nearestFood(world: World, entity: Entity, kind: AnimalKind): FoundFood 
     closest = distance;
     nearest = { selected, position: foodPosition, dropped };
   }
-  for (const block of getBlockIndex(world).values()) {
-    const selected = block.food ?? (block.meat ? meatSelection(block.meat) : undefined);
-    if (!selected || !edible(kind, selected)) continue;
-    const foodPosition = new Vector3(block.x, block.y + 0.5, block.z);
-    const distance = position.distanceTo(foodPosition);
+  for (const food of foodBlocks(world)) {
+    if (!edible(kind, food.selected)) continue;
+    const distance = position.distanceTo(food.position);
     if (distance >= closest) continue;
     closest = distance;
-    nearest = { selected, position: foodPosition, block };
+    nearest = food;
   }
   return nearest;
 }
