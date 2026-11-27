@@ -1,4 +1,4 @@
-import { generatePirateChunk } from '../src/game/pirates';
+import { generatePirateChunk, pirateSpawn } from '../src/game/pirates';
 import { generatePirateFortressChunk, pirateFortressSpawn } from '../src/game/pirateFortress';
 import { BlockKind } from '../src/game/voxel';
 import { PIRATE_CHEST_OFFSETS } from '../src/game/pirateShipGeometry';
@@ -37,10 +37,6 @@ const mysteryRewards = [
   { item: 'parachute', amount: 1 },
   { item: 'pickaxe_diamond', amount: 1 },
 ] as const;
-
-function spawn(team: Team) {
-  return { x: team === 'red' ? -18 : 18, y: 8.51, z: 3 };
-}
 
 export class PirateEngine {
   private kits = new Map<string, PirateKit>();
@@ -110,7 +106,7 @@ export class PirateEngine {
     this.room.broadcast({ type: 'battle-elimination', messageId: crypto.randomUUID(), killerName, victimName: player.name, killerId: killer?.playerId, victimId: player.playerId });
     if (this.objectives[team] > 0) {
       this.room.health.set(player.playerId, 10);
-      target.socket.send(JSON.stringify({ type: 'battle-respawn', team, position: this.room.template() === 'fortress' ? pirateFortressSpawn(team) : spawn(team) }));
+      target.socket.send(JSON.stringify({ type: 'battle-respawn', team, position: this.room.template() === 'fortress' ? pirateFortressSpawn(team) : pirateSpawn(team) }));
     } else {
       this.eliminated.add(player.playerId);
       target.socket.send(JSON.stringify({ type: 'pirates-final-death', playerId: player.playerId }));

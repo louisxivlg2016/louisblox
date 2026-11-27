@@ -33,7 +33,7 @@ export const PIRATE_SHOP = () => [
 ];
 
 export function pirateSpawn(team: 'red' | 'blue') {
-  return { x: team === 'red' ? -18 : 18, y: 9.51, z: 3 };
+  return { x: team === 'red' ? -16 : 16, y: 6.51, z: 3 };
 }
 
 export function generatePirateChunk(cx: number, cz: number): GeneratedChunk {

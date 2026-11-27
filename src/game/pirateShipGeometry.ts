@@ -16,7 +16,7 @@ export function addPirateShip(blocks: Voxel[], center: number, team: 'red' | 'bl
     for (let y = 4; y <= 8; y++) {
       const width = Math.max(1, deckWidth - Math.max(0, 7 - y));
       for (let x = -width; x <= width; x++) {
-        if (Math.abs(x) === width || y === 4 || Math.abs(z) === 16) put(center + x, y, z, BlockKind.Wood);
+        if (Math.abs(x) === width || y === 4 || y === 6 || Math.abs(z) === 16) put(center + x, y, z, BlockKind.Wood);
       }
     }
     for (let x = -deckWidth; x <= deckWidth; x++) {

@@ -83,7 +83,10 @@ function fortress(blocks: Voxel[], cx: number, cz: number, centerX: number, team
   for (let z = -1; z <= 1; z += 1) for (let y = 8; y <= 10; y += 1) put(blocks, cx, cz, gateX, y, z, BlockKind.DoorBlack, true, team === 'red' ? 'west' : 'east');
   const sign = put(blocks, cx, cz, gateX, 12, 0, BlockKind.Sign, true, team === 'red' ? 'west' : 'east');
   if (sign) sign.text = team === 'red' ? 'FORT ROUGE' : 'FORT BLEU';
-  for (const [dx, dy, dz] of PIRATE_CHEST_OFFSETS) put(blocks, cx, cz, centerX + dx, 7 + dy, dz, BlockKind.Chest, true, 'south');
+  for (const [dx, dy, dz] of PIRATE_CHEST_OFFSETS) {
+    put(blocks, cx, cz, centerX + dx, 6 + dy, dz, BlockKind.Stone);
+    put(blocks, cx, cz, centerX + dx, 7 + dy, dz, BlockKind.Chest, true, 'south');
+  }
   for (const z of [-6, 6]) for (const x of [centerX - 6, centerX + 6]) {
     put(blocks, cx, cz, x, 8, z, BlockKind.Wood);
     put(blocks, cx, cz, x, 9, z, BlockKind.Wood);
