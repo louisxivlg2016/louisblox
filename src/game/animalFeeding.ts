@@ -3,7 +3,7 @@ import { Vector3 } from 'three';
 import { getBlockIndex, removeVoxel } from './chunks';
 import { getItemMeta } from './items';
 import type { SelectedKind } from './items';
-import { Animal, AnimalLove, AnimalPosition, DroppedItem, DroppedItemPosition } from './traits';
+import { Animal, AnimalLove, AnimalPosition, DroppedItem, DroppedItemPosition, MeatDrop, MeatDropPosition } from './traits';
 import { applyTameState, canFeedAnimal, isTamedAnimal } from './taming';
 import type { AnimalKind } from './animals';
 import { reportAnimalTame } from './animalSync';
@@ -15,6 +15,10 @@ const targets = new WeakMap<World, Map<Entity, FoundFood | null>>();
 
 function edible(kind: AnimalKind, selected: SelectedKind) {
   return typeof selected === 'string' && getItemMeta(selected).category === 'food' && canFeedAnimal(kind, selected);
+}
+
+function meatSelection(kind: AnimalKind): SelectedKind {
+  return kind === 'chicken' || kind === 'duck' ? 'raw_chicken' : 'raw_meat';
 }
 
 function nearestFood(world: World, entity: Entity, kind: AnimalKind): FoundFood | null {
@@ -30,13 +34,23 @@ function nearestFood(world: World, entity: Entity, kind: AnimalKind): FoundFood 
     closest = distance;
     nearest = { selected, position: foodPosition, dropped };
   }
+  for (const dropped of world.query(MeatDrop, MeatDropPosition)) {
+    const selected = meatSelection(dropped.get(MeatDrop)!.kind);
+    if (!edible(kind, selected)) continue;
+    const foodPosition = dropped.get(MeatDropPosition)!;
+    const distance = position.distanceTo(foodPosition);
+    if (distance >= closest) continue;
+    closest = distance;
+    nearest = { selected, position: foodPosition, dropped };
+  }
   for (const block of getBlockIndex(world).values()) {
-    if (!block.food || !edible(kind, block.food)) continue;
+    const selected = block.food ?? (block.meat ? meatSelection(block.meat) : undefined);
+    if (!selected || !edible(kind, selected)) continue;
     const foodPosition = new Vector3(block.x, block.y + 0.5, block.z);
     const distance = position.distanceTo(foodPosition);
     if (distance >= closest) continue;
     closest = distance;
-    nearest = { selected: block.food, position: foodPosition, block };
+    nearest = { selected, position: foodPosition, block };
   }
   return nearest;
 }

@@ -24,7 +24,7 @@ export function damagePirateFortressWalls(world: World, blocks: Map<string, Voxe
 }
 
 export function pirateFortressSpawn(team: 'red' | 'blue' | null) {
-  return { x: team === 'red' ? -18 : 18, y: 9.51, z: 3 };
+  return { x: team === 'red' ? -24 : 24, y: 8.51, z: 3 };
 }
 
 function put(blocks: Voxel[], cx: number, cz: number, x: number, y: number, z: number, kind: BlockKind, protectedBlock = true, facing?: Voxel['facing']) {

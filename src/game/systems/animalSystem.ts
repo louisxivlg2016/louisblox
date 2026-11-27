@@ -449,7 +449,7 @@ export function animalSystem(world: World, dt: number) {
     hit.attackIn = Math.max(0, hit.attackIn - stepDt);
     const love = entity.get(AnimalLove);
     if (love) love.time = Math.max(0, love.time - stepDt);
-    const foodTarget = (!tamed || (entity.get(AnimalTame)?.happiness ?? 100) < 75) ? foundFoodFor(world, entity) : null;
+    const foodTarget = foundFoodFor(world, entity);
     if (foodTarget && !fire) {
       const distance = position.distanceTo(foodTarget.position);
       if (distance <= 1.2) eatFoundFood(world, entity, foodTarget);

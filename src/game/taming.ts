@@ -17,8 +17,9 @@ export const TAMED_ANIMAL_MONTH_DAYS = 30;
 export const WILD_ANIMALS = new Set<AnimalKind>(['bear', 'wolf', 'snowWolf', 'snowBear', 'monkey', 'ocelot', 'giraffe', 'elephant', 'deer', 'snowDeer']);
 export const DEFENSIVE_ANIMALS = new Set<AnimalKind>(['bear', 'wolf', 'snowWolf', 'snowBear']);
 export const FEED_INTERVAL_MS = 30 * 60 * 1000;
-const FARM_FOOD = new Set<SelectedKind>(['corn', 'apple', 'wheat']);
-const MEAT_FOOD = new Set<SelectedKind>(['raw_meat', 'cooked_meat']);
+const FARM_FOOD = new Set<SelectedKind>(['corn', 'cooked_corn', 'apple', 'wheat', 'tomato', 'carrot', 'watermelon', 'berries', 'bread']);
+const MEAT_FOOD = new Set<SelectedKind>(['raw_meat', 'cooked_meat', 'raw_chicken', 'cooked_chicken', 'raw_salmon', 'cooked_salmon']);
+const PLANT_WILD_ANIMALS = new Set<AnimalKind>(['monkey', 'giraffe', 'elephant', 'deer', 'snowDeer']);
 const kinds = new Set<AnimalKind>(['camel', 'cow', 'horse', 'pig', 'sheep', 'chicken', 'duck', 'bear', 'deer', 'wolf', 'snowWolf', 'snowBear', 'snowDeer', 'zombie', 'monkey', 'ocelot', 'giraffe', 'elephant']);
 const names = (): Partial<Record<AnimalKind, string>> => ({ cow: translate('Vache', 'Cow'), sheep: translate('Mouton', 'Sheep'), pig: translate('Cochon', 'Pig'), horse: translate('Cheval', 'Horse'), bear: translate('Ours', 'Bear'), wolf: translate('Loup', 'Wolf'), snowWolf: translate('Loup des neiges', 'Snow Wolf'), snowBear: translate('Ours des neiges', 'Snow Bear'), camel: translate('Chameau', 'Camel'), chicken: translate('Poule', 'Chicken'), duck: translate('Canard', 'Duck'), monkey: translate('Singe', 'Monkey'), ocelot: 'Ocelot', giraffe: translate('Girafe', 'Giraffe'), elephant: translate('Éléphant', 'Elephant'), deer: translate('Cerf', 'Deer'), snowDeer: translate('Cerf des neiges', 'Snow Deer') });
 
@@ -302,13 +303,18 @@ export function wakeTamedAnimal(world: World, entity: Entity) {
 }
 
 export function canFeedAnimal(kind: AnimalKind, selected: SelectedKind) {
-  return WILD_ANIMALS.has(kind) ? MEAT_FOOD.has(selected) : FARM_FOOD.has(selected);
+  if (MEAT_FOOD.has(selected)) return WILD_ANIMALS.has(kind) && !PLANT_WILD_ANIMALS.has(kind);
+  if (!FARM_FOOD.has(selected)) return false;
+  return !WILD_ANIMALS.has(kind) || PLANT_WILD_ANIMALS.has(kind) || kind === 'bear' || kind === 'snowBear';
 }
 
 export function animalFoodNotice(kind: AnimalKind) {
-  return WILD_ANIMALS.has(kind)
-    ? `${names()[kind] ?? translate('Cet animal', 'This animal')} eats raw or cooked meat.`
-    : `${names()[kind] ?? translate('Cet animal', 'This animal')} eats corn, apples, or wheat.`;
+  const eatsMeat = WILD_ANIMALS.has(kind) && !PLANT_WILD_ANIMALS.has(kind);
+  const eatsPlants = !WILD_ANIMALS.has(kind) || PLANT_WILD_ANIMALS.has(kind) || kind === 'bear' || kind === 'snowBear';
+  if (eatsMeat && eatsPlants) return `${names()[kind] ?? translate('Cet animal', 'This animal')} eats meat, fish, fruits, and vegetables.`;
+  return eatsMeat
+    ? `${names()[kind] ?? translate('Cet animal', 'This animal')} eats meat, chicken, or fish.`
+    : `${names()[kind] ?? translate('Cet animal', 'This animal')} eats fruits, vegetables, wheat, or bread.`;
 }
 
 export function feedAnimal(world: World, entity: Entity, selected: SelectedKind): 'fed' | 'handled' | false {
