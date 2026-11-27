@@ -1,5 +1,5 @@
 import { generatePirateChunk } from '../src/game/pirates';
-import { generatePirateFortressChunk } from '../src/game/pirateFortress';
+import { generatePirateFortressChunk, pirateFortressSpawn } from '../src/game/pirateFortress';
 import { BlockKind } from '../src/game/voxel';
 import { PIRATE_CHEST_OFFSETS } from '../src/game/pirateShipGeometry';
 import type { PlayerAttachment } from './index';
@@ -110,7 +110,7 @@ export class PirateEngine {
     this.room.broadcast({ type: 'battle-elimination', messageId: crypto.randomUUID(), killerName, victimName: player.name, killerId: killer?.playerId, victimId: player.playerId });
     if (this.objectives[team] > 0) {
       this.room.health.set(player.playerId, 10);
-      target.socket.send(JSON.stringify({ type: 'battle-respawn', team, position: spawn(team) }));
+      target.socket.send(JSON.stringify({ type: 'battle-respawn', team, position: this.room.template() === 'fortress' ? pirateFortressSpawn(team) : spawn(team) }));
     } else {
       this.eliminated.add(player.playerId);
       target.socket.send(JSON.stringify({ type: 'pirates-final-death', playerId: player.playerId }));

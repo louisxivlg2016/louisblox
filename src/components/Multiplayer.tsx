@@ -666,7 +666,7 @@ export function MultiplayerConnection() {
           return;
         }
         if (data.type === 'world' && (data.seed === null || typeof data.seed === 'number') && Array.isArray(data.edits)) {
-          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: isGameplayMode(data.gameplayMode) ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined, worldName: typeof data.worldName === 'string' ? data.worldName : undefined, template: data.template === 'city-ancient' || data.template === 'city-modern' || data.template === 'custom' ? data.template : 'nature', customWorld: sanitizeCustomWorld(data.customWorld) ?? undefined, protection: isWorldProtection(data.protection) ? data.protection : undefined, deadAnimals: Array.isArray(data.deadAnimals) ? data.deadAnimals.filter(isDeathId) : [], deadTraders: Array.isArray(data.deadTraders) ? data.deadTraders.filter(isDeathId) : [] };
+          pendingWorld.current = { seed: data.seed, edits: data.edits as Array<[string, ChunkEdit]>, gameplayMode: isGameplayMode(data.gameplayMode) ? data.gameplayMode : 'creative', worldId: typeof data.worldId === 'string' ? data.worldId : undefined, worldName: typeof data.worldName === 'string' ? data.worldName : undefined, template: data.template === 'city-ancient' || data.template === 'city-modern' || data.template === 'custom' || data.template === 'fortress' ? data.template : 'nature', customWorld: sanitizeCustomWorld(data.customWorld) ?? undefined, protection: isWorldProtection(data.protection) ? data.protection : undefined, deadAnimals: Array.isArray(data.deadAnimals) ? data.deadAnimals.filter(isDeathId) : [], deadTraders: Array.isArray(data.deadTraders) ? data.deadTraders.filter(isDeathId) : [] };
           applyPendingWorld();
           return;
         }
@@ -908,14 +908,14 @@ export function MultiplayerConnection() {
     lastGeneration.current = generation;
     if (!connected || pendingWorld.current) return;
     const current = socket.current;
-    if (current?.readyState === WebSocket.OPEN) {
+    if (current?.readyState === WebSocket.OPEN && !isJoinOnlyRoom(room)) {
       const force = requestedRoomForce && requestedRoomMode !== null && requestedRoomMode === useGameStore.getState().gameplayMode;
       if (worldInitSent.current && !force) return;
       if (force) requestedRoomMode = null;
       sendWorldInitialization(current, world, force);
       worldInitSent.current = true;
     }
-  }, [world, generation, connected]);
+  }, [world, generation, connected, room]);
 
   return null;
 }

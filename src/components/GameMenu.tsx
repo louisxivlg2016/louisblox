@@ -214,7 +214,7 @@ export function GameMenu({ paused, onPlay, onShop }: { paused: boolean; onPlay: 
   };
   const openJoinMode = (mode: GameplayMode, card?: ModeCard) => {
     if (card?.template) {
-      create(mode, false, { name: card.name, mode, template: card.template, multiplayer: enabled, canBreak: true, canPlace: true, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true });
+      create(mode, enabled, { name: card.name, mode, template: card.template, multiplayer: enabled, canBreak: true, canPlace: true, allowDestructiveFire: true, allowCampfire: true, allowFloodingWater: true, allowCalmWater: true });
       return;
     }
     if (!enabled) {
