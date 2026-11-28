@@ -51,7 +51,7 @@ export function usePublicWorldJoin(onPlay: () => void | Promise<void>) {
         return true;
       }
       const id = `salon-${crypto.randomUUID().slice(0, 8)}`;
-      const template = mode === 'city-ancient' || mode === 'city-modern' ? mode : 'nature';
+      const template = mode === 'city-ancient' || mode === 'city-modern' ? mode : mode === 'pirates' && useGameStore.getState().worldTemplate === 'fortress' ? 'fortress' : 'nature';
       const name = translate(`Monde ${GAMEPLAY_MODE_LABELS()[mode]}`, `${GAMEPLAY_MODE_LABELS()[mode]} world`);
       requestRoomMode(mode);
       useGameStore.getState().regenerate(mode, id, template, name);

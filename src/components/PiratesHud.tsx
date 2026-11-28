@@ -24,6 +24,7 @@ export function PiratesHud() {
   const localPlayerId = useBattleStore((state) => state.localPlayerId);
   const coins = usePirateStore((state) => state.coins);
   const objectives = usePirateStore((state) => state.objectives);
+  const health = useBattleStore((state) => state.health);
   const winner = usePirateStore((state) => state.winner);
   const [shopOpen, setShopOpen] = useState(false);
   useEffect(() => {
@@ -62,11 +63,12 @@ export function PiratesHud() {
     void requestPlay();
   };
   const money = localPlayerId ? coins[localPlayerId] ?? 0 : 0;
+  const lives = localPlayerId ? health[localPlayerId] ?? 10 : 10;
   const defeated = Boolean(worldTemplate === 'fortress' && winner && team && winner !== team);
   return (
     <>
       <div className="battle-scoreboard pirate-scoreboard" aria-label={translate('Objectifs des bateaux', 'Ship objectives')}>
-        <span className="battle-red">{translate('Rouge', 'Red')} · {objectives.red}</span><strong>{translate('TRÉSORS', 'TREASURES')}</strong><span className="battle-blue">{translate('Bleu', 'Blue')} · {objectives.blue}</span><span className="pirate-coins">{translate('Or', 'Gold')} · {money}</span>
+        <span className="battle-red">{translate('Rouge', 'Red')} · {objectives.red}</span><strong>{translate('TRÉSORS', 'TREASURES')}</strong><span className="battle-blue">{translate('Bleu', 'Blue')} · {objectives.blue}</span><span className="pirate-coins">{translate('Or', 'Gold')} · {money}</span>{worldTemplate === 'fortress' && <span className="pirate-lives">{translate('Vies', 'Lives')} · {lives}/10</span>}
       </div>
       {!team && (
         <div className="battle-team-picker pirate-picker">

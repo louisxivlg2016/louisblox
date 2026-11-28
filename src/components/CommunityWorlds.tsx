@@ -4,7 +4,7 @@ import type { ModePlayer, PublicWorld } from '../game/publicWorlds';
 import { GAMEPLAY_MODE_LABELS, isMultiplayerOnlyMode } from '../game/worldMode';
 import type { GameplayMode } from '../game/worldMode';
 import { playerIdentity } from '../game/playerIdentity';
-import { listWorlds } from '../game/save';
+import { listWorlds, readWorldSave } from '../game/save';
 import type { WorldMeta } from '../game/save';
 import { useGameStore } from '../game/store';
 import { useMultiplayerStore } from '../game/multiplayerStore';
@@ -70,7 +70,7 @@ export function CommunityWorlds({ onPlay, mode, onModeChange }: {
       return;
     }
     const gameplayMode = world.gameplayMode ?? selectedMode;
-    join({ id: world.id, name: world.name, ownerId: selfId, ownerName: playerName, gameplayMode, template: gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : 'nature', players: 0, updatedAt: world.updatedAt });
+    join({ id: world.id, name: world.name, ownerId: selfId, ownerName: playerName, gameplayMode, template: readWorldSave(world.id)?.template ?? (gameplayMode === 'city-ancient' || gameplayMode === 'city-modern' ? gameplayMode : 'nature'), players: 0, updatedAt: world.updatedAt });
   };
   const remove = async (world: WorldMeta) => {
     if (!window.confirm(translate(`Supprimer « ${world.name} » ?\n\nLa sauvegarde sur cet appareil sera définitivement effacée. Si tu possèdes le salon en ligne, il sera supprimé pour tout le monde.`, `Delete “${world.name}”?\n\nThe save on this device will be permanently deleted. If you own the online room, it will be deleted for everyone.`, `¿Eliminar “${world.name}”?\n\nLa partida guardada en este dispositivo se eliminará permanentemente. Si eres propietario de la sala en línea, se eliminará para todos.`))) return;
