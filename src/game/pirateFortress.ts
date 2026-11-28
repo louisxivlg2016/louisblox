@@ -79,7 +79,7 @@ function fortress(blocks: Voxel[], cx: number, cz: number, centerX: number, team
   put(blocks, cx, cz, centerX, 20, 0, color);
   put(blocks, cx, cz, centerX, 21, 0, color);
   put(blocks, cx, cz, centerX, 22, 0, color);
-  for (let y = 8; y <= 17; y += 1) put(blocks, cx, cz, centerX + inward * 4, y, 0, BlockKind.Ladder, true, inward > 0 ? 'east' : 'west');
+  for (let y = 8; y <= 19; y += 1) put(blocks, cx, cz, centerX + inward * 4, y, 0, BlockKind.Ladder, true, inward > 0 ? 'east' : 'west');
   for (let z = -1; z <= 1; z += 1) for (let y = 8; y <= 10; y += 1) put(blocks, cx, cz, gateX, y, z, BlockKind.DoorBlack, true, team === 'red' ? 'west' : 'east');
   const sign = put(blocks, cx, cz, gateX, 12, 0, BlockKind.Sign, true, team === 'red' ? 'west' : 'east');
   if (sign) sign.text = team === 'red' ? 'FORT ROUGE' : 'FORT BLEU';
