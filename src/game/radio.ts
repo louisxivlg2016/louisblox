@@ -90,12 +90,12 @@ export function selectRadioTrack(index: number, outsideVehicle = false) {
 }
 
 export function toggleVehicleRadio(outsideVehicle = false) {
-  const game = useGameStore.getState();
-  if (!outsideVehicle && (!game.riding || isAnimalMount(game.riding)) || game.mode !== 'play' || !useAudioSettings.getState().music) return false;
   if (useRadioStore.getState().enabled) {
     stopVehicleRadio();
     return false;
   }
+  const game = useGameStore.getState();
+  if (!outsideVehicle && (!game.riding || isAnimalMount(game.riding)) || game.mode !== 'play' || !useAudioSettings.getState().music) return false;
   useRadioStore.setState({ enabled: true, outside: outsideVehicle });
   setMusicSuppressed(true);
   playTrack();
